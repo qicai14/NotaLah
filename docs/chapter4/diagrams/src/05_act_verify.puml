@@ -1,0 +1,54 @@
+@startuml act_lecturer_verification
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam dpi 170
+skinparam ActivityBackgroundColor white
+skinparam SwimlaneWidth same
+|Guest|
+|Administrator|
+|Lecturer|
+|System|
+|Guest|
+start
+:Register selecting "Lecturer"\nand enter staff ID;
+|System|
+:Create student-level account\nwith lecturer status "pending";
+|Administrator|
+:Open Lecturer Applications;
+:Check staff ID against staff directory;
+if (Genuine staff?) then (no)
+  :Reject with reason;
+  |System|
+  :Keep student account; notify user;
+  stop
+else (yes)
+  |Administrator|
+  :Approve;
+endif
+|System|
+:Set role = lecturer; record account action;
+|Lecturer|
+:Open a published note and review slides;
+:Select "Super Like";
+|System|
+:Ask for confirmation and optional remark;
+|Lecturer|
+:Confirm;
+|System|
+if (Role = lecturer and status active?) then (no)
+  :Reject request (403 Forbidden);
+  stop
+elseif (Lecturer is the note's author?) then (yes)
+  :Reject: own note already scores V = 0.5;
+  stop
+elseif (Already verified by this lecturer?) then (yes)
+  :Show existing verification;
+  stop
+else (no)
+  :Store verification;
+  :Show verified frame and\n"Verified by [lecturer]";
+  :Note now scores V = 1.0 in ranking;
+  stop
+endif
+@enduml
