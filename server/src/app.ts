@@ -2,6 +2,8 @@ import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env';
+import { passport } from './auth/passport';
+import { authRouter } from './routes/auth';
 import { healthRouter } from './routes/health';
 
 export const app = express();
@@ -9,8 +11,13 @@ export const app = express();
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN }));
 app.use(express.json({ limit: '1mb' }));
+app.use(passport.initialize());
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
 
 // Express 5 forwards rejected async handlers here.
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {

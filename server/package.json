@@ -14,16 +14,26 @@
     "db:status": "dbmate --env-file ../.env --no-dump-schema status"
   },
   "dependencies": {
+    "bcryptjs": "3.0.3",
     "cors": "2.8.6",
     "express": "5.2.1",
+    "express-rate-limit": "8.7.0",
     "helmet": "8.3.0",
+    "jsonwebtoken": "9.0.3",
+    "passport": "0.7.0",
+    "passport-jwt": "4.0.1",
+    "passport-local": "1.0.0",
     "pg": "8.23.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/cors": "2.8.19",
     "@types/express": "5.0.6",
+    "@types/jsonwebtoken": "9.0.10",
     "@types/node": "24.19.0",
+    "@types/passport": "1.0.17",
+    "@types/passport-jwt": "4.0.1",
+    "@types/passport-local": "1.0.38",
     "@types/pg": "8.23.1",
     "@types/supertest": "7.2.1",
     "dbmate": "2.36.0",
