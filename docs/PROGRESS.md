@@ -8,3 +8,4 @@ Format: `HH:MM — step — commit`.
 03:28 — S0.2 class diagram, 5 activity + 5 sequence diagrams with explanatory text (4.2.3-4.2.5)
 03:34 — S0.4 25 greyscale wireframes (build.mjs + PNGs) and 4.4 text
 03:36 — S0.5 unit TC tables (8 modules x 10) + UAT template (4.5)
+03:38 — S0.6 Sprint 0 review + retrospective, 4.1 intro, numbered CHAPTER4.md, schema table images; PLAN.md Sprint 0 = done
