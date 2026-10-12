@@ -86,3 +86,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** the SQL in the repository is exactly the SQL in Chapter 4.3/5.2 (uppercase keywords, quoted
   tables), and dbmate records applied versions in `schema_migrations`.
 - **Reversibility:** Easy before Sprint 2.
+
+## D12 — Test case IDs carry a module prefix (AUTH-TC1 … ADM-TC10)
+- **Decision:** eight modules × TC1-TC10; automated test names start with the ID (e.g. `AUTH-TC3: …`).
+  Re-tests after a fix continue the module's sequence (AUTH-TC11).
+- **Why:** the standard asks for TC1-TC10 *per module*; a prefix keeps IDs unique across the report
+  and lets Chapter 5 tables be filled straight from test output.
+- **Reversibility:** Easy.
