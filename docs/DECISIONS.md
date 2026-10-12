@@ -69,3 +69,20 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   request (FR6), both users become contacts, and contacts-only posts (FR10) are visible to them.
 - **Alternatives:** separate add-friend flow (rejected: two approval mechanisms for one idea).
 - **Reversibility:** Medium.
+
+## D10 — Interest vector computed from an interaction log, not stored
+- **Decision:** `"INTERACTION_T"` logs views/likes/comments; the ranking service derives each viewer's
+  decayed hashtag weights at query time (cacheable later).
+- **Alternatives:** a maintained `INTEREST_T` (user, hashtag, weight) updated on every interaction.
+- **Why:** exact 14-day decay at any moment, and NFR5 re-tuning of interaction weights needs no data
+  migration. If feed latency suffers, add a cached table later.
+- **Reversibility:** Easy (an additive cache table).
+
+## D11 — Plain-SQL migrations with dbmate
+- **Decision:** migrations are `.sql` files in `server/db/migrations/` with `-- migrate:up/down`
+  sections, run by `dbmate` (npm package).
+- **Alternatives:** node-pg-migrate (JS builders), Prisma/Knex (generate lowercase names, fight the
+  quoted `_T` convention).
+- **Why:** the SQL in the repository is exactly the SQL in Chapter 4.3/5.2 (uppercase keywords, quoted
+  tables), and dbmate records applied versions in `schema_migrations`.
+- **Reversibility:** Easy before Sprint 2.

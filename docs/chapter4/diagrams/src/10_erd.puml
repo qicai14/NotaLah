@@ -1,0 +1,202 @@
+@startuml erd
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+skinparam dpi 150
+skinparam nodesep 40
+skinparam ranksep 50
+
+entity "USER_T" as USER {
+  * usr_id : INTEGER <<PK>>
+  --
+  * usr_email : VARCHAR(255) <<UNIQUE>>
+  * usr_password_hash : CHAR(60)
+  * usr_display_name : VARCHAR(50)
+  * usr_role : VARCHAR(10)
+  * usr_status : VARCHAR(10)
+  usr_lecturer_status : VARCHAR(10)
+  usr_staff_id : VARCHAR(20)
+  usr_programme : VARCHAR(100)
+  usr_bio : VARCHAR(300)
+  usr_avatar_url : VARCHAR(255)
+  * usr_created_at : TIMESTAMPTZ
+}
+entity "MODULE_T" as MODULE {
+  * mod_id : INTEGER <<PK>>
+  --
+  * mod_code : VARCHAR(20) <<UNIQUE>>
+  * mod_name : VARCHAR(150)
+  * mod_programme : VARCHAR(100)
+}
+entity "POST_T" as POST {
+  * pst_id : INTEGER <<PK>>
+  --
+  * pst_usr_id : INTEGER <<FK>>
+  pst_mod_id : INTEGER <<FK>>
+  * pst_title : VARCHAR(150)
+  * pst_template : VARCHAR(30)
+  * pst_status : VARCHAR(10)
+  pst_visibility : VARCHAR(10)
+  pst_search_doc : TSVECTOR
+  * pst_created_at : TIMESTAMPTZ
+  * pst_updated_at : TIMESTAMPTZ
+  pst_published_at : TIMESTAMPTZ
+}
+entity "SLIDE_T" as SLIDE {
+  * sld_id : INTEGER <<PK>>
+  --
+  * sld_pst_id : INTEGER <<FK>>
+  * sld_position : SMALLINT
+  * sld_content : TEXT
+}
+entity "HASHTAG_T" as HASHTAG {
+  * hsh_id : INTEGER <<PK>>
+  --
+  * hsh_name : VARCHAR(50) <<UNIQUE>>
+}
+entity "POST_HASHTAG_T" as PH {
+  * phs_pst_id : INTEGER <<PK, FK>>
+  * phs_hsh_id : INTEGER <<PK, FK>>
+}
+entity "LIKE_T" as LIKE {
+  * lik_usr_id : INTEGER <<PK, FK>>
+  * lik_pst_id : INTEGER <<PK, FK>>
+  --
+  * lik_created_at : TIMESTAMPTZ
+}
+entity "VERIFICATION_T" as VER {
+  * ver_id : INTEGER <<PK>>
+  --
+  * ver_pst_id : INTEGER <<FK>>
+  * ver_usr_id : INTEGER <<FK>>
+  ver_remark : VARCHAR(300)
+  * ver_created_at : TIMESTAMPTZ
+}
+entity "COMMENT_T" as CMT {
+  * cmt_id : INTEGER <<PK>>
+  --
+  * cmt_pst_id : INTEGER <<FK>>
+  * cmt_usr_id : INTEGER <<FK>>
+  cmt_parent_id : INTEGER <<FK>>
+  cmt_slide_no : SMALLINT
+  * cmt_body : VARCHAR(1000)
+  * cmt_is_deleted : BOOLEAN
+  * cmt_created_at : TIMESTAMPTZ
+}
+entity "COMMENT_LIKE_T" as CLK {
+  * clk_usr_id : INTEGER <<PK, FK>>
+  * clk_cmt_id : INTEGER <<PK, FK>>
+  --
+  * clk_created_at : TIMESTAMPTZ
+}
+entity "REPORT_T" as RPT {
+  * rpt_id : INTEGER <<PK>>
+  --
+  * rpt_pst_id : INTEGER <<FK>>
+  * rpt_reporter_id : INTEGER <<FK>>
+  * rpt_reason : VARCHAR(30)
+  rpt_details : VARCHAR(500)
+  * rpt_status : VARCHAR(10)
+  rpt_resolved_by : INTEGER <<FK>>
+  rpt_remark : VARCHAR(300)
+  * rpt_created_at : TIMESTAMPTZ
+  rpt_resolved_at : TIMESTAMPTZ
+}
+entity "BOOKMARK_T" as BMK {
+  * bmk_usr_id : INTEGER <<PK, FK>>
+  * bmk_pst_id : INTEGER <<PK, FK>>
+  --
+  * bmk_created_at : TIMESTAMPTZ
+}
+entity "INTERACTION_T" as INTR {
+  * int_id : BIGINT <<PK>>
+  --
+  * int_usr_id : INTEGER <<FK>>
+  * int_pst_id : INTEGER <<FK>>
+  * int_type : VARCHAR(10)
+  * int_created_at : TIMESTAMPTZ
+}
+entity "CONTACT_T" as CON {
+  * con_usr_id : INTEGER <<PK, FK>>
+  * con_contact_id : INTEGER <<PK, FK>>
+  --
+  * con_created_at : TIMESTAMPTZ
+}
+entity "MESSAGE_REQUEST_T" as MRQ {
+  * mrq_id : INTEGER <<PK>>
+  --
+  * mrq_sender_id : INTEGER <<FK>>
+  * mrq_recipient_id : INTEGER <<FK>>
+  mrq_pst_id : INTEGER <<FK>>
+  * mrq_body : VARCHAR(2000)
+  * mrq_status : VARCHAR(10)
+  * mrq_created_at : TIMESTAMPTZ
+  mrq_responded_at : TIMESTAMPTZ
+}
+entity "CONVERSATION_T" as CNV {
+  * cnv_id : INTEGER <<PK>>
+  --
+  * cnv_type : VARCHAR(10)
+  cnv_name : VARCHAR(80)
+  cnv_owner_id : INTEGER <<FK>>
+  * cnv_created_at : TIMESTAMPTZ
+}
+entity "CONV_MEMBER_T" as CMB {
+  * cmb_cnv_id : INTEGER <<PK, FK>>
+  * cmb_usr_id : INTEGER <<PK, FK>>
+  --
+  * cmb_joined_at : TIMESTAMPTZ
+  cmb_last_read_at : TIMESTAMPTZ
+  cmb_left_at : TIMESTAMPTZ
+}
+entity "MESSAGE_T" as MSG {
+  * msg_id : BIGINT <<PK>>
+  --
+  * msg_cnv_id : INTEGER <<FK>>
+  * msg_sender_id : INTEGER <<FK>>
+  msg_pst_id : INTEGER <<FK>>
+  * msg_body : VARCHAR(2000)
+  * msg_created_at : TIMESTAMPTZ
+}
+entity "ACCOUNT_ACTION_T" as AAC {
+  * aac_id : INTEGER <<PK>>
+  --
+  * aac_usr_id : INTEGER <<FK>>
+  * aac_admin_id : INTEGER <<FK>>
+  * aac_action : VARCHAR(20)
+  * aac_reason : VARCHAR(300)
+  * aac_created_at : TIMESTAMPTZ
+}
+
+USER ||--o{ POST : authors
+MODULE |o--o{ POST : classifies
+POST ||--|{ SLIDE : contains
+POST ||--o{ PH
+HASHTAG ||--o{ PH
+USER ||--o{ LIKE
+POST ||--o{ LIKE
+USER ||--o{ VER : "verifies (lecturer)"
+POST ||--o{ VER
+POST ||--o{ CMT
+USER ||--o{ CMT
+CMT |o--o{ CMT : "replies to"
+CMT ||--o{ CLK
+USER ||--o{ CLK
+POST ||--o{ RPT
+USER ||--o{ RPT : files
+USER ||--o{ BMK
+POST ||--o{ BMK
+USER ||--o{ INTR
+POST ||--o{ INTR
+USER ||--o{ CON
+USER ||--o{ MRQ : sends
+POST |o--o{ MRQ : "anchored to"
+CNV ||--|{ CMB
+USER ||--o{ CMB
+CNV ||--o{ MSG
+USER ||--o{ MSG : sends
+POST |o--o{ MSG : "anchored to"
+USER ||--o{ AAC : "subject of"
+@enduml
