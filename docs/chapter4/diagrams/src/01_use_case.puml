@@ -1,0 +1,76 @@
+@startuml use_case
+left to right direction
+skinparam shadowing false
+skinparam monochrome true
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam usecaseBackgroundColor white
+skinparam dpi 200
+skinparam nodesep 12
+skinparam ranksep 60
+
+actor "Guest" as G
+actor "Student" as S
+actor "Lecturer" as L
+actor "Administrator" as A
+L -|> S
+
+rectangle "Peer-to-Peer Academic Resource Platform (PARP)" {
+  usecase "UC01 Register Account" as UC01
+  usecase "UC02 Log In" as UC02
+  usecase "UC03 Log Out" as UC03
+  usecase "UC04 Manage Profile" as UC04
+  usecase "UC14 Search Content" as UC14
+  usecase "Filter by Lecturer\nor Date Range" as UC14x
+  usecase "UC05 Create Slide Note" as UC05
+  usecase "Assign Module\nand Hashtags" as UC05i
+  usecase "UC06 Save Draft" as UC06
+  usecase "UC07 Publish Note" as UC07
+  usecase "UC08 Edit or Delete\nOwn Note" as UC08
+  usecase "UC09 Browse Ranked Feed" as UC09
+  usecase "UC10 Like Note" as UC10
+  usecase "UC11 Comment on Note" as UC11
+  usecase "Reply to Comment" as UC11x
+  usecase "UC12 Report Note" as UC12
+  usecase "UC13 Bookmark Note" as UC13
+  usecase "UC15 Send Post-Anchored\nMessage" as UC15
+  usecase "Send Message Request" as UC15x
+  usecase "UC16 Respond to\nMessage Request" as UC16
+  usecase "UC17 Chat with Contact" as UC17
+  usecase "UC18 Manage Group Chat" as UC18
+  usecase "UC19 Super Like\n(Verify) Note" as UC19
+  usecase "UC20 Review\nReported Content" as UC20
+  usecase "UC21 Manage\nUser Accounts" as UC21
+  usecase "UC22 Approve\nLecturer Account" as UC22
+}
+
+G --> UC01
+G --> UC02
+S --> UC03
+S --> UC04
+S --> UC05
+UC05 ..> UC05i : <<include>>
+UC06 .> UC05 : <<extend>>
+S --> UC07
+S --> UC08
+S --> UC09
+S --> UC10
+S --> UC11
+UC11x .> UC11 : <<extend>>
+S --> UC12
+S --> UC13
+S --> UC14
+UC14x .> UC14 : <<extend>>
+S --> UC15
+UC15x .> UC15 : <<extend>>
+S --> UC16
+S --> UC17
+S --> UC18
+L --> UC19
+
+UC03 <-- A
+UC14 <-- A
+UC20 <-- A
+UC21 <-- A
+UC22 <-- A
+@enduml

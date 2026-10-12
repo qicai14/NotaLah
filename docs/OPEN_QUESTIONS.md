@@ -6,3 +6,4 @@ Working assumptions are in brackets; nothing is blocked on these.
 2. Has Form 421 been emailed to the supervisor? [Unconfirmed.]
 3. Has supervisor meeting #1 (9 Oct) been logged on PG Bank? [Unconfirmed.]
 4. Meeting #2 booked? [Unconfirmed; PLAN.md targets ~28 Oct.]
+5. Lecturer sign-up: is there an APU staff email domain we can restrict to instead of / as well as admin approval (D6)?
