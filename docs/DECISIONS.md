@@ -110,3 +110,15 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** Prisma/TypeORM (rejected, see D11); httpOnly-cookie sessions (rejected for Sprint 1:
   Socket.io handshake in Sprint 4 reuses the bearer token; revisit if XSS hardening is prioritised).
 - **Reversibility:** Medium.
+
+## D14 — Migration tool flags, TypeScript 5.9, CommonJS server
+- **Decision:** every dbmate script passes `--no-dump-schema`; the server compiles to CommonJS;
+  TypeScript is pinned to 5.9.3; `.env` is read with Node's built-in `process.loadEnvFile` (no dotenv).
+- **Alternatives:** install `pg_dump` so dbmate can write `db/schema.sql` (rejected: dbmate shells out
+  to `pg_dump`, absent on the Windows host; the migration files already are the schema record); ESM
+  server (rejected: `.js` import suffixes for no benefit); TypeScript 7.x (rejected: new native
+  rewrite, tooling support unproven); dotenv (rejected: Node 24 covers it).
+- **Why:** fewest moving parts on Windows + Docker. `concurrently` is pinned to 10.0.5 (newest release
+  older than two weeks); `npm audit` flags its `shell-quote` dependency (dev tool, runs fixed commands
+  only); bump to 10.0.6 once it is two weeks old (about 22 Oct 2026).
+- **Reversibility:** Easy.
