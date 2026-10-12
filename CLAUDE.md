@@ -12,7 +12,8 @@ Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Confi
 - `npm run build`, `npm run typecheck`
 
 ## Layout
-`server/src/{app,server}.ts`, `config/{env,ranking}.ts`, `db/pool.ts`, `routes/`;
+`server/src/{app,server}.ts`, `config/{env,ranking}.ts`, `db/{pool,users}.ts`, `auth/passport.ts`,
+`middleware/auth.ts` (`requireAuth`, `requireRole(...)` — role/status always read from the DB), `routes/`;
 tests in `server/tests/`; migrations in `server/db/migrations/`; decisions in `docs/DECISIONS.md`.
 
 ## Conventions

@@ -15,6 +15,12 @@ npm run dev                 # server :4000, client :5173 (proxies /api)
 ```
 Check: `curl http://localhost:4000/api/health` returns `{"status":"ok","db":"up"}`.
 
+### First administrator
+Admins cannot self-register (D6). Set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ chars, upper, lower case
+and a digit) and `ADMIN_NAME` in your local `.env` (or the shell), then run
+`npm run admin:create -w server`. It creates the admin, or promotes/resets the account with that
+email. Clear the password from `.env` afterwards.
+
 ## Commands
 | Command | Does |
 |---|---|
@@ -23,10 +29,13 @@ Check: `curl http://localhost:4000/api/health` returns `{"status":"ok","db":"up"
 | `npm run db:down` | stop Postgres (data kept in the `parp_pgdata` volume) |
 | `npm run db:rollback -w server` | undo the last migration |
 | `npm run db:status -w server` | list applied migrations |
+| `npm run admin:create -w server` | create or reset the admin from `ADMIN_*` env values |
 
 ## Layout
 - `client/` — React app (`src/App.tsx` routes)
-- `server/src/` — `app.ts`, `server.ts`, `config/` (env, ranking), `db/pool.ts`, `routes/`
+- `server/src/` — `app.ts`, `server.ts`, `config/` (env, ranking), `auth/passport.ts`,
+  `middleware/auth.ts` (`requireAuth`, `requireRole`), `db/` (pool, user SQL), `routes/` (health, auth, admin),
+  `scripts/createAdmin.ts`
 - `server/db/migrations/` — dbmate SQL migrations
 - `server/tests/` — Vitest + Supertest
 - `docker/initdb/` — creates `parp_test` on first start

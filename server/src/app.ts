@@ -3,6 +3,7 @@ import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env';
 import { passport } from './auth/passport';
+import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
 import { healthRouter } from './routes/health';
 
@@ -15,6 +16,7 @@ app.use(passport.initialize());
 
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
