@@ -93,3 +93,20 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** the standard asks for TC1-TC10 *per module*; a prefix keeps IDs unique across the report
   and lets Chapter 5 tables be filled straight from test output.
 - **Reversibility:** Easy.
+
+## D13 — Sprint 1 implementation details within the fixed IR stack
+- **Layout:** npm workspaces monorepo: `client/` (Vite + React + TS + Tailwind v4), `server/` (Express 5 + TS).
+- **DB access:** `pg` with hand-written parameterised SQL (no ORM) so quoted `_T` tables and uppercase
+  SQL appear verbatim in Chapter 5 snippets; `dbmate` runs migrations (D11).
+- **Validation:** `zod` at the API boundary. **Passwords:** `bcryptjs` (pure JS, no native build on
+  Windows; output is the 60-char hash `CHAR(60)` expects), cost 12.
+- **Auth:** Passport `passport-local` for login, `passport-jwt` for every protected route; JWT
+  (HS256, 1 h expiry) in an `Authorization: Bearer` header, stored by the client in memory +
+  `sessionStorage`. Account status is re-read from the DB on every request so suspension takes effect
+  immediately (ADM-TC6) instead of at token expiry.
+- **Tests:** Vitest + Supertest against a separate `parp_test` database migrated by dbmate; test names
+  start with their TC ID.
+- **Postgres:** `postgres:17-alpine` in Docker Compose on host port 5433 (avoids clashing with any local 5432).
+- **Alternatives:** Prisma/TypeORM (rejected, see D11); httpOnly-cookie sessions (rejected for Sprint 1:
+  Socket.io handshake in Sprint 4 reuses the bearer token; revisit if XSS hardening is prioritised).
+- **Reversibility:** Medium.
