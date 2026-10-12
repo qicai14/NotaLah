@@ -122,3 +122,60 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   older than two weeks); `npm audit` flags its `shell-quote` dependency (dev tool, runs fixed commands
   only); bump to 10.0.6 once it is two weeks old (about 22 Oct 2026).
 - **Reversibility:** Easy.
+
+## D15 — Report chapter layout: briefing numbering for Chapters 4-6
+- **Decision:** the .docx outline follows the structure guideline for front matter, Chapters 1-3, Chapter 6
+  and Appendices A-G, but uses the Semester 2 briefing numbering (master checklist, `fyp-standards`) for the
+  later chapters: Ch 4 "Design" = 4.1 Introduction, 4.2 System Design (Option A: use case diagram, use case
+  specs, class, activity, sequence), 4.3 Database Design (ERD, schema), 4.4 Interface Design, 4.5 Test Case
+  Preparation, 4.6 Summary; Ch 5 "Implementation, Results and Discussion" = intro paragraph, 5.1 System
+  Screenshots, 5.2 Sample Codes, 5.3 Unit Testing, 5.4 UAT, 5.5 Summary; Ch 6 = 6.1 Critical Evaluation,
+  6.2 Limitations, 6.3 Recommendations. Chapter 1.7 is "Overview of the Report" (the guideline's "Overview
+  of the IR" is IR wording). Headings carry manual numbers, not Word list numbering.
+- **Alternatives:** the guideline's own split (screenshots and sample code as Ch 4.6 "Execution", testing in
+  Ch 5) — rejected because the briefing, the marking checklist and the skill all cite 5.1-5.4 for those items;
+  Word multilevel auto-numbering — rejected as fragile when sections are moved between steps.
+- **Why:** examiners mark against the briefing section numbers; every guideline item still has a home.
+- **Reversibility:** Easy (rename/move headings; the TOC regenerates).
+
+## D16 — Report page layout and numbering
+- **Decision:** A4, margins left 40 mm / others 20 mm, header and footer 10 mm from the edge. Two sections:
+  front matter (cover to List of Tables) numbered i, ii, ... with no header/footer on the cover; chapters
+  onward numbered 1, 2, ... Header is `LIM QI CAI` left / `TP072229` right (intake code dropped, per
+  HEADER-AND-FOOTER.txt); footer is the bare page number left / university name right (the old "Page |"
+  prefix dropped). Body paragraphs use Word's built-in "Body Text" style (TNR 12, 1.5 spacing, justified,
+  12.7 mm first-line indent); Normal stays unindented so the cover, captions and tables are unaffected.
+  Captions: TNR 12 italic, centred, black. The empty trailing landscape section (US Letter, holding only a
+  blank caption) was removed. Declaration of Thesis Confidentiality and Library Form pages were added after
+  the cover as placeholders. Word is set to refresh the TOC and lists of figures/tables on open.
+- **Alternatives:** one continuous arabic numbering from the cover (rejected: front matter is normally roman);
+  first-line indent on Normal (rejected: it would indent the cover page, captions and table cells).
+- **Why:** matches FINAL DOCUMENT STANDARDS, HEADER-AND-FOOTER.txt and the supervisor's indent feedback.
+- **Reversibility:** Easy. Backup of the pre-change file: `FYP_Submissions/backups/MR_LIM_QI_CAI_TP072229_APU3F2605SE_SE_FYP_DOC_20261013-0347.docx`.
+
+## D17 — Sprint 1 auth details left open by the spec
+- **Decision:** register requires `role` ('student'|'lecturer') and a free-text `programme` (max 100);
+  passwords 8 chars to 72 UTF-8 bytes (bcrypt truncates beyond 72); a `restricted` account can still
+  log in (restriction is enforced per action later, ADM-TC7), only `suspended`/`deleted` get 403;
+  login is rate limited to 10 requests per minute per IP (off under NODE_ENV=test, so not covered by a
+  test; no `trust proxy` set since nothing sits in front of Express yet); a rejected JWT returns JSON
+  `{ error: 'Unauthorized' }`. The client refreshes the stored user from `/api/auth/me` on page load
+  (so an approval shows without re-login) and, on any 401 to an authenticated call, clears
+  `sessionStorage` and does a full reload to `/login?expired=1`.
+- **Alternatives:** programme as a dropdown from `"MODULE_T"` (no endpoint yet; revisit with the
+  search module); default role student when omitted (rejected: the form always sends it, explicit is
+  clearer); blocking restricted users at login (rejected: UC21 says restricted users can still read).
+- **Why:** most conventional secure option for each gap; nothing changes the schema.
+- **Reversibility:** Easy.
+
+## D18 — Lecturer approval API and admin bootstrap
+- **Decision:** approve takes an optional reason (logged as 'Approved' when absent); reject requires a
+  non-blank reason (max 300, matching `aac_reason`); acting on a user without a pending application
+  returns 404, so a rejected applicant cannot be approved later without re-applying (no re-apply flow
+  yet). The first admin comes from `npm run admin:create -w server`, which reads `ADMIN_EMAIL`,
+  `ADMIN_PASSWORD` (12+ chars, upper, lower case and a digit) and `ADMIN_NAME`, and upserts: an
+  existing account with that email is promoted to admin and its password reset.
+- **Alternatives:** a seed migration with a fixed admin password (rejected: credential in the repo);
+  insert-only script (rejected: no way to recover a lost admin password).
+- **Why:** UC22 and D6 without storing any credential in git.
+- **Reversibility:** Easy.
