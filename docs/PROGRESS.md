@@ -17,3 +17,4 @@ Format: `HH:MM — step — commit`.
 10:06 — S2A fixes 15c5603: tester 59/59, typecheck+build OK
 10:14 — S2B feed/likes/comments/reports/bookmarks bdad8ab (76/76); reviewer: 0 blockers, 5 should-fix + 4 nits → sent back to implementer
 10:16 — S2B fixes bd7c21c: tester 76/76, typecheck+build OK. Next: 2C client
+23:05 — usage limit (~10:30) stopped 2C fix agent (no changes landed) and writer step 2 (Chapter 1 saved, Ch 2-3 not). Resumed 23:04: HANDOVER.md written; PLAN Sprint 2 = in progress
