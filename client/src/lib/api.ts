@@ -60,7 +60,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   });
   const data = await res.json().catch(() => ({}));
 
-  if (res.status === 401 && token) {
+  if (res.status === 401 && token && path !== '/auth/login') {
     saveSession(null);
     window.location.assign('/login?expired=1'); // full reload also drops in-memory auth state
   }

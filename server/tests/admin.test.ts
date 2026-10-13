@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/app';
 import { pool } from '../src/db/pool';
 import { createAdmin } from '../src/scripts/createAdmin';
-import { bearer, insertUser, truncateAll } from './helpers';
+import { bearer, insertUser, lecturerOnlyApp, truncateAll } from './helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -42,7 +42,7 @@ describe('admin lecturer approval (UC22)', () => {
     expect(await roleOf(pending)).toEqual({ usr_role: 'student', usr_lecturer_status: 'pending' });
   });
 
-  it('lists pending applications oldest first', async () => {
+  it('ADM-TC11: lists pending applications oldest first', async () => {
     const a = await insertUser({ lecturerStatus: 'pending', staffId: 'S1', displayName: 'A' });
     const b = await insertUser({ lecturerStatus: 'pending', staffId: 'S2', displayName: 'B' });
     await pool.query(`UPDATE "USER_T" SET usr_created_at = NOW() - INTERVAL '1 day' WHERE usr_id = $1`, [b]);
@@ -69,6 +69,8 @@ describe('admin lecturer approval (UC22)', () => {
     // The same token now sees the new role (role read from the DB on each request).
     const me = await request(app).get('/api/auth/me').set('Authorization', bearer(id));
     expect(me.body.user.role).toBe('lecturer');
+    const like = await request(lecturerOnlyApp).post('/like').set('Authorization', bearer(id));
+    expect(like.status).toBe(200);
 
     const again = await request(app).post(`${base}/${id}/approve`).set('Authorization', admin);
     expect(again.status).toBe(404);
@@ -87,6 +89,8 @@ describe('admin lecturer approval (UC22)', () => {
     ]);
     const me = await request(app).get('/api/auth/me').set('Authorization', bearer(id));
     expect(me.body.user.role).toBe('student');
+    const like = await request(lecturerOnlyApp).post('/like').set('Authorization', bearer(id));
+    expect(like.status).toBe(403);
   });
 
   it('ADM-TC10: rejecting without a reason returns 400 and changes nothing', async () => {
@@ -100,7 +104,7 @@ describe('admin lecturer approval (UC22)', () => {
     expect(await actions()).toEqual([]);
   });
 
-  it('returns 400 for an invalid id and 404 for unknown or non-pending users', async () => {
+  it('ADM-TC12: returns 400 for an invalid id and 404 for unknown or non-pending users', async () => {
     const student = await insertUser();
     expect((await request(app).post(`${base}/abc/approve`).set('Authorization', admin)).status).toBe(400);
     expect((await request(app).post(`${base}/99999/approve`).set('Authorization', admin)).status).toBe(404);
@@ -111,13 +115,13 @@ describe('admin lecturer approval (UC22)', () => {
 describe('admin:create bootstrap script', () => {
   const valid = { ADMIN_EMAIL: ' Root@PARP.test ', ADMIN_PASSWORD: 'Str0ngAdminPass', ADMIN_NAME: 'Root' };
 
-  it('refuses missing or weak values', async () => {
+  it('ADM-TC13: refuses missing or weak values', async () => {
     await expect(createAdmin({})).rejects.toThrow(/ADMIN_EMAIL/);
     await expect(createAdmin({ ...valid, ADMIN_PASSWORD: 'short' })).rejects.toThrow(/at least 12/);
     await expect(createAdmin({ ...valid, ADMIN_PASSWORD: 'alllowercase1234' })).rejects.toThrow(/upper/);
   });
 
-  it('creates an admin, and promotes an existing account with the same email', async () => {
+  it('ADM-TC14: creates an admin, and promotes an existing account with the same email', async () => {
     const id = await insertUser({ email: 'root@parp.test', lecturerStatus: 'pending' });
     const user = await createAdmin(valid);
     expect(user).toMatchObject({ id, email: 'root@parp.test', role: 'admin', lecturerStatus: null });

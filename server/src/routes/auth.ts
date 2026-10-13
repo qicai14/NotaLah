@@ -29,7 +29,16 @@ const registerSchema = z.object({
   staffId: z.string().trim().max(20, 'Staff ID must be at most 20 characters').optional(),
 });
 
-authRouter.post('/register', async (req, res) => {
+const authLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
+  message: { error: 'Too many attempts. Try again in a minute.' },
+});
+
+authRouter.post('/register', authLimiter, async (req, res) => {
   const body: Record<string, unknown> = req.body && typeof req.body === 'object' ? req.body : {};
   const parsed = registerSchema.safeParse(body);
   const errors: Record<string, string> = {};
@@ -71,16 +80,7 @@ authRouter.post('/register', async (req, res) => {
   }
 });
 
-const loginLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 10,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
-  message: { error: 'Too many login attempts. Try again in a minute.' },
-});
-
-authRouter.post('/login', loginLimiter, (req, res, next) => {
+authRouter.post('/login', authLimiter, (req, res, next) => {
   const { email, password } = req.body ?? {};
   if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
     return res.status(400).json({ error: 'Email and password are required' });

@@ -5,8 +5,8 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/app';
 import { env } from '../src/config/env';
 import { pool } from '../src/db/pool';
-import { requireAuth, requireRole } from '../src/middleware/auth';
-import { bearer, insertUser, truncateAll } from './helpers';
+import { requireAuth } from '../src/middleware/auth';
+import { bearer, lecturerOnlyApp, insertUser, truncateAll } from './helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -92,11 +92,7 @@ describe('POST /api/auth/register', () => {
     const { rows } = await pool.query('SELECT usr_staff_id FROM "USER_T" WHERE usr_id = $1', [res.body.user.id]);
     expect(rows[0].usr_staff_id).toBe('S1234');
 
-    // Stand-in for Super Like until it exists: any requireRole('lecturer') route.
-    const superLike = express().post('/like', requireAuth, requireRole('lecturer'), (_req, r) => {
-      r.json({ ok: true });
-    });
-    const liked = await request(superLike).post('/like').set('Authorization', bearer(res.body.user.id));
+    const liked = await request(lecturerOnlyApp).post('/like').set('Authorization', bearer(res.body.user.id));
     expect(liked.status).toBe(403);
     expect(liked.body).toEqual({ error: 'Forbidden' });
   });

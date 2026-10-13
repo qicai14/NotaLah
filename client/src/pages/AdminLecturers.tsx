@@ -101,7 +101,10 @@ export default function AdminLecturers() {
                           <button type="submit" disabled={busy} className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60">
                             Confirm reject
                           </button>
-                          <button type="button" onClick={() => setRejecting(null)} className="rounded-md border border-slate-300 px-3 py-1">
+                          <button type="button" onClick={() => {
+                              setRejecting(null);
+                              setError(null);
+                            }} className="rounded-md border border-slate-300 px-3 py-1">
                             Cancel
                           </button>
                         </div>

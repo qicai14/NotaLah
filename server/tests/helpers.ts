@@ -1,7 +1,9 @@
 import bcrypt from 'bcryptjs';
+import express from 'express';
 import { signToken } from '../src/auth/passport';
 import type { AuthUser } from '../src/db/users';
 import { pool } from '../src/db/pool';
+import { requireAuth, requireRole } from '../src/middleware/auth';
 
 /** Empties every table except the migration log and the seeded module catalogue. */
 export async function truncateAll(): Promise<void> {
@@ -49,3 +51,8 @@ export async function insertUser(u: TestUserInput = {}): Promise<number> {
 export function bearer(id: number): string {
   return `Bearer ${signToken({ id, role: 'student' } as AuthUser)}`;
 }
+
+/** Stand-in for Super Like until it exists: any requireRole('lecturer') route. */
+export const lecturerOnlyApp = express().post('/like', requireAuth, requireRole('lecturer'), (_req, r) => {
+  r.json({ ok: true });
+});

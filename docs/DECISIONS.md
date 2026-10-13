@@ -157,7 +157,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Decision:** register requires `role` ('student'|'lecturer') and a free-text `programme` (max 100);
   passwords 8 chars to 72 UTF-8 bytes (bcrypt truncates beyond 72); a `restricted` account can still
   log in (restriction is enforced per action later, ADM-TC7), only `suspended`/`deleted` get 403;
-  login is rate limited to 10 requests per minute per IP (off under NODE_ENV=test, so not covered by a
+  login and registration share one rate limit of 10 requests per minute per IP (off under NODE_ENV=test, so not covered by a
   test; no `trust proxy` set since nothing sits in front of Express yet); a rejected JWT returns JSON
   `{ error: 'Unauthorized' }`. The client refreshes the stored user from `/api/auth/me` on page load
   (so an approval shows without re-login) and, on any 401 to an authenticated call, clears

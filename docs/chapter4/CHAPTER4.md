@@ -837,6 +837,10 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC8 | Act on an administrator account | suspend another admin | 403; status unchanged | | |
 | ADM-TC9 | Approve lecturer application | pending lecturer L | Role lecturer, lecturer status approved, action logged; L can now Super Like | | |
 | ADM-TC10 | Reject lecturer application | pending lecturer M with reason | Role remains student, lecturer status rejected; Super Like still 403 | | |
+| ADM-TC11 | List pending applications | pending lecturers A (newer) and B (older), plus a rejected one and a student | Only A and B listed, oldest first | | |
+| ADM-TC12 | Approve with invalid or unknown id | id "abc", id 99999, id of a non-pending student | 400, 404, 404 | | |
+| ADM-TC13 | Create admin with missing or weak values | no ADMIN_EMAIL; password "short"; password with no uppercase | Each refused with a message naming the problem | | |
+| ADM-TC14 | Create admin for an existing email | valid values, email matching an existing account | Account promoted to admin, email normalised, can log in as admin | | |
 
 ## 4.5.2 User Acceptance Testing
 
