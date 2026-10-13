@@ -384,3 +384,23 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Users page:** the search term lives in the URL (`?q=`), so that link and the back button work; action buttons are
   only those that change the status (no Reinstate for an active account), none for admins or deleted accounts.
 - **Reversibility:** Easy.
+
+## D28 — Report Chapter 4 written from docs/chapter4 (documentation step 3)
+- **Decision:** Chapter 4 text and tables taken from `chapter4/CHAPTER4.md` (as of 13 Oct 23:37, 127 test cases) into the
+  D15 outline; the report's own 4.5 headings kept (4.5.1 Introduction, 4.5.2 Unit Testing, 4.5.3 UAT Preparation).
+  Numbering continues the document: Figures 84-121, Tables 34-70; in-text references renumbered, and IR references
+  pointed at this report (FR table = Table 31, worked example = Table 11, FR15/17/18 changes = Table 33, UC22 = FR19).
+- **Added:** an explanatory paragraph beneath every table (22 use case specs, 9 test tables, 5 UAT tables), half a
+  page on testing methods in 4.5.1, a 4.6 summary. Light humanizer edits to the source prose (no change of substance).
+  Test-case rows sorted by TC number inside each table; Actual Outcome and Pass/Fail blank.
+- **Layout:** class diagram (Figure 85) and ERD (Figure 96) on landscape pages (237 mm wide) with their first
+  explanatory paragraph; the text continues on portrait pages. Page numbering stays continuous (only the first
+  body section restarts at 1). All other diagrams portrait at text width, height-capped (use case and publish
+  activity diagrams are tall, so narrower than text width).
+- **Schema:** Table 56 in 4.3.2 is the three high-resolution images (schema rule: images); the same schema as an
+  editable Word table is a new Appendix H ("Table H1", not a SEQ caption, so the List of Tables is unaffected),
+  to avoid four duplicated pages in the counted body.
+- **Alternatives:** Word table in the body (rejected: duplicates the images and adds ~4 counted pages); rotating the
+  wide diagrams on portrait pages (rejected: same size as landscape, harder to read on screen).
+- **Reversibility:** Easy. Re-runnable builder in the session scratchpad; backups `FYP_Submissions/backups/…_2336`
+  (before Chapter 4) to `…_2345`.

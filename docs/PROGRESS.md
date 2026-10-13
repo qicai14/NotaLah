@@ -22,3 +22,4 @@ Format: `HH:MM — step — commit`.
 23:17 — Sprint 2 code-review fixes eb460fd: tester server 82/82 + client 1/1; Sprint 2 review written; PLAN Sprint 2 = done; HANDOVER updated. Next: Sprint 3
 23:28 — writer step 2 done: Ch 1-3 + References in docx (31.5k words prose; OPEN_QUESTIONS 8-10; D25). S3A ranking 58e77c0 (93/93); reviewer 0 blockers, 4 should-fix + 1 nit → implementer
 23:30 — S3A fixes ea1d8f3: tester server 94/94 + client 1/1. Next: 3B verification + moderation
+23:47 — S3B verification+moderation 49a6b44/cbecf64 (server 116/116); reviewer 0 blockers, 2 should-fix + 5 nits → implementer. Writer step 3 done: Chapter 4 in docx (Figures 84-121, Tables 34-70, Appendix H schema; D28; OPEN_QUESTIONS 11: 39k words prose)

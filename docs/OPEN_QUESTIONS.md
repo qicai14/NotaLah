@@ -16,3 +16,6 @@ Working assumptions are in brackets; nothing is blocked on these.
    supervisor-requested appraisal and survey analysis). This sharpens question 7: decide which IR material to cut.
 10. Three references lack APA 7 details the writer could not verify (Gufroni & Zaman 2026 source; institutions for the
     Gusenbauer and Lieu theses) and Shahzad et al. (2023) shows issue 15(5) against DOI su15010005 — please check.
+11. Chapter 4 adds about 7.6k words of prose (plus 7.4k inside tables), so Chapters 1-6 now hold about 39k words of
+    prose against the 18-20k standard, before Chapters 5-6 are written. Question 7/9 (what to cut) is now pressing.
+    [Assumed: nothing cut; tables are usually not counted, but Chapter 2 (16k) is the obvious place to trim.]
