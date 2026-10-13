@@ -1,6 +1,6 @@
 # Handover — autopilot run of 13 Oct 2026
 
-Sprints 0 and 1 are done. Most of Sprint 2 is done, with one open blocker in the client (see "Broken or half-done").
+Sprints 0, 1 and 2 are done (Sprint 2 closed at 23:20 after the run resumed; see `docs/sprints/sprint2_review_retrospective.md`).
 Everything is committed and pushed to `origin/main`. Usage limits stopped two agents at about 10:30, and work only
 resumed at 23:04, so roughly 12 hours of the planned window were lost. The step-by-step log is `docs/PROGRESS.md`.
 
@@ -65,11 +65,7 @@ resumed at 23:04, so roughly 12 hours of the planned window were lost. The step-
 - A stray folder to delete (see below).
 
 ## Broken or half-done
-- **2C review blocker, not fixed.**
-  - **Problem:** `/notes/new` and `/notes/:id/edit` share one `NoteEditor` instance. Clicking "Create Note" while editing keeps the old note's content, and saving then makes a copy of it.
-  - **Fix:** key the editor by its route id.
-  - **What's ready:** the full list of fixes, items 1-15, is in the 2C review notes and summarised in `docs/PROGRESS.md`. The agent applying them hit the usage limit before changing anything.
-  - **Also still open:** `useFetch` stale data, the publish dialog not closing, h4-h6 headings, note detail missing like and save, mobile scroll-snap, and a shared error-text helper.
+- **Sprint 2 closed after the handover was first written:** the 2C editor blocker and all review items were fixed (bfa3b67), the sprint-wide `/code-review high` found 0 blockers and its 7 findings were fixed (eb460fd); server 82/82, client 1/1.
 - **Dev database not migrated.** The command guard blocked `db:migrate` all day. To set it up, run `cd FYP_Project && npm run db:migrate -w server`. Then set `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `ADMIN_NAME` in `.env` and run `npm run admin:create -w server`.
 - **The `parp_test` database holds smoke-test users and notes** from the browser checks. The tests truncate it, so this is harmless.
 - **Stray folder `C:\Users\reymy\Code%20Projects\`** holds 25 duplicate wireframe PNGs written by a path bug, which is fixed. It is safe to delete; the autopilot was blocked from deleting it.
@@ -78,7 +74,7 @@ resumed at 23:04, so roughly 12 hours of the planned window were lost. The step-
 - **No client tests yet.** All automated tests are on the server.
 
 ## Next three steps
-1. **Fix the 2C editor blocker and the other 2C review items,** then the tester. Sprint 2 is closed after that and `/code-review high` over Sprint 2.
+1. **Read the Sprint 2 review** (`docs/sprints/sprint2_review_retrospective.md`) and click through the new screens on your dev DB once it is migrated.
 2. **Run the dev migration and `admin:create`.** Then click through register, admin approval and lecturer login, read the Chapter 1 the writer produced, and rerun writer step 2 for Chapters 2-3.
 3. **Sprint 3** (ranking E/R/V/M from `features/ranking/config.ts`, computed against `asOf`):
    - lecturer Super Like with the verifier's name (`features/verification`, VER-TC)

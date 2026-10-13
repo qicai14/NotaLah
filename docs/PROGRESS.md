@@ -18,3 +18,5 @@ Format: `HH:MM — step — commit`.
 10:14 — S2B feed/likes/comments/reports/bookmarks bdad8ab (76/76); reviewer: 0 blockers, 5 should-fix + 4 nits → sent back to implementer
 10:16 — S2B fixes bd7c21c: tester 76/76, typecheck+build OK. Next: 2C client
 23:05 — usage limit (~10:30) stopped 2C fix agent (no changes landed) and writer step 2 (Chapter 1 saved, Ch 2-3 not). Resumed 23:04: HANDOVER.md written; PLAN Sprint 2 = in progress
+23:12 — S2C fixes bfa3b67 (blocker fixed): tester server 78/78 + client 1/1. /code-review high over Sprint 2 (d8bf55b..HEAD): 0 blockers, 7 findings (feed cutoff clock, self-engagement inflates E, profile PUT nulls fields, restricted users can't remove, own views logged, template enum, lecturer SQL predicate x3) → implementer
+23:17 — Sprint 2 code-review fixes eb460fd: tester server 82/82 + client 1/1; Sprint 2 review written; PLAN Sprint 2 = done; HANDOVER updated. Next: Sprint 3
