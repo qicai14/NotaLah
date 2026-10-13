@@ -25,7 +25,7 @@ server/src/features/auth/         passport strategies, JWT, requireAuth/requireR
 server/src/features/users/        USER_T repository
 server/src/features/moderation/   admin-only routes: lecturer approval (UC22) now; report queue (UC20) and account
                                   suspend/restrict/delete (UC21, ADM-TC5-8) in Sprint 3
-server/src/features/ranking/      config.ts (all weights/constants, NFR5); scoring service in Sprint 3
+server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
 server/src/features/verification/ lecturer Super Like of notes, "VERIFICATION_T" (Sprint 3)
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
 server/src/features/feed/         feed query, likes, comments, reports, bookmarks (Sprint 2)

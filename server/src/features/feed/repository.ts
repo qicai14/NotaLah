@@ -1,6 +1,8 @@
 import { pool } from '../../lib/pool';
 import { approvedLecturer } from '../users/repository';
 import { ENGAGEMENT_COLS, NOTE_COLS, NOTE_FROM, SUMMARY_COLS, VISIBLE, type NoteSummary, type NoteWithEngagement } from '../notes/repository';
+import { getCandidates, getInteractionRows } from '../ranking/repository';
+import { buildInterestVector, scoreCandidate, type Components } from '../ranking/service';
 
 export const PAGE_SIZE = 10;
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
@@ -8,29 +10,34 @@ const VIEW_WINDOW_MINUTES = 30;
 
 // ---- Feed ------------------------------------------------------------------------------------
 
-export type FeedItem = NoteWithEngagement;
-
-/** FEED ORDER: the one place the ordering lives. Sprint 3 replaces this with the heuristic score (D20). */
-const FEED_ORDER = `p.pst_published_at DESC, p.pst_id DESC`;
+export type FeedItem = NoteWithEngagement & { score: number; components: Components };
 
 /**
- * One page of published, visible notes (page is 1-based); asks for one extra row to know whether a next page exists.
- * `asOf` freezes the list: notes published after it are ignored, so paging does not shift (D22).
+ * One page of the ranked feed (page is 1-based). Candidates are scored in the app and sorted by score, then
+ * newest, then id (IR 2.3.4, D24). `asOf` freezes both the candidate set and recency, so pages stay stable;
+ * engagement added between page requests can still reorder notes (accepted, D24).
  */
 export async function getFeedPage(
   viewerId: number, page: number, asOf: Date | null,
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
   // the cutoff comes from the database clock, the same one that stamps pst_published_at (D22)
   const cutoff = (await pool.query<{ t: Date }>(`SELECT COALESCE($1::TIMESTAMPTZ, NOW()) AS "t"`, [asOf])).rows[0].t;
-  const { rows } = await pool.query<FeedItem>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}
-     ${NOTE_FROM}
-     WHERE p.pst_status = 'published' AND p.pst_published_at <= $4::TIMESTAMPTZ AND ${VISIBLE}
-     ORDER BY ${FEED_ORDER} LIMIT $2 OFFSET $3`,
-    [viewerId, PAGE_SIZE + 1, (page - 1) * PAGE_SIZE, cutoff],
+  const [candidates, interactions] = await Promise.all([getCandidates(viewerId, cutoff), getInteractionRows(viewerId, cutoff)]);
+  const interest = buildInterestVector(interactions, cutoff);
+  const ranked = candidates
+    .map((c) => ({ id: c.id, publishedAt: c.publishedAt, ...scoreCandidate(c, interest, cutoff) }))
+    .sort((a, b) => b.score - a.score || b.publishedAt.getTime() - a.publishedAt.getTime() || b.id - a.id);
+  const slice = ranked.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const { rows } = slice.length === 0 ? { rows: [] } : await pool.query<NoteWithEngagement>(
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = ANY($2::INT[]) AND ${VISIBLE}`,
+    [viewerId, slice.map((r) => r.id)],
   );
-  const hasNext = rows.length > PAGE_SIZE;
-  return { items: rows.slice(0, PAGE_SIZE), nextPage: hasNext ? page + 1 : null, asOf: cutoff };
+  const notes = new Map(rows.map((n) => [n.id, n]));
+  const items = slice.flatMap(({ id, score, components }) => {
+    const note = notes.get(id); // gone only if hidden or deleted since the candidate query
+    return note ? [{ ...note, score, components }] : [];
+  });
+  return { items, nextPage: ranked.length > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff };
 }
 
 // ---- Engagement targets ----------------------------------------------------------------------

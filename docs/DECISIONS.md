@@ -295,3 +295,29 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   sanitiser because TipTap writes it on continued lists. The editor is keyed by note id and, after the first draft save, receives the saved
   note through router state instead of refetching. The mobile feed snaps through `scroll-snap-type` on `html` while the feed is mounted.
   A minimal client Vitest setup (node environment, pure logic only) covers the hashtag rules (NOTE-TC24).
+
+## D24 — Ranking service and ranked feed (Sprint 3, task 3A)
+- **Scoring in the app:** `GET /api/feed` fetches candidates and the viewer's interactions, scores each note with the
+  pure functions in `ranking/service.ts`, sorts by score desc (ties: `published_at` desc, id desc) and slices the page.
+  Four queries per request: the `asOf` cutoff, candidates and interactions (run in parallel), then the full notes for the
+  page only, so slide HTML is never loaded for the whole candidate set. The `FEED_ORDER` constant is gone.
+- **Candidate window:** the 500 most recent visible published notes at or before `asOf` (`candidateLimit` in config).
+  With a 72 h recency half-life an older note needs very high E and V to matter, and 500 covers weeks of faculty-scale
+  posting; a count cap was chosen over a 60-day cap because it bounds the scoring work whatever the posting rate.
+- **Interest vector:** view 1, like 3, comment 5 (config `interactionWeights`; the IR fixes only the order), decayed by
+  0.5^(ageDays / 14) against `asOf`, summed per hashtag of the interacted post (its current hashtags), normalised to max 1.
+  Interactions older than 90 days (`interestWindowDays`, weight below 1.2 %) or after `asOf` are ignored. No history gives
+  M = 0 for every note.
+- **Validation:** `verified` (shared `ENGAGEMENT_COLS`, so the feed and note detail agree) now counts only a Super Like by
+  an approved lecturer whose account is active; a suspended or deleted lecturer's past Super Likes stop counting. V = 0.5
+  uses the existing author flag (approved lecturer, any account status), as the IR ties it to authorship.
+- **Response:** each feed item adds `score` and `components {E, R, V, M}` (unrounded) for the "why am I seeing this" panel
+  and UAT/NFR5 analysis. Shape and the `asOf` contract are otherwise unchanged; `nextPage` comes from the ranked length.
+- **Paging:** `asOf` freezes the candidate set and recency, so pages are stable; a like or comment added between page
+  requests can move a note across a page boundary (accepted; the client already drops ids it has shown, D22). A note
+  hidden or deleted between the two queries is dropped from that page.
+- **Refactor:** the hashtag-list subquery repeated three times in `notes/repository.ts` is now one `HASHTAGS_COL` fragment.
+- **Alternatives:** scoring in SQL (rejected: the components would not be separately testable, Chapter 4 sequence text);
+  storing scores (rejected: stale as soon as a like or verification lands); loading full notes for all candidates
+  (rejected: slide HTML for 500 notes per request).
+- **Reversibility:** Easy; constants are in config.

@@ -9,6 +9,12 @@ export const RANKING = Object.freeze({
   engagementCap: 100,
   recencyHalfLifeHours: 72,
   interestHalfLifeDays: 14,
+  /** Interest added per interaction before decay: views least, comments most (IR 2.3.4.5, D24). */
+  interactionWeights: Object.freeze({ view: 1, like: 3, comment: 5 }),
+  /** Interactions older than this add nothing to the interest vector (0.5^(90/14) is below 1.2 %). */
+  interestWindowDays: 90,
+  /** Most recent published notes scored per feed request; older ones are not ranked (D24). */
+  candidateLimit: 500,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {

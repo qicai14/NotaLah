@@ -29,6 +29,11 @@ export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.
        WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
           OR (c.con_usr_id = $1 AND c.con_contact_id = p.pst_usr_id))))))`;
 
+/** The note's hashtag names, alphabetical (alias p = POST_T). */
+export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
+                   FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
+                   WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"`;
+
 export interface Note {
   id: number;
   title: string;
@@ -49,9 +54,7 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
          p.pst_visibility AS "visibility",
          CASE WHEN m.mod_id IS NULL THEN NULL
               ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
-         COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
-                   FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
-                   WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags",
+         ${HASHTAGS_COL},
          COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'content', s.sld_content)
                                    ORDER BY s.sld_position)
                    FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
@@ -65,13 +68,14 @@ export const NOTE_FROM = `
   JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
   LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id`;
 
-/** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22) shared by the feed and the note detail so the counts exist once. */
+/** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; only an approved, active lecturer's Super Like verifies, D24) shared by the feed and the note detail so the counts exist once. */
 export const ENGAGEMENT_COLS = `json_build_object(
               'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
               'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted AND cmt_usr_id <> p.pst_usr_id)) AS "counts",
             EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
             EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
-            EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id) AS "verified"`;
+            EXISTS (SELECT 1 FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id
+                    WHERE v.ver_pst_id = p.pst_id AND ${approvedLecturer('vu')} AND vu.usr_status = 'active') AS "verified"`;
 
 export interface NoteWithEngagement extends Note {
   counts: { likes: number; comments: number };
@@ -102,9 +106,7 @@ export async function listDrafts(authorId: number): Promise<DraftSummary[]> {
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
             CASE WHEN m.mod_id IS NULL THEN NULL
                  ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
-            COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
-                      FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
-                      WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags",
+            ${HASHTAGS_COL},
             p.pst_updated_at AS "updatedAt"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
@@ -212,9 +214,7 @@ export interface NoteSummary {
 
 /** Columns of a note summary (needs the POST_T alias p and MODULE_T alias m). */
 export const SUMMARY_COLS = `p.pst_id AS "id", p.pst_title AS "title", m.mod_code AS "moduleCode", p.pst_published_at AS "publishedAt",
-            COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
-                      FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
-                      WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"`;
+            ${HASHTAGS_COL}`;
 
 /** An author's published notes that the viewer may see, newest first. */
 export async function listNotesByAuthor(authorId: number, viewerId: number): Promise<NoteSummary[]> {

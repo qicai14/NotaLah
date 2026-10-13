@@ -793,6 +793,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC8 | Weights read from configuration | change w3 in config to 0.40, w1 to 0.20 | Scores change accordingly without code change; weights that do not sum to 1 are rejected at start-up | | |
 | RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-contact | Only published, permitted posts returned | | |
 | RANK-TC10 | Feed request without token and with invalid page | no token; page = -1 | 401; 400 "Invalid page" | | |
+| RANK-TC11 | Verified student note outranks an identical unverified one | three student notes of equal age and tags; one Super Liked by an approved active lecturer, one by a suspended lecturer | Verified note first with V = 1.0 and a score higher by w3; the other two have V = 0 | | |
+| RANK-TC12 | Interest vector weighting, decay and normalisation | viewer view, like and comment today on #viewed, #liked, #commented; comment 14 days ago on #older; comment 91 days ago on #ancient | #commented 1.0, #liked 0.6, #viewed 0.2, #older 0.5, #ancient absent; maximum weight 1.0; no history gives an empty vector | | |
+| RANK-TC13 | Verified, relevant note surfaced ahead of popular irrelevant note (NFR3) | viewer interested in #sql; verified #sql note 24 h old with no likes; unverified #art note with 10 likes | #sql note ranked above the #art note although its E is lower | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
