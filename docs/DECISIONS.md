@@ -321,3 +321,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   storing scores (rejected: stale as soon as a like or verification lands); loading full notes for all candidates
   (rejected: slide HTML for 500 notes per request).
 - **Reversibility:** Easy; constants are in config.
+
+## D25 — Report Chapters 1-3 written from the IR (documentation step 2)
+- **Decision:** IR text kept in substance; figures, OMML equations and tables copied from the IR .docx. Rewritten:
+  all of Chapter 1 (tense, Part II scope, D1-D6 changes, re-baselined plan; Table "project plan" gains a Sprint 0
+  row and one-week sprint dates, Part II weeks counted from 21 Sep 2026), every Chapter 2.2 figure/text pair
+  (description now sits beneath each screenshot), 3.1.4/3.1.5 (one-week sprints, time-boxes 2 h / 1 h / 45 min).
+  Added: 2.1.1.6 and 2.1.2.3 (appraisal of implications), a methodology-domain appraisal paragraph, 2.3.11 with a
+  trade-off table, 3.3.1.9 cross-tabulation (6 tables + Spearman table, computed from the survey CSV), 3.3.3.4
+  requirement changes (FR19 = admin approval of lecturer accounts added to the FR table), an explanatory
+  paragraph under every figure and table. References: the 49 IR entries (all cited in Ch 1-3), hanging indent.
+- **Corrections made to IR content:** FR8 evidence (19 selections, 59.4%, not 20/62%); Figure 18 source
+  (Moodle, not Notion); Moodle captions now n.d.-a/-b; "Table 2.3/3.1/1.3" refs; Figure 49 -> 47 ref in 3.1.4;
+  question tables 3.2-3.9 turned into numbered captions; Ch 2 now records that Sprint 1 stores the JWT in
+  memory/sessionStorage (D13), contrary to the IR's httpOnly-cookie plan, with mitigations (D17, D20/D21).
+  Figures 6-8 were linked web images inside INCLUDEPICTURE fields in the IR; they are now embedded copies.
+- **Alternatives:** full rewrite of 29k words (rejected: OPEN_QUESTIONS #7, risk of losing substance).
+- **Reversibility:** Easy. Backups in `FYP_Submissions/backups/` (…_0945 = before Ch 1, …_2321 before Ch 2,
+  …_2322 before Ch 3, …_2323 before References, …_2324 before the sanitisation fix).

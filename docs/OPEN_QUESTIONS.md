@@ -11,3 +11,8 @@ Working assumptions are in brackets; nothing is blocked on these.
 7. IR Chapters 1-3 total about 29k words against the 18-20k standard for the whole report body. Cut
    them, or keep them? [Assumed: the writer agent keeps the IR's substance in Chapters 1-3 until you
    decide; no cuts made.]
+8. Final demonstration: deploy to the free-tier host documented in IR §2.3.9, or demo from local hosting? (Report §1.5 has a [TBC].)
+9. Chapters 1-3 now total about 31.5k words of prose plus ~4.9k in tables (writer step 2 kept all IR substance and added the
+   supervisor-requested appraisal and survey analysis). This sharpens question 7: decide which IR material to cut.
+10. Three references lack APA 7 details the writer could not verify (Gufroni & Zaman 2026 source; institutions for the
+    Gusenbauer and Lieu theses) and Shahzad et al. (2023) shows issue 15(5) against DOI su15010005 — please check.

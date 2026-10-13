@@ -20,3 +20,4 @@ Format: `HH:MM — step — commit`.
 23:05 — usage limit (~10:30) stopped 2C fix agent (no changes landed) and writer step 2 (Chapter 1 saved, Ch 2-3 not). Resumed 23:04: HANDOVER.md written; PLAN Sprint 2 = in progress
 23:12 — S2C fixes bfa3b67 (blocker fixed): tester server 78/78 + client 1/1. /code-review high over Sprint 2 (d8bf55b..HEAD): 0 blockers, 7 findings (feed cutoff clock, self-engagement inflates E, profile PUT nulls fields, restricted users can't remove, own views logged, template enum, lecturer SQL predicate x3) → implementer
 23:17 — Sprint 2 code-review fixes eb460fd: tester server 82/82 + client 1/1; Sprint 2 review written; PLAN Sprint 2 = done; HANDOVER updated. Next: Sprint 3
+23:28 — writer step 2 done: Ch 1-3 + References in docx (31.5k words prose; OPEN_QUESTIONS 8-10; D25). S3A ranking 58e77c0 (93/93); reviewer 0 blockers, 4 should-fix + 1 nit → implementer
