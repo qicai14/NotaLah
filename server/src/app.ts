@@ -25,9 +25,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/modules', modulesRouter);
 app.use('/api/feed', feedRouter);
+app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
 app.use('/api/notes', notesRouter);
 app.use('/api/users', usersRouter);
-app.use('/api', engagementRouter);
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

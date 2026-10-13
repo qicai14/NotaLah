@@ -50,6 +50,9 @@ docker/                           Postgres init script (creates parp_test)
 ## Conventions
 - A feature owns its routes, repository, tests and (client side) pages. A feature imports another feature only
   through that feature's exported functions, never its SQL; shared code goes to `lib/`, `types/` or `components/`.
+- Exception to the no-SQL rule: `notes/repository.ts` exports SQL fragments other features reuse so the rules exist once:
+  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
+  aliases `p`, `u`, `m`) and `SUMMARY_COLS` (aliases `p`, `m`). Callers keep those aliases and bind `$1` to the viewer.
 - Tables are UPPERCASE `_T`, double-quoted in SQL; columns lowercase with a table prefix; SQL keywords UPPERCASE.
 - All ranking constants live in `server/src/features/ranking/config.ts`.
 - Test names start with the TC ID from `docs/chapter4/4.5_test_cases.md`.

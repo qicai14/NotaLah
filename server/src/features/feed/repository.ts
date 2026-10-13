@@ -1,5 +1,5 @@
 import { pool } from '../../lib/pool';
-import { NOTE_SELECT, SUMMARY_COLS, VISIBLE, type Note, type NoteSummary } from '../notes/repository';
+import { NOTE_COLS, NOTE_FROM, SUMMARY_COLS, VISIBLE, type Note, type NoteSummary } from '../notes/repository';
 
 export const PAGE_SIZE = 10;
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
@@ -16,26 +16,30 @@ export interface FeedItem extends Note {
 
 /** FEED ORDER: the one place the ordering lives. Sprint 3 replaces this with the heuristic score (D20). */
 const FEED_ORDER = `p.pst_published_at DESC, p.pst_id DESC`;
-const FEED_ORDER_OUTER = `n."publishedAt" DESC, n."id" DESC`;
 
-/** One page of published, visible notes (page is 1-based); asks for one extra row to know whether a next page exists. */
-export async function getFeedPage(viewerId: number, page: number): Promise<{ items: FeedItem[]; nextPage: number | null }> {
+/**
+ * One page of published, visible notes (page is 1-based); asks for one extra row to know whether a next page exists.
+ * `asOf` freezes the list: notes published after it are ignored, so paging does not shift (D22).
+ */
+export async function getFeedPage(
+  viewerId: number, page: number, asOf: Date | null,
+): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
+  const cutoff = asOf ?? new Date();
   const { rows } = await pool.query<FeedItem>(
-    `SELECT n.*,
+    `SELECT ${NOTE_COLS},
             json_build_object(
-              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = n."id"),
-              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = n."id" AND NOT cmt_is_deleted)) AS "counts",
-            EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = n."id" AND lik_usr_id = $1) AS "liked",
-            EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = n."id" AND bmk_usr_id = $1) AS "bookmarked",
-            EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = n."id") AS "verified"
-     FROM (${NOTE_SELECT}
-           WHERE p.pst_status = 'published' AND ${VISIBLE}
-           ORDER BY ${FEED_ORDER} LIMIT $2 OFFSET $3) n
-     ORDER BY ${FEED_ORDER_OUTER}`,
-    [viewerId, PAGE_SIZE + 1, (page - 1) * PAGE_SIZE],
+              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
+              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted)) AS "counts",
+            EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
+            EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
+            EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id) AS "verified"
+     ${NOTE_FROM}
+     WHERE p.pst_status = 'published' AND p.pst_published_at <= $4 AND ${VISIBLE}
+     ORDER BY ${FEED_ORDER} LIMIT $2 OFFSET $3`,
+    [viewerId, PAGE_SIZE + 1, (page - 1) * PAGE_SIZE, cutoff],
   );
   const hasNext = rows.length > PAGE_SIZE;
-  return { items: rows.slice(0, PAGE_SIZE), nextPage: hasNext ? page + 1 : null };
+  return { items: rows.slice(0, PAGE_SIZE), nextPage: hasNext ? page + 1 : null, asOf: cutoff };
 }
 
 // ---- Engagement targets ----------------------------------------------------------------------
@@ -57,6 +61,7 @@ export async function getTarget(noteId: number, viewerId: number): Promise<Targe
 }
 
 /** Records a view unless this user already viewed the note within the window. */
+// shortcut: check-then-insert is not atomic, so two simultaneous views can both log; the client guards per mount (D22).
 export async function logView(noteId: number, viewerId: number): Promise<void> {
   await pool.query(
     `INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type)
@@ -181,8 +186,13 @@ export async function getVisibleComment(id: number, viewerId: number): Promise<C
   return rows[0];
 }
 
-export async function softDeleteComment(id: number): Promise<void> {
-  await pool.query(`UPDATE "COMMENT_T" SET cmt_is_deleted = TRUE WHERE cmt_id = $1`, [id]);
+/** Owner-only soft delete; true when a live comment of this user was deleted (works even if the note is no longer visible). */
+export async function softDeleteComment(id: number, userId: number): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `UPDATE "COMMENT_T" SET cmt_is_deleted = TRUE WHERE cmt_id = $1 AND cmt_usr_id = $2 AND NOT cmt_is_deleted`,
+    [id, userId],
+  );
+  return rowCount === 1;
 }
 
 const commentLikes = async (id: number): Promise<number> =>

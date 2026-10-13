@@ -150,6 +150,10 @@ export interface Profile {
   isVerifiedLecturer: boolean;
 }
 
+/** True for a lecturer account whose registration an admin approved (D21). */
+export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>
+  u.role === 'lecturer' && u.lecturerStatus === 'approved';
+
 /** Public profile fields; undefined for unknown or deleted accounts. */
 export async function findProfile(id: number): Promise<Profile | undefined> {
   const { rows } = await pool.query<Profile>(

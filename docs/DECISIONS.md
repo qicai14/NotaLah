@@ -254,6 +254,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   but the row is kept, so they reappear if made visible again.
 - **Feed:** `GET /api/feed?page=N` fetches 11 rows to learn `nextPage`; ordering lives in one `FEED_ORDER` constant.
   `page` above 1,000,000 is treated as invalid.
+- **Unlike, unbookmark, delete own comment:** need no visibility check (code matches this rule); an owner can still
+  delete their comment on a note that later became invisible.
+- **Paging stability:** page 1 returns `asOf` (ISO timestamp); later pages send `?asOf=` and only notes published at or
+  before it are listed, so new posts do not shift pages. Invalid `asOf` is 400. Sprint 3 must compute recency against
+  `asOf`, not NOW(); the client also drops ids it has already shown.
+- **View dedupe race:** the 30-minute check is check-then-insert, so simultaneous requests can double-log; the client
+  guards per mount, accepted as a known shortcut.
 - **Alternatives:** a migration for a view-dedupe index (rejected: the task forbade new schema unless needed and the
   window check is cheap); a separate counts table (rejected: counts are aggregated at read time at this scale).
 - **Reversibility:** Easy.

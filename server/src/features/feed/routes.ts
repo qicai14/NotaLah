@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { issueMap, invalidId } from '../../lib/validation';
+import { isApprovedLecturer } from '../users/repository';
 import { requireActive, requireAuth } from '../auth/middleware';
 import * as repo from './repository';
 
@@ -23,7 +24,12 @@ feedRouter.get('/', requireAuth, async (req, res) => {
   if (typeof raw !== 'string' || !/^\d+$/.test(raw) || Number(raw) < 1 || Number(raw) > 1_000_000) {
     return res.status(400).json({ error: 'Invalid page' });
   }
-  res.json(await repo.getFeedPage(req.user!.id, Number(raw)));
+  const rawAsOf = req.query.asOf;
+  const asOf = rawAsOf === undefined ? null : new Date(String(rawAsOf));
+  if (asOf !== null && (typeof rawAsOf !== 'string' || Number.isNaN(asOf.getTime()))) {
+    return res.status(400).json({ error: 'Invalid asOf' });
+  }
+  res.json(await repo.getFeedPage(req.user!.id, Number(raw), asOf));
 });
 
 // ---- views and likes ----
@@ -42,9 +48,9 @@ engagementRouter.post('/notes/:id/like', requireAuth, requireActive, async (req,
 });
 
 engagementRouter.delete('/notes/:id/like', requireAuth, requireActive, async (req, res) => {
-  const t = await target(req, res);
-  if (!t) return;
-  res.json({ liked: false, likes: await repo.unlikeNote(t.id, req.user!.id) });
+  const id = idOf(req);
+  if (id === undefined) return notFound(res);
+  res.json({ liked: false, likes: await repo.unlikeNote(id, req.user!.id) }); // no visibility check (D22)
 });
 
 // ---- comments ----
@@ -89,10 +95,13 @@ async function commentOf(req: Request, res: Response) {
 }
 
 engagementRouter.delete('/comments/:id', requireAuth, async (req, res) => {
-  const c = await commentOf(req, res);
-  if (!c) return;
-  if (c.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
-  await repo.softDeleteComment(c.id);
+  const id = idOf(req);
+  const c = id === undefined ? undefined : await repo.getVisibleComment(id, req.user!.id);
+  if (c && c.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
+  // Owners may delete their comment even when the note is no longer visible to them (D22).
+  if (id === undefined || !(await repo.softDeleteComment(id, req.user!.id))) {
+    return res.status(404).json({ error: 'Comment not found' });
+  }
   res.status(204).end();
 });
 
@@ -104,32 +113,31 @@ engagementRouter.post('/comments/:id/like', requireAuth, requireActive, async (r
 });
 
 engagementRouter.delete('/comments/:id/like', requireAuth, requireActive, async (req, res) => {
-  const c = await commentOf(req, res);
-  if (!c) return;
-  res.json({ liked: false, likes: await repo.unlikeComment(c.id, req.user!.id) });
+  const id = idOf(req);
+  if (id === undefined) return res.status(404).json({ error: 'Comment not found' });
+  res.json({ liked: false, likes: await repo.unlikeComment(id, req.user!.id) }); // no visibility check (D22)
 });
 
 // ---- reports (UC12) ----
 const EVERYONE_REASONS = ['inaccurate', 'inappropriate', 'spam', 'other'];
 const LECTURER_REASONS = ['plagiarism', 'copyright'];
+const reportSchema = z.object({
+  reason: z.enum([...EVERYONE_REASONS, ...LECTURER_REASONS], { error: 'Invalid reason' }),
+  details: z.string({ error: 'Invalid details' }).trim().max(500, 'Details must be at most 500 characters').nullish(),
+});
 
 engagementRouter.post('/notes/:id/report', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
-  const { reason, details } = (req.body ?? {}) as { reason?: unknown; details?: unknown };
-  if (typeof reason !== 'string' || ![...EVERYONE_REASONS, ...LECTURER_REASONS].includes(reason)) {
-    return res.status(400).json({ error: 'Validation failed', errors: { reason: 'Invalid reason' } });
-  }
-  if (details != null && (typeof details !== 'string' || details.length > 500)) {
-    return res.status(400).json({ error: 'Validation failed', errors: { details: 'Details must be at most 500 characters' } });
-  }
-  if (t.authorId === req.user!.id) return res.status(400).json({ error: 'You cannot report your own note' });
+  const parsed = reportSchema.safeParse(req.body ?? {});
+  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  const { reason, details } = parsed.data;
   const u = req.user!;
-  if (LECTURER_REASONS.includes(reason) && !(u.role === 'lecturer' && u.lecturerStatus === 'approved')) {
+  if (t.authorId === u.id) return res.status(400).json({ error: 'You cannot report your own note' });
+  if (LECTURER_REASONS.includes(reason) && !isApprovedLecturer(u)) {
     return res.status(403).json({ error: 'This reason is only available to approved lecturers' });
   }
-  const stored = typeof details === 'string' && details.trim() ? details.trim() : null;
-  if (!(await repo.addReport(t.id, u.id, reason, stored))) {
+  if (!(await repo.addReport(t.id, u.id, reason, details || null))) {
     return res.status(409).json({ error: 'You have already reported this note' });
   }
   res.status(201).json({ reported: true });

@@ -22,7 +22,7 @@ export async function moduleExists(id: number): Promise<boolean> {
   return rowCount === 1;
 }
 
-/** Who may see a post ($1 = viewer id): the author, or a published post that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
+/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
 export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published' AND
     (p.pst_visibility = 'public' OR EXISTS (SELECT 1 FROM "CONTACT_T" c
        WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
@@ -43,8 +43,8 @@ export interface Note {
   publishedAt: Date | null;
 }
 
-export const NOTE_SELECT = `
-  SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "template", p.pst_status AS "status",
+/** Note columns (contract: alias p = POST_T; use with NOTE_FROM). */
+export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "template", p.pst_status AS "status",
          p.pst_visibility AS "visibility",
          CASE WHEN m.mod_id IS NULL THEN NULL
               ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
@@ -57,14 +57,17 @@ export const NOTE_SELECT = `
          -- verified lecturer = approved lecturer (D21)
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
                            'isVerifiedLecturer', (u.usr_role = 'lecturer' AND u.usr_lecturer_status = 'approved')) AS "author",
-         p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"
+         p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"`;
+
+/** FROM clause defining the aliases p, u and m that NOTE_COLS uses. */
+export const NOTE_FROM = `
   FROM "POST_T" p
   JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
   LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id`;
 
 /** The note as the API returns it, or undefined when it does not exist or the viewer may not see it. */
 export async function getVisibleNote(id: number, viewerId: number): Promise<Note | undefined> {
-  const { rows } = await pool.query<Note>(`${NOTE_SELECT} WHERE p.pst_id = $2 AND ${VISIBLE}`, [viewerId, id]);
+  const { rows } = await pool.query<Note>(`SELECT ${NOTE_COLS} ${NOTE_FROM} WHERE p.pst_id = $2 AND ${VISIBLE}`, [viewerId, id]);
   return rows[0];
 }
 

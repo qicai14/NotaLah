@@ -81,7 +81,10 @@ describe('Feed', () => {
     });
     expect(p1.body.items[0].slides).toHaveLength(2);
     expect(p1.body.items[1]).toMatchObject({ liked: false, bookmarked: false, verified: false });
-    const p2 = await get(viewer, '/api/feed?page=2');
+    const late = await insertNote(author); // published after page 1 was served
+    const p2 = await get(viewer, `/api/feed?page=2&asOf=${encodeURIComponent(p1.body.asOf)}`);
+    expect(p2.body.items.map((i: { id: number }) => i.id)).not.toContain(late);
+    expect((await get(viewer, '/api/feed?asOf=nope')).status).toBe(400);
     expect(p2.body.items.map((i: { id: number }) => i.id)).toEqual([ids[1], ids[0]]);
     expect(p2.body.nextPage).toBeNull();
   });
@@ -140,6 +143,12 @@ describe('Engagement', () => {
       expect((await comment(a, id, { body: 'x' })).status).toBe(404);
       expect((await post(a, `/api/notes/${id}/bookmark`)).status).toBe(404);
     }
+    const cid = (await pool.query<{ cmt_id: number }>(
+      `INSERT INTO "COMMENT_T" (cmt_pst_id, cmt_usr_id, cmt_body) VALUES ($1, $2, 'hello') RETURNING cmt_id`, [priv, b],
+    )).rows[0].cmt_id;
+    expect((await post(a, `/api/comments/${cid}/like`)).status).toBe(404);
+    expect((await get(a, `/api/notes/${priv}/comments`)).status).toBe(404);
+    expect((await del(b, `/api/comments/${cid}`)).status).toBe(204); // author may still delete
     const open = await insertNote(b);
     const restricted = await insertUser({ status: 'restricted' });
     expect((await post(restricted, `/api/notes/${open}/like`)).status).toBe(403);
