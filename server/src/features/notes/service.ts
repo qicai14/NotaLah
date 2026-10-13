@@ -9,7 +9,7 @@ export const MAX_HASHTAGS = 5;
 // Mirrors the TipTap StarterKit nodes the editor can produce (D20); every attribute is dropped.
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ['p', 'h1', 'h2', 'h3', 'strong', 'em', 's', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'br', 'hr'],
-  allowedAttributes: {},
+  allowedAttributes: { ol: ['start'] }, // TipTap writes start on a continued numbered list
   transformTags: { b: 'strong', i: 'em', strike: 's', del: 's' },
 };
 

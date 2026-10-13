@@ -2,14 +2,12 @@ import { type KeyboardEvent, useRef, useState } from 'react';
 import type { Slide } from '../types';
 
 /** Read-only slide viewer. Content is HTML the server already sanitised against the editor allow-list (D20). */
-export function SlideViewer({ slides, index, onIndex }: { slides: Slide[]; index?: number; onIndex?(i: number): void }) {
-  const [own, setOwn] = useState(0);
+export function SlideViewer({ slides }: { slides: Slide[] }) {
+  const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
-  const cur = Math.min(index ?? own, Math.max(0, slides.length - 1));
+  const cur = Math.min(index, Math.max(0, slides.length - 1));
   const go = (i: number) => {
-    const next = Math.max(0, Math.min(slides.length - 1, i));
-    setOwn(next);
-    onIndex?.(next);
+    setIndex(Math.max(0, Math.min(slides.length - 1, i)));
   };
   if (slides.length === 0) return <p className="text-sm text-slate-500">This note has no slides.</p>;
 

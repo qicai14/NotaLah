@@ -1,11 +1,11 @@
 import { type FormEvent, useState } from 'react';
 import { ConfirmButton } from '../../components/ConfirmButton';
-import { api, ApiError } from '../../lib/api';
+import { api, errorText } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
-import { errorText, useFetch } from '../../lib/useFetch';
+import { useFetch } from '../../lib/useFetch';
 import type { Comment, CommentReply } from '../../types';
 import { useAuth } from '../auth/AuthContext';
-import { LecturerBadge } from '../feed/NoteCard';
+import { LecturerBadge } from '../../components/LecturerBadge';
 
 const MAX = 1000;
 
@@ -32,7 +32,7 @@ function Composer({ noteId, slideCount, parentId, onDone, onCancel }: {
       setBody('');
       onDone();
     } catch (err) {
-      setError(err instanceof ApiError ? (err.errors && Object.values(err.errors)[0]) || err.message : errorText(err));
+      setError(errorText(err));
     } finally {
       setBusy(false);
     }

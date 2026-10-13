@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../lib/api';
-import { errorText } from '../../lib/useFetch';
+import { api, errorText } from '../../lib/api';
 import type { FeedItem, FeedPage } from '../../types';
 import { NoteCard } from './NoteCard';
 
@@ -37,6 +36,12 @@ export default function Feed() {
       setLoading(false);
     }
   }, [next]);
+
+  // Mobile: one card per screen (UC09). Snapping needs the page scroller, so the class goes on <html> only while the feed is mounted.
+  useEffect(() => {
+    document.documentElement.classList.add('feed-snap');
+    return () => document.documentElement.classList.remove('feed-snap');
+  }, []);
 
   useEffect(() => {
     const node = sentinel.current;

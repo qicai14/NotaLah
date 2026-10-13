@@ -65,9 +65,27 @@ export const NOTE_FROM = `
   JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
   LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id`;
 
+/** Engagement columns (alias p; $1 = viewer id) shared by the feed and the note detail so the counts exist once. */
+export const ENGAGEMENT_COLS = `json_build_object(
+              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
+              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted)) AS "counts",
+            EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
+            EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
+            EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id) AS "verified"`;
+
+export interface NoteWithEngagement extends Note {
+  counts: { likes: number; comments: number };
+  liked: boolean;
+  bookmarked: boolean;
+  verified: boolean;
+}
+
 /** The note as the API returns it, or undefined when it does not exist or the viewer may not see it. */
-export async function getVisibleNote(id: number, viewerId: number): Promise<Note | undefined> {
-  const { rows } = await pool.query<Note>(`SELECT ${NOTE_COLS} ${NOTE_FROM} WHERE p.pst_id = $2 AND ${VISIBLE}`, [viewerId, id]);
+export async function getVisibleNote(id: number, viewerId: number): Promise<NoteWithEngagement | undefined> {
+  const { rows } = await pool.query<NoteWithEngagement>(
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = $2 AND ${VISIBLE}`,
+    [viewerId, id],
+  );
   return rows[0];
 }
 

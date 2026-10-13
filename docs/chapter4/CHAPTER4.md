@@ -758,6 +758,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC19 | Module list and missing token | GET /api/modules with and without token; POST /api/notes without token | 200 with module catalogue; 401; 401 | | |
 | NOTE-TC20 | Stranger edits or deletes a draft or contacts-only note | PUT and DELETE by a non-contact | 404 for all four requests (existence not revealed) | | |
 | NOTE-TC21 | Moderator-hidden note | status set to hidden in the database | Author PUT 403; other user GET 404; not on the author's profile | | |
+| NOTE-TC22 | Numbered list start attribute | slide `<ol start="3" onclick="x()"><li>a</li></ol>` | Stored as `<ol start="3"><li>a</li></ol>`; other attributes removed | | |
+| NOTE-TC23 | Note detail engagement state | Another user likes a published note, then GET /api/notes/:id as that user | `counts.likes` 1, `counts.comments` 0, `liked` true, `bookmarked` false, `verified` false | | |
+| NOTE-TC24 | Hashtag input rules (client) | Add `#Algebra, maths, Algebra`, then an invalid tag, then a sixth tag | `#` stripped, lowercased, duplicates ignored, invalid tag and a sixth tag rejected with a message | | |
 
 *Table 4.26: User profile module test cases (USR)*
 

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConfirmButton } from '../../components/ConfirmButton';
-import { api } from '../../lib/api';
+import { api, errorText } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
-import { errorText, useFetch } from '../../lib/useFetch';
+import { useFetch } from '../../lib/useFetch';
 import type { DraftSummary } from '../../types';
 
 export default function Drafts() {

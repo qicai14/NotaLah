@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../lib/api';
+import { api, errorText } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
-import { errorText, useFetch } from '../../lib/useFetch';
+import { useFetch } from '../../lib/useFetch';
 import type { NoteSummary } from '../../types';
 
 export default function Saved() {
@@ -37,8 +37,7 @@ export default function Saved() {
                 {n.title}
               </Link>
               <p className="text-sm text-slate-600">
-                {n.moduleCode} · saved {timeAgo(n.savedAt ?? null)}
-                {n.hashtags.length > 0 && ` · ${n.hashtags.map((h) => `#${h}`).join(' ')}`}
+                {[n.moduleCode, `saved ${timeAgo(n.savedAt ?? null)}`, n.hashtags.map((h) => `#${h}`).join(' ')].filter(Boolean).join(' · ')}
               </p>
             </div>
             <button type="button" onClick={() => remove(n.id)} aria-label={`Remove ${n.title} from saved`} className="rounded-md border border-slate-300 px-2 py-1 text-sm">

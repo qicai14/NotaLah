@@ -13,3 +13,8 @@
 .slide-content pre code { background: none; padding: 0; }
 .slide-content hr { border-color: #cbd5e1; }
 .slide-content.ProseMirror { outline: none; min-height: 12rem; }
+
+/* Mobile feed: vertical snap, one card per screen. Desktop scrolls freely. */
+@media (max-width: 767px) {
+  html.feed-snap { scroll-snap-type: y mandatory; scroll-padding-top: 4rem; }
+}

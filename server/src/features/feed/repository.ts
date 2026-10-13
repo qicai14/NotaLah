@@ -1,5 +1,5 @@
 import { pool } from '../../lib/pool';
-import { NOTE_COLS, NOTE_FROM, SUMMARY_COLS, VISIBLE, type Note, type NoteSummary } from '../notes/repository';
+import { ENGAGEMENT_COLS, NOTE_COLS, NOTE_FROM, SUMMARY_COLS, VISIBLE, type NoteSummary, type NoteWithEngagement } from '../notes/repository';
 
 export const PAGE_SIZE = 10;
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
@@ -7,12 +7,7 @@ const VIEW_WINDOW_MINUTES = 30;
 
 // ---- Feed ------------------------------------------------------------------------------------
 
-export interface FeedItem extends Note {
-  counts: { likes: number; comments: number };
-  liked: boolean;
-  bookmarked: boolean;
-  verified: boolean;
-}
+export type FeedItem = NoteWithEngagement;
 
 /** FEED ORDER: the one place the ordering lives. Sprint 3 replaces this with the heuristic score (D20). */
 const FEED_ORDER = `p.pst_published_at DESC, p.pst_id DESC`;
@@ -26,13 +21,7 @@ export async function getFeedPage(
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
   const cutoff = asOf ?? new Date();
   const { rows } = await pool.query<FeedItem>(
-    `SELECT ${NOTE_COLS},
-            json_build_object(
-              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
-              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted)) AS "counts",
-            EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
-            EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
-            EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id) AS "verified"
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}
      ${NOTE_FROM}
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $4 AND ${VISIBLE}
      ORDER BY ${FEED_ORDER} LIMIT $2 OFFSET $3`,

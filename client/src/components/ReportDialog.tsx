@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
-import { api, ApiError } from '../lib/api';
+import { api, errorText } from '../lib/api';
 import { Dialog } from './Dialog';
 
 const COMMON = [
@@ -34,7 +34,7 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
       await api(`/notes/${noteId}/report`, { method: 'POST', body: { reason, details: details.trim() || null } });
       setDone(true);
     } catch (err) {
-      setError(err instanceof ApiError ? (err.errors && Object.values(err.errors)[0]) || err.message : 'Could not reach the server. Please try again.');
+      setError(errorText(err));
     } finally {
       setBusy(false);
     }
@@ -45,7 +45,7 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
       {done ? (
         <div>
           <p role="status">Thanks. Your report was sent to the moderators.</p>
-          <button type="button" onClick={onClose} className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-white">
+          <button type="button" autoFocus onClick={onClose} className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-white">
             Close
           </button>
         </div>

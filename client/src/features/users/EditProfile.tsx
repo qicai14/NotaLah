@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Field } from '../../components/Field';
-import { api, ApiError, type User } from '../../lib/api';
-import { errorText, useFetch } from '../../lib/useFetch';
+import { api, ApiError, errorText, type User } from '../../lib/api';
+import { useFetch } from '../../lib/useFetch';
 import type { Profile } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 

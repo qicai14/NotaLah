@@ -1,10 +1,10 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Field } from '../../components/Field';
-import { api, ApiError } from '../../lib/api';
-import { errorText, useFetch } from '../../lib/useFetch';
+import { api, ApiError, errorText } from '../../lib/api';
+import { useFetch } from '../../lib/useFetch';
 import type { ModuleRef, Note } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { HashtagInput } from './HashtagInput';
@@ -20,7 +20,7 @@ const TEMPLATES = [
 ];
 
 // Exactly the server sanitize allow-list (D20): StarterKit v3 also ships Underline, Link, ListKeymap and TrailingNode.
-const EXTENSIONS = [StarterKit.configure({ underline: false, link: false, listKeymap: false, trailingNode: false })];
+const EXTENSIONS = [StarterKit.configure({ heading: { levels: [1, 2, 3] }, underline: false, link: false, listKeymap: false, trailingNode: false })];
 
 const isEmpty = (html: string) => html === '' || html === '<p></p>';
 const preview = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 28);
@@ -29,7 +29,10 @@ export default function NoteEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const existing = useFetch<{ note: Note }>(id ? `/notes/${id}` : null);
+  // After the first draft save we land here with the saved note in router state, so nothing is refetched over what was typed.
+  const seed = (useLocation().state as { note?: Note } | null)?.note;
+  const fetched = useFetch<{ note: Note }>(id && !seed ? `/notes/${id}` : null);
+  const existing = { ...fetched, data: seed ? { note: seed } : fetched.data };
   const modules = useFetch<{ modules: ModuleRef[] }>('/modules');
 
   const [title, setTitle] = useState('');
@@ -62,6 +65,10 @@ export default function NoteEditor() {
       setSlides(slidesRef.current.map((s, i) => (i === activeRef.current ? (isEmpty(html) ? '' : html) : s)));
     },
   });
+
+  useEffect(() => {
+    editor?.setEditable(!saving); // no typing while a save is in flight
+  }, [editor, saving]);
 
   // Load an existing note once, when both the note and the editor are ready.
   const loaded = useRef(false);
@@ -127,7 +134,8 @@ export default function NoteEditor() {
       const { note } = await api<{ note: Note }>(id ? `/notes/${id}` : '/notes', { method: id ? 'PUT' : 'POST', body });
       if (publishing) navigate(`/notes/${note.id}`);
       else if (id) setMessage('Draft saved.');
-      else navigate(`/notes/${note.id}/edit`, { replace: true });
+      else navigate(`/notes/${note.id}/edit`, { replace: true, state: { note } });
+      setDialog(false);
     } catch (e) {
       setDialog(false);
       if (e instanceof ApiError && Object.keys(e.errors ?? {}).length) setErrors(e.errors);
@@ -159,7 +167,7 @@ export default function NoteEditor() {
   return (
     <section>
       <h1 className="mb-4 text-xl font-semibold">{id ? 'Edit note' : 'Create note'}</h1>
-      <div className="flex flex-col gap-4">
+      <fieldset disabled={saving} className="flex min-w-0 flex-col gap-4">
         <Field label="Title" name="title" value={title} maxLength={150} onChange={(e) => setTitle(e.target.value)} error={errors.title} />
         <div className="grid gap-4 sm:grid-cols-2">
           <div className={card}>
@@ -280,7 +288,7 @@ export default function NoteEditor() {
             Back to drafts
           </Link>
         </div>
-      </div>
+      </fieldset>
       {dialog && (
         <PublishDialog
           initial={visibility}

@@ -152,6 +152,27 @@ describe('Notes', () => {
     expect(res.body.note.slides[0].content).toBe('<p>hi link</p>');
   });
 
+  it('NOTE-TC22: numbered list start is kept and other list attributes are stripped', async () => {
+    const res = await post(await insertUser(), {
+      title: 'x',
+      status: 'draft',
+      slides: ['<ol start="3" onclick="x()"><li>a</li></ol>'],
+    });
+    expect(res.body.note.slides[0].content).toBe('<ol start="3"><li>a</li></ol>');
+  });
+
+  it('NOTE-TC23: note detail carries counts and the viewer like and bookmark state', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const id = (await post(author, await publishBody())).body.note.id;
+    await request(app).post(`/api/notes/${id}/like`).set('Authorization', bearer(viewer));
+    const note = (await get(viewer, id)).body.note;
+    expect(note.counts).toEqual({ likes: 1, comments: 0 });
+    expect(note.liked).toBe(true);
+    expect(note.bookmarked).toBe(false);
+    expect(note.verified).toBe(false);
+  });
+
   it('NOTE-TC12: a draft needs a title', async () => {
     const res = await post(await insertUser(), { title: '   ', status: 'draft' });
     expect(res.status).toBe(400);

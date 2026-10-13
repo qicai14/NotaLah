@@ -1,7 +1,6 @@
 import { type KeyboardEvent, useState } from 'react';
 
-export const MAX_HASHTAGS = 5; // mirrors server/src/features/notes/service.ts
-const VALID = /^[a-z0-9_]{1,50}$/;
+import { addHashtags, MAX_HASHTAGS } from '../../lib/hashtags';
 
 /** Chip input: Enter or comma adds a tag, '#' is stripped, tags are lowercased and unique. */
 export function HashtagInput({ value, onChange, error }: { value: string[]; onChange(v: string[]): void; error?: string }) {
@@ -9,17 +8,9 @@ export function HashtagInput({ value, onChange, error }: { value: string[]; onCh
   const [local, setLocal] = useState<string | null>(null);
 
   function commit(raw: string) {
-    let next = value;
-    let err: string | null = null;
-    for (const part of raw.split(',')) {
-      const name = part.trim().replace(/^#+/, '').toLowerCase();
-      if (!name || next.includes(name)) continue;
-      if (!VALID.test(name)) err = `"${name.slice(0, 20)}" is not valid: use letters, numbers and underscores (max 50)`;
-      else if (next.length >= MAX_HASHTAGS) err = `Maximum ${MAX_HASHTAGS} hashtags`;
-      else next = [...next, name];
-    }
+    const { tags, error: err } = addHashtags(value, raw);
     setLocal(err);
-    if (next !== value) onChange(next);
+    if (tags !== value) onChange(tags);
     if (!err) setText('');
   }
 

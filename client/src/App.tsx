@@ -1,9 +1,10 @@
-import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './features/auth/AuthContext';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import AdminLecturers from './features/moderation/AdminLecturers';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
+import { LecturerBadge } from './components/LecturerBadge';
 import Feed from './features/feed/Feed';
 import Saved from './features/feed/Saved';
 import Drafts from './features/notes/Drafts';
@@ -11,6 +12,12 @@ import NoteDetail from './features/notes/NoteDetail';
 import NoteEditor from './features/notes/NoteEditor';
 import EditProfile from './features/users/EditProfile';
 import Profile from './features/users/Profile';
+
+/** One NoteEditor per note id: /notes/new and /notes/:id/edit must never share state. */
+function EditorRoute() {
+  const { id } = useParams();
+  return <NoteEditor key={id ?? 'new'} />;
+}
 
 const DESKTOP_NAV = [
   ['/', 'Feed'],
@@ -79,11 +86,7 @@ function Header() {
             )}
             <Link to="/profile" className="font-medium">
               {user.displayName}
-              {verified && (
-                <span title="Verified lecturer" className="ml-1 rounded-full bg-indigo-600 px-1.5 text-xs text-white">
-                  ✓<span className="sr-only"> verified lecturer</span>
-                </span>
-              )}
+              {verified && <LecturerBadge />}
             </Link>
             <button
               type="button"
@@ -114,13 +117,13 @@ export default function App() {
       <Header />
       <div className="mx-auto flex max-w-4xl gap-6 px-4 py-6 pb-24 md:pb-6">
         {user && <SideNav />}
-        <main className="min-w-0 max-w-2xl flex-1">
+        <main id="main" tabIndex={-1} className="min-w-0 outline-none max-w-2xl flex-1">
           <Routes>
             <Route path="/" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/notes/new" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
-            <Route path="/notes/:id/edit" element={<ProtectedRoute><NoteEditor /></ProtectedRoute>} />
+            <Route path="/notes/new" element={<ProtectedRoute><EditorRoute /></ProtectedRoute>} />
+            <Route path="/notes/:id/edit" element={<ProtectedRoute><EditorRoute /></ProtectedRoute>} />
             <Route path="/notes/:id" element={<ProtectedRoute><NoteDetail /></ProtectedRoute>} />
             <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
             <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />

@@ -25,14 +25,13 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
-}
-
-export interface FeedItem extends Note {
   counts: { likes: number; comments: number };
   liked: boolean;
   bookmarked: boolean;
   verified: boolean;
 }
+
+export type FeedItem = Note;
 
 export interface FeedPage {
   items: FeedItem[];

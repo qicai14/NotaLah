@@ -3,7 +3,7 @@ import { timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 import type { Profile as ProfileData } from '../../types';
 import { useAuth } from '../auth/AuthContext';
-import { LecturerBadge } from '../feed/NoteCard';
+import { LecturerBadge } from '../../components/LecturerBadge';
 
 /** /users/:id shows any user; /profile shows the signed-in user with Edit and the drafts count. */
 export default function Profile() {
@@ -58,8 +58,7 @@ export default function Profile() {
               {n.title}
             </Link>
             <p className="text-sm text-slate-600">
-              {n.moduleCode} · {timeAgo(n.publishedAt)}
-              {n.hashtags.length > 0 && ` · ${n.hashtags.map((h) => `#${h}`).join(' ')}`}
+              {[n.moduleCode, timeAgo(n.publishedAt), n.hashtags.map((h) => `#${h}`).join(' ')].filter(Boolean).join(' · ')}
             </p>
           </li>
         ))}
