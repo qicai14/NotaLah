@@ -1,6 +1,6 @@
 # client feature: search
 
-Will hold: Subject, module code, hashtag, keyword and full-text search, with lecturer and term filters.
+Will hold: Subject, module code, hashtag, keyword and full-text search, with lecturer and published-date filters (FR15 reworked, see Sprint 0 review).
 
 Contents: search bar, results page, filters.
 

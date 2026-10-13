@@ -841,7 +841,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC12 | Approve with invalid or unknown id | id "abc", id 99999, id of a non-pending student | 400, 404, 404 | | |
 | ADM-TC13 | Create admin with missing or weak values | no ADMIN_EMAIL; password "short"; password with no uppercase | Each refused with a message naming the problem | | |
 | ADM-TC14 | Create admin for an existing email | valid values, email matching an existing account | Account promoted to admin, email normalised, can log in as admin | | |
-| ADM-TC15 | Lecturer applicants whose account is suspended or deleted | pending applicants with status active, suspended, deleted; approve the suspended and deleted ones | Only the active applicant is listed; approving the others returns 404 and changes nothing | | |
+| ADM-TC15 | Lecturer applicants whose account is not active | pending applicants with status active, restricted, suspended, deleted; approve the non-active ones | Only the active applicant is listed (a restricted applicant waits until reinstated); approving the others returns 404 and changes nothing | | |
 
 ## 4.5.2 User Acceptance Testing
 

@@ -1,3 +1,4 @@
 # client feature: users
 
-Profile page and account settings. Serves FR9 (one platform for sharing and messaging) and UC for viewing a profile. Filled in: Sprint 2.
+Profile pages: own profile, another user's profile, edit profile (UC04, wireframes 10-12).
+Serves FR9 and FR4 (programme is a search key). Filled in: Sprint 2.

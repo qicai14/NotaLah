@@ -10,6 +10,8 @@
 
 ### Increment delivered
 
+*Paths as of Sprint 1; the code was later moved into feature folders (D19, `docs/ARCHITECTURE.md`).*
+
 | Item | Evidence |
 | --- | --- |
 | React + Vite + TypeScript + Tailwind CSS client with routing, session handling and mobile-first layout | `client/src/` |

@@ -187,7 +187,8 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   Tests mirror features under `server/tests/<feature>/`. The ranking config moved to
   `server/src/features/ranking/config.ts`, now the single "one config module" for NFR5; CLAUDE.md and README were
   updated, while older DECISIONS entries that mention `config/ranking.ts` are historical. Likes, comments, reports
-  and bookmarks live in `feed`; note verification lives in `moderation`. Moved: config/env -> lib/env, db/pool ->
+  and bookmarks live in `feed`; lecturer note verification has its own `verification` feature (lecturer-only routes,
+  `"VERIFICATION_T"`, `VER-TC*`), kept apart from the admin-only `moderation` router (amended after review). Moved: config/env -> lib/env, db/pool ->
   lib/pool, routes/health -> lib/health, auth/passport -> features/auth/passport, middleware/auth ->
   features/auth/middleware, routes/auth -> features/auth/routes, db/users -> features/users/repository,
   routes/admin -> features/moderation/routes; client auth/, pages/Login+Register, ProtectedRoute -> features/auth,
