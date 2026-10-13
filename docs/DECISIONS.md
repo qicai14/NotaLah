@@ -343,3 +343,31 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** full rewrite of 29k words (rejected: OPEN_QUESTIONS #7, risk of losing substance).
 - **Reversibility:** Easy. Backups in `FYP_Submissions/backups/` (…_0945 = before Ch 1, …_2321 before Ch 2,
   …_2322 before Ch 3, …_2323 before References, …_2324 before the sanitisation fix).
+
+## D26 — Super Like, report queue and account actions API (Sprint 3, task 3B)
+- **Path:** Super Like is `POST`/`DELETE /api/notes/:id/verify`, matching every other note route; VER-TC1's test data
+  said `/api/posts/P/verify` and was corrected in `4.5_test_cases.md`.
+- **Super Like checks:** lecturer role and approved status (403), then 404 for an unknown, draft or invisible note (the
+  feed's `getTarget`), 400 for a remark over 300 characters (blank stored as NULL), 409 for the author's own note, the
+  same order as reports (D22). A repeat returns 200 with the stored verification unchanged (a new remark is ignored).
+  Withdrawal deletes only the caller's row and skips `requireActive`, so a restricted lecturer can still undo (D22
+  removal rule; the task spec listed `requireActive` for both routes). It answers with the note's state afterwards,
+  because another lecturer's Super Like may keep it verified.
+- **Verifier name:** `verifiedBy` is the display name of the earliest valid verifier (same rule as `VERIFIED`, D24),
+  shared through `VERIFIED_BY`; `verifiedByMe` (any row by the viewer) drives the "Remove Super Like" toggle. Both are
+  in `ENGAGEMENT_COLS` (feed, detail, ranking candidates) and `verifiedBy` is in `SUMMARY_COLS` (saved list, profile
+  lists), so every list shows the same name.
+- **Report resolution:** per note, not per report: one remark resolves every open report on it; 404 when it has none.
+  Hide only flips a published note to hidden (a deleted note stays deleted). The queue returns the full note so the
+  review panel can preview a contacts-only note the admin cannot open through `GET /api/notes/:id`. UC20 step 5
+  "notifies the author" is not implemented: there is no notification channel until messaging (Sprint 4).
+- **Accounts:** search is a case-insensitive substring match on name or email (`STRPOS`, so `%` needs no escaping),
+  first 50 alphabetically, deleted accounts included so their history stays inspectable. Any administrator target,
+  including the caller, is 403; a deleted account is 409 for every action (anonymised data cannot be restored); a
+  repeated action (suspending a suspended user) is allowed and logged again. Delete sets name "Deleted user", email
+  `deleted-<id>@invalid`, clears bio, avatar and staff ID, hides published notes and leaves drafts; the password hash
+  stays (login is already refused for deleted accounts, D17). No migration: `"ACCOUNT_ACTION_T"` and `"REPORT_T"`
+  already had the columns.
+- **Tests:** the `lecturerOnlyApp` stand-in was removed; AUTH-TC7 and ADM-TC9/10 now call the real Super Like route.
+  `insertNote` moved to `tests/helpers.ts`.
+- **Reversibility:** Easy.

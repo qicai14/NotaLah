@@ -13,7 +13,7 @@ Endpoints (all need a bearer token; writes also need an active account):
 
 | Method and path | Result |
 | --- | --- |
-| `GET /api/feed?page=N` | `{items, nextPage, asOf}`; 10 per page, later pages send `?asOf=` from page 1; item = note + `counts`, `liked`, `bookmarked`, `verified`, `score`, `components {E,R,V,M}`; ordered by score; bad page 400 |
+| `GET /api/feed?page=N` | `{items, nextPage, asOf}`; 10 per page, later pages send `?asOf=` from page 1; item = note + `counts`, `liked`, `bookmarked`, `verified`, `verifiedBy`, `verifiedByMe`, `score`, `components {E,R,V,M}`; ordered by score; bad page 400 |
 | `POST /api/notes/:id/view` | 204; logged once per user/note per 30 min |
 | `POST` / `DELETE /api/notes/:id/like` | `{liked, likes}`; POST 201 when new, else 200 |
 | `GET /api/notes/:id/comments` | pinned lecturer comments, then likes desc, then oldest; `replies[]` oldest first |

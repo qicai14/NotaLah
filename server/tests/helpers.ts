@@ -1,9 +1,7 @@
 import bcrypt from 'bcryptjs';
-import express from 'express';
 import { signToken } from '../src/features/auth/passport';
 import type { AuthUser } from '../src/features/users/repository';
 import { pool } from '../src/lib/pool';
-import { requireAuth, requireRole } from '../src/features/auth/middleware';
 
 /** Empties every table except the migration log and the seeded module catalogue. */
 export async function truncateAll(): Promise<void> {
@@ -52,7 +50,26 @@ export function bearer(id: number): string {
   return `Bearer ${signToken({ id, role: 'student' } as AuthUser)}`;
 }
 
-/** Stand-in for Super Like until it exists: any requireRole('lecturer') route. */
-export const lecturerOnlyApp = express().post('/like', requireAuth, requireRole('lecturer'), (_req, r) => {
-  r.json({ ok: true });
-});
+export interface NoteOpts {
+  status?: string;
+  visibility?: string;
+  slides?: number;
+  title?: string;
+}
+
+/** Inserts a note directly with `slides` slides; returns its id. */
+export async function insertNote(authorId: number, o: NoteOpts = {}): Promise<number> {
+  const status = o.status ?? 'published';
+  const { rows } = await pool.query<{ pst_id: number }>(
+    `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_status, pst_visibility, pst_published_at)
+     VALUES ($1, (SELECT mod_id FROM "MODULE_T" ORDER BY mod_id LIMIT 1), $2, $3, $4,
+             CASE WHEN $3::VARCHAR = 'published' THEN NOW() END)
+     RETURNING pst_id`,
+    [authorId, o.title ?? 'A note', status, o.visibility ?? 'public'],
+  );
+  const id = rows[0].pst_id;
+  for (let i = 1; i <= (o.slides ?? 3); i++) {
+    await pool.query(`INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content) VALUES ($1, $2, '<p>x</p>')`, [id, i]);
+  }
+  return id;
+}

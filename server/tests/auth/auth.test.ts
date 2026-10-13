@@ -6,7 +6,7 @@ import { app } from '../../src/app';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { requireAuth } from '../../src/features/auth/middleware';
-import { bearer, lecturerOnlyApp, insertUser, truncateAll } from '../helpers';
+import { bearer, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -92,7 +92,8 @@ describe('POST /api/auth/register', () => {
     const { rows } = await pool.query('SELECT usr_staff_id FROM "USER_T" WHERE usr_id = $1', [res.body.user.id]);
     expect(rows[0].usr_staff_id).toBe('S1234');
 
-    const liked = await request(lecturerOnlyApp).post('/like').set('Authorization', bearer(res.body.user.id));
+    const note = await insertNote(await insertUser());
+    const liked = await request(app).post(`/api/notes/${note}/verify`).set('Authorization', bearer(res.body.user.id));
     expect(liked.status).toBe(403);
     expect(liked.body).toEqual({ error: 'Forbidden' });
   });

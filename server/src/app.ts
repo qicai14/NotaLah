@@ -9,6 +9,7 @@ import { engagementRouter, feedRouter } from './features/feed/routes';
 import { healthRouter } from './lib/health';
 import { modulesRouter, notesRouter } from './features/notes/routes';
 import { usersRouter } from './features/users/routes';
+import { verificationRouter } from './features/verification/routes';
 
 export const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/modules', modulesRouter);
 app.use('/api/feed', feedRouter);
+app.use('/api', verificationRouter);
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
 app.use('/api/notes', notesRouter);
 app.use('/api/users', usersRouter);

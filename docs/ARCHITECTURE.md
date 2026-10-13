@@ -23,10 +23,10 @@ server/src/types/                 types shared by several features
 server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create)
 server/src/features/auth/         passport strategies, JWT, requireAuth/requireRole, register/login/me routes
 server/src/features/users/        USER_T repository
-server/src/features/moderation/   admin-only routes: lecturer approval (UC22) now; report queue (UC20) and account
-                                  suspend/restrict/delete (UC21, ADM-TC5-8) in Sprint 3
+server/src/features/moderation/   admin-only routes: lecturer approval (UC22), report queue (UC20), account
+                                  restrict/suspend/reinstate/delete (UC21)
 server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
-server/src/features/verification/ lecturer Super Like of notes, "VERIFICATION_T" (Sprint 3)
+server/src/features/verification/ lecturer Super Like of notes and its withdrawal, "VERIFICATION_T" (UC19)
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
 server/src/features/feed/         feed query, likes, comments, reports, bookmarks (Sprint 2)
 server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
@@ -51,7 +51,7 @@ docker/                           Postgres init script (creates parp_test)
 - A feature owns its routes, repository, tests and (client side) pages. A feature imports another feature only
   through that feature's exported functions, never its SQL; shared code goes to `lib/`, `types/` or `components/`.
 - Exception to the no-SQL rule: `notes/repository.ts` exports SQL fragments other features reuse so the rules exist once:
-  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
+  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
   aliases `p`, `u`, `m`) and `SUMMARY_COLS` (aliases `p`, `m`). Callers keep those aliases and bind `$1` to the viewer.
 - Tables are UPPERCASE `_T`, double-quoted in SQL; columns lowercase with a table prefix; SQL keywords UPPERCASE.
 - All ranking constants live in `server/src/features/ranking/config.ts`.
