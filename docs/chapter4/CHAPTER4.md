@@ -803,6 +803,11 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC8 | Report a note with invalid reason and own note | reason "boring"; reporter is author | 400; 400 "You cannot report your own note" | | |
 | ENG-TC9 | Student selects lecturer-only reason; duplicate open report | student reason plagiarism; second report by same user | 403; 409 "You have already reported this note" | | |
 | ENG-TC10 | Bookmark, list and remove | save P, GET /api/bookmarks, remove P | P listed newest first; removed after DELETE | | |
+| ENG-TC11 | Feed paging and item shape | 12 published notes; one liked, bookmarked, commented and verified | Page 1 has 10 newest first with nextPage 2; counts, liked, bookmarked, verified and slides present; page 2 has 2 and nextPage null | | |
+| ENG-TC12 | View logging window | POST view twice, then after 31 minutes; view of a contacts-only note by a non-contact | One "view" interaction for the first two, a second after 31 minutes; 404 for the invisible note | | |
+| ENG-TC13 | Engagement on invisible note; restricted user | like, comment, bookmark a contacts-only note and a draft; restricted user likes | 404 for each; 403 for the restricted like; restricted user can still read comments | | |
+| ENG-TC14 | Replies and comment likes | two replies under one comment; comment liked twice, then unliked | Replies listed oldest first; second like leaves count 1; unlike gives 0 | | |
+| ENG-TC15 | Delete comment | non-author deletes; author deletes a comment with a reply and one without | 403; parent shown as "[deleted]" with its reply; the other omitted and a second delete gives 404 | | |
 
 *Table 4.29: Lecturer verification module test cases (VER)*
 

@@ -234,3 +234,26 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** returning 403 for every non-owner (rejected: leaks drafts' existence); allowing publish-to-draft
   (rejected: would pull a note out of feeds others already saw).
 - **Reversibility:** Easy.
+
+## D22 — Feed and engagement rules (Sprint 2, task 2B)
+- **Who can engage:** likes, views, comments, reports and bookmark-adds need a published note the viewer may see
+  (the notes `VISIBLE` predicate); anything else is 404, so a draft or contacts-only note is never revealed. Unliking,
+  removing a bookmark and deleting your own comment do not re-check the note. Writes use `requireActive`; reads do not.
+- **Views:** logged once per user and note per 30 minutes (query-side `NOT EXISTS`), so reloading cannot inflate the
+  interest history. Window is a constant in `feed/repository.ts`.
+- **Status codes:** a new like (note or comment) returns 201, a repeated one 200, both with `{liked, likes}`;
+  unlike returns 200 (ENG-TC1/TC3).
+- **Comments:** body is trimmed before the 1-1000 check; `slideNo` must be within the note's slide count; a parent must
+  be a live top-level comment on the same note (a deleted parent cannot be replied to). Deleted comments show
+  `[deleted]` with no author when they still have replies and are omitted otherwise; deleted replies are omitted.
+  Pinned = author is an approved lecturer; ordering is done in code after one query (pinned, likes desc, oldest first).
+  The feed's comment count excludes deleted comments.
+- **Reports:** check order is visibility (404), reason valid (400), own note (400), lecturer-only reason (403), then
+  insert; duplicates map the partial unique index violation (23505) to 409. Details are trimmed, blank stored as NULL.
+- **Bookmarks:** list returns the summary shape plus `savedAt`; notes that became hidden/deleted/invisible are skipped
+  but the row is kept, so they reappear if made visible again.
+- **Feed:** `GET /api/feed?page=N` fetches 11 rows to learn `nextPage`; ordering lives in one `FEED_ORDER` constant.
+  `page` above 1,000,000 is treated as invalid.
+- **Alternatives:** a migration for a view-dedupe index (rejected: the task forbade new schema unless needed and the
+  window check is cheap); a separate counts table (rejected: counts are aggregated at read time at this scale).
+- **Reversibility:** Easy.

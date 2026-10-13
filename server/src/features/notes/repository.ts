@@ -23,7 +23,7 @@ export async function moduleExists(id: number): Promise<boolean> {
 }
 
 /** Who may see a post ($1 = viewer id): the author, or a published post that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
-const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published' AND
+export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published' AND
     (p.pst_visibility = 'public' OR EXISTS (SELECT 1 FROM "CONTACT_T" c
        WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
           OR (c.con_usr_id = $1 AND c.con_contact_id = p.pst_usr_id))))))`;
@@ -43,7 +43,7 @@ export interface Note {
   publishedAt: Date | null;
 }
 
-const NOTE_SELECT = `
+export const NOTE_SELECT = `
   SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "template", p.pst_status AS "status",
          p.pst_visibility AS "visibility",
          CASE WHEN m.mod_id IS NULL THEN NULL
@@ -189,13 +189,16 @@ export interface NoteSummary {
   hashtags: string[];
 }
 
+/** Columns of a note summary (needs the POST_T alias p and MODULE_T alias m). */
+export const SUMMARY_COLS = `p.pst_id AS "id", p.pst_title AS "title", m.mod_code AS "moduleCode", p.pst_published_at AS "publishedAt",
+            COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
+                      FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
+                      WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"`;
+
 /** An author's published notes that the viewer may see, newest first. */
 export async function listNotesByAuthor(authorId: number, viewerId: number): Promise<NoteSummary[]> {
   const { rows } = await pool.query<NoteSummary>(
-    `SELECT p.pst_id AS "id", p.pst_title AS "title", m.mod_code AS "moduleCode", p.pst_published_at AS "publishedAt",
-            COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
-                      FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
-                      WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"
+    `SELECT ${SUMMARY_COLS}
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE}
      ORDER BY p.pst_published_at DESC, p.pst_id DESC`,
