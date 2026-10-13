@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { BCRYPT_COST } from '../auth/passport';
-import '../config/env'; // loads the root .env into process.env
-import { pool } from '../db/pool';
-import { type AuthUser, upsertAdmin } from '../db/users';
+import { BCRYPT_COST } from '../features/auth/passport';
+import '../lib/env'; // loads the root .env into process.env
+import { pool } from '../lib/pool';
+import { type AuthUser, upsertAdmin } from '../features/users/repository';
 
 // Admins are never self-registered (D6); this is the only way to create one.
 const adminSchema = z.object({

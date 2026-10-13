@@ -1,9 +1,9 @@
 import bcrypt from 'bcryptjs';
 import express from 'express';
-import { signToken } from '../src/auth/passport';
-import type { AuthUser } from '../src/db/users';
-import { pool } from '../src/db/pool';
-import { requireAuth, requireRole } from '../src/middleware/auth';
+import { signToken } from '../src/features/auth/passport';
+import type { AuthUser } from '../src/features/users/repository';
+import { pool } from '../src/lib/pool';
+import { requireAuth, requireRole } from '../src/features/auth/middleware';
 
 /** Empties every table except the migration log and the seeded module catalogue. */
 export async function truncateAll(): Promise<void> {

@@ -31,12 +31,12 @@ email. Clear the password from `.env` afterwards.
 | `npm run db:status -w server` | list applied migrations |
 | `npm run admin:create -w server` | create or reset the admin from `ADMIN_*` env values |
 
-## Layout
-- `client/` — React app (`src/App.tsx` routes)
-- `server/src/` — `app.ts`, `server.ts`, `config/` (env, ranking), `auth/passport.ts`,
-  `middleware/auth.ts` (`requireAuth`, `requireRole`), `db/` (pool, user SQL), `routes/` (health, auth, admin),
+## Layout (full map in `docs/ARCHITECTURE.md`)
+- `client/src/` — `App.tsx` routes; `features/<feature>/` pages and components; `components/`, `lib/`, `types/` shared
+- `server/src/` — `app.ts`, `server.ts`; `lib/` (env, pool, health); `features/<feature>/` (auth, users, moderation,
+  ranking, notes, feed, search, messaging) each with routes, repository and middleware as needed;
   `scripts/createAdmin.ts`
 - `server/db/migrations/` — dbmate SQL migrations
-- `server/tests/` — Vitest + Supertest
+- `server/tests/<feature>/` — Vitest + Supertest, mirroring the features
 - `docker/initdb/` — creates `parp_test` on first start
-- `docs/` — decisions, Chapter 4 material
+- `docs/` — decisions, architecture, Chapter 4-6 material, testing, screenshots, code snippets, sprint reviews

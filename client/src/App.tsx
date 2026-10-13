@@ -1,9 +1,9 @@
 import { Link, Route, Routes, useNavigate } from 'react-router-dom';
-import { useAuth } from './auth/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import AdminLecturers from './pages/AdminLecturers';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import { useAuth } from './features/auth/AuthContext';
+import { ProtectedRoute } from './features/auth/ProtectedRoute';
+import AdminLecturers from './features/moderation/AdminLecturers';
+import Login from './features/auth/Login';
+import Register from './features/auth/Register';
 
 function Header() {
   const { user, logout } = useAuth();

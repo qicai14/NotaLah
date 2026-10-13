@@ -1,11 +1,11 @@
 import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
-import { env } from './config/env';
-import { passport } from './auth/passport';
-import { adminRouter } from './routes/admin';
-import { authRouter } from './routes/auth';
-import { healthRouter } from './routes/health';
+import { env } from './lib/env';
+import { passport } from './features/auth/passport';
+import { adminRouter } from './features/moderation/routes';
+import { authRouter } from './features/auth/routes';
+import { healthRouter } from './lib/health';
 
 export const app = express();
 

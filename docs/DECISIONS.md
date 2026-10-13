@@ -179,3 +179,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   insert-only script (rejected: no way to recover a lost admin password).
 - **Why:** UC22 and D6 without storing any credential in git.
 - **Reversibility:** Easy.
+
+## D19 — Feature-folder structure for every sprint
+- **Decision:** server code lives in `server/src/features/<feature>/` (auth, users, moderation, ranking, notes,
+  feed, search, messaging) with shared code in `lib/` (env, pool, health) and `types/`; the client mirrors it in
+  `client/src/features/<feature>/` plus shared `components/`, `lib/`, `types/` (no client `ranking` folder: it has no UI).
+  Tests mirror features under `server/tests/<feature>/`. The ranking config moved to
+  `server/src/features/ranking/config.ts`, now the single "one config module" for NFR5; CLAUDE.md and README were
+  updated, while older DECISIONS entries that mention `config/ranking.ts` are historical. Likes, comments, reports
+  and bookmarks live in `feed`; note verification lives in `moderation`. Moved: config/env -> lib/env, db/pool ->
+  lib/pool, routes/health -> lib/health, auth/passport -> features/auth/passport, middleware/auth ->
+  features/auth/middleware, routes/auth -> features/auth/routes, db/users -> features/users/repository,
+  routes/admin -> features/moderation/routes; client auth/, pages/Login+Register, ProtectedRoute -> features/auth,
+  pages/AdminLecturers -> features/moderation. Docs folders for chapters 5-6, testing, screenshots and code
+  snippets were created with READMEs.
+- **Alternatives:** keep layer folders (routes/, db/, middleware/) and add features later (rejected: moves later cost
+  more); keep `config/ranking.ts` (rejected: the ranking feature needs a home and few references existed).
+- **Why:** one agreed map so each sprint only fills folders; the folder name tells which FR and test table it serves.
+- **Reversibility:** Medium (imports touched across ~20 files).

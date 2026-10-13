@@ -11,15 +11,20 @@ Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Confi
 - `npm test` — server tests (global setup migrates `parp_test`)
 - `npm run build`, `npm run typecheck`
 
-## Layout
-`server/src/{app,server}.ts`, `config/{env,ranking}.ts`, `db/{pool,users}.ts`, `auth/passport.ts`,
-`middleware/auth.ts` (`requireAuth`, `requireRole(...)` — role/status always read from the DB), `routes/`;
-tests in `server/tests/`; migrations in `server/db/migrations/`; decisions in `docs/DECISIONS.md`.
+## Layout (details: `docs/ARCHITECTURE.md`)
+- `server/src/{app,server}.ts`; `lib/` (env, pool, health); `types/`; `scripts/createAdmin.ts`.
+- `server/src/features/<feature>/` for auth, users, moderation, ranking, notes, feed, search, messaging:
+  `routes.ts` -> `middleware.ts` (`requireAuth`, `requireRole(...)`, role/status always read from the DB) ->
+  `repository.ts` (the only SQL). Empty features hold a README naming their FRs and sprint.
+- `server/tests/<feature>/` mirrors features; `helpers.ts` and `globalSetup.ts` are shared.
+- `client/src/features/<feature>/` holds pages and components per feature; shared `components/`, `lib/`, `types/`.
+- `server/db/migrations/` dbmate migrations; `docs/` decisions, chapter4-6, testing/{unit,uat}, screenshots,
+  code-snippets, sprints.
 
 ## Conventions
 - Tables are UPPERCASE `_T` and always double-quoted in SQL (`"POST_T"`); columns lowercase with a table prefix.
 - SQL keywords UPPERCASE. No ORM; parameterised `pg` queries.
 - Schema changes only through new dbmate migration files (`-- migrate:up` / `-- migrate:down`); never edit an applied one.
-- Ranking constants live only in `server/src/config/ranking.ts` (NFR5).
+- Ranking constants live only in `server/src/features/ranking/config.ts` (NFR5).
 - Test names start with the TC ID from `docs/chapter4/4.5_test_cases.md` (e.g. `AUTH-TC3: ...`).
 - Commit after each working step.
