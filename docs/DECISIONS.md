@@ -156,9 +156,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 ## D17 — Sprint 1 auth details left open by the spec
 - **Decision:** register requires `role` ('student'|'lecturer') and a free-text `programme` (max 100);
   passwords 8 chars to 72 UTF-8 bytes (bcrypt truncates beyond 72); a `restricted` account can still
-  log in (restriction is enforced per action later, ADM-TC7), only `suspended`/`deleted` get 403;
+  log in (restriction is enforced per action later, ADM-TC7), only `suspended` gets 403 at login (`deleted` gets the generic 401 so it does not reveal the account; both are rejected on every token request);
   login and registration share one rate limit of 10 requests per minute per IP (off under NODE_ENV=test, so not covered by a
-  test; no `trust proxy` set since nothing sits in front of Express yet); a rejected JWT returns JSON
+  test; behind the Vite dev proxy, which sends `X-Forwarded-For` (`xfwd: true` in `client/vite.config.ts`), Express trusts `loopback` proxies so each real client IP gets its own bucket); a rejected JWT returns JSON
   `{ error: 'Unauthorized' }`. The client refreshes the stored user from `/api/auth/me` on page load
   (so an approval shows without re-login) and, on any 401 to an authenticated call, clears
   `sessionStorage` and does a full reload to `/login?expired=1`.

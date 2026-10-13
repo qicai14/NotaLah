@@ -731,7 +731,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC7 | Register as lecturer | role lecturer, staff ID "S1234" | 201; role student, lecturer status pending; Super Like not permitted | | |
 | AUTH-TC8 | Log in with wrong password | test1@mail.apu.edu.my / "wrong" | 401 with the same generic message as an unknown email; no token issued | | |
 | AUTH-TC9 | Log in with valid credentials | test1@mail.apu.edu.my / "Passw0rd!" | 200; signed JWT containing user ID and role; GET /api/auth/me returns the user | | |
-| AUTH-TC10 | Access protected route without, with tampered and with valid token; suspended user logs in | no header; altered token; valid token; suspended account | 401; 401; 200; login returns 403 "This account is suspended" | | |
+| AUTH-TC10 | Access protected route without, with tampered and with valid token; suspended and deleted users log in | no header; altered token; valid token; suspended account; deleted account | 401; 401; 200; suspended login returns 403 "This account is suspended"; deleted login returns 401 "Invalid email or password" | | |
 
 *Table 4.25: Note editor and publishing module test cases (NOTE)*
 
@@ -841,6 +841,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC12 | Approve with invalid or unknown id | id "abc", id 99999, id of a non-pending student | 400, 404, 404 | | |
 | ADM-TC13 | Create admin with missing or weak values | no ADMIN_EMAIL; password "short"; password with no uppercase | Each refused with a message naming the problem | | |
 | ADM-TC14 | Create admin for an existing email | valid values, email matching an existing account | Account promoted to admin, email normalised, can log in as admin | | |
+| ADM-TC15 | Lecturer applicants whose account is suspended or deleted | pending applicants with status active, suspended, deleted; approve the suspended and deleted ones | Only the active applicant is listed; approving the others returns 404 and changes nothing | | |
 
 ## 4.5.2 User Acceptance Testing
 

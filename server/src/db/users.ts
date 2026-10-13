@@ -106,7 +106,7 @@ export async function listPendingLecturers(): Promise<LecturerApplication[]> {
     `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_email AS "email",
             usr_staff_id AS "staffId", usr_programme AS "programme", usr_created_at AS "createdAt"
      FROM "USER_T"
-     WHERE usr_lecturer_status = 'pending'
+     WHERE usr_lecturer_status = 'pending' AND usr_status = 'active'
      ORDER BY usr_created_at ASC, usr_id ASC`,
   );
   return rows;
@@ -114,7 +114,7 @@ export async function listPendingLecturers(): Promise<LecturerApplication[]> {
 
 /**
  * Approves or rejects a pending lecturer application and logs it in one transaction (UC22).
- * Returns undefined when the user does not exist or has no pending application.
+ * Returns undefined when the user does not exist or has no pending application from an active account.
  */
 export async function decideLecturer(
   userId: number,
@@ -128,7 +128,7 @@ export async function decideLecturer(
     const { rows } = await client.query<UserRow>(
       `UPDATE "USER_T"
        SET usr_role = $2, usr_lecturer_status = $3
-       WHERE usr_id = $1 AND usr_lecturer_status = 'pending'
+       WHERE usr_id = $1 AND usr_lecturer_status = 'pending' AND usr_status = 'active'
        RETURNING ${USER_COLUMNS}`,
       [userId, approve ? 'lecturer' : 'student', approve ? 'approved' : 'rejected'],
     );

@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!current) return;
     api<{ user: User }>('/auth/me')
       .then(({ user }) => {
-        if (loadSession()) update({ token: current.token, user }); // ignore if logged out meanwhile
+        if (loadSession()?.token === current.token) update({ token: current.token, user }); // ignore if logged out or re-logged in meanwhile
       })
       .catch(() => {});
   }, []);

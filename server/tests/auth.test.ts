@@ -139,7 +139,7 @@ describe('POST /api/auth/login', () => {
 });
 
 describe('protected routes', () => {
-  it('AUTH-TC10: no token 401, tampered token 401, valid token 200, suspended login 403', async () => {
+  it('AUTH-TC10: no token 401, tampered token 401, valid token 200, suspended login 403, deleted login 401', async () => {
     await insertUser({ email: 'test1@mail.apu.edu.my' });
     const { token } = (await login('test1@mail.apu.edu.my', 'Passw0rd!')).body;
     const me = (auth?: string) => {
@@ -159,6 +159,12 @@ describe('protected routes', () => {
     expect(res.status).toBe(403);
     expect(res.body).toEqual({ error: 'This account is suspended' });
     expect(res.body.token).toBeUndefined();
+
+    // A deleted account is indistinguishable from an unknown one.
+    await insertUser({ email: 'deleted@mail.apu.edu.my', status: 'deleted' });
+    const del = await login('deleted@mail.apu.edu.my', 'Passw0rd!');
+    expect(del.status).toBe(401);
+    expect(del.body).toEqual({ error: 'Invalid email or password' });
   });
 
   it('AUTH-TC10: an existing token stops working once the user is suspended', async () => {

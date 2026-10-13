@@ -121,6 +121,20 @@ describe('admin:create bootstrap script', () => {
     await expect(createAdmin({ ...valid, ADMIN_PASSWORD: 'alllowercase1234' })).rejects.toThrow(/upper/);
   });
 
+  it('ADM-TC15: a suspended or deleted applicant is not listed and cannot be approved', async () => {
+    const admin = bearer(await insertUser({ role: 'admin', email: 'admin@parp.test' }));
+    const active = await insertUser({ lecturerStatus: 'pending', staffId: 'S1' });
+    const suspended = await insertUser({ lecturerStatus: 'pending', staffId: 'S2', status: 'suspended' });
+    const deleted = await insertUser({ lecturerStatus: 'pending', staffId: 'S3', status: 'deleted' });
+
+    const res = await request(app).get(base).set('Authorization', admin);
+    expect(res.body.applications.map((x: { id: number }) => x.id)).toEqual([active]);
+    for (const id of [suspended, deleted]) {
+      expect((await request(app).post(`${base}/${id}/approve`).set('Authorization', admin)).status).toBe(404);
+      expect(await roleOf(id)).toEqual({ usr_role: 'student', usr_lecturer_status: 'pending' });
+    }
+  });
+
   it('ADM-TC14: creates an admin, and promotes an existing account with the same email', async () => {
     const id = await insertUser({ email: 'root@parp.test', lecturerStatus: 'pending' });
     const user = await createAdmin(valid);

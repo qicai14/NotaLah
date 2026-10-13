@@ -16,8 +16,9 @@ export const BCRYPT_COST = 12;
 const TOKEN_TTL = '1h';
 const BLOCKED_STATUSES = new Set(['suspended', 'deleted']);
 
-// Compared against when the email is unknown, so the response time does not reveal which accounts exist.
-const DUMMY_HASH = bcrypt.hashSync('timing-equaliser-not-a-password', BCRYPT_COST);
+// bcrypt hash (cost 12) of a random throwaway value. Precomputed so importing this module does not block
+// the event loop; compared against when the email is unknown, so timing does not reveal which accounts exist.
+const DUMMY_HASH = '$2b$12$RlrI9iOSRzy3g1iXWWluwuttoBLEuxgVYd7SRuC8cOnhMVrJEseEW';
 
 export function signToken(user: AuthUser): string {
   return jwt.sign({ role: user.role }, env.JWT_SECRET, {
@@ -40,7 +41,9 @@ passport.use(
       const ok = await bcrypt.compare(password, row?.usr_password_hash ?? DUMMY_HASH);
       const fail = (info: LoginInfo) => done(null, false, info);
       if (!row || !ok) return fail({ status: 401, message: 'Invalid email or password' });
-      if (BLOCKED_STATUSES.has(row.usr_status)) return fail({ status: 403, message: 'This account is suspended' });
+      // A deleted account looks like an unknown one; only suspended reveals itself.
+      if (row.usr_status === 'deleted') return fail({ status: 401, message: 'Invalid email or password' });
+      if (row.usr_status === 'suspended') return fail({ status: 403, message: 'This account is suspended' });
       return done(null, toAuthUser(row));
     } catch (err) {
       return done(err);

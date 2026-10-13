@@ -9,6 +9,9 @@ import { healthRouter } from './routes/health';
 
 export const app = express();
 
+// Behind the Vite dev proxy every request arrives from loopback; trust its X-Forwarded-For (D17).
+app.set('trust proxy', 'loopback');
+
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN }));
 app.use(express.json({ limit: '1mb' }));
@@ -23,7 +26,7 @@ app.use('/api', (_req, res) => {
 
 // Express 5 forwards rejected async handlers here.
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const status = typeof err.status === 'number' ? err.status : 500;
+  const status = typeof err?.status === 'number' ? err.status : 500;
   if (status >= 500) console.error(err);
   res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
 };
