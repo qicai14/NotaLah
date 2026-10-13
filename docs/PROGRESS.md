@@ -15,3 +15,5 @@ Format: `HH:MM — step — commit`.
 09:55 — structure: ca66cd7 (7 code-review fixes) + 9bbba08 (feature folders, ARCHITECTURE.md); reviewer: 0 blockers, 10 doc items fixed (verification feature folder split from admin-only moderation, notes README table names, FR15 filter wording, request-flow order, PLAN Sprint 2 += FR14/UC04, Sprint 3 += UC20-21)
 10:05 — S2A notes/drafts/publish/hashtags/profiles API 85ffcd3 (52/52); reviewer: 0 blockers, 5 should-fix + 5 nits → sent back to implementer
 10:06 — S2A fixes 15c5603: tester 59/59, typecheck+build OK
+10:14 — S2B feed/likes/comments/reports/bookmarks bdad8ab (76/76); reviewer: 0 blockers, 5 should-fix + 4 nits → sent back to implementer
+10:16 — S2B fixes bd7c21c: tester 76/76, typecheck+build OK. Next: 2C client
