@@ -371,3 +371,16 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** the `lecturerOnlyApp` stand-in was removed; AUTH-TC7 and ADM-TC9/10 now call the real Super Like route.
   `insertNote` moved to `tests/helpers.ts`.
 - **Reversibility:** Easy.
+
+## D27 — Super Like and admin console client choices (Sprint 3, task 3B)
+- **Super Like button** in the shared `NoteActions`; the card and the note detail own the verify state and pass an
+  `onVerify` callback, so the frame and "Verified by <name>" update without a refetch. After a new Super Like the
+  label keeps the existing earliest verifier when there is one. "Remove Super Like" acts at once without a dialog
+  (reversible, like unlike/unsave). The note detail now also draws the verified frame, as the card does.
+- **"Verified by"** text also appears in the saved and profile lists (from `SUMMARY_COLS`, D26).
+- **Reports page:** the review panel previews the slides (the admin may not be able to open a contacts-only note) and
+  links to the note; the wireframe's third outcome "hide with account action" is Hide note followed by a link to the
+  author on the Users page, rather than a combined call.
+- **Users page:** the search term lives in the URL (`?q=`), so that link and the back button work; action buttons are
+  only those that change the status (no Reinstate for an active account), none for admins or deleted accounts.
+- **Reversibility:** Easy.

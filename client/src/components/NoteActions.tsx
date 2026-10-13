@@ -3,13 +3,18 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { api, errorText } from '../lib/api';
 import type { Note } from '../types';
+import { SuperLikeDialog } from '../features/verification/SuperLikeDialog';
 import { ReportDialog } from './ReportDialog';
 
 const btn = 'rounded-md border border-slate-300 px-3 py-1 text-sm disabled:opacity-50';
 
-/** Like, comments, save, report and the Sprint 4 message placeholder; used by the feed card and the note detail. */
-export function NoteActions({ note, commentsLink = true }: { note: Note; commentsLink?: boolean }) {
+type VerifyState = Pick<Note, 'verified' | 'verifiedBy' | 'verifiedByMe'>;
+
+/** Like, comments, save, report, lecturer Super Like and the Sprint 4 message placeholder; used by the feed card and the note detail. `onVerify` lets the parent redraw the verified frame. */
+export function NoteActions({ note, commentsLink = true, onVerify }: { note: Note; commentsLink?: boolean; onVerify(v: VerifyState): void }) {
   const { user } = useAuth();
+  const canSuperLike = user?.role === 'lecturer' && user.lecturerStatus === 'approved' && note.author.id !== user.id;
+  const [superLiking, setSuperLiking] = useState(false);
   const [liked, setLiked] = useState(note.liked);
   const [likes, setLikes] = useState(note.counts.likes);
   const [saved, setSaved] = useState(note.bookmarked);
@@ -26,6 +31,20 @@ export function NoteActions({ note, commentsLink = true }: { note: Note; comment
       const r = await api<{ liked?: boolean; likes?: number; bookmarked?: boolean }>(`/notes/${note.id}/${kind}`, { method: on ? 'DELETE' : 'POST' });
       if (kind === 'like') (setLiked(!!r.liked), setLikes(r.likes ?? likes));
       else setSaved(!!r.bookmarked);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeSuperLike() {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api<{ verified: boolean; verifiedBy: string | null }>(`/notes/${note.id}/verify`, { method: 'DELETE' });
+      onVerify({ ...r, verifiedByMe: false });
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -52,6 +71,16 @@ export function NoteActions({ note, commentsLink = true }: { note: Note; comment
             Report
           </button>
         )}
+        {canSuperLike &&
+          (note.verifiedByMe ? (
+            <button type="button" onClick={removeSuperLike} disabled={busy} className={`${btn} border-indigo-500 text-indigo-700`}>
+              Remove Super Like
+            </button>
+          ) : (
+            <button type="button" onClick={() => setSuperLiking(true)} className={`${btn} border-indigo-500 bg-indigo-50 text-indigo-700`}>
+              Super Like
+            </button>
+          ))}
         <button type="button" disabled title="Coming in Sprint 4" className={btn}>
           Message author — coming soon
         </button>
@@ -62,6 +91,16 @@ export function NoteActions({ note, commentsLink = true }: { note: Note; comment
         </p>
       )}
       {reporting && <ReportDialog noteId={note.id} onClose={() => setReporting(false)} />}
+      {superLiking && (
+        <SuperLikeDialog
+          noteId={note.id}
+          onClose={() => setSuperLiking(false)}
+          onDone={(me) => {
+            setSuperLiking(false);
+            onVerify({ verified: true, verifiedBy: note.verifiedBy ?? me, verifiedByMe: true }); // the earliest verifier keeps the label
+          }}
+        />
+      )}
     </>
   );
 }

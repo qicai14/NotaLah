@@ -2,6 +2,8 @@ import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-rout
 import { useAuth } from './features/auth/AuthContext';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import AdminLecturers from './features/moderation/AdminLecturers';
+import AdminReports from './features/moderation/AdminReports';
+import AdminUsers from './features/moderation/AdminUsers';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
 import { LecturerBadge } from './components/LecturerBadge';
@@ -31,6 +33,11 @@ const TABS = [
   ['/notes/new', 'Create'],
   ['/saved', 'Saved'],
   ['/profile', 'Me'],
+];
+const ADMIN_NAV = [
+  ['/admin/lecturers', 'Lecturer applications'],
+  ['/admin/reports', 'Reports'],
+  ['/admin/users', 'Users'],
 ];
 const linkClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'font-semibold text-indigo-700' : 'text-slate-700');
 
@@ -80,9 +87,13 @@ function Header() {
         {user ? (
           <div className="flex items-center gap-3 text-sm">
             {user.role === 'admin' && (
-              <Link to="/admin/lecturers" className="text-indigo-600">
-                Lecturer applications
-              </Link>
+              <nav aria-label="Administration" className="flex gap-3">
+                {ADMIN_NAV.map(([to, label]) => (
+                  <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'font-semibold text-indigo-700' : 'text-indigo-600')}>
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
             )}
             <Link to="/profile" className="font-medium">
               {user.displayName}
@@ -131,6 +142,8 @@ export default function App() {
             <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
             <Route path="/users/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin/lecturers" element={<ProtectedRoute roles={['admin']}><AdminLecturers /></ProtectedRoute>} />
+            <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><AdminReports /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>

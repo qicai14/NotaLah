@@ -1,10 +1,13 @@
 # client feature: verification
 
-Will hold: lecturer Super Like (verify) of a note and its withdrawal (UC19).
+Lecturer Super Like (verify) of a note and its withdrawal (UC19).
 
-Contents: Super Like confirmation dialog with optional remark, verified frame and "Verified by" label.
+- `SuperLikeDialog.tsx`: confirmation with an optional review remark (max 300), wireframe 17; built on the shared `Dialog`.
+- The button lives in the shared `components/NoteActions.tsx` (feed card and note detail). It shows only for an approved
+  lecturer on someone else's note: "Super Like" opens the dialog, and for the lecturer who verified it becomes
+  "Remove Super Like" (no dialog: it is reversible). `onVerify` hands the new `verified`/`verifiedBy`/`verifiedByMe` to
+  the card or detail page, which redraws the double indigo frame and "Verified by <name>". Saved and profile lists show
+  "Verified by <name>" in the summary line.
 
 Serves: FR1, FR2 (and FR3 through the V component of ranking). Test table: `VER-TC*` in
-`docs/chapter4/4.5_test_cases.md`.
-
-Filled in: Sprint 3. See `docs/ARCHITECTURE.md` for the layering rules.
+`docs/chapter4/4.5_test_cases.md` (server tests). Decisions: D26, D27.

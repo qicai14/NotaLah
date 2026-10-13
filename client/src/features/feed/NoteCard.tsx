@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
@@ -37,7 +37,8 @@ function useViewLogger(noteId: number) {
   return el;
 }
 
-export function NoteCard({ item }: { item: FeedItem }) {
+export function NoteCard({ item: initial }: { item: FeedItem }) {
+  const [item, setItem] = useState(initial);
   const ref = useViewLogger(item.id);
   return (
     <article
@@ -57,7 +58,7 @@ export function NoteCard({ item }: { item: FeedItem }) {
       <h2 className="mb-2 text-lg font-semibold">
         <Link to={`/notes/${item.id}`}>{item.title}</Link>
       </h2>
-      {item.verified && <p className="mb-2 text-sm font-medium text-indigo-700">Verified by a lecturer</p>}
+      {item.verified && <p className="mb-2 text-sm font-medium text-indigo-700">Verified by {item.verifiedBy}</p>}
       <SlideViewer slides={item.slides} />
       {item.hashtags.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-2 text-sm text-indigo-700">
@@ -66,7 +67,7 @@ export function NoteCard({ item }: { item: FeedItem }) {
           ))}
         </ul>
       )}
-      <NoteActions note={item} />
+      <NoteActions note={item} onVerify={(v) => setItem((n) => ({ ...n, ...v }))} />
     </article>
   );
 }

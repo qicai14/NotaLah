@@ -11,7 +11,7 @@ import { CommentPanel } from './CommentPanel';
 export default function NoteDetail() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { data, error, loading } = useFetch<{ note: Note }>(`/notes/${id}`);
+  const { data, setData, error, loading } = useFetch<{ note: Note }>(`/notes/${id}`);
 
   if (loading) return <p>Loading…</p>;
   if (error || !data) {
@@ -23,7 +23,7 @@ export default function NoteDetail() {
   }
   const n = data.note;
   return (
-    <article>
+    <article className={n.verified ? 'rounded-lg border-4 border-double border-indigo-500 p-4' : undefined}>
       <h1 className="text-2xl font-semibold">{n.title}</h1>
       <p className="mb-3 mt-1 flex flex-wrap items-center gap-x-2 text-sm text-slate-600">
         <Link to={`/users/${n.author.id}`} className="font-medium text-slate-900">
@@ -33,7 +33,7 @@ export default function NoteDetail() {
         {n.module && <span className="rounded bg-slate-100 px-1.5">{n.module.code}</span>}
         <span>{timeAgo(n.publishedAt ?? n.updatedAt)}</span>
         <span>· {visibilityLabel(n.visibility)}</span>
-        {n.verified && <span className="font-medium text-indigo-700">· Verified by a lecturer</span>}
+        {n.verified && <span className="font-medium text-indigo-700">· Verified by {n.verifiedBy}</span>}
       </p>
       <SlideViewer slides={n.slides} />
       {n.hashtags.length > 0 && <p className="mt-2 text-sm text-indigo-700">{n.hashtags.map((h) => `#${h}`).join(' ')}</p>}
@@ -42,7 +42,7 @@ export default function NoteDetail() {
           Edit
         </Link>
       )}
-      {n.status === 'published' && <NoteActions note={n} commentsLink={false} />}
+      {n.status === 'published' && <NoteActions note={n} commentsLink={false} onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })} />}
       {n.status === 'published' && <CommentPanel noteId={n.id} slideCount={n.slides.length} />}
     </article>
   );

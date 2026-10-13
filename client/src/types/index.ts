@@ -29,6 +29,10 @@ export interface Note {
   liked: boolean;
   bookmarked: boolean;
   verified: boolean;
+  /** Earliest lecturer whose Super Like counts; null when unverified. */
+  verifiedBy: string | null;
+  /** The viewer has Super Liked this note. */
+  verifiedByMe: boolean;
 }
 
 export type FeedItem = Note;
@@ -54,6 +58,7 @@ export interface NoteSummary {
   moduleCode: string | null;
   publishedAt: string | null;
   hashtags: string[];
+  verifiedBy: string | null;
   savedAt?: string;
 }
 
