@@ -10,3 +10,4 @@ Format: `HH:MM — step — commit`.
 03:36 — S0.5 unit TC tables (8 modules x 10) + UAT template (4.5)
 03:38 — S0.6 Sprint 0 review + retrospective, 4.1 intro, numbered CHAPTER4.md, schema table images; PLAN.md Sprint 0 = done
 03:59 — S1 complete: scaffold (07a041d..3b40124), auth+roles+lecturer approval (43c9447..4149afe); tester verified 27/27, typecheck+build OK; browser smoke test OK; Sprint 1 review written; writer step 1 done (docx formatted), step 2 (Ch1-3) running
+09:34 — writer step 2 (stand-in) died on usage limit before saving; docx unchanged since step 1. Relaunched step 2 with the real writer agent, saving per chapter
