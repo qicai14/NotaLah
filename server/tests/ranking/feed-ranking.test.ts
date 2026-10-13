@@ -2,7 +2,8 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { getInteractionRows } from '../../src/features/ranking/repository';
+import { RANKING } from '../../src/features/ranking/config';
+import { getCandidates, getInteractionRows } from '../../src/features/ranking/repository';
 import { buildInterestVector } from '../../src/features/ranking/service';
 import { bearer, insertUser, truncateAll, type TestUserInput } from '../helpers';
 
@@ -52,16 +53,19 @@ describe('Ranked feed', () => {
     const plain = await insertNote(author, ['sql'], 5);
     const verified = await insertNote(author, ['sql'], 5);
     const byInactive = await insertNote(author, ['sql'], 5);
+    const byRestricted = await insertNote(author, ['sql'], 5);
     await verify(verified, await lecturer());
-    await verify(byInactive, await lecturer('suspended')); // only an active, approved lecturer's Super Like counts
+    await verify(byInactive, await lecturer('suspended')); // a suspended lecturer's Super Like does not count
+    await verify(byRestricted, await lecturer('restricted')); // a restricted one's still does
     const res = await feed(viewer);
     expect(res.status).toBe(200);
     const items: Item[] = res.body.items;
-    expect(items[0].id).toBe(verified);
+    expect(items.slice(0, 2).map((i) => i.id).sort()).toEqual([verified, byRestricted].sort());
     expect(items[0].components.V).toBe(1);
+    expect(items[1].components.V).toBe(1);
     expect(items.find((i) => i.id === plain)!.components.V).toBe(0);
     expect(items.find((i) => i.id === byInactive)!.components.V).toBe(0);
-    expect(items[0].score - items[1].score).toBeCloseTo(0.3, 6); // w3 · (1 - 0)
+    expect(items[0].score - items[2].score).toBeCloseTo(RANKING.weights.lecturerValidation, 6); // w3 · (1 - 0)
   });
 
   it('RANK-TC12: interest vector ranks comment > like > view, halves at 14 days, max 1', async () => {
@@ -81,6 +85,18 @@ describe('Ranked feed', () => {
     expect(v.has('ancient')).toBe(false);
     expect(Math.max(...v.values())).toBe(1);
     expect(buildInterestVector([], asOf).size).toBe(0);
+  });
+
+  it('RANK-TC14: a verified note older than the newest-N window is still a candidate', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const oldVerified = await insertNote(author, ['sql'], 500);
+    const oldPlain = await insertNote(author, ['sql'], 400);
+    await verify(oldVerified, await lecturer());
+    const recent = [await insertNote(author, ['sql'], 2), await insertNote(author, ['sql'], 1)];
+    const ids = (await getCandidates(viewer, new Date(), 2)).map((c) => c.id);
+    expect(ids.sort()).toEqual([...recent, oldVerified].sort());
+    expect(ids).not.toContain(oldPlain);
   });
 
   it('RANK-TC13: a verified, relevant note is surfaced ahead of a more-liked unverified irrelevant one (NFR3)', async () => {

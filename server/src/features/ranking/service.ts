@@ -23,9 +23,9 @@ export interface InteractionRow {
 /** Hashtag name -> interest weight in [0, 1]. */
 export type InterestVector = Map<string, number>;
 
-/** Log-compressed peer approval: raw = likes + 2 × comments, saturating at engagementCap. */
+/** Log-compressed peer approval: raw = likes + commentEngagementWeight × comments, saturating at engagementCap. */
 export function engagement(likes: number, comments: number): number {
-  const raw = likes + 2 * comments;
+  const raw = likes + RANKING.commentEngagementWeight * comments;
   return Math.min(1, Math.log10(1 + raw) / Math.log10(1 + RANKING.engagementCap));
 }
 

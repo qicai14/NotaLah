@@ -793,9 +793,10 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC8 | Weights read from configuration | change w3 in config to 0.40, w1 to 0.20 | Scores change accordingly without code change; weights that do not sum to 1 are rejected at start-up | | |
 | RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-contact | Only published, permitted posts returned | | |
 | RANK-TC10 | Feed request without token and with invalid page | no token; page = -1 | 401; 400 "Invalid page" | | |
-| RANK-TC11 | Verified student note outranks an identical unverified one | three student notes of equal age and tags; one Super Liked by an approved active lecturer, one by a suspended lecturer | Verified note first with V = 1.0 and a score higher by w3; the other two have V = 0 | | |
+| RANK-TC11 | Verified student note outranks an identical unverified one | four student notes of equal age and tags; Super Liked by an approved active lecturer, by a restricted one, by a suspended one, and none | The active and restricted lecturers' notes first with V = 1.0 and a score higher by w3; the suspended lecturer's and the plain note have V = 0 | | |
 | RANK-TC12 | Interest vector weighting, decay and normalisation | viewer view, like and comment today on #viewed, #liked, #commented; comment 14 days ago on #older; comment 91 days ago on #ancient | #commented 1.0, #liked 0.6, #viewed 0.2, #older 0.5, #ancient absent; maximum weight 1.0; no history gives an empty vector | | |
 | RANK-TC13 | Verified, relevant note surfaced ahead of popular irrelevant note (NFR3) | viewer interested in #sql; verified #sql note 24 h old with no likes; unverified #art note with 10 likes | #sql note ranked above the #art note although its E is lower | | |
+| RANK-TC14 | Old verified note stays a candidate | candidate window 2; two recent notes, an older unverified note and a still older verified note | Candidates are the two recent notes and the verified note; the older unverified note is excluded | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
@@ -811,7 +812,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC8 | Report a note with invalid reason and own note | reason "boring"; reporter is author | 400; 400 "You cannot report your own note" | | |
 | ENG-TC9 | Student selects lecturer-only reason; duplicate open report | student reason plagiarism; second report by same user | 403; 409 "You have already reported this note" | | |
 | ENG-TC10 | Bookmark, list and remove | save P, GET /api/bookmarks, remove P | P listed newest first; removed after DELETE | | |
-| ENG-TC11 | Feed paging and item shape | 12 published notes; one liked, bookmarked, commented and verified | Page 1 has 10 newest first with nextPage 2; counts, liked, bookmarked, verified and slides present; page 2 has 2 and nextPage null | | |
+| ENG-TC11 | Feed paging and item shape | 12 published notes; one liked, bookmarked, commented and verified | Page 1 has 10 ordered by score (ties newest first) with nextPage 2; counts, liked, bookmarked, verified and slides present; page 2 has 2 and nextPage null | | |
 | ENG-TC12 | View logging window | POST view twice, then after 31 minutes; view of a contacts-only note by a non-contact | One "view" interaction for the first two, a second after 31 minutes; 404 for the invisible note | | |
 | ENG-TC13 | Engagement on invisible note; restricted user | like, comment, bookmark a contacts-only note and a draft; restricted user likes | 404 for each, and for liking or listing comments on the invisible note; its author can still delete their comment; 403 for the restricted like; restricted user can still read comments | | |
 | ENG-TC14 | Replies and comment likes | two replies under one comment; comment liked twice, then unliked | Replies listed oldest first; second like leaves count 1; unlike gives 0 | | |

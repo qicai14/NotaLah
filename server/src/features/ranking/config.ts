@@ -6,6 +6,8 @@ export const RANKING = Object.freeze({
     lecturerValidation: 0.3, // w3
     relevance: 0.15, // w4
   }),
+  /** Raw engagement = likes + commentEngagementWeight × comments (IR 2.3.4.2). */
+  commentEngagementWeight: 2,
   engagementCap: 100,
   recencyHalfLifeHours: 72,
   interestHalfLifeDays: 14,
@@ -13,7 +15,7 @@ export const RANKING = Object.freeze({
   interactionWeights: Object.freeze({ view: 1, like: 3, comment: 5 }),
   /** Interactions older than this add nothing to the interest vector (0.5^(90/14) is below 1.2 %). */
   interestWindowDays: 90,
-  /** Most recent published notes scored per feed request; older ones are not ranked (D24). */
+  /** Most recent published notes scored per feed request; older notes are scored only if verified (D24). */
   candidateLimit: 500,
 });
 

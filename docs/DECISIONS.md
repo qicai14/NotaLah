@@ -301,15 +301,19 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   pure functions in `ranking/service.ts`, sorts by score desc (ties: `published_at` desc, id desc) and slices the page.
   Four queries per request: the `asOf` cutoff, candidates and interactions (run in parallel), then the full notes for the
   page only, so slide HTML is never loaded for the whole candidate set. The `FEED_ORDER` constant is gone.
-- **Candidate window:** the 500 most recent visible published notes at or before `asOf` (`candidateLimit` in config).
-  With a 72 h recency half-life an older note needs very high E and V to matter, and 500 covers weeks of faculty-scale
-  posting; a count cap was chosen over a 60-day cap because it bounds the scoring work whatever the posting rate.
+- **Candidate window:** the 500 most recent visible published notes at or before `asOf` (`candidateLimit` in config),
+  plus every visible published note with a valid Super Like, so verified notes stay reachable however old (RANK-TC14).
+  A count cap bounds the scoring work whatever the posting rate; with a 72 h recency half-life an old unverified note
+  rarely outranks newer ones. Known limit (a `shortcut:` comment in `ranking/repository.ts`): an unverified note older
+  than the newest 500 is never ranked, however much engagement it has; widen the window if UAT shows misses.
+- **Engagement:** the comment multiplier is `commentEngagementWeight` (2) in config, not inlined.
 - **Interest vector:** view 1, like 3, comment 5 (config `interactionWeights`; the IR fixes only the order), decayed by
   0.5^(ageDays / 14) against `asOf`, summed per hashtag of the interacted post (its current hashtags), normalised to max 1.
   Interactions older than 90 days (`interestWindowDays`, weight below 1.2 %) or after `asOf` are ignored. No history gives
   M = 0 for every note.
-- **Validation:** `verified` (shared `ENGAGEMENT_COLS`, so the feed and note detail agree) now counts only a Super Like by
-  an approved lecturer whose account is active; a suspended or deleted lecturer's past Super Likes stop counting. V = 0.5
+- **Validation:** `verified` (one `VERIFIED` fragment used by `ENGAGEMENT_COLS` and the candidate query, so the feed and
+  note detail agree) counts only a Super Like by an approved lecturer whose account is active or restricted; a restricted
+  lecturer keeps their past endorsements, while a suspended or deleted lecturer's Super Likes stop counting. V = 0.5
   uses the existing author flag (approved lecturer, any account status), as the IR ties it to authorship.
 - **Response:** each feed item adds `score` and `components {E, R, V, M}` (unrounded) for the "why am I seeing this" panel
   and UAT/NFR5 analysis. Shape and the `asOf` contract are otherwise unchanged; `nextPage` comes from the ranked length.

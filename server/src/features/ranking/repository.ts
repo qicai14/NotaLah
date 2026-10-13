@@ -1,6 +1,6 @@
 import { pool } from '../../lib/pool';
 import { approvedLecturer } from '../users/repository';
-import { ENGAGEMENT_COLS, HASHTAGS_COL, VISIBLE } from '../notes/repository';
+import { ENGAGEMENT_COLS, HASHTAGS_COL, VERIFIED, VISIBLE } from '../notes/repository';
 import { RANKING } from './config';
 import type { Candidate, InteractionRow } from './service';
 
@@ -9,18 +9,23 @@ export interface CandidateRow extends Candidate {
 }
 
 /**
- * The most recent `candidateLimit` published notes the viewer may see, published at or before asOf,
+ * Published notes the viewer may see, published at or before asOf: the newest `limit` plus every verified one,
  * with only what scoring needs; the page's full notes are loaded afterwards (D24).
  */
-export async function getCandidates(viewerId: number, asOf: Date): Promise<CandidateRow[]> {
+// shortcut: an unverified note older than the newest `limit` is never ranked, however popular; widen if UAT shows misses.
+export async function getCandidates(viewerId: number, asOf: Date, limit: number = RANKING.candidateLimit): Promise<CandidateRow[]> {
   const { rows } = await pool.query<CandidateRow>(
-    `SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", ${HASHTAGS_COL},
+    `WITH newest AS (
+       SELECT p.pst_id FROM "POST_T" p
+       WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
+       ORDER BY p.pst_published_at DESC, p.pst_id DESC
+       LIMIT $3)
+     SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", ${HASHTAGS_COL},
             ${approvedLecturer('u')} AS "lecturerAuthor", ${ENGAGEMENT_COLS}
      FROM "POST_T" p JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
-     ORDER BY p.pst_published_at DESC, p.pst_id DESC
-     LIMIT $3`,
-    [viewerId, asOf, RANKING.candidateLimit],
+       AND (p.pst_id IN (SELECT pst_id FROM newest) OR ${VERIFIED})`,
+    [viewerId, asOf, limit],
   );
   return rows;
 }

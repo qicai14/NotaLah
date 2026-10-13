@@ -43,7 +43,8 @@ describe('ranking components', () => {
       { E: 1.0, R: 0.099, V: 0.0, M: 0.071, S: 0.336 },
       { E: 0.0, R: 0.99, V: 0.0, M: 0.0, S: 0.248 },
     ];
-    const scores = posts.map(({ S: _, ...c }) => score(c));
+    const irWeights = { engagement: 0.3, recency: 0.25, lecturerValidation: 0.3, relevance: 0.15 }; // IR 2.3.4.7
+    const scores = posts.map(({ S: _, ...c }) => score(c, irWeights));
     posts.forEach((p, i) => expect(Math.abs(scores[i] - p.S)).toBeLessThanOrEqual(0.002));
     expect([...scores].sort((a, b) => b - a)).toEqual(scores);
   });
@@ -65,9 +66,10 @@ describe('ranking config', () => {
 
   it('RANK-TC8: changed weights change the score without code change', () => {
     const c = { E: 0.5, R: 0.5, V: 1, M: 0.5 };
-    const tuned = { ...RANKING.weights, lecturerValidation: 0.4, engagement: 0.2 };
+    const w = RANKING.weights;
+    const tuned = { ...w, lecturerValidation: 0.4, engagement: 0.2, recency: 0.25, relevance: 0.15 };
     expect(() => assertWeightsSumToOne(tuned)).not.toThrow();
-    expect(score(c)).toBeCloseTo(0.3 * 0.5 + 0.25 * 0.5 + 0.3 + 0.15 * 0.5, 9);
+    expect(score(c)).toBeCloseTo(w.engagement * 0.5 + w.recency * 0.5 + w.lecturerValidation + w.relevance * 0.5, 9);
     expect(score(c, tuned)).toBeCloseTo(0.2 * 0.5 + 0.25 * 0.5 + 0.4 + 0.15 * 0.5, 9);
   });
 });

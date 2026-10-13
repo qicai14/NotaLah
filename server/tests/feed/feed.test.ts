@@ -63,7 +63,7 @@ describe('Feed', () => {
     }
   });
 
-  it('ENG-TC11: feed pages newest first, 10 per page, with counts, flags and slides', async () => {
+  it('ENG-TC11: feed pages ordered by score (ties newest first), 10 per page, with counts, flags and slides', async () => {
     const author = await insertUser();
     const viewer = await insertUser();
     const ids: number[] = [];
