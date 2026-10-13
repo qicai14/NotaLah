@@ -15,6 +15,8 @@ interface AuthValue {
   user: User | null;
   login(email: string, password: string): Promise<User>;
   logout(): void;
+  /** Replaces the stored user (after a profile edit) without touching the token. */
+  setUser(user: User): void;
   register(input: RegisterInput): Promise<User>;
 }
 
@@ -48,6 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     logout() {
       update(null);
+    },
+    setUser(next) {
+      const current = loadSession();
+      if (current) update({ token: current.token, user: next });
     },
     async register(input) {
       const { user } = await api<{ user: User }>('/auth/register', { method: 'POST', body: input });

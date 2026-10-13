@@ -264,3 +264,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** a migration for a view-dedupe index (rejected: the task forbade new schema unless needed and the
   window check is cheap); a separate counts table (rejected: counts are aggregated at read time at this scale).
 - **Reversibility:** Easy.
+
+## D23 — Sprint 2 client choices (task 2C)
+- **TipTap 3.31.3** (`@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`) pinned exactly: 3.31.4 was under two weeks old. npm
+  also resolved the optional bubble/floating-menu peers to 3.31.4, so those two plus `@tiptap/core` are pinned to 3.31.3 as well.
+- **Allow-list:** StarterKit v3 ships Underline, Link, ListKeymap and TrailingNode; all four are disabled so the editor can only
+  emit the server's allow-list (D20). The toolbar has one button per allowed node/mark.
+- **Published notes:** the editor offers only Public and Contacts only when editing a published note (the server rejects
+  publish-to-draft, D21), and shows "Update" instead of Save Draft. New notes and drafts get the three equal options (FR10).
+- **"Verified by":** the feed returns only a `verified` flag, not the verifier, so the card says "Verified by a lecturer".
+  Naming the lecturer needs an API change (Sprint 3 Super Like work).
+- **Note detail** shows slides, hashtags and comments but no like/save buttons: `GET /api/notes/:id` carries no like or
+  bookmark state, and guessing it would show wrong toggles. Engagement toggles live on feed cards and the detail page links back.
+- **Templates:** plain, lecture, revision, howto (server accepts any string up to 30 characters).
+- **Own profile** loads via `GET /api/users/:id` with the caller's id because `/auth/me` has no bio; the auth user is refreshed
+  from the `PUT /api/users/me` response through a new `setUser` on the auth context.
+- **Delete confirmations** (drafts, own comments) use an inline "Are you sure?" button pair, not `window.confirm`.
+- **Feed card views:** logged after 1 s at >=50 % visibility, guarded by a ref (once per card per mount).
+- **Reversibility:** Easy.

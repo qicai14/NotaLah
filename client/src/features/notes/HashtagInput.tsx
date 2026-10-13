@@ -1,0 +1,69 @@
+import { type KeyboardEvent, useState } from 'react';
+
+export const MAX_HASHTAGS = 5; // mirrors server/src/features/notes/service.ts
+const VALID = /^[a-z0-9_]{1,50}$/;
+
+/** Chip input: Enter or comma adds a tag, '#' is stripped, tags are lowercased and unique. */
+export function HashtagInput({ value, onChange, error }: { value: string[]; onChange(v: string[]): void; error?: string }) {
+  const [text, setText] = useState('');
+  const [local, setLocal] = useState<string | null>(null);
+
+  function commit(raw: string) {
+    let next = value;
+    let err: string | null = null;
+    for (const part of raw.split(',')) {
+      const name = part.trim().replace(/^#+/, '').toLowerCase();
+      if (!name || next.includes(name)) continue;
+      if (!VALID.test(name)) err = `"${name.slice(0, 20)}" is not valid: use letters, numbers and underscores (max 50)`;
+      else if (next.length >= MAX_HASHTAGS) err = `Maximum ${MAX_HASHTAGS} hashtags`;
+      else next = [...next, name];
+    }
+    setLocal(err);
+    if (next !== value) onChange(next);
+    if (!err) setText('');
+  }
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      commit(text);
+    } else if (e.key === 'Backspace' && !text && value.length) onChange(value.slice(0, -1));
+  }
+
+  const shown = local ?? error;
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor="hashtag-input" className="text-sm font-medium">
+        Hashtags ({value.length}/{MAX_HASHTAGS})
+      </label>
+      <div className={`flex flex-wrap items-center gap-2 rounded-md border bg-white px-2 py-1.5 ${shown ? 'border-red-500' : 'border-slate-300'}`}>
+        {value.map((t) => (
+          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-sm text-indigo-800">
+            #{t}
+            <button type="button" aria-label={`Remove hashtag ${t}`} onClick={() => onChange(value.filter((x) => x !== t))}>
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          id="hashtag-input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={onKeyDown}
+          onBlur={() => text && commit(text)}
+          aria-invalid={shown ? true : undefined}
+          aria-describedby="hashtag-hint"
+          className="min-w-24 flex-1 outline-none"
+        />
+      </div>
+      <p id="hashtag-hint" className="text-xs text-slate-500">
+        Press Enter or comma to add. At least one is needed to publish.
+      </p>
+      {shown && (
+        <p role="alert" className="text-sm text-red-600">
+          {shown}
+        </p>
+      )}
+    </div>
+  );
+}
