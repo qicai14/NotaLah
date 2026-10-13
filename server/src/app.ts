@@ -6,6 +6,8 @@ import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { authRouter } from './features/auth/routes';
 import { healthRouter } from './lib/health';
+import { modulesRouter, notesRouter } from './features/notes/routes';
+import { usersRouter } from './features/users/routes';
 
 export const app = express();
 
@@ -20,6 +22,9 @@ app.use(passport.initialize());
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/modules', modulesRouter);
+app.use('/api/notes', notesRouter);
+app.use('/api/users', usersRouter);
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

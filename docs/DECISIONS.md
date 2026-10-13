@@ -214,3 +214,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** Markdown slides (rejected: FR8 asks for a formatting interface, and survey users are not all
   technical); Quill/Lexical (TipTap has the smallest React integration for this feature set).
 - **Reversibility:** Medium for the editor (stored HTML), easy for the rest.
+
+## D21 — Notes and profile API rules (Sprint 2, task 2A)
+- **Limits:** at most 30 slides per note and 20 000 characters per slide after sanitising; at most 5 hashtags
+  (enforced for drafts too, since the link table is the same). A title is always required, even for drafts.
+- **Sanitising:** `sanitize-html` 2.17.6 with the TipTap StarterKit allow-list and no attributes; `b`, `i`,
+  `strike`, `del` are rewritten to `strong`, `em`, `s` so pasted formatting survives (NOTE-TC10).
+- **Publishing:** empty slides are dropped when publishing (at least one non-empty slide required); visibility is
+  required to publish; a published note cannot be changed back to a draft (400).
+- **Access:** PUT/DELETE on a note the caller cannot see (another user's draft, contacts-only) return 404 so
+  existence is not revealed; on a note they can see but do not own they return 403 (NOTE-TC9). A moderator-hidden
+  note cannot be edited by its author (403). Restricted users are blocked from POST and PUT only (`requireActive`);
+  they can still delete their own notes. DELETE is a soft delete (status 'deleted').
+- **Verified lecturer:** `isVerifiedLecturer` is true when role is lecturer and lecturer status is approved.
+- **Profiles:** `PUT /api/users/me` returns the updated user in the same shape as `/api/auth/me`; empty
+  programme/bio are stored as NULL; avatar upload is out of scope for now. Deleted accounts return 404.
+- **Alternatives:** returning 403 for every non-owner (rejected: leaks drafts' existence); allowing publish-to-draft
+  (rejected: would pull a note out of feeds others already saw).
+- **Reversibility:** Easy.

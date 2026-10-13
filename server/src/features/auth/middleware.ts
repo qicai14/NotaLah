@@ -19,3 +19,11 @@ export function requireRole(...roles: Role[]): RequestHandler {
     next();
   };
 }
+
+/** Use after requireAuth. Restricted accounts may read but not create or edit content (UC21). */
+export const requireActive: RequestHandler = (req, res, next) => {
+  if (req.user?.status !== 'active') {
+    return res.status(403).json({ error: 'Your account is restricted and cannot perform this action' });
+  }
+  next();
+};

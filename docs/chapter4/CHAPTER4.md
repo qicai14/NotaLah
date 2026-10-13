@@ -747,8 +747,27 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC8 | Edit own published note | change title and reorder slides 1 and 2 | 200; new title and order stored; updated time changes | | |
 | NOTE-TC9 | Edit or delete another user's note | user B sends PUT and DELETE on user A's note | 403 for both; note unchanged | | |
 | NOTE-TC10 | Slide content containing script | slide content `<script>alert(1)</script><b>ok</b>` | Stored and returned with the script removed and formatting kept | | |
+| NOTE-TC11 | Slide with attributes, links and images | `<p onclick=.. style=..>` with `<a href="javascript:..">` and `<img onerror=..>` | Attributes, link and image removed; text kept | | |
+| NOTE-TC12 | Save draft with blank title | title "   ", status draft | 400 "Title is required" | | |
+| NOTE-TC13 | Save note with 31 slides | 31 slides | 400 "Maximum 30 slides" | | |
+| NOTE-TC14 | Publish with a module that does not exist | moduleId 99999 | 400 "Module not found" | | |
+| NOTE-TC15 | Restricted user creates or edits a note | account status restricted; POST and PUT | 403 for both | | |
+| NOTE-TC16 | Change a published note back to draft | PUT status draft on a published note | 400 "A published note cannot be changed back to a draft" | | |
+| NOTE-TC17 | Author deletes own note | DELETE own published note | 204; status deleted in database; GET returns 404 | | |
+| NOTE-TC18 | Publish a saved draft | PUT status published on an existing draft | 200; same note (no new row); published time set | | |
+| NOTE-TC19 | Module list and missing token | GET /api/modules with and without token; POST /api/notes without token | 200 with module catalogue; 401; 401 | | |
 
-*Table 4.26: Ranking and feed module test cases (RANK)*
+*Table 4.26: User profile module test cases (USR)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| USR-TC1 | Update profile with blank display name | displayName "  " | 400 "Display name is required" | | |
+| USR-TC2 | Update profile with a bio that is too long | bio of 301 characters | 400 "Bio must be at most 300 characters" | | |
+| USR-TC3 | Update profile with valid details | displayName "Ann Lee", programme, bio "Hello" | 200; values stored and shown on the profile | | |
+| USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, contact, owner | Stranger sees the public note only; contact also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
+| USR-TC5 | View unknown user or without token | user 99999; no Authorization header | 404; 401 | | |
+
+*Table 4.27: Ranking and feed module test cases (RANK)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -763,7 +782,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-contact | Only published, permitted posts returned | | |
 | RANK-TC10 | Feed request without token and with invalid page | no token; page = -1 | 401; 400 "Invalid page" | | |
 
-*Table 4.27: Engagement module test cases (ENG)*
+*Table 4.28: Engagement module test cases (ENG)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -778,7 +797,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC9 | Student selects lecturer-only reason; duplicate open report | student reason plagiarism; second report by same user | 403; 409 "You have already reported this note" | | |
 | ENG-TC10 | Bookmark, list and remove | save P, GET /api/bookmarks, remove P | P listed newest first; removed after DELETE | | |
 
-*Table 4.28: Lecturer verification module test cases (VER)*
+*Table 4.29: Lecturer verification module test cases (VER)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -793,7 +812,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | VER-TC9 | Verified post gains V in ranking | P before and after VER-TC7 | V changes 0.0 → 1.0; P ranks above an otherwise identical unverified post | | |
 | VER-TC10 | Withdraw Super Like | lecturer L removes verification on P | 200; V returns to 0.0; verified frame removed | | |
 
-*Table 4.29: Search module test cases (SRCH)*
+*Table 4.30: Search module test cases (SRCH)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -808,7 +827,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | SRCH-TC9 | Date range filter, including invalid range | from 2026-10-01 to 2026-10-13; from after to | Only posts published in range; 400 "Invalid date range" | | |
 | SRCH-TC10 | Search latency (NFR1) | 10,000 seeded posts, 50 mixed queries | Every response under 3,000 ms; median and maximum recorded | | |
 
-*Table 4.30: Messaging module test cases (MSG)*
+*Table 4.31: Messaging module test cases (MSG)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -823,7 +842,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | MSG-TC9 | Create group with invalid input | name ""; one member; a non-contact member | Rejected with a message for each case | | |
 | MSG-TC10 | Create group and leave | name "FYP Team", two contacts; one member leaves | Group created with owner and members; leaver no longer receives group messages | | |
 
-*Table 4.31: Administration module test cases (ADM)*
+*Table 4.32: Administration module test cases (ADM)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -847,7 +866,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.32: UAT tester details*
+*Table 4.33: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -855,7 +874,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.33: UAT scenario tasks*
+*Table 4.34: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -874,7 +893,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.34: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.35: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -884,7 +903,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.35: UAT feedback and developer response*
+*Table 4.36: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -895,7 +914,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.36: Ranking weight re-evaluation (NFR5)*
+*Table 4.37: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

@@ -150,3 +150,37 @@ export async function decideLecturer(
     client.release();
   }
 }
+
+export interface Profile {
+  id: number;
+  displayName: string;
+  role: Role;
+  programme: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
+  isVerifiedLecturer: boolean;
+}
+
+/** Public profile fields; undefined for unknown or deleted accounts. */
+export async function findProfile(id: number): Promise<Profile | undefined> {
+  const { rows } = await pool.query<Profile>(
+    `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_role AS "role", usr_programme AS "programme",
+            usr_bio AS "bio", usr_avatar_url AS "avatarUrl",
+            (usr_role = 'lecturer' AND usr_lecturer_status = 'approved') AS "isVerifiedLecturer"
+     FROM "USER_T" WHERE usr_id = $1 AND usr_status <> 'deleted'`,
+    [id],
+  );
+  return rows[0];
+}
+
+export async function updateProfile(
+  id: number,
+  p: { displayName: string; programme: string | null; bio: string | null },
+): Promise<AuthUser> {
+  const { rows } = await pool.query<UserRow>(
+    `UPDATE "USER_T" SET usr_display_name = $2, usr_programme = $3, usr_bio = $4
+     WHERE usr_id = $1 RETURNING ${USER_COLUMNS}`,
+    [id, p.displayName, p.programme, p.bio],
+  );
+  return toAuthUser(rows[0]);
+}
