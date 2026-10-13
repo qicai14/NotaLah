@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
 import { inTransaction, pool } from '../../lib/pool';
-import { approvedLecturer } from '../users/repository';
+import { approvedLecturer, countingLecturer } from '../users/repository';
 import type { NoteInput } from './service';
 
 export interface ModuleRow {
@@ -23,8 +23,9 @@ export async function moduleExists(id: number): Promise<boolean> {
   return rowCount === 1;
 }
 
-/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
-export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published' AND
+/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
+export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
+    AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND
     (p.pst_visibility = 'public' OR EXISTS (SELECT 1 FROM "CONTACT_T" c
        WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
           OR (c.con_usr_id = $1 AND c.con_contact_id = p.pst_usr_id))))))`;
@@ -68,23 +69,23 @@ export const NOTE_FROM = `
   JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
   LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id`;
 
-/** Super Likes of note p that count: by an approved lecturer whose account is active or restricted (D24). */
-const VALID_VERIFICATIONS = `FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id
-                    WHERE v.ver_pst_id = p.pst_id AND ${approvedLecturer('vu')} AND vu.usr_status IN ('active', 'restricted')`;
+/** Super Likes that count (alias v): by an approved lecturer whose account is active or restricted (D24). Ends in a WHERE clause, so callers append AND conditions. */
+export const VALID_VERIFICATIONS = `FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id WHERE ${countingLecturer('vu')}`;
 
 /** True when the note (alias p) has at least one valid Super Like. */
-export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS})`;
+export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id)`;
 
 /** Display name of the earliest valid verifier of note p, or NULL (FR2 "Verified by"). */
-export const VERIFIED_BY = `(SELECT vu.usr_display_name ${VALID_VERIFICATIONS} ORDER BY v.ver_created_at, v.ver_id LIMIT 1)`;
+export const VERIFIED_BY = `(SELECT vu.usr_display_name ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id ORDER BY v.ver_created_at, v.ver_id LIMIT 1)`;
 
-/** Like and comment counts of note p (the author's own comments are not counted, D22); also used by ranking candidates. */
-export const COUNTS_COL = `json_build_object(
-              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
-              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted AND cmt_usr_id <> p.pst_usr_id)) AS "counts"`;
+/** Like and comment counts of note p (the author's own comments are not counted, D22); with `asOf` (an SQL expression), only rows created by then, for the ranking snapshot (D24). */
+export const countsCol = (asOf?: string) => `json_build_object(
+              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id${asOf ? ` AND lik_created_at <= ${asOf}` : ''}),
+              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted
+                           AND cmt_usr_id <> p.pst_usr_id${asOf ? ` AND cmt_created_at <= ${asOf}` : ''})) AS "counts"`;
 
 /** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; `verified`/`verifiedBy` per VERIFIED, `verifiedByMe` = the viewer's own Super Like) shared by the feed and the note detail so the counts exist once. */
-export const ENGAGEMENT_COLS = `${COUNTS_COL},
+export const ENGAGEMENT_COLS = `${countsCol()},
             EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
             EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
             ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy",

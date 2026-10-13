@@ -7,8 +7,9 @@ Heuristic feed ranking (IR 2.3.4): S = w1·E + w2·R + w3·V + w4·M, scored in 
   the 500-note candidate limit. `assertWeightsSumToOne` runs at server start-up.
 - `service.ts`: pure functions `engagement`, `recency`, `validation`, `relevance`, `score`, `buildInterestVector`,
   plus `scoreCandidate` that applies them to one note against the feed's `asOf`.
-- `repository.ts`: `getCandidates` (most recent visible published notes at or before `asOf`, with counts, verified
-  and lecturer-author flags and hashtags; reuses the notes SQL fragments) and `getInteractionRows` (the viewer's
+- `repository.ts`: `getCandidates` (the newest visible published notes at or before `asOf` united with every note
+  verified by then, with counts and verified as of `asOf`, the lecturer-author flag and hashtags; reuses the notes SQL
+  fragments) and `getInteractionRows` (the viewer's
   interactions joined to post hashtags inside the interest window).
 
 The feed (`feed/repository.ts` `getFeedPage`) runs four queries per request: the `asOf` cutoff, candidates and

@@ -303,23 +303,35 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   page only, so slide HTML is never loaded for the whole candidate set. The `FEED_ORDER` constant is gone.
 - **Candidate window:** the 500 most recent visible published notes at or before `asOf` (`candidateLimit` in config),
   plus every visible published note with a valid Super Like, so verified notes stay reachable however old (RANK-TC14).
+  The two sets are a `UNION` of the newest-N CTE and a CTE driven from `"VERIFICATION_T"` (valid Super Likes made by
+  `asOf`), filtered once for visibility, so the per-note verified `EXISTS` is no longer evaluated for every note
+  (Sprint 3 review).
   A count cap bounds the scoring work whatever the posting rate; with a 72 h recency half-life an old unverified note
   rarely outranks newer ones. Known limit (a `shortcut:` comment in `ranking/repository.ts`): an unverified note older
   than the newest 500 is never ranked, however much engagement it has; widen the window if UAT shows misses.
 - **Engagement:** the comment multiplier is `commentEngagementWeight` (2) in config, not inlined.
 - **Interest vector:** view 1, like 3, comment 5 (config `interactionWeights`; the IR fixes only the order), decayed by
   0.5^(ageDays / 14) against `asOf`, summed per hashtag of the interacted post (its current hashtags), normalised to max 1.
+  Known effect, kept because IR §2.3.4.5 defines it: normalising to the maximum makes the strongest interest 1.0 however
+  weak it is in absolute terms, so a viewer whose only history is one view 80 days ago gets M = 1.0 for that hashtag,
+  the same as a daily commenter. Recorded as an NFR5/UAT check (does a near-empty history over-steer the feed?); the
+  fix, if UAT shows one is needed, is a floor or absolute scale in config, not a formula change.
   Interactions older than 90 days (`interestWindowDays`, weight below 1.2 %) or after `asOf` are ignored. No history gives
   M = 0 for every note.
 - **Validation:** `verified` (one `VERIFIED` fragment used by `ENGAGEMENT_COLS` and the candidate query, so the feed and
   note detail agree) counts only a Super Like by an approved lecturer whose account is active or restricted; a restricted
   lecturer keeps their past endorsements, while a suspended or deleted lecturer's Super Likes stop counting. V = 0.5
-  uses the existing author flag (approved lecturer, any account status), as the IR ties it to authorship.
+  (lecturer author) uses the same rule through the shared `countingLecturer` fragment (approved lecturer, account
+  active or restricted; RANK-TC16), so a suspended lecturer's own notes lose the bonus too (Sprint 3 review; it was
+  any account status before).
 - **Response:** each feed item adds `score` and `components {E, R, V, M}` (unrounded) for the "why am I seeing this" panel
   and UAT/NFR5 analysis. Shape and the `asOf` contract are otherwise unchanged; `nextPage` comes from the ranked length.
-- **Paging:** `asOf` freezes the candidate set and recency, so pages are stable; a like or comment added between page
-  requests can move a note across a page boundary (accepted; the client already drops ids it has shown, D22). A note
-  hidden or deleted between the two queries is dropped from that page.
+- **Paging:** `asOf` freezes the candidate set, recency and the scored engagement: likes, comments and Super Likes
+  count only when created at or before `asOf` (`lik_created_at`, `cmt_created_at`, `ver_created_at`), so one `asOf`
+  gives one ranking and pages can neither skip nor repeat a note when engagement lands between requests (RANK-TC15;
+  Sprint 3 review, replacing the earlier "accepted" reorder). The counts shown on each item stay live, because they are
+  displayed, not ranked. Still not frozen: an unlike, a deleted comment, a note hidden or deleted, a verifier or author
+  suspended between requests (no removal timestamps); such a note can shift or drop from a later page.
 - **Refactor:** the hashtag-list subquery repeated three times in `notes/repository.ts` is now one `HASHTAGS_COL` fragment.
 - **Alternatives:** scoring in SQL (rejected: the components would not be separately testable, Chapter 4 sequence text);
   storing scores (rejected: stale as soon as a like or verification lands); loading full notes for all candidates
@@ -358,6 +370,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   in `ENGAGEMENT_COLS` (feed, detail, ranking candidates) and `verifiedBy` is in `SUMMARY_COLS` (saved list, profile
   lists), so every list shows the same name.
 - **Report resolution:** per note, not per report: one remark resolves every open report on it; 404 when it has none.
+  Open reports on a note its author deleted are excluded from the queue and resolving them returns 404 (ADM-TC19); they
+  stay `open` in `"REPORT_T"` rather than being auto-dismissed, because no administrator decided them and the row keeps
+  the history (Sprint 3 review).
   Hide only flips a published note to hidden (a deleted note stays deleted). The queue returns the full note so the
   review panel can preview a contacts-only note the admin cannot open through `GET /api/notes/:id`. UC20 step 5
   "notifies the author" is not implemented: there is no notification channel until messaging (Sprint 4).
@@ -368,6 +383,12 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `deleted-<id>@invalid`, clears bio, avatar and staff ID, hides published notes and leaves drafts; the password hash
   stays (login is already refused for deleted accounts, D17). No migration: `"ACCOUNT_ACTION_T"` and `"REPORT_T"`
   already had the columns.
+- **Suspension and content:** `VISIBLE` now also requires the author's account to be active or restricted for every
+  viewer except the author, so a suspension takes the user's notes out of the feed, note detail, profile lists, saved
+  list, comments and engagement routes until reinstated, with no change to the notes themselves (ADM-TC20; Sprint 3
+  review). Restricted authors stay visible (restriction limits posting, not past content). The report queue does not
+  use `VISIBLE`, so reported notes of a suspended author can still be reviewed. No existing test relied on a suspended
+  author's notes staying visible, so none was changed.
 - **Tests:** the `lecturerOnlyApp` stand-in was removed; AUTH-TC7 and ADM-TC9/10 now call the real Super Like route.
   `insertNote` moved to `tests/helpers.ts`.
 - **Review fixes (3B):** delete also clears programme and lecturer status, and `approvedLecturer` is now NULL-safe

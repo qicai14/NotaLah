@@ -306,4 +306,30 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     expect((await act(author, 'reinstate', { reason: 'x' })).status).toBe(409);
     expect((await actions()).map((a) => a.aac_action)).toEqual(['delete', 'delete']);
   });
+
+  it('ADM-TC19: open reports on a note its author deleted leave the queue and cannot be resolved', async () => {
+    await report(note);
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'deleted' WHERE pst_id = $1`, [note]);
+    expect((await request(app).get('/api/admin/reports').set('Authorization', admin)).body.groups).toEqual([]);
+    expect((await resolve(note, { outcome: 'dismiss', remark: 'Gone' })).status).toBe(404);
+    expect((await reports())[0].rpt_status).toBe('open');
+  });
+
+  it("ADM-TC20: suspending takes the author's notes out of view for others; reinstating restores them", async () => {
+    const viewerId = await insertUser();
+    const viewer = bearer(viewerId);
+    await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2)`, [viewerId, note]);
+    const seen = async () => [
+      (await request(app).get(`/api/notes/${note}`).set('Authorization', viewer)).status,
+      (await request(app).get('/api/feed').set('Authorization', viewer)).body.items.length,
+      (await request(app).get('/api/bookmarks').set('Authorization', viewer)).body.notes.length,
+      (await request(app).get(`/api/users/${author}`).set('Authorization', viewer)).body.user.notes.length,
+    ];
+    expect(await seen()).toEqual([200, 1, 1, 1]);
+    await act(author, 'suspend', { reason: 'Spam' });
+    expect(await seen()).toEqual([404, 0, 0, 0]);
+    expect((await request(app).get('/api/admin/reports').set('Authorization', admin)).status).toBe(200);
+    await act(author, 'reinstate', { reason: 'Appeal accepted' });
+    expect(await seen()).toEqual([200, 1, 1, 1]);
+  });
 });

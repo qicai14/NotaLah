@@ -154,6 +154,9 @@ export interface Profile {
 export const approvedLecturer = (alias: string) =>
   `(${alias}.usr_role = 'lecturer' AND COALESCE(${alias}.usr_lecturer_status = 'approved', FALSE))`;
 
+/** An approved lecturer whose account is active or restricted: who earns V in the ranking, as verifier or author (D24). */
+export const countingLecturer = (alias: string) => `(${approvedLecturer(alias)} AND ${alias}.usr_status IN ('active', 'restricted'))`;
+
 /** True for a lecturer account whose registration an admin approved (D21). */
 export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>
   u.role === 'lecturer' && u.lecturerStatus === 'approved';

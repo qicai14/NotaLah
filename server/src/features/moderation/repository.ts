@@ -11,7 +11,7 @@ export interface ReportGroup extends Note {
   reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: Date }[];
 }
 
-/** Open reports grouped by note, the note with the oldest open report first. */
+/** Open reports grouped by note, the note with the oldest open report first; a note its author deleted drops out (D26). */
 export async function listOpenReports(): Promise<ReportGroup[]> {
   const { rows } = await pool.query<ReportGroup>(
     `WITH g AS (
@@ -24,6 +24,7 @@ export async function listOpenReports(): Promise<ReportGroup[]> {
        GROUP BY r.rpt_pst_id)
      SELECT ${NOTE_COLS}, g.n AS "reportCount", g.oldest AS "oldestReportAt", g.reports AS "reports"
      ${NOTE_FROM} JOIN g ON g.rpt_pst_id = p.pst_id
+     WHERE p.pst_status <> 'deleted'
      ORDER BY g.oldest, p.pst_id`,
   );
   return rows;
@@ -31,14 +32,15 @@ export async function listOpenReports(): Promise<ReportGroup[]> {
 
 /**
  * Resolves every open report on the note in one transaction: 'dismiss' marks them dismissed, 'hide' marks them upheld
- * and hides the note if it is published. Returns the number resolved (0 = the note had no open reports).
+ * and hides the note if it is published. Returns the number resolved (0 = the note had no open reports or was deleted).
  */
 export async function resolveReports(noteId: number, adminId: number, outcome: 'dismiss' | 'hide', remark: string): Promise<number> {
   return inTransaction(async (client) => {
     const { rowCount } = await client.query(
       `UPDATE "REPORT_T"
        SET rpt_status = $2, rpt_resolved_by = $3, rpt_remark = $4, rpt_resolved_at = NOW()
-       WHERE rpt_pst_id = $1 AND rpt_status = 'open'`,
+       WHERE rpt_pst_id = $1 AND rpt_status = 'open'
+         AND EXISTS (SELECT 1 FROM "POST_T" WHERE pst_id = $1 AND pst_status <> 'deleted')`,
       [noteId, outcome === 'hide' ? 'upheld' : 'dismissed', adminId, remark],
     );
     if (rowCount && outcome === 'hide') {

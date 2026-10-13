@@ -797,6 +797,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC12 | Interest vector weighting, decay and normalisation | viewer view, like and comment today on #viewed, #liked, #commented; comment 14 days ago on #older; comment 91 days ago on #ancient | #commented 1.0, #liked 0.6, #viewed 0.2, #older 0.5, #ancient absent; maximum weight 1.0; no history gives an empty vector | | |
 | RANK-TC13 | Verified, relevant note surfaced ahead of popular irrelevant note (NFR3) | viewer interested in #sql; verified #sql note 24 h old with no likes; unverified #art note with 10 likes | #sql note ranked above the #art note although its E is lower | | |
 | RANK-TC14 | Old verified note stays a candidate | candidate window 2; two recent notes, an older unverified note and a still older verified note | Candidates are the two recent notes and the verified note; the older unverified note is excluded | | |
+| RANK-TC15 | Ranking snapshot stable across pages | 20 notes; page 1 and page 2 fetched with the returned asOf; then 20 likes and a Super Like added to the last note of page 2; page 2 fetched again with the same asOf | Page 2 lists the same notes with the same components; the shown like count is 20 (live); a feed with a fresh asOf moves that note onto page 1 | | |
+| RANK-TC16 | Lecturer-author bonus follows account status | notes by an approved lecturer who is active, one who is restricted and one who is suspended | Active and restricted authors' notes have the lecturer-author flag (V = 0.5); the suspended author's note is not a candidate for others and, for the author, has no flag | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
@@ -889,6 +891,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC16 | Report queue grouping and resolve validation | 2 open reports on P (older), 1 on Q, 1 dismissed on R; outcome "archive"; remark of 301 characters | P then Q listed with counts 2 and 1 and their reasons; R not listed; 400 for the bad outcome and the long remark | | |
 | ADM-TC17 | Search users and reinstate | search "author" after one upheld report; suspend then reinstate; unknown action; unknown user | Author listed with role, status and upheld count 1; reinstated user can use the feed again; 404; 404 | | |
 | ADM-TC18 | Delete account | delete student S who has a published note and a draft; then reinstate S | S anonymised ("Deleted user", deleted-id@invalid), published note hidden, draft untouched, token 401; reinstate returns 409 | | |
+| ADM-TC19 | Reports on a deleted note | open report on note P; P's author deletes it; admin resolves P with outcome dismiss | P not in the report queue; resolve returns 404; the report stays open | | |
+| ADM-TC20 | Suspension withdraws the author's content | viewer has bookmarked author A's public note P; admin suspends A, then reinstates A | While suspended: GET P 404, P absent from feed, saved list and A's profile; the report queue still loads. After reinstatement P is visible in all four again | | |
 
 ## 4.5.2 User Acceptance Testing
 

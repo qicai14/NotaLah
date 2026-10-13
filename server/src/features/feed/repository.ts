@@ -14,8 +14,8 @@ export type FeedItem = NoteWithEngagement & { score: number; components: Compone
 
 /**
  * One page of the ranked feed (page is 1-based). Candidates are scored in the app and sorted by score, then
- * newest, then id (IR 2.3.4, D24). `asOf` freezes both the candidate set and recency, so pages stay stable;
- * engagement added between page requests can still reorder notes (accepted, D24).
+ * newest, then id (IR 2.3.4, D24). `asOf` freezes the candidate set, recency and the engagement that is scored, so
+ * pages stay stable; the counts shown on each item are live (D24).
  */
 export async function getFeedPage(
   viewerId: number, page: number, asOf: Date | null,

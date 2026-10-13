@@ -118,4 +118,40 @@ describe('Ranked feed', () => {
     expect(pop.components.M).toBe(0);
     expect(items.indexOf(rel)).toBeLessThan(items.indexOf(pop));
   });
+
+  it('RANK-TC15: likes added between page 1 and page 2 do not change page-2 membership for the same asOf', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
+    const page = async (n: number, asOf?: string) =>
+      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set({ Authorization: bearer(viewer) })).body;
+    const first = await page(1);
+    const before: Item[] = (await page(2, first.asOf)).items;
+    const last = before[before.length - 1].id;
+    for (let i = 0; i < 20; i++) {
+      await pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [await insertUser(), last]);
+    }
+    await verify(last, await lecturer()); // a Super Like after asOf does not count either
+    const after: (Item & { counts: { likes: number } })[] = (await page(2, first.asOf)).items;
+    expect(after.map((i) => i.id)).toEqual(before.map((i) => i.id));
+    expect(after.find((i) => i.id === last)!.components).toEqual(before.find((i) => i.id === last)!.components);
+    expect(after.find((i) => i.id === last)!.counts.likes).toBe(20); // the displayed count is live
+    expect((await page(1)).items.map((i: Item) => i.id)).toContain(last); // a fresh asOf does rank the new likes
+  });
+
+  it('RANK-TC16: a lecturer author earns V = 0.5 only while approved and active or restricted', async () => {
+    const viewer = await insertUser();
+    const active = await lecturer();
+    const restricted = await lecturer('restricted');
+    const suspended = await lecturer('suspended');
+    const byActive = await insertNote(active, ['sql']);
+    const byRestricted = await insertNote(restricted, ['sql']);
+    const bySuspended = await insertNote(suspended, ['sql']);
+    const flags = async (uid: number) => new Map((await getCandidates(uid, new Date())).map((c) => [c.id, c.lecturerAuthor]));
+    const seen = await flags(viewer);
+    expect(seen.get(byActive)).toBe(true);
+    expect(seen.get(byRestricted)).toBe(true);
+    expect(seen.has(bySuspended)).toBe(false); // a suspended author's notes are not visible to others (ADM-TC20)
+    expect((await flags(suspended)).get(bySuspended)).toBe(false); // the author still sees it, without the lecturer bonus
+  });
 });
