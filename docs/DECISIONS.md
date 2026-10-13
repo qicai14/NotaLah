@@ -198,3 +198,19 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   more); keep `config/ranking.ts` (rejected: the ranking feature needs a home and few references existed).
 - **Why:** one agreed map so each sprint only fills folders; the folder name tells which FR and test table it serves.
 - **Reversibility:** Medium (imports touched across ~20 files).
+
+## D20 — Sprint 2 implementation choices
+- **Slide content:** each slide is HTML produced by a TipTap editor (StarterKit: headings, bold, italic,
+  lists, code blocks) and sanitised on the server with `sanitize-html` against that same allow-list before
+  it is stored (NOTE-TC10). The server never trusts client sanitising.
+- **Feed order in Sprint 2:** published, visible posts newest first. The heuristic score replaces this order in
+  Sprint 3 behind the same endpoint, so the client does not change.
+- **Search document:** `pst_search_doc` is rebuilt in SQL on every publish/edit from title, slide text (tags
+  stripped) and hashtags with `to_tsvector('english', ...)`, ready for Sprint 4 search.
+- **Interactions:** views, likes and comments are logged to `"INTERACTION_T"` from Sprint 2 so that Sprint 3's
+  interest vector has history to work with.
+- **Lecturer comment pinning (ENG-TC7)** is done now with comment ordering, not in Sprint 3, because it is one
+  ORDER BY clause and ENG-TC7 belongs to the engagement test table.
+- **Alternatives:** Markdown slides (rejected: FR8 asks for a formatting interface, and survey users are not all
+  technical); Quill/Lexical (TipTap has the smallest React integration for this feature set).
+- **Reversibility:** Medium for the editor (stored HTML), easy for the rest.
