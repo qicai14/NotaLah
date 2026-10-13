@@ -150,8 +150,9 @@ export interface Profile {
   isVerifiedLecturer: boolean;
 }
 
-/** SQL for "approved lecturer" (D21) on a USER_T alias; the one definition every query shares. */
-export const approvedLecturer = (alias: string) => `(${alias}.usr_role = 'lecturer' AND ${alias}.usr_lecturer_status = 'approved')`;
+/** SQL for "approved lecturer" (D21) on a USER_T alias; the one definition every query shares. Never NULL (a deleted lecturer has no lecturer status). */
+export const approvedLecturer = (alias: string) =>
+  `(${alias}.usr_role = 'lecturer' AND COALESCE(${alias}.usr_lecturer_status = 'approved', FALSE))`;
 
 /** True for a lecturer account whose registration an admin approved (D21). */
 export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>

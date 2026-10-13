@@ -103,10 +103,12 @@ export async function applyAccountAction(
       await client.query(
         `UPDATE "USER_T"
          SET usr_status = 'deleted', usr_display_name = 'Deleted user', usr_email = 'deleted-' || usr_id || '@invalid',
-             usr_bio = NULL, usr_avatar_url = NULL, usr_staff_id = NULL
+             usr_bio = NULL, usr_avatar_url = NULL, usr_staff_id = NULL, usr_programme = NULL, usr_lecturer_status = NULL
          WHERE usr_id = $1`,
         [userId],
       );
+      // shortcut: a note published in a concurrent request just after this UPDATE stays visible (the deleted user's token
+      // is refused from the next request); lock the user's posts first if that race ever matters.
       await client.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_usr_id = $1 AND pst_status = 'published'`, [userId]);
     } else {
       await client.query(`UPDATE "USER_T" SET usr_status = $2 WHERE usr_id = $1`, [userId, NEW_STATUS[action]]);

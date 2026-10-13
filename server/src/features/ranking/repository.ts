@@ -1,6 +1,6 @@
 import { pool } from '../../lib/pool';
 import { approvedLecturer } from '../users/repository';
-import { ENGAGEMENT_COLS, HASHTAGS_COL, VERIFIED, VISIBLE } from '../notes/repository';
+import { COUNTS_COL, HASHTAGS_COL, VERIFIED, VISIBLE } from '../notes/repository';
 import { RANKING } from './config';
 import type { Candidate, InteractionRow } from './service';
 
@@ -21,7 +21,7 @@ export async function getCandidates(viewerId: number, asOf: Date, limit: number 
        ORDER BY p.pst_published_at DESC, p.pst_id DESC
        LIMIT $3)
      SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", ${HASHTAGS_COL},
-            ${approvedLecturer('u')} AS "lecturerAuthor", ${ENGAGEMENT_COLS}
+            ${approvedLecturer('u')} AS "lecturerAuthor", ${COUNTS_COL}, ${VERIFIED} AS "verified"
      FROM "POST_T" p JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
        AND (p.pst_id IN (SELECT pst_id FROM newest) OR ${VERIFIED})`,

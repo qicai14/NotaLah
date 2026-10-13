@@ -370,6 +370,14 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   already had the columns.
 - **Tests:** the `lecturerOnlyApp` stand-in was removed; AUTH-TC7 and ADM-TC9/10 now call the real Super Like route.
   `insertNote` moved to `tests/helpers.ts`.
+- **Review fixes (3B):** delete also clears programme and lecturer status, and `approvedLecturer` is now NULL-safe
+  (`COALESCE`), so a deleted lecturer's comments lose the pin and badge (ADM-TC18). Public search (Sprint 4) must
+  exclude deleted accounts. Re-registering with a deleted user's original email is allowed (the old row now holds
+  `deleted-<id>@invalid`). A note published in a concurrent request just after the delete's hide UPDATE stays visible
+  (accepted; `shortcut:` comment in `moderation/repository.ts`). Withdrawal reports the note state only when the
+  lecturer can still see the note, else `{verified: false, verifiedBy: null}`. Ranking candidates select only counts
+  and `verified` (`COUNTS_COL`), not the full engagement columns. `decide` (UC22) reuses `requiredText`; a reason stays
+  optional only for approval. The client hides "Super Like" from a restricted lecturer but keeps "Remove Super Like".
 - **Reversibility:** Easy.
 
 ## D27 — Super Like and admin console client choices (Sprint 3, task 3B)

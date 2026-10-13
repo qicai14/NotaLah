@@ -76,11 +76,11 @@ export function NoteActions({ note, commentsLink = true, onVerify }: { note: Not
             <button type="button" onClick={removeSuperLike} disabled={busy} className={`${btn} border-indigo-500 text-indigo-700`}>
               Remove Super Like
             </button>
-          ) : (
+          ) : user.status === 'active' ? ( // a restricted lecturer may only withdraw (D26)
             <button type="button" onClick={() => setSuperLiking(true)} className={`${btn} border-indigo-500 bg-indigo-50 text-indigo-700`}>
               Super Like
             </button>
-          ))}
+          ) : null)}
         <button type="button" disabled title="Coming in Sprint 4" className={btn}>
           Message author — coming soon
         </button>

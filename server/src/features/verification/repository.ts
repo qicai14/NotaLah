@@ -1,5 +1,5 @@
 import { pool } from '../../lib/pool';
-import { VERIFIED, VERIFIED_BY } from '../notes/repository';
+import { VERIFIED, VERIFIED_BY, VISIBLE } from '../notes/repository';
 
 export interface Verification {
   verifiedBy: string;
@@ -25,12 +25,12 @@ export async function addVerification(
   return { added: inserted.rowCount === 1, verification: rows[0] };
 }
 
-/** Removes the lecturer's own Super Like and returns the note's verification state afterwards (another lecturer may still verify it). */
+/** Removes the lecturer's own Super Like and returns the note's verification state afterwards (another lecturer may still verify it); a note the lecturer can no longer see reports unverified so nothing leaks. */
 export async function removeVerification(noteId: number, lecturerId: number): Promise<{ verified: boolean; verifiedBy: string | null }> {
   await pool.query(`DELETE FROM "VERIFICATION_T" WHERE ver_pst_id = $1 AND ver_usr_id = $2`, [noteId, lecturerId]);
   const { rows } = await pool.query<{ verified: boolean; verifiedBy: string | null }>(
-    `SELECT ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy" FROM "POST_T" p WHERE p.pst_id = $1`,
-    [noteId],
+    `SELECT ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy" FROM "POST_T" p WHERE p.pst_id = $2 AND ${VISIBLE}`,
+    [lecturerId, noteId],
   );
   return rows[0] ?? { verified: false, verifiedBy: null };
 }

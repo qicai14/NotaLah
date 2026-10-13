@@ -115,6 +115,8 @@ describe('Lecturer Super Like (UC19)', () => {
     expect(await feedItem(second, note)).toMatchObject({ verifiedBy: 'Dr First', verifiedByMe: true });
     const saved = await request(app).get('/api/bookmarks').set('Authorization', bearer(student));
     expect(saved.body.notes[0].verifiedBy).toBe('Dr First');
+    const before = await request(app).get(`/api/notes/${note}`).set('Authorization', bearer(student));
+    expect(before.body.note.verifiedBy).toBe('Dr First');
 
     expect((await unverify(first, note)).body).toEqual({ verified: true, verifiedBy: 'Dr Second' });
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [second]);
@@ -132,5 +134,12 @@ describe('Lecturer Super Like (UC19)', () => {
     expect((await verify(l, await insertNote(student))).status).toBe(403);
     expect((await unverify(l, note)).status).toBe(200);
     expect(await rows()).toEqual([]);
+
+    // withdrawing from a note the lecturer can no longer see reveals nothing about it
+    const other = await lecturer();
+    await verify(other, note);
+    await verify(await lecturer({ displayName: 'Dr Keep' }), note);
+    await pool.query(`UPDATE "POST_T" SET pst_visibility = 'contacts' WHERE pst_id = $1`, [note]);
+    expect((await unverify(other, note)).body).toEqual({ verified: false, verifiedBy: null });
   });
 });

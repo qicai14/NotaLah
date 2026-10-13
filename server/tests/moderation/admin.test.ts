@@ -287,6 +287,16 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
 
   it('ADM-TC18: deleting anonymises the account, hides its notes, and the account cannot be acted on again', async () => {
     const draft = await insertNote(author, { status: 'draft' });
+    const lect = await insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: 'S77', displayName: 'Dr Gone' });
+    const other = await insertNote(await insertUser());
+    await request(app).post(`/api/notes/${other}/comments`).set('Authorization', bearer(lect)).send({ body: 'Lecturer tip' });
+    const thread = async () => (await request(app).get(`/api/notes/${other}/comments`).set('Authorization', bearer(author))).body.comments[0];
+    expect(await thread()).toMatchObject({ pinned: true, author: { isVerifiedLecturer: true } });
+    await act(lect, 'delete', { reason: 'Left the university' });
+    expect(await thread()).toMatchObject({ pinned: false, author: { displayName: 'Deleted user', isVerifiedLecturer: false } });
+    expect((await pool.query('SELECT usr_programme, usr_lecturer_status FROM "USER_T" WHERE usr_id = $1', [lect])).rows[0])
+      .toEqual({ usr_programme: null, usr_lecturer_status: null });
+
     const res = await act(author, 'delete', { reason: 'Requested by user' });
     expect(res.status).toBe(200);
     expect(res.body.user).toMatchObject({ status: 'deleted', displayName: 'Deleted user', email: `deleted-${author}@invalid` });
@@ -294,6 +304,6 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     expect(await noteStatus(draft)).toBe('draft');
     expect((await request(app).get('/api/feed').set('Authorization', bearer(author))).status).toBe(401);
     expect((await act(author, 'reinstate', { reason: 'x' })).status).toBe(409);
-    expect((await actions()).map((a) => a.aac_action)).toEqual(['delete']);
+    expect((await actions()).map((a) => a.aac_action)).toEqual(['delete', 'delete']);
   });
 });

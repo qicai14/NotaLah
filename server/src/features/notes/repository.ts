@@ -78,10 +78,13 @@ export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS})`;
 /** Display name of the earliest valid verifier of note p, or NULL (FR2 "Verified by"). */
 export const VERIFIED_BY = `(SELECT vu.usr_display_name ${VALID_VERIFICATIONS} ORDER BY v.ver_created_at, v.ver_id LIMIT 1)`;
 
-/** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; `verified`/`verifiedBy` per VERIFIED, `verifiedByMe` = the viewer's own Super Like) shared by the feed and the note detail so the counts exist once. */
-export const ENGAGEMENT_COLS = `json_build_object(
+/** Like and comment counts of note p (the author's own comments are not counted, D22); also used by ranking candidates. */
+export const COUNTS_COL = `json_build_object(
               'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
-              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted AND cmt_usr_id <> p.pst_usr_id)) AS "counts",
+              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted AND cmt_usr_id <> p.pst_usr_id)) AS "counts"`;
+
+/** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; `verified`/`verifiedBy` per VERIFIED, `verifiedByMe` = the viewer's own Super Like) shared by the feed and the note detail so the counts exist once. */
+export const ENGAGEMENT_COLS = `${COUNTS_COL},
             EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
             EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
             ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy",

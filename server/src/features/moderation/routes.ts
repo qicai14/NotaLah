@@ -12,24 +12,15 @@ adminRouter.get('/lecturer-applications', async (_req, res) => {
   res.json({ applications: await listPendingLecturers() });
 });
 
-const reasonSchema = z.string().trim().max(300, 'Reason must be at most 300 characters');
-
 async function decide(req: Request<{ userId: string }>, res: Response, approve: boolean) {
   const userId = Number(req.params.userId);
   if (invalidId(req.params.userId)) {
     res.status(400).json({ error: 'Invalid user id' });
     return;
   }
-  const parsed = reasonSchema.optional().safeParse(req.body?.reason);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.issues[0].message });
-    return;
-  }
-  const reason = parsed.data || (approve ? 'Approved' : '');
-  if (!reason) {
-    res.status(400).json({ error: 'Reason is required' });
-    return;
-  }
+  const blank = typeof req.body?.reason !== 'string' || !req.body.reason.trim();
+  const reason = approve && blank ? 'Approved' : requiredText(res, req.body?.reason, 'Reason'); // reason optional only when approving (D18)
+  if (reason === undefined) return;
   const user = await decideLecturer(userId, req.user!.id, approve, reason);
   if (!user) {
     res.status(404).json({ error: 'No pending lecturer application for this user' });
