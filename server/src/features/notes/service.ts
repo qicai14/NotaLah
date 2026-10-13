@@ -16,7 +16,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
 export const sanitizeSlide = (html: string) => sanitizeHtml(html, OPTIONS);
 
 const plainText = (html: string) =>
-  sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).replace(/&nbsp;/g, ' ').trim();
+  sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
 
 const baseSchema = z.object({
   title: z

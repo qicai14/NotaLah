@@ -1,5 +1,5 @@
 import type { PoolClient } from 'pg';
-import { pool } from '../../lib/pool';
+import { inTransaction, pool } from '../../lib/pool';
 import type { NoteInput } from './service';
 
 export interface ModuleRow {
@@ -22,10 +22,11 @@ export async function moduleExists(id: number): Promise<boolean> {
   return rowCount === 1;
 }
 
-/** Who may see a post ($1 = viewer id): the author, or a published post that is public or from a contact. */
+/** Who may see a post ($1 = viewer id): the author, or a published post that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
 const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published' AND
     (p.pst_visibility = 'public' OR EXISTS (SELECT 1 FROM "CONTACT_T" c
-       WHERE c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)))))`;
+       WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
+          OR (c.con_usr_id = $1 AND c.con_contact_id = p.pst_usr_id))))))`;
 
 export interface Note {
   id: number;
@@ -49,10 +50,11 @@ const NOTE_SELECT = `
               ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
          COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
                    FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
-                   WHERE ph.phs_pst_id = p.pst_id), '[]'::json) AS "hashtags",
+                   WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags",
          COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'content', s.sld_content)
                                    ORDER BY s.sld_position)
-                   FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::json) AS "slides",
+                   FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
+         -- verified lecturer = approved lecturer (D21)
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
                            'isVerifiedLecturer', (u.usr_role = 'lecturer' AND u.usr_lecturer_status = 'approved')) AS "author",
          p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"
@@ -66,9 +68,26 @@ export async function getVisibleNote(id: number, viewerId: number): Promise<Note
   return rows[0];
 }
 
-export async function listDrafts(authorId: number): Promise<Note[]> {
-  const { rows } = await pool.query<Note>(
-    `${NOTE_SELECT} WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft' ORDER BY p.pst_updated_at DESC, p.pst_id DESC`,
+export interface DraftSummary {
+  id: number;
+  title: string;
+  module: { id: number; code: string; name: string } | null;
+  hashtags: string[];
+  updatedAt: Date;
+}
+
+export async function listDrafts(authorId: number): Promise<DraftSummary[]> {
+  const { rows } = await pool.query<DraftSummary>(
+    `SELECT p.pst_id AS "id", p.pst_title AS "title",
+            CASE WHEN m.mod_id IS NULL THEN NULL
+                 ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+            COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
+                      FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
+                      WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags",
+            p.pst_updated_at AS "updatedAt"
+     FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
+     WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
+     ORDER BY p.pst_updated_at DESC, p.pst_id DESC`,
     [authorId],
   );
   return rows;
@@ -91,24 +110,25 @@ export async function getNoteMeta(id: number, viewerId: number): Promise<NoteMet
 }
 
 async function writeChildren(client: PoolClient, postId: number, n: NoteInput): Promise<void> {
+  const tags = [...n.hashtags].sort(); // fixed order avoids deadlocks between concurrent upserts
   await client.query(`DELETE FROM "SLIDE_T" WHERE sld_pst_id = $1`, [postId]);
   await client.query(`DELETE FROM "POST_HASHTAG_T" WHERE phs_pst_id = $1`, [postId]);
   if (n.slides.length > 0) {
     await client.query(
       `INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content)
-       SELECT $1, t.ord, t.content FROM unnest($2::text[]) WITH ORDINALITY AS t(content, ord)`,
+       SELECT $1, t.ord, t.content FROM unnest($2::TEXT[]) WITH ORDINALITY AS t(content, ord)`,
       [postId, n.slides],
     );
   }
-  if (n.hashtags.length > 0) {
+  if (tags.length > 0) {
     await client.query(
-      `INSERT INTO "HASHTAG_T" (hsh_name) SELECT unnest($1::text[]) ON CONFLICT (hsh_name) DO NOTHING`,
-      [n.hashtags],
+      `INSERT INTO "HASHTAG_T" (hsh_name) SELECT unnest($1::TEXT[]) ON CONFLICT (hsh_name) DO NOTHING`,
+      [tags],
     );
     await client.query(
       `INSERT INTO "POST_HASHTAG_T" (phs_pst_id, phs_hsh_id)
-       SELECT $1, hsh_id FROM "HASHTAG_T" WHERE hsh_name = ANY($2::text[])`,
-      [postId, n.hashtags],
+       SELECT $1, hsh_id FROM "HASHTAG_T" WHERE hsh_name = ANY($2::TEXT[])`,
+      [postId, tags],
     );
   }
   // Search document is rebuilt in SQL from title, slide text without tags, and hashtags (D20).
@@ -127,27 +147,12 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   );
 }
 
-async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const out = await fn(client);
-    await client.query('COMMIT');
-    return out;
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-
 /** Inserts the post, its slides and hashtags in one transaction; returns the new id. */
 export function createNote(authorId: number, n: NoteInput): Promise<number> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ pst_id: number }>(
       `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_status, pst_visibility, pst_published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $5::varchar = 'published' THEN NOW() END)
+       VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $5::VARCHAR = 'published' THEN NOW() END)
        RETURNING pst_id`,
       [authorId, n.moduleId, n.title, n.template, n.status, n.visibility],
     );
@@ -157,21 +162,23 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
 }
 
 /** Full replace of the post's fields, slides and hashtags in one transaction. */
-export function replaceNote(id: number, n: NoteInput): Promise<void> {
+export function replaceNote(id: number, n: NoteInput): Promise<boolean> {
   return inTransaction(async (c) => {
-    await c.query(
+    const { rowCount } = await c.query(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_status = $5, pst_visibility = $6,
-           pst_published_at = CASE WHEN $5::varchar = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END
-       WHERE pst_id = $1`,
+           pst_published_at = CASE WHEN $5::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END
+       WHERE pst_id = $1 AND pst_status IN ('draft', 'published')`,
       [id, n.moduleId, n.title, n.template, n.status, n.visibility],
     );
+    if (rowCount === 0) return false; // deleted or hidden since the permission check
     await writeChildren(c, id, n);
+    return true;
   });
 }
 
 export async function softDeleteNote(id: number): Promise<void> {
-  await pool.query(`UPDATE "POST_T" SET pst_status = 'deleted', pst_updated_at = NOW() WHERE pst_id = $1`, [id]);
+  await pool.query(`UPDATE "POST_T" SET pst_status = 'deleted', pst_updated_at = NOW() WHERE pst_id = $1 AND pst_status <> 'deleted'`, [id]);
 }
 
 export interface NoteSummary {
@@ -188,7 +195,7 @@ export async function listNotesByAuthor(authorId: number, viewerId: number): Pro
     `SELECT p.pst_id AS "id", p.pst_title AS "title", m.mod_code AS "moduleCode", p.pst_published_at AS "publishedAt",
             COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
                       FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
-                      WHERE ph.phs_pst_id = p.pst_id), '[]'::json) AS "hashtags"
+                      WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE}
      ORDER BY p.pst_published_at DESC, p.pst_id DESC`,

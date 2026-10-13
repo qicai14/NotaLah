@@ -756,6 +756,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC17 | Author deletes own note | DELETE own published note | 204; status deleted in database; GET returns 404 | | |
 | NOTE-TC18 | Publish a saved draft | PUT status published on an existing draft | 200; same note (no new row); published time set | | |
 | NOTE-TC19 | Module list and missing token | GET /api/modules with and without token; POST /api/notes without token | 200 with module catalogue; 401; 401 | | |
+| NOTE-TC20 | Stranger edits or deletes a draft or contacts-only note | PUT and DELETE by a non-contact | 404 for all four requests (existence not revealed) | | |
+| NOTE-TC21 | Moderator-hidden note | status set to hidden in the database | Author PUT 403; other user GET 404; not on the author's profile | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -766,6 +768,11 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC3 | Update profile with valid details | displayName "Ann Lee", programme, bio "Hello" | 200; values stored and shown on the profile | | |
 | USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, contact, owner | Stranger sees the public note only; contact also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
 | USR-TC5 | View unknown user or without token | user 99999; no Authorization header | 404; 401 | | |
+| USR-TC6 | Update profile with over-long fields | displayName 51 characters, programme 101 characters | 400 naming both limits | | |
+| USR-TC7 | Update profile with empty optional fields | programme "", bio "  " | 200; stored as NULL | | |
+| USR-TC8 | View a deleted account | user with status deleted | 404 | | |
+| USR-TC9 | View profile with a non-numeric id | GET /api/users/abc | 404 | | |
+| USR-TC10 | Hidden and deleted notes on a profile | owner has published, hidden and deleted notes | Only the published note is listed | | |
 
 *Table 4.27: Ranking and feed module test cases (RANK)*
 

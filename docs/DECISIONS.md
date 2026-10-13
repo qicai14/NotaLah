@@ -226,6 +226,8 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   existence is not revealed; on a note they can see but do not own they return 403 (NOTE-TC9). A moderator-hidden
   note cannot be edited by its author (403). Restricted users are blocked from POST and PUT only (`requireActive`);
   they can still delete their own notes. DELETE is a soft delete (status 'deleted').
+- **Contacts:** visibility checks treat `"CONTACT_T"` as symmetric (a row in either direction counts); accepting a
+  message request inserts both rows together (D9), so this only protects against a half-written pair.
 - **Verified lecturer:** `isVerifiedLecturer` is true when role is lecturer and lecturer status is approved.
 - **Profiles:** `PUT /api/users/me` returns the updated user in the same shape as `/api/auth/me`; empty
   programme/bio are stored as NULL; avatar upload is out of scope for now. Deleted accounts return 404.

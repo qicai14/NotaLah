@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { BCRYPT_COST, type LoginInfo, passport, signToken } from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
+import { issueMap } from '../../lib/validation';
 
 export const authRouter = Router();
 
@@ -41,11 +42,7 @@ const authLimiter = rateLimit({
 authRouter.post('/register', authLimiter, async (req, res) => {
   const body: Record<string, unknown> = req.body && typeof req.body === 'object' ? req.body : {};
   const parsed = registerSchema.safeParse(body);
-  const errors: Record<string, string> = {};
-  for (const issue of parsed.error?.issues ?? []) {
-    const field = String(issue.path[0] ?? 'form');
-    errors[field] ??= issue.message;
-  }
+  const errors = issueMap(parsed.error?.issues ?? []);
   // Cross-field rules run on the raw body so they are reported alongside per-field errors.
   if (!errors.confirmPassword && body.confirmPassword !== body.password) {
     errors.confirmPassword = 'Passwords do not match';

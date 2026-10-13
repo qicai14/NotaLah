@@ -1,4 +1,4 @@
-import { pool } from '../../lib/pool';
+import { inTransaction, pool } from '../../lib/pool';
 
 export type Role = 'student' | 'lecturer' | 'admin';
 export type UserStatus = 'active' | 'restricted' | 'suspended' | 'deleted';
@@ -122,9 +122,7 @@ export async function decideLecturer(
   approve: boolean,
   reason: string,
 ): Promise<AuthUser | undefined> {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+  return inTransaction(async (client) => {
     const { rows } = await client.query<UserRow>(
       `UPDATE "USER_T"
        SET usr_role = $2, usr_lecturer_status = $3
@@ -132,23 +130,14 @@ export async function decideLecturer(
        RETURNING ${USER_COLUMNS}`,
       [userId, approve ? 'lecturer' : 'student', approve ? 'approved' : 'rejected'],
     );
-    if (rows.length === 0) {
-      await client.query('ROLLBACK');
-      return undefined;
-    }
+    if (rows.length === 0) return undefined;
     await client.query(
       `INSERT INTO "ACCOUNT_ACTION_T" (aac_usr_id, aac_admin_id, aac_action, aac_reason)
        VALUES ($1, $2, $3, $4)`,
       [userId, adminId, approve ? 'approve_lecturer' : 'reject_lecturer', reason],
     );
-    await client.query('COMMIT');
     return toAuthUser(rows[0]);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
+  });
 }
 
 export interface Profile {
@@ -166,6 +155,7 @@ export async function findProfile(id: number): Promise<Profile | undefined> {
   const { rows } = await pool.query<Profile>(
     `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_role AS "role", usr_programme AS "programme",
             usr_bio AS "bio", usr_avatar_url AS "avatarUrl",
+            -- verified lecturer = approved lecturer (D21)
             (usr_role = 'lecturer' AND usr_lecturer_status = 'approved') AS "isVerifiedLecturer"
      FROM "USER_T" WHERE usr_id = $1 AND usr_status <> 'deleted'`,
     [id],

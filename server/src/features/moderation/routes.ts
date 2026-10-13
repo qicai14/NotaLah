@@ -2,6 +2,7 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
 import { requireAuth, requireRole } from '../auth/middleware';
+import { invalidId } from '../../lib/validation';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
@@ -14,7 +15,7 @@ const reasonSchema = z.string().trim().max(300, 'Reason must be at most 300 char
 
 async function decide(req: Request<{ userId: string }>, res: Response, approve: boolean) {
   const userId = Number(req.params.userId);
-  if (!/^\d+$/.test(req.params.userId) || userId < 1 || userId > 2147483647) {
+  if (invalidId(req.params.userId)) {
     res.status(400).json({ error: 'Invalid user id' });
     return;
   }

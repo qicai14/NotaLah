@@ -62,4 +62,41 @@ describe('Profiles', () => {
     expect((await getUser(uid, 99999)).status).toBe(404);
     expect((await request(app).get(`/api/users/${uid}`)).status).toBe(401);
   });
+
+  it('USR-TC6: display name over 50 and programme over 100 characters are rejected', async () => {
+    const res = await putMe(await insertUser(), { displayName: 'n'.repeat(51), programme: 'p'.repeat(101) });
+    expect(res.status).toBe(400);
+    expect(res.body.errors).toEqual({
+      displayName: 'Display name must be at most 50 characters',
+      programme: 'Programme must be at most 100 characters',
+    });
+  });
+
+  it('USR-TC7: empty programme and bio are stored as NULL', async () => {
+    const uid = await insertUser();
+    expect((await putMe(uid, { displayName: 'Ann', programme: '', bio: '  ' })).status).toBe(200);
+    const { rows } = await pool.query(`SELECT usr_programme, usr_bio FROM "USER_T" WHERE usr_id = $1`, [uid]);
+    expect(rows[0]).toEqual({ usr_programme: null, usr_bio: null });
+  });
+
+  it('USR-TC8: a deleted account profile is 404', async () => {
+    const viewer = await insertUser();
+    const gone = await insertUser({ status: 'deleted' });
+    expect((await getUser(viewer, gone)).status).toBe(404);
+  });
+
+  it('USR-TC9: a non-numeric user id is 404', async () => {
+    const uid = await insertUser();
+    expect((await request(app).get('/api/users/abc').set('Authorization', bearer(uid))).status).toBe(404);
+  });
+
+  it('USR-TC10: hidden and deleted notes are not listed on the profile', async () => {
+    const owner = await insertUser();
+    const viewer = await insertUser();
+    await addNote(owner, 'Visible', 'published', 'public');
+    await addNote(owner, 'Hidden', 'hidden', 'public');
+    await addNote(owner, 'Deleted', 'deleted', 'public');
+    const titles = (await getUser(viewer, owner)).body.user.notes.map((n: { title: string }) => n.title);
+    expect(titles).toEqual(['Visible']);
+  });
 });

@@ -214,3 +214,29 @@ describe('Notes', () => {
     expect((await request(app).post('/api/notes').send({})).status).toBe(401);
   });
 });
+
+describe('Notes access rules (D21)', () => {
+  const del = (uid: number, id: number) => request(app).delete(`/api/notes/${id}`).set('Authorization', bearer(uid));
+
+  it('NOTE-TC20: a stranger gets 404 on PUT and DELETE of a draft and of a contacts-only note', async () => {
+    const author = await insertUser();
+    const stranger = await insertUser();
+    const draft = (await post(author, { title: 'D', status: 'draft' })).body.note.id;
+    const circle = (await post(author, await publishBody({ visibility: 'contacts' }))).body.note.id;
+    for (const id of [draft, circle]) {
+      expect((await put(stranger, id, await publishBody())).status).toBe(404);
+      expect((await del(stranger, id)).status).toBe(404);
+    }
+  });
+
+  it('NOTE-TC21: a hidden note cannot be edited by its author, is invisible to others and not on the profile', async () => {
+    const author = await insertUser();
+    const other = await insertUser();
+    const id = (await post(author, await publishBody())).body.note.id;
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [id]);
+    expect((await put(author, id, await publishBody())).status).toBe(403);
+    expect((await get(other, id)).status).toBe(404);
+    const profile = await request(app).get(`/api/users/${author}`).set('Authorization', bearer(other));
+    expect(profile.body.user.notes).toEqual([]);
+  });
+});

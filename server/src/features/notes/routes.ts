@@ -55,7 +55,7 @@ notesRouter.put('/:id', requireActive, async (req, res) => {
     return res.status(400).json({ error: 'Validation failed', errors: { moduleId: 'Module not found' } });
   }
   const id = Number(req.params.id);
-  await replaceNote(id, n);
+  if (!(await replaceNote(id, n))) return res.status(404).json({ error: 'Note not found' });
   res.json({ note: await getVisibleNote(id, req.user!.id) });
 });
 
