@@ -24,7 +24,7 @@ const baseSchema = z.object({
     .trim()
     .min(1, 'Title is required')
     .max(150, 'Title must be at most 150 characters'),
-  template: z.string({ error: 'Invalid template' }).trim().min(1, 'Invalid template').max(30, 'Invalid template').optional(),
+  template: z.enum(['plain', 'lecture', 'revision', 'howto'], { error: 'Invalid template' }).optional(),
   slides: z
     .array(z.string({ error: 'Each slide must be text' }), { error: 'Slides must be a list' })
     .max(MAX_SLIDES, `Maximum ${MAX_SLIDES} slides`)

@@ -36,18 +36,19 @@ feedRouter.get('/', requireAuth, async (req, res) => {
 engagementRouter.post('/notes/:id/view', requireAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
-  await repo.logView(t.id, req.user!.id);
+  if (t.authorId !== req.user!.id) await repo.logView(t.id, req.user!.id); // own views are not interest signals (D22)
   res.status(204).end();
 });
 
 engagementRouter.post('/notes/:id/like', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
+  if (t.authorId === req.user!.id) return res.status(400).json({ error: 'You cannot like your own note' });
   const { added, likes } = await repo.likeNote(t.id, req.user!.id);
   res.status(added ? 201 : 200).json({ liked: true, likes });
 });
 
-engagementRouter.delete('/notes/:id/like', requireAuth, requireActive, async (req, res) => {
+engagementRouter.delete('/notes/:id/like', requireAuth, async (req, res) => {
   const id = idOf(req);
   if (id === undefined) return notFound(res);
   res.json({ liked: false, likes: await repo.unlikeNote(id, req.user!.id) }); // no visibility check (D22)
@@ -112,7 +113,7 @@ engagementRouter.post('/comments/:id/like', requireAuth, requireActive, async (r
   res.status(added ? 201 : 200).json({ liked: true, likes });
 });
 
-engagementRouter.delete('/comments/:id/like', requireAuth, requireActive, async (req, res) => {
+engagementRouter.delete('/comments/:id/like', requireAuth, async (req, res) => {
   const id = idOf(req);
   if (id === undefined) return res.status(404).json({ error: 'Comment not found' });
   res.json({ liked: false, likes: await repo.unlikeComment(id, req.user!.id) }); // no visibility check (D22)
@@ -151,7 +152,7 @@ engagementRouter.post('/notes/:id/bookmark', requireAuth, requireActive, async (
   res.json({ bookmarked: true });
 });
 
-engagementRouter.delete('/notes/:id/bookmark', requireAuth, requireActive, async (req, res) => {
+engagementRouter.delete('/notes/:id/bookmark', requireAuth, async (req, res) => {
   const id = idOf(req);
   if (id === undefined) return notFound(res);
   await repo.removeBookmark(id, req.user!.id); // removal never needs visibility

@@ -150,6 +150,9 @@ export interface Profile {
   isVerifiedLecturer: boolean;
 }
 
+/** SQL for "approved lecturer" (D21) on a USER_T alias; the one definition every query shares. */
+export const approvedLecturer = (alias: string) => `(${alias}.usr_role = 'lecturer' AND ${alias}.usr_lecturer_status = 'approved')`;
+
 /** True for a lecturer account whose registration an admin approved (D21). */
 export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>
   u.role === 'lecturer' && u.lecturerStatus === 'approved';
@@ -159,9 +162,8 @@ export async function findProfile(id: number): Promise<Profile | undefined> {
   const { rows } = await pool.query<Profile>(
     `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_role AS "role", usr_programme AS "programme",
             usr_bio AS "bio", usr_avatar_url AS "avatarUrl",
-            -- verified lecturer = approved lecturer (D21)
-            (usr_role = 'lecturer' AND usr_lecturer_status = 'approved') AS "isVerifiedLecturer"
-     FROM "USER_T" WHERE usr_id = $1 AND usr_status <> 'deleted'`,
+            ${approvedLecturer('u')} AS "isVerifiedLecturer"
+     FROM "USER_T" u WHERE usr_id = $1 AND usr_status <> 'deleted'`,
     [id],
   );
   return rows[0];
@@ -169,12 +171,15 @@ export async function findProfile(id: number): Promise<Profile | undefined> {
 
 export async function updateProfile(
   id: number,
-  p: { displayName: string; programme: string | null; bio: string | null },
+  p: { displayName: string; programme?: string | null; bio?: string | null },
 ): Promise<AuthUser> {
+  // $3/$5 flag a field as present, so an omitted one keeps its value while null clears it
   const { rows } = await pool.query<UserRow>(
-    `UPDATE "USER_T" SET usr_display_name = $2, usr_programme = $3, usr_bio = $4
+    `UPDATE "USER_T" SET usr_display_name = $2,
+            usr_programme = CASE WHEN $3::BOOLEAN THEN $4 ELSE usr_programme END,
+            usr_bio = CASE WHEN $5::BOOLEAN THEN $6 ELSE usr_bio END
      WHERE usr_id = $1 RETURNING ${USER_COLUMNS}`,
-    [id, p.displayName, p.programme, p.bio],
+    [id, p.displayName, p.programme !== undefined, p.programme ?? null, p.bio !== undefined, p.bio ?? null],
   );
   return toAuthUser(rows[0]);
 }

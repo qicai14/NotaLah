@@ -22,7 +22,12 @@ usersRouter.put('/me', async (req, res) => {
   const parsed = profileSchema.safeParse(req.body && typeof req.body === 'object' ? req.body : {});
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { displayName, programme, bio } = parsed.data;
-  const user = await updateProfile(req.user!.id, { displayName, programme: programme || null, bio: bio || null });
+  // omitted fields keep their value; an empty string clears to NULL (D22)
+  const user = await updateProfile(req.user!.id, {
+    displayName,
+    ...(programme !== undefined && { programme: programme || null }),
+    ...(bio !== undefined && { bio: bio || null }),
+  });
   res.json({ user });
 });
 

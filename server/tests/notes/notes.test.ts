@@ -173,6 +173,15 @@ describe('Notes', () => {
     expect(note.verified).toBe(false);
   });
 
+  it('NOTE-TC25: template must be one of the editor choices and defaults to plain', async () => {
+    const uid = await insertUser();
+    const bad = await post(uid, await publishBody({ template: 'fancy' }));
+    expect(bad.status).toBe(400);
+    expect(bad.body.errors.template).toBe('Invalid template');
+    expect((await post(uid, await publishBody({ template: 'howto' }))).body.note.template).toBe('howto');
+    expect((await post(uid, await publishBody())).body.note.template).toBe('plain');
+  });
+
   it('NOTE-TC12: a draft needs a title', async () => {
     const res = await post(await insertUser(), { title: '   ', status: 'draft' });
     expect(res.status).toBe(400);

@@ -263,6 +263,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   guards per mount, accepted as a known shortcut.
 - **Alternatives:** a migration for a view-dedupe index (rejected: the task forbade new schema unless needed and the
   window check is cheap); a separate counts table (rejected: counts are aggregated at read time at this scale).
+- **Review fixes (Sprint 2):** the feed cutoff is `COALESCE($asOf, NOW())` read from the database (one extra tiny query, so an empty page
+  still returns it), matching the clock that stamps `pst_published_at`. Self-engagement does not inflate ranking E: liking your own note is
+  400 "You cannot like your own note"; `ENGAGEMENT_COLS` counts comments `AND cmt_usr_id <> p.pst_usr_id` (the thread still shows them all);
+  the author's own views and comments write no INTERACTION_T row. `PUT /users/me` updates only the fields sent (empty string clears to NULL).
+  Removal routes (unlike, unlike comment, unbookmark) drop `requireActive`, so a restricted user can undo. Template is the enum
+  plain/lecture/revision/howto (default plain). `approvedLecturer(alias)` in `users/repository.ts` is the one SQL fragment for D21.
+  Judgement: the pg driver returns millisecond `Date`s, so a note published in the same millisecond as the cutoff can drop off page 2 (accepted).
 - **Reversibility:** Easy.
 
 ## D23 — Sprint 2 client choices (task 2C)

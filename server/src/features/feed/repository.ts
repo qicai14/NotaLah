@@ -1,4 +1,5 @@
 import { pool } from '../../lib/pool';
+import { approvedLecturer } from '../users/repository';
 import { ENGAGEMENT_COLS, NOTE_COLS, NOTE_FROM, SUMMARY_COLS, VISIBLE, type NoteSummary, type NoteWithEngagement } from '../notes/repository';
 
 export const PAGE_SIZE = 10;
@@ -19,11 +20,12 @@ const FEED_ORDER = `p.pst_published_at DESC, p.pst_id DESC`;
 export async function getFeedPage(
   viewerId: number, page: number, asOf: Date | null,
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
-  const cutoff = asOf ?? new Date();
+  // the cutoff comes from the database clock, the same one that stamps pst_published_at (D22)
+  const cutoff = (await pool.query<{ t: Date }>(`SELECT COALESCE($1::TIMESTAMPTZ, NOW()) AS "t"`, [asOf])).rows[0].t;
   const { rows } = await pool.query<FeedItem>(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}
      ${NOTE_FROM}
-     WHERE p.pst_status = 'published' AND p.pst_published_at <= $4 AND ${VISIBLE}
+     WHERE p.pst_status = 'published' AND p.pst_published_at <= $4::TIMESTAMPTZ AND ${VISIBLE}
      ORDER BY ${FEED_ORDER} LIMIT $2 OFFSET $3`,
     [viewerId, PAGE_SIZE + 1, (page - 1) * PAGE_SIZE, cutoff],
   );
@@ -111,7 +113,7 @@ export async function listComments(noteId: number, viewerId: number): Promise<Co
             c.cmt_is_deleted AS "deleted", c.cmt_created_at AS "createdAt",
             CASE WHEN c.cmt_is_deleted THEN NULL
                  ELSE json_build_object('id', u.usr_id, 'displayName', u.usr_display_name,
-                        'isVerifiedLecturer', (u.usr_role = 'lecturer' AND u.usr_lecturer_status = 'approved')) END AS "author",
+                        'isVerifiedLecturer', ${approvedLecturer('u')}) END AS "author",
             (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS "likes",
             EXISTS (SELECT 1 FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id AND clk_usr_id = $1) AS "likedByMe"
      FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
@@ -152,7 +154,8 @@ export async function addComment(noteId: number, userId: number, c: NewComment):
   const { rows } = await pool.query<{ id: number; createdAt: Date }>(
     `WITH c AS (INSERT INTO "COMMENT_T" (cmt_pst_id, cmt_usr_id, cmt_parent_id, cmt_slide_no, cmt_body)
                 VALUES ($1, $2, $3, $4, $5) RETURNING cmt_id, cmt_created_at),
-          i AS (INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) SELECT $2, $1, 'comment' FROM c)
+          i AS (INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) SELECT $2, $1, 'comment' FROM c
+                WHERE $2 <> (SELECT pst_usr_id FROM "POST_T" WHERE pst_id = $1))
      SELECT cmt_id AS "id", cmt_created_at AS "createdAt" FROM c`,
     [noteId, userId, c.parentId, c.slideNo, c.body],
   );

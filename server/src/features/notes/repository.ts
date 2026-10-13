@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import { inTransaction, pool } from '../../lib/pool';
+import { approvedLecturer } from '../users/repository';
 import type { NoteInput } from './service';
 
 export interface ModuleRow {
@@ -54,9 +55,8 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
          COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'content', s.sld_content)
                                    ORDER BY s.sld_position)
                    FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
-         -- verified lecturer = approved lecturer (D21)
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
-                           'isVerifiedLecturer', (u.usr_role = 'lecturer' AND u.usr_lecturer_status = 'approved')) AS "author",
+                           'isVerifiedLecturer', ${approvedLecturer('u')}) AS "author",
          p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"`;
 
 /** FROM clause defining the aliases p, u and m that NOTE_COLS uses. */
@@ -65,10 +65,10 @@ export const NOTE_FROM = `
   JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
   LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id`;
 
-/** Engagement columns (alias p; $1 = viewer id) shared by the feed and the note detail so the counts exist once. */
+/** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22) shared by the feed and the note detail so the counts exist once. */
 export const ENGAGEMENT_COLS = `json_build_object(
               'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id),
-              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted)) AS "counts",
+              'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted AND cmt_usr_id <> p.pst_usr_id)) AS "counts",
             EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
             EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
             EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id) AS "verified"`;

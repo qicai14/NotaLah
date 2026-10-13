@@ -90,6 +90,18 @@ describe('Profiles', () => {
     expect((await request(app).get('/api/users/abc').set('Authorization', bearer(uid))).status).toBe(404);
   });
 
+  it('USR-TC11: omitted programme and bio keep their value; empty string clears', async () => {
+    const uid = await insertUser();
+    await putMe(uid, { displayName: 'Ann', programme: 'SE', bio: 'Hi' });
+    const kept = await putMe(uid, { displayName: 'Ann B' });
+    expect(kept.body.user).toMatchObject({ displayName: 'Ann B', programme: 'SE' });
+    expect((await getUser(uid, uid)).body.user.bio).toBe('Hi');
+    await putMe(uid, { displayName: 'Ann B', bio: '' });
+    const profile = (await getUser(uid, uid)).body.user;
+    expect(profile.bio).toBeNull();
+    expect(profile.programme).toBe('SE');
+  });
+
   it('USR-TC10: hidden and deleted notes are not listed on the profile', async () => {
     const owner = await insertUser();
     const viewer = await insertUser();

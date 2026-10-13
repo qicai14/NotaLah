@@ -71,7 +71,7 @@ describe('Feed', () => {
     const newest = ids[11];
     await post(viewer, `/api/notes/${newest}/like`);
     await post(viewer, `/api/notes/${newest}/bookmark`);
-    await comment(author, newest, { body: 'hi' });
+    await comment(viewer, newest, { body: 'hi' });
     await pool.query(`INSERT INTO "VERIFICATION_T" (ver_pst_id, ver_usr_id) VALUES ($1, $2)`, [newest, await lecturer()]);
     const p1 = await get(viewer, '/api/feed');
     expect(p1.body.items).toHaveLength(10);
@@ -153,6 +153,42 @@ describe('Engagement', () => {
     const restricted = await insertUser({ status: 'restricted' });
     expect((await post(restricted, `/api/notes/${open}/like`)).status).toBe(403);
     expect((await get(restricted, `/api/notes/${open}/comments`)).status).toBe(200);
+    // removals need no active status: a restricted user can still undo their own like, comment like and bookmark
+    const other = await insertUser();
+    await post(other, `/api/notes/${open}/like`);
+    await post(other, `/api/notes/${open}/bookmark`);
+    const c2 = (await comment(b, open, { body: 'hi' })).body.comment.id;
+    await post(other, `/api/comments/${c2}/like`);
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'restricted' WHERE usr_id = $1`, [other]);
+    expect((await del(other, `/api/notes/${open}/like`)).status).toBe(200);
+    expect((await del(other, `/api/comments/${c2}/like`)).status).toBe(200);
+    expect((await del(other, `/api/notes/${open}/bookmark`)).status).toBe(200);
+  });
+
+  it('ENG-TC16: own note cannot be liked; own comments are not counted in engagement', async () => {
+    const [a, b] = [await insertUser(), await insertUser()];
+    const p = await insertNote(a);
+    const res = await post(a, `/api/notes/${p}/like`);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('You cannot like your own note');
+    await comment(a, p, { body: 'author reply' });
+    await comment(b, p, { body: 'reader comment' });
+    const feed = (await get(b, '/api/feed')).body.items[0];
+    expect(feed.counts).toEqual({ likes: 0, comments: 1 });
+    expect((await get(b, `/api/notes/${p}/comments`)).body.comments).toHaveLength(2);
+  });
+
+  it('ENG-TC17: the authors own view and comment are not logged as interactions', async () => {
+    const [a, b] = [await insertUser(), await insertUser()];
+    const p = await insertNote(a);
+    await post(a, `/api/notes/${p}/view`);
+    await comment(a, p, { body: 'mine' });
+    expect(await interactions('view')).toBe(0);
+    expect(await interactions('comment')).toBe(0);
+    await post(b, `/api/notes/${p}/view`);
+    await comment(b, p, { body: 'theirs' });
+    expect(await interactions('view')).toBe(1);
+    expect(await interactions('comment')).toBe(1);
   });
 
   it('ENG-TC4: blank and over-length comments are rejected', async () => {
