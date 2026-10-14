@@ -732,6 +732,11 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC8 | Log in with wrong password | test1@mail.apu.edu.my / "wrong" | 401 with the same generic message as an unknown email; no token issued | | |
 | AUTH-TC9 | Log in with valid credentials | test1@mail.apu.edu.my / "Passw0rd!" | 200; signed JWT containing user ID and role; GET /api/auth/me returns the user | | |
 | AUTH-TC10 | Access protected route without, with tampered and with valid token; suspended and deleted users log in | no header; altered token; valid token; suspended account; deleted account | 401; 401; 200; suspended login returns 403 "This account is suspended"; deleted login returns 401 "Invalid email or password" | | |
+| AUTH-TC11 | Log in and register with valid details | test1@mail.apu.edu.my / "Passw0rd!"; a new student | 200 / 201; Set-Cookie `parp_token` with HttpOnly, SameSite=Lax, Path=/, Max-Age=3600; no token in the response body | | |
+| AUTH-TC12 | Access a protected route with only an `Authorization: Bearer` header | valid JWT sent as a bearer header, no cookie | 401 "Unauthorized" | | |
+| AUTH-TC13 | Log out with a valid and with an invalid cookie | valid `parp_token`; `parp_token=garbage` | 204 both times; Set-Cookie clears `parp_token` (empty value, expired) with the same attributes | | |
+| AUTH-TC14 | Send state-changing requests without the CSRF header | POST login, POST like, DELETE note with no or a wrong `X-Requested-With` | 403 "Forbidden"; no cookie issued; GET requests are unaffected | | |
+| AUTH-TC15 | Log in with COOKIE_SECURE=true | COOKIE_SECURE = true | Set-Cookie includes the Secure flag | | |
 
 *Table 4.25: Note editor and publishing module test cases (NOTE)*
 
