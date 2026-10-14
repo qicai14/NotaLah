@@ -44,7 +44,9 @@ usersRouter.post('/:id/follow', requireActive, async (req, res) => {
 usersRouter.delete('/:id/follow', async (req, res) => {
   const target = Number(req.params.id);
   await unfollow(me(req).id, target);
-  res.json(await getFollowState(me(req).id, target));
+  const state = await getFollowState(me(req).id, target);
+  if (!state) return res.status(404).json({ error: 'User not found' });
+  res.json(state);
 });
 
 for (const side of ['followers', 'following'] as const) {

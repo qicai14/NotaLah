@@ -9,9 +9,11 @@ CREATE TABLE "FOLLOW_T" (
 CREATE INDEX follow_followee_idx ON "FOLLOW_T" (fol_followee_id);
 
 INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id, fol_created_at)
-SELECT con_usr_id, con_contact_id, con_created_at FROM "CONTACT_T"
-UNION ALL
-SELECT con_contact_id, con_usr_id, con_created_at FROM "CONTACT_T"
+SELECT c.follower_id, c.followee_id, c.created_at
+FROM (SELECT con_usr_id AS follower_id, con_contact_id AS followee_id, con_created_at AS created_at FROM "CONTACT_T"
+      UNION ALL
+      SELECT con_contact_id, con_usr_id, con_created_at FROM "CONTACT_T") c
+WHERE NOT EXISTS (SELECT 1 FROM "USER_T" WHERE usr_id IN (c.follower_id, c.followee_id) AND usr_status = 'deleted')
 ON CONFLICT DO NOTHING;
 
 DROP TABLE "CONTACT_T";

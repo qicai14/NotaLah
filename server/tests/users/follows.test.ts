@@ -52,15 +52,16 @@ describe('Follows', () => {
     expect((await followReq(r, b)).status).toBe(403);
   });
 
-  it('USR-TC16: following a suspended, deleted or unknown user is 404', async () => {
+  it('USR-TC16: a suspended user can be followed; a deleted or unknown user is 404 for follow and unfollow', async () => {
     const a = await insertUser();
-    for (const status of ['suspended', 'deleted'] as const) {
-      const res = await followReq(a, await insertUser({ status }));
-      expect(res.status).toBe(404);
-      expect(res.body.error).toBe('User not found');
+    expect((await followReq(a, await insertUser({ status: 'suspended' }))).status).toBe(201);
+    for (const target of [await insertUser({ status: 'deleted' }), 99999]) {
+      for (const res of [await followReq(a, target), await unfollowReq(a, target)]) {
+        expect(res.status).toBe(404);
+        expect(res.body.error).toBe('User not found');
+      }
     }
-    expect((await followReq(a, 99999)).status).toBe(404);
-    expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(0);
+    expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(1);
   });
 
   it('USR-TC17: a mutual follow makes two users friends; a one-way follow does not', async () => {
@@ -109,6 +110,20 @@ describe('Follows', () => {
     expect(ids((await get(target, `/api/users/${fans[0]}/following`)).body.items)).toEqual([target]);
     expect((await get(target, `/api/users/${target}/followers?cursor=abc`)).status).toBe(400);
     expect((await get(target, `/api/users/${await insertUser({ status: 'deleted' })}/followers`)).status).toBe(404);
+  });
+
+  it('USR-TC24: followers made at the same instant page by id without gaps or repeats', async () => {
+    const target = await insertUser();
+    const fans: number[] = [];
+    for (let i = 0; i < 23; i++) fans.push(await insertUser());
+    await pool.query(
+      `INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) SELECT f, $1 FROM unnest($2::INT[]) AS f`,
+      [target, fans],
+    );
+    const p1 = await get(target, `/api/users/${target}/followers`);
+    const p2 = await get(target, `/api/users/${target}/followers?cursor=${p1.body.nextCursor}`);
+    expect([...ids(p1.body.items), ...ids(p2.body.items)]).toEqual([...fans].sort((x, y) => y - x));
+    expect(p2.body.nextCursor).toBeNull();
   });
 
   it('USR-TC20: counts and lists exclude deleted and suspended users', async () => {

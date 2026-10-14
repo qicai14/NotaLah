@@ -161,14 +161,14 @@ export const countingLecturer = (alias: string) => `(${approvedLecturer(alias)} 
 export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>
   u.role === 'lecturer' && u.lecturerStatus === 'approved';
 
-/** SQL: user `a` follows user `b` (any SQL expressions). */
+/** SQL: user `a` follows user `b`. Arguments are SQL constants or placeholders, never user input. */
 export const follows = (a: string, b: string) =>
   `EXISTS (SELECT 1 FROM "FOLLOW_T" WHERE fol_follower_id = ${a} AND fol_followee_id = ${b})`;
 
 /** SQL: `a` and `b` follow each other, which makes them friends (D38). */
 export const friends = (a: string, b: string) => `(${follows(a, b)} AND ${follows(b, a)})`;
 
-/** Accounts that can be followed and that appear in follow lists and counts: not deleted or suspended (D38). */
+/** Accounts that appear in follow lists and counts: not deleted or suspended (D38). */
 const LISTED = `IN ('active', 'restricted')`;
 
 export interface FollowState {
@@ -200,15 +200,19 @@ export async function findProfile(id: number, viewerId: number): Promise<(Profil
   return rows[0];
 }
 
-export async function getFollowState(viewerId: number, targetId: number): Promise<FollowState> {
-  const { rows } = await pool.query<FollowState>(`SELECT ${FOLLOW_STATE_COLS} FROM "USER_T" u WHERE u.usr_id = $2`, [viewerId, targetId]);
+/** The follow state of a user who is not deleted, as the viewer sees it; undefined for unknown or deleted users. */
+export async function getFollowState(viewerId: number, targetId: number): Promise<FollowState | undefined> {
+  const { rows } = await pool.query<FollowState>(
+    `SELECT ${FOLLOW_STATE_COLS} FROM "USER_T" u WHERE u.usr_id = $2 AND u.usr_status <> 'deleted'`,
+    [viewerId, targetId],
+  );
   return rows[0];
 }
 
-/** Follows a user who is not deleted or suspended; 'exists' when already following. */
+/** Follows a user who is not deleted (the profile rule, D38); 'exists' when already following. */
 export async function follow(followerId: number, followeeId: number): Promise<'created' | 'exists' | 'not_found'> {
   const { rows } = await pool.query<{ found: boolean; created: boolean }>(
-    `WITH t AS (SELECT usr_id FROM "USER_T" WHERE usr_id = $2 AND usr_status ${LISTED}),
+    `WITH t AS (SELECT usr_id FROM "USER_T" WHERE usr_id = $2 AND usr_status <> 'deleted'),
           ins AS (INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) SELECT $1, usr_id FROM t
                   ON CONFLICT DO NOTHING RETURNING 1)
      SELECT EXISTS (SELECT 1 FROM t) AS "found", EXISTS (SELECT 1 FROM ins) AS "created"`,
