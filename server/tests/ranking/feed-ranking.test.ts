@@ -262,6 +262,19 @@ describe('Ranked feed', () => {
     expect(second.items).toHaveLength(9);
   });
 
+  it('RANK-TC28: the author does not see their own note hidden after page 1 on a later page', async () => {
+    const author = await insertUser();
+    for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
+    const page = async (n: number, asOf?: string) =>
+      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(author))).body;
+    const first = await page(1);
+    const victim = (await page(2, first.asOf)).items[0].id;
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [victim]);
+    const second = await page(2, first.asOf);
+    expect(second.items.map((i: Item) => i.id)).not.toContain(victim);
+    expect(second.items).toHaveLength(9);
+  });
+
   it('RANK-TC16: a lecturer author earns V = 0.5 only while approved and active or restricted', async () => {
     const viewer = await insertUser();
     const active = await lecturer();

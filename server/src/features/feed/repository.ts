@@ -9,9 +9,10 @@ export async function getCutoff(asOf: Date | null): Promise<Date> {
   return (await pool.query<{ t: Date }>(`SELECT LEAST(COALESCE($1::TIMESTAMPTZ, NOW()), NOW()) AS "t"`, [asOf])).rows[0].t;
 }
 
+/** Published notes only: VISIBLE lets an author see their own hidden note, which a later page must not show. */
 export async function getNotesByIds(viewerId: number, ids: number[]): Promise<NoteWithEngagement[]> {
   const { rows } = await pool.query<NoteWithEngagement>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = ANY($2::INT[]) AND ${VISIBLE}`,
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = ANY($2::INT[]) AND p.pst_status = 'published' AND ${VISIBLE}`,
     [viewerId, ids],
   );
   return rows;

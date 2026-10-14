@@ -606,7 +606,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   older than `RANKING.snapshotTtlHours` (2) are deleted by the daily purge (D34) and, for one viewer, whenever that viewer stores a new
   one, and the same write also keeps only that viewer's newest `RANKING.snapshotsPerViewer` (4), so reloading page 1 many times within the TTL cannot grow the table; a page requested after its snapshot expired or was dropped is simply recomputed. The snapshot lives in Postgres, so any instance can serve the
   next page. It also closes the D24 gap: an unlike, a deleted comment or a suspended verifier between pages no longer reorders later
-  pages for the same asOf (a note hidden or deleted since still drops out, because the page's notes are loaded through `VISIBLE`, so a snapshot cannot leak it; RANK-TC27).
+  pages for the same asOf (a note hidden or deleted since still drops out, because the page's notes are loaded as published and through `VISIBLE`, so a snapshot cannot leak it, even to the author who still sees a hidden note elsewhere; RANK-TC27, RANK-TC28).
   Measured on the test database with 500 notes (5 slides each, about 2,500 likes, 167 viewer interactions), mean of 20 requests through
   Supertest: page 1 30.0 ms, page 2 from the snapshot 10.1 ms, page 2 recomputed 31.5 ms.
 - **Report queue (audit #4):** `GET /api/admin/reports` returns summaries (id, title, status, module, author id and name, report
