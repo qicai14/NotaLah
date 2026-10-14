@@ -22,7 +22,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** full TERM_T table maintained by admin (rejected: admin workload, no data source);
   cut entirely (rejected: lecturer search had 31.3% support in D5 and filters are cheap once FR4 exists).
 - **Reversibility:** Easy (filters are query parameters).
-- **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR.
+- **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR. Shape confirmed 14 Oct: the lecturer filter also offers one named lecturer.
 
 ## D3 — FR17 background audio on slide notes: **cut (future work)**
 - **Alternatives:** keep as Sprint 4 stretch; rework as a link to external audio.
