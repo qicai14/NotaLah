@@ -3,12 +3,16 @@ import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
 import { requireAuth, requireRole, me } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
+import * as modules from '../modules/repository';
+import { isUniqueViolation } from '../../lib/pool';
+import { issueMap } from '../../lib/validation';
 import * as repo from './repository';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
 adminRouter.param('userId', idParam('Invalid user id', 400));
 adminRouter.param('noteId', idParam('Invalid note id', 400));
+adminRouter.param('moduleId', idParam('Module not found'));
 
 adminRouter.get('/lecturer-applications', async (_req, res) => {
   res.json({ applications: await listPendingLecturers() });
@@ -68,4 +72,52 @@ adminRouter.post('/users/:userId/:action', async (req, res) => {
   if (out === 'admin') return res.status(403).json({ error: 'Administrator accounts cannot be changed here' });
   if (out === 'deleted') return res.status(409).json({ error: 'This account has been deleted' });
   res.json({ user: out });
+});
+
+const moduleName = z.string({ error: 'Name is required' }).trim().min(1, 'Name is required').max(150, 'Name must be at most 150 characters');
+const moduleProgramme = z
+  .string({ error: 'Programme is required' })
+  .trim()
+  .min(1, 'Programme is required')
+  .max(100, 'Programme must be at most 100 characters');
+const newModuleSchema = z.object({
+  code: z
+    .string({ error: 'Code is required' })
+    .trim()
+    .toUpperCase()
+    .min(1, 'Code is required')
+    .max(20, 'Code must be at most 20 characters')
+    .regex(/^[A-Z0-9][A-Z0-9-]*$/, 'Code may contain only letters, digits and hyphens'),
+  name: moduleName,
+  programme: moduleProgramme,
+});
+const moduleEditSchema = z.object({ name: moduleName.optional(), programme: moduleProgramme.optional() });
+
+const body = (req: Request) => (req.body && typeof req.body === 'object' ? req.body : {});
+
+adminRouter.get('/modules', async (_req, res) => {
+  res.json({ modules: await modules.listAdminModules() });
+});
+
+adminRouter.post('/modules', async (req, res) => {
+  const parsed = newModuleSchema.safeParse(body(req));
+  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  const { code, name, programme } = parsed.data;
+  try {
+    res.status(201).json({ module: await modules.createModule(code, name, programme) });
+  } catch (err) {
+    if (isUniqueViolation(err)) return res.status(409).json({ error: 'Module code already exists' });
+    throw err;
+  }
+});
+
+// The code is immutable: notes and the dissertation refer to it, so only name and programme can change.
+adminRouter.patch('/modules/:moduleId', async (req, res) => {
+  const parsed = moduleEditSchema.safeParse(body(req));
+  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  const { name, programme } = parsed.data;
+  if (name === undefined && programme === undefined) return res.status(400).json({ error: 'Nothing to change' });
+  const updated = await modules.updateModule(Number(req.params.moduleId), { name, programme });
+  if (!updated) return res.status(404).json({ error: 'Module not found' });
+  res.json({ module: updated });
 });
