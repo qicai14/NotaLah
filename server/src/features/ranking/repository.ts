@@ -22,12 +22,13 @@ export async function getCandidates(viewerId: number, asOf: Date, limit: number 
        WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
        ORDER BY p.pst_published_at DESC, p.pst_id DESC
        LIMIT $3),
-     verified AS (SELECT DISTINCT v.ver_pst_id AS pst_id ${VALID_VERIFICATIONS} AND v.ver_created_at <= $2::TIMESTAMPTZ
-       AND v.ver_created_at > $2::TIMESTAMPTZ - make_interval(days => $4))
+     verified AS (SELECT DISTINCT v.ver_pst_id AS pst_id ${VALID_VERIFICATIONS} AND v.ver_created_at <= $2::TIMESTAMPTZ)
      SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", ${HASHTAGS_COL},
             ${countingLecturer('u')} AS "lecturerAuthor", ${countsCol('$2::TIMESTAMPTZ')},
             p.pst_id IN (SELECT pst_id FROM verified) AS "verified"
-     FROM (SELECT pst_id FROM newest UNION SELECT pst_id FROM verified) ids
+     FROM (SELECT pst_id FROM newest
+           UNION SELECT v.ver_pst_id ${VALID_VERIFICATIONS} AND v.ver_created_at <= $2::TIMESTAMPTZ
+                                                              AND v.ver_created_at > $2::TIMESTAMPTZ - make_interval(days => $4)) ids
      JOIN "POST_T" p ON p.pst_id = ids.pst_id
      JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}`,

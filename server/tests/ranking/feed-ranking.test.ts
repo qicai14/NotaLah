@@ -38,6 +38,7 @@ const verify = (noteId: number, lecturerId: number) =>
   pool.query(`INSERT INTO "VERIFICATION_T" (ver_pst_id, ver_usr_id) VALUES ($1, $2)`, [noteId, lecturerId]);
 const lecturer = (status: TestUserInput['status'] = 'active') =>
   insertUser({ role: 'lecturer', lecturerStatus: 'approved', status, staffId: `S${Math.random()}`.slice(0, 12) });
+const dbNow = async (): Promise<Date> => (await pool.query<{ t: Date }>('SELECT NOW() AS t')).rows[0].t;
 const feed = (uid: number) => request(app).get('/api/feed').set({ Authorization: bearer(uid) });
 
 interface Item {
@@ -99,15 +100,15 @@ describe('Ranked feed', () => {
     expect(ids).not.toContain(oldPlain);
   });
 
-  it('RANK-TC17: a future asOf is capped at now, so every score stays finite', async () => {
+  it('RANK-TC17: a future asOf is capped at now, so recency is not zeroed', async () => {
     const author = await insertUser();
     const viewer = await insertUser();
     await insertNote(author, ['sql'], 5);
     const res = await request(app).get('/api/feed').query({ asOf: '9999-01-01T00:00:00Z' }).set({ Authorization: bearer(viewer) });
     expect(res.status).toBe(200);
-    expect(new Date(res.body.asOf).getTime()).toBeLessThanOrEqual(Date.now());
+    expect(new Date(res.body.asOf).getTime()).toBeLessThanOrEqual((await dbNow()).getTime());
     expect(res.body.items).toHaveLength(1);
-    expect(Number.isFinite(res.body.items[0].score)).toBe(true);
+    expect(res.body.items[0].components.R).toBeGreaterThan(0);
   });
 
   it('RANK-TC18: a Super Like older than the verified window no longer surfaces an old note', async () => {
@@ -119,8 +120,19 @@ describe('Ranked feed', () => {
     await verify(fresh, await lecturer());
     await pool.query(`UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`, [RANKING.verifiedCandidateWindowDays + 1, stale]);
     const recent = await insertNote(author, ['sql'], 1);
-    const ids = (await getCandidates(viewer, new Date(), 1)).map((c) => c.id);
+    const ids = (await getCandidates(viewer, await dbNow(), 1)).map((c) => c.id);
     expect(ids.sort()).toEqual([recent, fresh].sort());
+  });
+
+  it('RANK-TC19: a note in the newest window keeps verified and V = 1 when its only Super Like is stale', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const note = await insertNote(author, ['sql'], 5);
+    await verify(note, await lecturer());
+    await pool.query(`UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`, [RANKING.verifiedCandidateWindowDays + 1, note]);
+    expect((await getCandidates(viewer, await dbNow())).find((c) => c.id === note)!.verified).toBe(true);
+    const item: Item = (await feed(viewer)).body.items.find((i: Item) => i.id === note);
+    expect(item.components.V).toBe(1);
   });
 
   it('RANK-TC13: a verified, relevant note is surfaced ahead of a more-liked unverified irrelevant one (NFR3)', async () => {

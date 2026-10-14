@@ -483,7 +483,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Decision:** a note older than the newest-N window becomes a ranking candidate through a Super Like only if that Super Like
   was made within `RANKING.verifiedCandidateWindowDays` (180) before asOf, so the candidate set no longer grows with every
   Super Like ever given. A future `asOf` on the feed is capped at the database clock (`LEAST(..., NOW())`), because a cutoff
-  ahead of now made recency Infinity/NaN. Also fixed in the same pass: note editor reseeding from stale router state,
+  ahead of now zeroed recency for every note and let later engagement change a "frozen" page. Also fixed in the same pass: note editor reseeding from stale router state,
   `inTransaction` masking the original error when ROLLBACK fails, and sequential profile queries.
 - **Alternatives:** reject a future asOf with 400 (rejected: breaks a harmless client clock skew); an index on the Super Like date (out of scope, no migration).
 - **Reversibility:** Easy (one constant, one SQL expression).
