@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../auth/middleware';
 import { countDrafts, listNotesByAuthor } from '../notes/repository';
-import { invalidId, issueMap } from '../../lib/validation';
+import { idParam, issueMap } from '../../lib/validation';
 import { findProfile, updateProfile } from './repository';
 
 export const usersRouter = Router();
 usersRouter.use(requireAuth);
+usersRouter.param('id', idParam('User not found'));
 
 const profileSchema = z.object({
   displayName: z
@@ -32,7 +33,7 @@ usersRouter.put('/me', async (req, res) => {
 });
 
 usersRouter.get('/:id', async (req, res) => {
-  const profile = invalidId(req.params.id) ? undefined : await findProfile(Number(req.params.id));
+  const profile = await findProfile(Number(req.params.id));
   if (!profile) return res.status(404).json({ error: 'User not found' });
   const own = profile.id === req.user!.id;
   const [notes, draftCount] = await Promise.all([listNotesByAuthor(profile.id, req.user!.id), own ? countDrafts(profile.id) : undefined]);

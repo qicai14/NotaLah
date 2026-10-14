@@ -2,11 +2,13 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
 import { requireAuth, requireRole } from '../auth/middleware';
-import { invalidId } from '../../lib/validation';
+import { idParam } from '../../lib/validation';
 import * as repo from './repository';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
+adminRouter.param('userId', idParam('Invalid user id', 400));
+adminRouter.param('noteId', idParam('Invalid note id', 400));
 
 adminRouter.get('/lecturer-applications', async (_req, res) => {
   res.json({ applications: await listPendingLecturers() });
@@ -14,10 +16,6 @@ adminRouter.get('/lecturer-applications', async (_req, res) => {
 
 async function decide(req: Request<{ userId: string }>, res: Response, approve: boolean) {
   const userId = Number(req.params.userId);
-  if (invalidId(req.params.userId)) {
-    res.status(400).json({ error: 'Invalid user id' });
-    return;
-  }
   const blank = typeof req.body?.reason !== 'string' || !req.body.reason.trim();
   const reason = approve && blank ? 'Approved' : requiredText(res, req.body?.reason, 'Reason'); // reason optional only when approving (D18)
   if (reason === undefined) return;
@@ -46,7 +44,6 @@ adminRouter.get('/reports', async (_req, res) => {
 });
 
 adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
-  if (invalidId(req.params.noteId)) return res.status(400).json({ error: 'Invalid note id' });
   const outcome = req.body?.outcome;
   if (outcome !== 'dismiss' && outcome !== 'hide') return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
   const remark = requiredText(res, req.body?.remark, 'Remark');
@@ -66,7 +63,6 @@ const ACTIONS: repo.AccountAction[] = ['restrict', 'suspend', 'reinstate', 'dele
 adminRouter.post('/users/:userId/:action', async (req, res) => {
   const action = req.params.action as repo.AccountAction;
   if (!ACTIONS.includes(action)) return res.status(404).json({ error: 'Not found' });
-  if (invalidId(req.params.userId)) return res.status(400).json({ error: 'Invalid user id' });
   const reason = requiredText(res, req.body?.reason, 'Reason');
   if (reason === undefined) return;
   const out = await repo.applyAccountAction(Number(req.params.userId), req.user!.id, action, reason);

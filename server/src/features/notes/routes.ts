@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireActive, requireAuth } from '../auth/middleware';
-import { invalidId } from '../../lib/validation';
+import { idParam } from '../../lib/validation';
 import {
   createNote, getNoteMeta, getVisibleNote, listDrafts, listModules, moduleExists, replaceNote, softDeleteNote,
 } from './repository';
@@ -9,6 +9,7 @@ import { parseNoteBody } from './service';
 export const notesRouter = Router();
 export const modulesRouter = Router();
 notesRouter.use(requireAuth);
+notesRouter.param('id', idParam('Note not found'));
 modulesRouter.use(requireAuth);
 
 modulesRouter.get('/', async (_req, res) => {
@@ -31,13 +32,13 @@ notesRouter.post('/', requireActive, async (req, res) => {
 });
 
 notesRouter.get('/:id', async (req, res) => {
-  const note = invalidId(req.params.id) ? undefined : await getVisibleNote(Number(req.params.id), req.user!.id);
+  const note = await getVisibleNote(Number(req.params.id), req.user!.id);
   if (!note) return res.status(404).json({ error: 'Note not found' });
   res.json({ note });
 });
 
 notesRouter.put('/:id', requireActive, async (req, res) => {
-  const meta = invalidId(req.params.id) ? undefined : await getNoteMeta(Number(req.params.id), req.user!.id);
+  const meta = await getNoteMeta(Number(req.params.id), req.user!.id);
   if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
   if (meta.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
   if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
@@ -60,7 +61,7 @@ notesRouter.put('/:id', requireActive, async (req, res) => {
 });
 
 notesRouter.delete('/:id', async (req, res) => {
-  const meta = invalidId(req.params.id) ? undefined : await getNoteMeta(Number(req.params.id), req.user!.id);
+  const meta = await getNoteMeta(Number(req.params.id), req.user!.id);
   if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
   if (meta.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
   await softDeleteNote(Number(req.params.id));

@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
-import { issueMap, invalidId } from '../../lib/validation';
+import { idParam, issueMap } from '../../lib/validation';
 import { isApprovedLecturer } from '../users/repository';
 import { requireActive, requireAuth } from '../auth/middleware';
 import * as repo from './repository';
@@ -8,25 +8,25 @@ import * as repo from './repository';
 /** Mounted at /api; auth is applied per route so unrelated /api paths keep their own behaviour. */
 export const engagementRouter = Router();
 
-const notFound = (res: Response) => res.status(404).json({ error: 'Note not found' });
-const idOf = (req: Request) => (invalidId(req.params.id) ? undefined : Number(req.params.id));
+engagementRouter.param('noteId', idParam('Note not found'));
+engagementRouter.param('commentId', idParam('Comment not found'));
 /** The target note id when the viewer may engage with it, else sends 404 and returns undefined. */
 async function target(req: Request, res: Response) {
-  const id = idOf(req);
-  const t = id === undefined ? undefined : await repo.getTarget(id, req.user!.id);
-  if (!t) return void notFound(res);
-  return { id: id!, ...t };
+  const id = Number(req.params.noteId);
+  const t = await repo.getTarget(id, req.user!.id);
+  if (!t) return void res.status(404).json({ error: 'Note not found' });
+  return { id, ...t };
 }
 
 // ---- views and likes ----
-engagementRouter.post('/notes/:id/view', requireAuth, async (req, res) => {
+engagementRouter.post('/notes/:noteId/view', requireAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   if (t.authorId !== req.user!.id) await repo.logView(t.id, req.user!.id); // own views are not interest signals (D22)
   res.status(204).end();
 });
 
-engagementRouter.post('/notes/:id/like', requireAuth, requireActive, async (req, res) => {
+engagementRouter.post('/notes/:noteId/like', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   if (t.authorId === req.user!.id) return res.status(400).json({ error: 'You cannot like your own note' });
@@ -34,14 +34,12 @@ engagementRouter.post('/notes/:id/like', requireAuth, requireActive, async (req,
   res.status(added ? 201 : 200).json({ liked: true, likes });
 });
 
-engagementRouter.delete('/notes/:id/like', requireAuth, async (req, res) => {
-  const id = idOf(req);
-  if (id === undefined) return notFound(res);
-  res.json({ liked: false, likes: await repo.unlikeNote(id, req.user!.id) }); // no visibility check (D22)
+engagementRouter.delete('/notes/:noteId/like', requireAuth, async (req, res) => {
+  res.json({ liked: false, likes: await repo.unlikeNote(Number(req.params.noteId), req.user!.id) }); // no visibility check (D22)
 });
 
 // ---- comments ----
-engagementRouter.get('/notes/:id/comments', requireAuth, async (req, res) => {
+engagementRouter.get('/notes/:noteId/comments', requireAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   res.json({ comments: await repo.listComments(t.id, req.user!.id) });
@@ -53,7 +51,7 @@ const commentSchema = z.object({
   parentId: z.number({ error: 'Invalid parent comment' }).int('Invalid parent comment').min(1, 'Invalid parent comment').nullish(),
 });
 
-engagementRouter.post('/notes/:id/comments', requireAuth, requireActive, async (req, res) => {
+engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   const parsed = commentSchema.safeParse(req.body ?? {});
@@ -75,34 +73,32 @@ engagementRouter.post('/notes/:id/comments', requireAuth, requireActive, async (
 
 /** Loads the comment for the viewer or sends 404. */
 async function commentOf(req: Request, res: Response) {
-  const id = idOf(req);
-  const c = id === undefined ? undefined : await repo.getVisibleComment(id, req.user!.id);
+  const id = Number(req.params.commentId);
+  const c = await repo.getVisibleComment(id, req.user!.id);
   if (!c) return void res.status(404).json({ error: 'Comment not found' });
-  return { id: id!, ...c };
+  return { id, ...c };
 }
 
-engagementRouter.delete('/comments/:id', requireAuth, async (req, res) => {
-  const id = idOf(req);
-  const c = id === undefined ? undefined : await repo.getVisibleComment(id, req.user!.id);
+engagementRouter.delete('/comments/:commentId', requireAuth, async (req, res) => {
+  const id = Number(req.params.commentId);
+  const c = await repo.getVisibleComment(id, req.user!.id);
   if (c && c.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
   // Owners may delete their comment even when the note is no longer visible to them (D22).
-  if (id === undefined || !(await repo.softDeleteComment(id, req.user!.id))) {
+  if (!(await repo.softDeleteComment(id, req.user!.id))) {
     return res.status(404).json({ error: 'Comment not found' });
   }
   res.status(204).end();
 });
 
-engagementRouter.post('/comments/:id/like', requireAuth, requireActive, async (req, res) => {
+engagementRouter.post('/comments/:commentId/like', requireAuth, requireActive, async (req, res) => {
   const c = await commentOf(req, res);
   if (!c) return;
   const { added, likes } = await repo.likeComment(c.id, req.user!.id);
   res.status(added ? 201 : 200).json({ liked: true, likes });
 });
 
-engagementRouter.delete('/comments/:id/like', requireAuth, async (req, res) => {
-  const id = idOf(req);
-  if (id === undefined) return res.status(404).json({ error: 'Comment not found' });
-  res.json({ liked: false, likes: await repo.unlikeComment(id, req.user!.id) }); // no visibility check (D22)
+engagementRouter.delete('/comments/:commentId/like', requireAuth, async (req, res) => {
+  res.json({ liked: false, likes: await repo.unlikeComment(Number(req.params.commentId), req.user!.id) }); // no visibility check (D22)
 });
 
 // ---- reports (UC12) ----
@@ -113,7 +109,7 @@ const reportSchema = z.object({
   details: z.string({ error: 'Invalid details' }).trim().max(500, 'Details must be at most 500 characters').nullish(),
 });
 
-engagementRouter.post('/notes/:id/report', requireAuth, requireActive, async (req, res) => {
+engagementRouter.post('/notes/:noteId/report', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   const parsed = reportSchema.safeParse(req.body ?? {});
@@ -131,17 +127,15 @@ engagementRouter.post('/notes/:id/report', requireAuth, requireActive, async (re
 });
 
 // ---- bookmarks (UC13) ----
-engagementRouter.post('/notes/:id/bookmark', requireAuth, requireActive, async (req, res) => {
+engagementRouter.post('/notes/:noteId/bookmark', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   await repo.addBookmark(t.id, req.user!.id);
   res.json({ bookmarked: true });
 });
 
-engagementRouter.delete('/notes/:id/bookmark', requireAuth, async (req, res) => {
-  const id = idOf(req);
-  if (id === undefined) return notFound(res);
-  await repo.removeBookmark(id, req.user!.id); // removal never needs visibility
+engagementRouter.delete('/notes/:noteId/bookmark', requireAuth, async (req, res) => {
+  await repo.removeBookmark(Number(req.params.noteId), req.user!.id); // removal never needs visibility
   res.json({ bookmarked: false });
 });
 
