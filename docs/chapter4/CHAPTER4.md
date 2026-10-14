@@ -428,7 +428,7 @@
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
-	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-contact until it is accepted (FR6); CONTACT_T, which records the resulting contact relationship; and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13). Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities; the second foreign keys to USER_T in CONTACT_T, MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
+	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities; the second foreign keys to USER_T in FOLLOW_T, MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
 
 ## 4.3.2 Database Schema
 
@@ -512,9 +512,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | int_pst_id | INTEGER | | FK → POST_T, NOT NULL | Note interacted with |
 | | int_type | VARCHAR | 10 | NOT NULL, CHECK (view, like, comment) | Interaction kind; sets its weight in the interest vector |
 | | int_created_at | TIMESTAMPTZ | | NOT NULL | Interaction time; age for the 14-day decay |
-| CONTACT_T | con_usr_id | INTEGER | | PK, FK → USER_T | User |
-| | con_contact_id | INTEGER | | PK, FK → USER_T, CHECK differs from con_usr_id | The user's contact; stored in both directions |
-| | con_created_at | TIMESTAMPTZ | | NOT NULL | Time the request was accepted |
+| FOLLOW_T | fol_follower_id | INTEGER | | PK, FK → USER_T | User who follows |
+| | fol_followee_id | INTEGER | | PK, FK → USER_T, CHECK differs from fol_follower_id; indexed | User being followed; a row in each direction makes the two users friends |
+| | fol_created_at | TIMESTAMPTZ | | NOT NULL | Time of the follow; orders follower lists |
 | MESSAGE_REQUEST_T | mrq_id | INTEGER (identity) | | PK, NOT NULL | Unique request identifier |
 | | mrq_sender_id | INTEGER | | FK → USER_T, NOT NULL | Requesting user |
 | | mrq_recipient_id | INTEGER | | FK → USER_T, NOT NULL | Recipient who must approve |
@@ -749,7 +749,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC4 | Publish with invalid or too many hashtags | ["data base!"]; six hashtags | 400 naming the invalid hashtag; 400 "Maximum 5 hashtags" | | |
 | NOTE-TC5 | Save incomplete note as draft | title "Draft 1", no module, no hashtags | 201; status draft; not returned by feed or search | | |
 | NOTE-TC6 | Publish valid public note | title, 3 slides, module CT046-3-M, ["#MVC", "design_patterns"] | 201; status published, visibility public, published time set; hashtags stored as "mvc" and "design_patterns"; 3 slides in order | | |
-| NOTE-TC7 | Publish contacts-only note | visibility contacts | Visible to the author's contacts; not visible to a non-contact in feed, search or direct GET (404) | | |
+| NOTE-TC7 | Publish contacts-only note | visibility contacts; viewers: a friend (mutual follow) and a one-way follower | Visible to the author's friends; not visible to a one-way follower or a stranger in feed, search or direct GET (404) | | |
 | NOTE-TC8 | Edit own published note | change title and reorder slides 1 and 2 | 200; new title and order stored; updated time changes | | |
 | NOTE-TC9 | Edit or delete another user's note | user B sends PUT and DELETE on user A's note | 403 for both; note unchanged | | |
 | NOTE-TC10 | Slide content containing script | slide content `<script>alert(1)</script><b>ok</b>` | Stored and returned with the script removed and formatting kept | | |
@@ -776,7 +776,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC1 | Update profile with blank display name | displayName "  " | 400 "Display name is required" | | |
 | USR-TC2 | Update profile with a bio that is too long | bio of 301 characters | 400 "Bio must be at most 300 characters" | | |
 | USR-TC3 | Update profile with valid details | displayName "Ann Lee", programme, bio "Hello" | 200; values stored and shown on the profile | | |
-| USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, contact, owner | Stranger sees the public note only; contact also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
+| USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, friend (mutual follow), owner | Stranger sees the public note only; friend also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
 | USR-TC5 | View unknown user or without token | user 99999; no Authorization header | 404; 401 | | |
 | USR-TC6 | Update profile with over-long fields | displayName 51 characters, programme 101 characters | 400 naming both limits | | |
 | USR-TC7 | Update profile with empty optional fields | programme "", bio "  " | 200; stored as NULL | | |
@@ -784,6 +784,16 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC9 | View profile with a non-numeric id | GET /api/users/abc | 404 | | |
 | USR-TC11 | Partial profile update | PUT with only displayName; then bio "" | programme and bio keep their values; empty bio becomes NULL, programme untouched | | |
 | USR-TC10 | Hidden and deleted notes on a profile | owner has published, hidden and deleted notes | Only the published note is listed | | |
+| USR-TC12 | Follow a user | user A follows user B | 201; B's follower count 1; A sees followedByMe true; B sees followsMe true | | |
+| USR-TC13 | Follow the same user twice | repeat TC12 | 200; one follow row; count unchanged | | |
+| USR-TC14 | Follow yourself | A follows A | 400 "You cannot follow yourself" | | |
+| USR-TC15 | Unfollow, and follow while restricted | DELETE follow twice; restricted user unfollows then follows | 200 both times with the count back to 0; restricted user may unfollow (200) but not follow (403) | | |
+| USR-TC16 | Follow a suspended, deleted or unknown user | targets with status suspended, deleted; user 99999 | 404 "User not found"; no row stored | | |
+| USR-TC17 | Friends are a mutual follow | A follows B; then B follows A | isFriend false after the one-way follow, true for both after the mutual follow, also in the follower list | | |
+| USR-TC18 | Contacts-only note and friendship | author has a friend, a one-way follower and a user the author follows; then the author unfollows the friend | Only the friend sees the note (others 404); after the unfollow the friend also gets 404 | | |
+| USR-TC19 | Follower and following lists | 25 followers one second apart; GET followers, then with nextCursor; cursor "abc"; list of a deleted user | 20 newest first with nextCursor, then the last 5 with nextCursor null; 400 "Invalid cursor"; 404 | | |
+| USR-TC20 | Counts exclude deleted and suspended users | target follows and is followed by an active, a suspended and a deleted user | followerCount 1 and followingCount 1; both lists show only the active user | | |
+| USR-TC21 | Deleting an account clears its follows | admin deletes a user who has a friend; another follow exists | No FOLLOW_T row names the deleted user; the unrelated follow remains | | |
 
 *Table 4.27: Ranking and feed module test cases (RANK)*
 
@@ -797,7 +807,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC6 | Relevance with empty interest vector and with hashtag padding | new viewer; viewer interest {sql: 1.0}, post tags [sql] vs [sql, a, b, c] | M = 0; M = 1.00 vs 0.25 (padding lowers relevance) | | |
 | RANK-TC7 | Composite score reproduces IR worked example | E, R, V, M values of the five posts in Table 10 (IR §2.3.4.8) | Scores 0.860, 0.590, 0.544, 0.336, 0.248 (±0.002, as the table's inputs are rounded) in that order | | |
 | RANK-TC8 | Weights read from configuration | change w3 in config to 0.40, w1 to 0.20 | Scores change accordingly without code change; weights that do not sum to 1 are rejected at start-up | | |
-| RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-contact | Only published, permitted posts returned | | |
+| RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-friend | Only published, permitted posts returned | | |
 | RANK-TC10 | Feed request without token and with invalid page | no token; page = -1 | 401; 400 "Invalid page" | | |
 | RANK-TC11 | Verified student note outranks an identical unverified one | four student notes of equal age and tags; Super Liked by an approved active lecturer, by a restricted one, by a suspended one, and none | The active and restricted lecturers' notes first with V = 1.0 and a score higher by w3; the suspended lecturer's and the plain note have V = 0 | | |
 | RANK-TC12 | Interest vector weighting, decay and normalisation | viewer view, like and comment today on #viewed, #liked, #commented; comment 14 days ago on #older; comment 91 days ago on #ancient | #commented 1.0, #liked 0.6, #viewed 0.2, #older 0.5, #ancient absent; maximum weight 1.0; no history gives an empty vector | | |
@@ -805,6 +815,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC14 | Old verified note stays a candidate | candidate window 2; two recent notes, an older unverified note and a still older verified note | Candidates are the two recent notes and the verified note; the older unverified note is excluded | | |
 | RANK-TC15 | Ranking snapshot stable across pages | 20 notes; page 1 and page 2 fetched with the returned asOf; then 20 likes and a Super Like added to the last note of page 2; page 2 fetched again with the same asOf | Page 2 lists the same notes with the same components; the shown like count is 20 (live); a feed with a fresh asOf moves that note onto page 1 | | |
 | RANK-TC16 | Lecturer-author bonus follows account status | notes by an approved lecturer who is active, one who is restricted and one who is suspended | Active and restricted authors' notes have the lecturer-author flag (V = 0.5); the suspended author's note is not a candidate for others and, for the author, has no flag | | |
+| RANK-TC21 | Following feed shows only followed authors | viewer follows one author; another user follows the viewer; notes by the followed author, the other user and the viewer | GET /api/feed?tab=following lists the followed author's notes newest first, without score; unknown tab 400 "Invalid tab" | | |
+| RANK-TC22 | Following feed paging stable with asOf | 12 notes by a followed author; page 1, then a new note, then page 2 with the returned asOf | Page 1 has 10 notes and nextPage 2; page 2 has the 2 oldest notes and excludes the new note | | |
+| RANK-TC23 | Contacts-only notes in the Following feed | author with a friend and a one-way follower; a public and a contacts-only note | Friend sees both notes; one-way follower sees only the public note | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 

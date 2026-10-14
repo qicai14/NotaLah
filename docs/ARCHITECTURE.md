@@ -22,16 +22,16 @@ server/src/lib/                   env.ts (validated config), pool.ts (pg pool), 
 server/src/types/                 types shared by several features
 server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create)
 server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes
-server/src/features/users/        USER_T repository
+server/src/features/users/        USER_T repository, profiles, follows and follower lists ("FOLLOW_T", D38)
 server/src/features/moderation/   admin-only routes: lecturer approval (UC22), report queue (UC20), account
                                   restrict/suspend/reinstate/delete (UC21)
 server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
 server/src/features/verification/ lecturer Super Like of notes and its withdrawal, "VERIFICATION_T" (UC19)
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
-server/src/features/feed/         ranked feed: service.ts (ranking orchestration), repository.ts (cutoff, note lookup)
+server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup)
 server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
 server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
-server/src/features/messaging/    post-anchored messages, contact approval, groups, Socket.io (Sprint 4)
+server/src/features/messaging/    post-anchored messages, message requests from non-friends, groups, Socket.io (Sprint 4)
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
 client/src/App.tsx, main.tsx      routes and bootstrap

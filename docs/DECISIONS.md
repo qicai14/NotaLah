@@ -537,3 +537,38 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `https://api.<domain>`, empty in development so the Vite proxy still applies); the cookie stays host-only (no Domain attribute), and `app.` and `api.` share a
   registrable domain, so SameSite=Lax still sends it.
 - **Reversibility:** Medium (server extractor, CORS and CSRF middleware, client api wrapper and auth context).
+
+## D38 - Follows replace contacts; friends are mutual follows; Following feed (R2, 15 Oct 2026)
+- **Decision:** implements the D9 user review (14 Oct). Migration `20261015000002_follows.sql` creates `"FOLLOW_T"`
+  (`fol_follower_id`, `fol_followee_id`, `fol_created_at`; primary key on the pair, `CHECK` follower <> followee, index
+  `follow_followee_idx` on the followee), copies every `"CONTACT_T"` row into it in both directions and drops
+  `"CONTACT_T"`; the down migration recreates `"CONTACT_T"` from mutual pairs only. Anyone (student or lecturer) may follow
+  anyone, and one-way follows are allowed. Two users who follow each other are **friends**; the `friends(a, b)` SQL helper in
+  `users/repository.ts` (two `EXISTS` on `"FOLLOW_T"`) is the one definition, and the notes `VISIBLE` fragment uses it, so a
+  contacts-only note (`pst_visibility` 'contacts', label unchanged for now) is visible to the author's friends only, in every
+  route that already used `VISIBLE` (feed, note detail, profile lists, engagement, Super Like). This supersedes the D21
+  "Contacts" bullet.
+- **API:** `POST /api/users/:id/follow` (`requireActive`): 201 new, 200 already following, 400 "You cannot follow
+  yourself", 404 "User not found" when the target is unknown, deleted or suspended. `DELETE /api/users/:id/follow` is 200
+  and idempotent, without `requireActive` (D22 removal rule). Both answer with the target's follow state
+  `{followerCount, followingCount, followedByMe, followsMe, isFriend}`, which `GET /api/users/:id` now also carries.
+  `GET /api/users/:id/followers` and `/following` return `{items: [{id, displayName, role, isVerifiedLecturer, followedByMe,
+  isFriend}], nextCursor}`, 20 per page, newest follow first; 404 for an unknown or deleted user (the profile rule), 400
+  "Invalid cursor". Counts and lists leave out deleted and suspended accounts. Admin account deletion deletes the user's
+  follow rows in both directions in the same transaction.
+- **Cursor:** keyset on (`fol_created_at`, user id), sent as `<microseconds since epoch>_<id>` and built in SQL, because a
+  JavaScript `Date` holds milliseconds only and a millisecond cursor would skip follows made within the same millisecond.
+- **Following feed:** `GET /api/feed?tab=following` lists visible published notes by followed authors, newest first, with the
+  same `page`/`asOf` paging and response shape as the ranked feed but without `score` and `components`. It is chronological
+  rather than ranked because a user who opens it has already chosen the authors; the value is "what is new from people I
+  follow", and ranking would hide a followed author's latest note behind older popular ones. The ranked For You feed stays the
+  default; any other `tab` value is 400 "Invalid tab".
+- **Messaging (Sprint 4):** friends message directly; a non-friend's first message is a request (FR6), and approving it opens
+  that conversation only, without making the two users friends.
+- **Not changed:** the client (the UI waits for the redesign); Chapter 4 use cases, activity and sequence diagrams that still say
+  "contact" (UC04, UC10, UC15-UC18, Figures 4.7 and 4.12) and the ERD image.
+- **Alternatives:** keeping `"CONTACT_T"` beside follows (rejected: two relationships for one idea); a friends table maintained
+  on each follow (rejected: a derived fact that can drift; two indexed `EXISTS` are cheap); offset paging for follower lists
+  (rejected: rows shift as people follow and unfollow); a ranked Following feed (rejected, see above).
+- **Tests:** USR-TC12 to USR-TC21, RANK-TC21 to RANK-TC23; NOTE-TC7 and USR-TC4 fixtures now use follows.
+- **Reversibility:** Medium (one migration with a down step that keeps mutual pairs; one-way follows are lost on rollback).
