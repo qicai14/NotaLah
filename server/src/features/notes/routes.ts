@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireActive, requireAuth, me } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
+import { parseKeyset } from '../../lib/keyset';
 import {
   createNote, getNoteMeta, getVisibleNote, listDrafts, listModules, moduleExists, replaceNote, softDeleteNote,
 } from './repository';
@@ -17,7 +18,10 @@ modulesRouter.get('/', async (_req, res) => {
 });
 
 notesRouter.get('/drafts', async (req, res) => {
-  res.json({ notes: await listDrafts(me(req).id) });
+  const page = parseKeyset(req, res, 2);
+  if (!page) return;
+  const { items, nextCursor } = await listDrafts(me(req).id, page);
+  res.json({ notes: items, nextCursor });
 });
 
 notesRouter.post('/', requireActive, async (req, res) => {

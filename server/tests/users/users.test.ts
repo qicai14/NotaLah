@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -129,5 +129,20 @@ describe('Profiles', () => {
     expect(kept.status).toBe(200);
     expect(kept.body.user.programme).toBe('Legacy Programme');
     expect((await putMe(await insertUser(), { displayName: 'Bob', programme: 'Legacy Programme' })).status).toBe(400);
+  });
+
+  it('USR-TC25: the profile embeds the first 50 notes; GET /users/:id/notes continues from notesNextCursor', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const notes: number[] = [];
+    for (let i = 0; i < 52; i++) notes.push(await insertNote(author, { slides: 0 }));
+    await pool.query(`UPDATE "POST_T" SET pst_published_at = '2026-10-01T00:00:00.123456Z'`);
+    const profile = (await getUser(viewer, author)).body.user;
+    expect(profile.notes).toHaveLength(50);
+    const rest = await request(app).get(`/api/users/${author}/notes`).query({ cursor: profile.notesNextCursor }).set(asUser(viewer));
+    expect(rest.body.nextCursor).toBeNull();
+    expect([...profile.notes, ...rest.body.notes].map((n: { id: number }) => n.id)).toEqual([...notes].reverse());
+    expect((await request(app).get(`/api/users/99999/notes`).set(asUser(viewer))).status).toBe(404);
+    expect((await request(app).get(`/api/users/${author}/notes?cursor=x`).set(asUser(viewer))).status).toBe(400);
   });
 });

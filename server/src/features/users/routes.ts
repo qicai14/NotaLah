@@ -3,10 +3,12 @@ import { z } from 'zod';
 import { requireActive, requireAuth, me } from '../auth/middleware';
 import { countDrafts, listNotesByAuthor } from '../notes/repository';
 import { idParam, issueMap } from '../../lib/validation';
+import { parseKeyset } from '../../lib/keyset';
 import { programmeExists } from '../modules/repository';
 import { findProfile, follow, getFollowState, listFollows, unfollow, updateProfile } from './repository';
 
 export const usersRouter = Router();
+const PROFILE_NOTES = 50;
 usersRouter.use(requireAuth);
 usersRouter.param('id', idParam('User not found'));
 
@@ -66,10 +68,23 @@ for (const side of ['followers', 'following'] as const) {
   });
 }
 
+usersRouter.get('/:id/notes', async (req, res) => {
+  const page = parseKeyset(req, res, 2);
+  if (!page) return;
+  const user = Number(req.params.id);
+  if (!(await findProfile(user, me(req).id))) return res.status(404).json({ error: 'User not found' });
+  const { items, nextCursor } = await listNotesByAuthor(user, me(req).id, page);
+  res.json({ notes: items, nextCursor });
+});
+
 usersRouter.get('/:id', async (req, res) => {
   const profile = await findProfile(Number(req.params.id), me(req).id);
   if (!profile) return res.status(404).json({ error: 'User not found' });
   const own = profile.id === me(req).id;
-  const [notes, draftCount] = await Promise.all([listNotesByAuthor(profile.id, me(req).id), own ? countDrafts(profile.id) : undefined]);
-  res.json({ user: { ...profile, notes, ...(own ? { draftCount } : {}) } });
+  const [notes, draftCount] = await Promise.all([
+    listNotesByAuthor(profile.id, me(req).id, { cursor: null, limit: PROFILE_NOTES }),
+    own ? countDrafts(profile.id) : undefined,
+  ]);
+  // the first page is embedded; GET /:id/notes?cursor=<notesNextCursor> continues it (D40)
+  res.json({ user: { ...profile, notes: notes.items, notesNextCursor: notes.nextCursor, ...(own ? { draftCount } : {}) } });
 });

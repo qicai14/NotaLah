@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { idParam, issueMap } from '../../lib/validation';
+import { parseKeyset } from '../../lib/keyset';
 import { isApprovedLecturer } from '../users/repository';
 import { requireActive, requireAuth, me } from '../auth/middleware';
 import * as repo from './repository';
@@ -39,7 +40,10 @@ engagementRouter.delete('/notes/:noteId/like', requireAuth, async (req, res) => 
 engagementRouter.get('/notes/:noteId/comments', requireAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
-  res.json({ comments: await repo.listComments(t.id, me(req).id) });
+  const page = parseKeyset(req, res, 4);
+  if (!page) return;
+  const { items, nextCursor } = await repo.listComments(t.id, me(req).id, page);
+  res.json({ comments: items, nextCursor });
 });
 
 const commentSchema = z.object({
@@ -136,5 +140,8 @@ engagementRouter.delete('/notes/:noteId/bookmark', requireAuth, async (req, res)
 });
 
 engagementRouter.get('/bookmarks', requireAuth, async (req, res) => {
-  res.json({ notes: await repo.listBookmarks(me(req).id) });
+  const page = parseKeyset(req, res, 2);
+  if (!page) return;
+  const { items, nextCursor } = await repo.listBookmarks(me(req).id, page);
+  res.json({ notes: items, nextCursor });
 });

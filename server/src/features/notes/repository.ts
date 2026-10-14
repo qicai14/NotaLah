@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { approvedLecturer, countingLecturer, friends } from '../users/repository';
 import type { NoteInput } from './service';
@@ -114,19 +115,22 @@ export interface DraftSummary {
   updatedAt: Date;
 }
 
-export async function listDrafts(authorId: number): Promise<DraftSummary[]> {
-  const { rows } = await pool.query<DraftSummary>(
+/** One page of the author's drafts, last edited first; keyset on (updated_at, id), D40. */
+export async function listDrafts(authorId: number, { cursor, limit }: KeysetPage): Promise<{ items: DraftSummary[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<DraftSummary & { cursor: string }>(
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
             CASE WHEN m.mod_id IS NULL THEN NULL
                  ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
             ${HASHTAGS_COL},
-            p.pst_updated_at AS "updatedAt"
+            p.pst_updated_at AS "updatedAt", ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
-     ORDER BY p.pst_updated_at DESC, p.pst_id DESC`,
-    [authorId],
+       AND ($2::BIGINT IS NULL OR (p.pst_updated_at, p.pst_id) < (${fromMicros('$2')}, $3::INT))
+     ORDER BY p.pst_updated_at DESC, p.pst_id DESC
+     LIMIT $4`,
+    [authorId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
 }
 
 export interface NoteMeta {
@@ -228,16 +232,20 @@ export interface NoteSummary {
 export const SUMMARY_COLS = `p.pst_id AS "id", p.pst_title AS "title", m.mod_code AS "moduleCode", p.pst_published_at AS "publishedAt",
             ${HASHTAGS_COL}, ${VERIFIED_BY} AS "verifiedBy"`;
 
-/** An author's published notes that the viewer may see, newest first. */
-export async function listNotesByAuthor(authorId: number, viewerId: number): Promise<NoteSummary[]> {
-  const { rows } = await pool.query<NoteSummary>(
-    `SELECT ${SUMMARY_COLS}
+/** One page of an author's published notes that the viewer may see, newest first; keyset on (published_at, id), D40. */
+export async function listNotesByAuthor(
+  authorId: number, viewerId: number, { cursor, limit }: KeysetPage,
+): Promise<{ items: NoteSummary[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<NoteSummary & { cursor: string }>(
+    `SELECT ${SUMMARY_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE}
-     ORDER BY p.pst_published_at DESC, p.pst_id DESC`,
-    [viewerId, authorId],
+       AND ($3::BIGINT IS NULL OR (p.pst_published_at, p.pst_id) < (${fromMicros('$3')}, $4::INT))
+     ORDER BY p.pst_published_at DESC, p.pst_id DESC
+     LIMIT $5`,
+    [viewerId, authorId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
 }
 
 export async function countDrafts(authorId: number): Promise<number> {

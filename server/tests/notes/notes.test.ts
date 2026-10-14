@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, CSRF, follow, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, CSRF, follow, insertUser, truncateAll, walkPages } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -243,6 +243,18 @@ describe('Notes', () => {
     expect(res.body.modules[0]).toHaveProperty('code');
     expect((await request(app).get('/api/modules')).status).toBe(401);
     expect((await request(app).post('/api/notes').set(CSRF).send({})).status).toBe(401);
+  });
+
+  it('NOTE-TC26: drafts page last edited first, breaking equal edit times by id', async () => {
+    const uid = await insertUser();
+    const drafts: number[] = [];
+    for (let i = 0; i < 5; i++) drafts.push((await post(uid, { title: `Draft ${i}`, status: 'draft' })).body.note.id);
+    await pool.query(`UPDATE "POST_T" SET pst_updated_at = '2026-10-01T00:00:00.123456Z'`);
+    const pages = await walkPages<{ id: number }>(
+      (cursor) => request(app).get('/api/notes/drafts').query({ limit: 2, ...(cursor && { cursor }) }).set(asUser(uid)), 'notes');
+    expect(pages.map((pg) => pg.length)).toEqual([2, 2, 1]);
+    expect(pages.flat().map((n) => n.id)).toEqual([...drafts].reverse());
+    expect((await request(app).get('/api/notes/drafts?limit=101').set(asUser(uid))).status).toBe(400);
   });
 });
 

@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, CSRF, insertNote, insertUser, truncateAll, walkPages } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -240,5 +240,42 @@ describe('Engagement', () => {
     expect((await get(a, '/api/bookmarks')).body.notes.map((n: { id: number }) => n.id)).toEqual([p1]);
     expect((await del(a, `/api/notes/${p1}/bookmark`)).status).toBe(200);
     expect((await get(a, '/api/bookmarks')).body.notes).toEqual([]);
+  });
+
+  it('ENG-TC18: comments page by pinned, likes, oldest, keeping replies with their comment', async () => {
+    const author = await insertUser();
+    const p = await insertNote(author);
+    const fan = await insertUser();
+    const ids: number[] = [];
+    for (let i = 0; i < 5; i++) ids.push((await comment(await insertUser(), p, { body: `c${i}` })).body.comment.id);
+    const pinned = (await comment(await lecturer(), p, { body: 'lecturer' })).body.comment.id;
+    await post(fan, `/api/comments/${ids[3]}/like`);
+    const reply = (await comment(author, p, { body: 'reply', parentId: ids[0] })).body.comment.id;
+    await pool.query(`UPDATE "COMMENT_T" SET cmt_is_deleted = TRUE WHERE cmt_id = $1`, [ids[4]]); // no replies: omitted
+    await pool.query(`UPDATE "COMMENT_T" SET cmt_created_at = '2026-10-01T00:00:00.123456Z'`); // ties break on id
+    const pages = await walkPages<{ id: number; replies: { id: number }[] }>(
+      (cursor) => get(fan, `/api/notes/${p}/comments?limit=2${cursor ? `&cursor=${cursor}` : ''}`), 'comments');
+    expect(pages.map((pg) => pg.length)).toEqual([2, 2, 1]);
+    expect(pages.flat().map((c) => c.id)).toEqual([pinned, ids[3], ids[0], ids[1], ids[2]]);
+    expect(pages.flat().find((c) => c.id === ids[0])!.replies.map((r) => r.id)).toEqual([reply]);
+    const first = await get(fan, `/api/notes/${p}/comments`); // no cursor: first page (default 50), as the current client calls it
+    expect(first.body.comments).toHaveLength(5);
+    expect(first.body.nextCursor).toBeNull();
+    for (const q of ['cursor=abc', 'cursor=1_2', 'limit=0', 'limit=101', 'limit=x']) {
+      expect((await get(fan, `/api/notes/${p}/comments?${q}`)).status).toBe(400);
+    }
+  });
+
+  it('ENG-TC19: saved notes page newest first, breaking equal save times by note id', async () => {
+    const a = await insertUser();
+    const author = await insertUser();
+    const notes: number[] = [];
+    for (let i = 0; i < 5; i++) notes.push(await insertNote(author, { slides: 0 }));
+    for (const n of notes) await post(a, `/api/notes/${n}/bookmark`);
+    await pool.query(`UPDATE "BOOKMARK_T" SET bmk_created_at = '2026-10-01T00:00:00.123456Z'`);
+    const pages = await walkPages<{ id: number }>((cursor) => get(a, `/api/bookmarks?limit=2${cursor ? `&cursor=${cursor}` : ''}`), 'notes');
+    expect(pages.map((pg) => pg.length)).toEqual([2, 2, 1]);
+    expect(pages.flat().map((n) => n.id)).toEqual([...notes].reverse());
+    expect((await get(a, '/api/bookmarks?cursor=1')).status).toBe(400);
   });
 });

@@ -1,3 +1,4 @@
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
 import { approvedLecturer } from '../users/repository';
 import { VISIBLE, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
@@ -70,35 +71,54 @@ export interface Comment extends Reply {
   replies: Reply[];
 }
 
-/** Top-level comments with replies: approved-lecturer comments first, then most liked, then oldest (ENG-TC7). */
-export async function listComments(noteId: number, viewerId: number): Promise<Comment[]> {
-  const { rows } = await pool.query<CommentRow>(
-    `SELECT c.cmt_id AS "id", c.cmt_parent_id AS "parentId", c.cmt_slide_no AS "slideNo",
+/**
+ * One page of top-level comments with their live replies: approved-lecturer comments first, then most liked, then oldest
+ * (ENG-TC7). Keyset on (pinned, likes, created_at, id), D40; likes are live, so a comment liked between page requests can
+ * cross the page boundary. A deleted comment shows as [deleted] only while it has live replies; deleted replies are omitted.
+ */
+// shortcut: replies are not paged; page them too if one thread ever grows to thousands of replies.
+export async function listComments(
+  noteId: number, viewerId: number, { cursor, limit }: KeysetPage,
+): Promise<{ items: Comment[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<CommentRow & { cursor: string | null }>(
+    `WITH top AS (
+       SELECT c.cmt_id AS id, c.cmt_created_at AS at,
+              CASE WHEN NOT c.cmt_is_deleted AND ${approvedLecturer('u')} THEN 0 ELSE 1 END AS unpinned,
+              (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS likes
+       FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
+       WHERE c.cmt_pst_id = $2 AND c.cmt_parent_id IS NULL
+         AND (NOT c.cmt_is_deleted
+              OR EXISTS (SELECT 1 FROM "COMMENT_T" r WHERE r.cmt_parent_id = c.cmt_id AND NOT r.cmt_is_deleted))),
+     pg AS (
+       SELECT * FROM top
+       WHERE $3::BIGINT IS NULL OR (unpinned, -likes, at, id) > ($3::BIGINT, -$4::BIGINT, ${fromMicros('$5')}, $6::INT)
+       ORDER BY unpinned, likes DESC, at, id
+       LIMIT $7)
+     SELECT c.cmt_id AS "id", c.cmt_parent_id AS "parentId", c.cmt_slide_no AS "slideNo",
             CASE WHEN c.cmt_is_deleted THEN '[deleted]' ELSE c.cmt_body END AS "body",
             c.cmt_is_deleted AS "deleted", c.cmt_created_at AS "createdAt",
             CASE WHEN c.cmt_is_deleted THEN NULL
                  ELSE json_build_object('id', u.usr_id, 'displayName', u.usr_display_name,
                         'isVerifiedLecturer', ${approvedLecturer('u')}) END AS "author",
             (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS "likes",
-            EXISTS (SELECT 1 FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id AND clk_usr_id = $1) AS "likedByMe"
-     FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
-     WHERE c.cmt_pst_id = $2
-     ORDER BY c.cmt_created_at, c.cmt_id`,
-    [viewerId, noteId],
+            EXISTS (SELECT 1 FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id AND clk_usr_id = $1) AS "likedByMe",
+            pg.unpinned || '_' || pg.likes || '_' || ${micros('pg.at')} || '_' || pg.id AS "cursor"
+     FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id LEFT JOIN pg ON pg.id = c.cmt_id
+     WHERE pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT c.cmt_is_deleted)
+     ORDER BY pg.unpinned, pg.likes DESC, c.cmt_created_at, c.cmt_id`,
+    [viewerId, noteId, ...(cursor ?? [null, null, null, null]), limit + 1],
   );
   const replies = new Map<number, Reply[]>();
-  for (const { parentId, deleted, ...r } of rows) {
-    if (parentId === null || deleted) continue; // deleted replies are omitted; a reply has no replies of its own
-    replies.set(parentId, [...(replies.get(parentId) ?? []), r]);
+  for (const { parentId, deleted: _deleted, cursor: _cursor, ...r } of rows) {
+    if (parentId !== null) replies.set(parentId, [...(replies.get(parentId) ?? []), r]); // a reply has no replies of its own
   }
-  const top: Comment[] = [];
-  for (const { parentId, deleted, ...r } of rows) {
-    if (parentId !== null) continue;
-    const kids = replies.get(r.id) ?? [];
-    if (deleted && kids.length === 0) continue;
-    top.push({ ...r, pinned: r.author?.isVerifiedLecturer ?? false, replies: kids });
-  }
-  return top.sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.likes - a.likes); // stable: ties stay oldest first
+  const { items, nextCursor } = toPage(rows.filter((r) => r.parentId === null), limit);
+  return {
+    items: items.map(({ parentId: _parentId, deleted: _deleted, ...r }) => ({
+      ...r, pinned: r.author?.isVerifiedLecturer ?? false, replies: replies.get(r.id) ?? [],
+    })),
+    nextCursor,
+  };
 }
 
 export async function getParent(id: number): Promise<{ noteId: number; parentId: number | null } | undefined> {
@@ -194,14 +214,17 @@ export interface SavedNote extends NoteSummary {
   savedAt: Date;
 }
 
-export async function listBookmarks(userId: number): Promise<SavedNote[]> {
-  const { rows } = await pool.query<SavedNote>(
-    `SELECT ${SUMMARY_COLS}, b.bmk_created_at AS "savedAt"
+/** One page of the user's saved notes, newest bookmark first; keyset on (saved at, note id), D40. */
+export async function listBookmarks(userId: number, { cursor, limit }: KeysetPage): Promise<{ items: SavedNote[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<SavedNote & { cursor: string }>(
+    `SELECT ${SUMMARY_COLS}, b.bmk_created_at AS "savedAt", ${micros('b.bmk_created_at')} || '_' || p.pst_id AS "cursor"
      FROM "BOOKMARK_T" b JOIN "POST_T" p ON p.pst_id = b.bmk_pst_id
           LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE b.bmk_usr_id = $1 AND p.pst_status = 'published' AND ${VISIBLE}
-     ORDER BY b.bmk_created_at DESC, p.pst_id DESC`,
-    [userId],
+       AND ($2::BIGINT IS NULL OR (b.bmk_created_at, p.pst_id) < (${fromMicros('$2')}, $3::INT))
+     ORDER BY b.bmk_created_at DESC, p.pst_id DESC
+     LIMIT $4`,
+    [userId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
 }

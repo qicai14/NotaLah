@@ -86,3 +86,17 @@ export async function befriend(a: number, b: number): Promise<void> {
   await follow(a, b);
   await follow(b, a);
 }
+
+/** Follows `nextCursor` from the first page to the last; returns each page's `key` list (keyset lists, D40). */
+export async function walkPages<T>(
+  fetchPage: (cursor?: string) => Promise<{ body: Record<string, unknown> }>, key: string,
+): Promise<T[][]> {
+  const pages: T[][] = [];
+  let cursor: string | undefined;
+  do {
+    const { body } = await fetchPage(cursor);
+    pages.push(body[key] as T[]);
+    cursor = (body.nextCursor as string | null) ?? undefined;
+  } while (cursor);
+  return pages;
+}

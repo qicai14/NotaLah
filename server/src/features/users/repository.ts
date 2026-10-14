@@ -1,3 +1,4 @@
+import { fromMicros, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 
 export type Role = 'student' | 'lecturer' | 'admin';
@@ -251,25 +252,19 @@ export async function listFollows(
   userId: number, viewerId: number, side: keyof typeof SIDES, cursor: FollowCursor | null,
 ): Promise<{ items: FollowListItem[]; nextCursor: string | null }> {
   const { list, of } = SIDES[side];
-  // the cursor is built in SQL at microsecond precision; a JS Date would round to milliseconds and skip rows
   const { rows } = await pool.query<FollowListItem & { cursor: string }>(
     `SELECT u.usr_id AS "id", u.usr_display_name AS "displayName", u.usr_role AS "role",
             ${approvedLecturer('u')} AS "isVerifiedLecturer",
             ${follows('$1', 'u.usr_id')} AS "followedByMe", ${friends('$1', 'u.usr_id')} AS "isFriend",
-            (EXTRACT(EPOCH FROM f.fol_created_at) * 1000000)::BIGINT || '_' || u.usr_id AS "cursor"
+            ${micros('f.fol_created_at')} || '_' || u.usr_id AS "cursor"
      FROM "FOLLOW_T" f JOIN "USER_T" u ON u.usr_id = f.${list}
      WHERE f.${of} = $2 AND u.usr_status ${LISTED}
-       AND ($3::BIGINT IS NULL
-            OR (f.fol_created_at, u.usr_id) < (TIMESTAMPTZ 'epoch' + $3::BIGINT * INTERVAL '1 microsecond', $4::INT))
+       AND ($3::BIGINT IS NULL OR (f.fol_created_at, u.usr_id) < (${fromMicros('$3')}, $4::INT))
      ORDER BY f.fol_created_at DESC, u.usr_id DESC
      LIMIT $5`,
     [viewerId, userId, cursor?.micros ?? null, cursor?.userId ?? null, FOLLOW_PAGE + 1],
   );
-  const page = rows.slice(0, FOLLOW_PAGE);
-  return {
-    items: page.map(({ cursor: _cursor, ...item }) => item),
-    nextCursor: rows.length > FOLLOW_PAGE ? page[page.length - 1].cursor : null,
-  };
+  return toPage(rows, FOLLOW_PAGE);
 }
 
 export async function updateProfile(
