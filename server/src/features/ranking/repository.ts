@@ -51,11 +51,11 @@ export async function getInteractionRows(viewerId: number, asOf: Date): Promise<
   return rows;
 }
 
-/** Deletes interactions older than the interest window; ranking ignores them already (D24). Idempotent. */
+/** Deletes interactions older than the interest window plus the purge grace; ranking ignores them already (D24). Idempotent. */
 export async function purgeOldInteractions(): Promise<number> {
   const { rowCount } = await pool.query(
     `DELETE FROM "INTERACTION_T" WHERE int_created_at < NOW() - make_interval(days => $1)`,
-    [RANKING.interestWindowDays],
+    [RANKING.interestWindowDays + RANKING.purgeGraceDays],
   );
   return rowCount ?? 0;
 }

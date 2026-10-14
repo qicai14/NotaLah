@@ -15,6 +15,8 @@ export const RANKING = Object.freeze({
   interactionWeights: Object.freeze({ view: 1, like: 3, comment: 5 }),
   /** Interactions older than this add nothing to the interest vector (0.5^(90/14) is below 1.2 %). */
   interestWindowDays: 90,
+  /** The purge keeps this many extra days, because later feed pages read the window ending at an asOf that lags NOW(). */
+  purgeGraceDays: 1,
   /** Most recent published notes scored per feed request; older notes are scored only if verified (D24). */
   candidateLimit: 500,
   /** Only Super Likes made within this many days before asOf surface an old note as a candidate (D30). */

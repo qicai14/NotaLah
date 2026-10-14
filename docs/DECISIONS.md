@@ -495,16 +495,16 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `"INTERACTION_T" (int_usr_id, int_pst_id, int_created_at DESC)` (the 30-minute view dedupe in `logView`), `report_post_idx` on
   `"REPORT_T" (rpt_pst_id)` (upheld-report counts per note; the existing partial unique index covers open reports only) and
   `message_request_recipient_pending_idx`, a partial index on `"MESSAGE_REQUEST_T" (mrq_recipient_id) WHERE mrq_status = 'pending'`
-  (the Sprint 4 inbox). `interaction_user_time_idx` is kept: the ranking interest query filters on user and time range only, which
+  (added ahead of the Sprint 4 inbox query, since no code reads `"MESSAGE_REQUEST_T"` yet; re-check it when that query is written). `interaction_user_time_idx` is kept: the ranking interest query filters on user and time range only, which
   the new index cannot serve as well. EXPLAIN on 200,000 seeded interactions and 400,000 comment likes showed an index scan on the
   new index for the dedupe query and a bitmap scan on `comment_like_comment_idx`. The pool reads `PG_POOL_MAX` (10),
-  `PG_IDLE_TIMEOUT_MS` (30000) and `PG_CONNECTION_TIMEOUT_MS` (5000) from the environment, validated by zod. `"INTERACTION_T"` rows
-  older than `RANKING.interestWindowDays` (90) are deleted by `purgeOldInteractions`, run daily by an unref'd timer in `server.ts`
+  `PG_IDLE_TIMEOUT_MS` (30000) and `PG_CONNECTION_TIMEOUT_MS` (10000, to survive a Neon cold start) from the environment, validated by zod. `"INTERACTION_T"` rows
+  older than `RANKING.interestWindowDays` (90) plus `RANKING.purgeGraceDays` (1) are deleted by `purgeOldInteractions`, run daily by an unref'd timer in `server.ts`
   (first run 1 minute after start) and on demand with `npm run db:purge-interactions -w server`.
 - **Alternatives:** table partitioning of interactions (rejected: needless at this scale); keeping all history (rejected: ranking
   ignores rows past the window, D24, so they only slow the table); a cron service outside the process (rejected: one more moving part).
-- **Why:** each index serves a query the application already runs; the purge keeps the table bounded; pool limits matter on the
-  small Neon and Fly tiers (D29). The delete is idempotent, so several instances running it is harmless.
+- **Why:** the first three indexes serve queries the application already runs; the purge keeps the table bounded; pool limits matter on the
+  small Neon and Fly tiers (D29). The delete is idempotent, so several instances running it is harmless. The one-day grace keeps a purge between feed pages from changing the interest vector of later pages, which read a window ending at an earlier asOf.
 - **Reversibility:** Easy (drop the indexes through the down migration; remove the timer).
 
 ## D35 - JWT in an httpOnly cookie with a CSRF header (R1, 15 Oct 2026)

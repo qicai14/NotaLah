@@ -140,12 +140,7 @@ describe('Ranked feed', () => {
     const viewer = await insertUser();
     const note = await insertNote(author, ['sql']);
     const win = RANKING.interestWindowDays;
-    for (const days of [win + 10, win + 5, 10]) {
-      await pool.query(
-        `INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type, int_created_at) VALUES ($1, $2, 'view', NOW() - make_interval(days => $3))`,
-        [viewer, note, days],
-      );
-    }
+    for (const days of [win + 10, win + 5, 10]) await interact(viewer, note, 'view', new Date(), days);
     expect(await purgeOldInteractions()).toBe(2);
     expect((await pool.query(`SELECT 1 FROM "INTERACTION_T"`)).rowCount).toBe(1);
     expect(await purgeOldInteractions()).toBe(0);
