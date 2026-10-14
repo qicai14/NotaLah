@@ -21,6 +21,8 @@ export const RANKING = Object.freeze({
   candidateLimit: 500,
   /** Only Super Likes made within this many days before asOf surface an old note as a candidate (D30). */
   verifiedCandidateWindowDays: 180,
+  /** A ranked feed stored for one asOf is kept this long for later pages, then purged (D40). */
+  snapshotTtlHours: 2,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {

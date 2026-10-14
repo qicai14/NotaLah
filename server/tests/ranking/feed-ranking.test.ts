@@ -5,6 +5,7 @@ import { pool } from '../../src/lib/pool';
 import { RANKING } from '../../src/features/ranking/config';
 import { getCandidates, getInteractionRows, purgeOldInteractions } from '../../src/features/ranking/repository';
 import { buildInterestVector } from '../../src/features/ranking/service';
+import { purgeFeedSnapshots } from '../../src/features/feed/repository';
 import { asUser, insertUser, truncateAll, type TestUserInput } from '../helpers';
 
 beforeEach(truncateAll);
@@ -184,6 +185,55 @@ describe('Ranked feed', () => {
     expect(after.find((i) => i.id === last)!.components).toEqual(before.find((i) => i.id === last)!.components);
     expect(after.find((i) => i.id === last)!.counts.likes).toBe(20); // the displayed count is live
     expect((await page(1)).items.map((i: Item) => i.id)).toContain(last); // a fresh asOf does rank the new likes
+  });
+
+  it('RANK-TC24: page 2 reads the stored ranking, so changes a recompute would see do not reorder it', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const ids: number[] = [];
+    for (let h = 0; h < 20; h++) ids.push(await insertNote(author, ['sql'], h));
+    const oldest = ids[19];
+    for (let i = 0; i < 30; i++) {
+      await pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [await insertUser(), oldest]);
+    }
+    const page = async (n: number, asOf?: string) =>
+      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(viewer))).body;
+    const idsOf = (body: { items: Item[] }) => body.items.map((i) => i.id);
+    const first = await page(1);
+    expect(idsOf(first)).toContain(oldest);
+    const before = idsOf(await page(2, first.asOf));
+    const snapshots = async () => (await pool.query(`SELECT COUNT(*)::INT AS n FROM "FEED_SNAPSHOT_T"`)).rows[0].n;
+    expect(await snapshots()).toBe(1); // page 2 read the snapshot page 1 stored
+    // a recompute at the same asOf would see both: unlikes are not frozen (D24) and the new note is published before asOf
+    await pool.query(`DELETE FROM "LIKE_T" WHERE lik_pst_id = $1`, [oldest]);
+    const added = await insertNote(author, ['sql'], 12);
+    expect(idsOf(await page(2, first.asOf))).toEqual(before);
+    await pool.query(`DELETE FROM "FEED_SNAPSHOT_T"`);
+    const recomputed = idsOf(await page(2, first.asOf)); // a missing snapshot is recomputed and stored again
+    expect(recomputed).not.toEqual(before);
+    expect(recomputed).toContain(added);
+    expect(await snapshots()).toBe(1);
+  });
+
+  it('RANK-TC25: feed snapshots past the TTL are purged, daily and when the viewer stores a new one', async () => {
+    const viewer = await insertUser();
+    const insertSnapshot = (hoursAgo: number) =>
+      pool.query(
+        `INSERT INTO "FEED_SNAPSHOT_T" (fsn_usr_id, fsn_as_of, fsn_pst_ids, fsn_scores, fsn_created_at)
+         VALUES ($1, NOW() - make_interval(hours => $2), '{}', '{}', NOW() - make_interval(hours => $2))`,
+        [viewer, hoursAgo],
+      );
+    await insertSnapshot(RANKING.snapshotTtlHours + 1);
+    await insertSnapshot(RANKING.snapshotTtlHours - 1);
+    expect(await purgeFeedSnapshots()).toBe(1);
+    await insertSnapshot(RANKING.snapshotTtlHours + 1);
+    await feed(viewer);
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) FILTER (WHERE fsn_created_at < NOW() - make_interval(hours => $1))::INT AS "expired", COUNT(*)::INT AS "total"
+       FROM "FEED_SNAPSHOT_T"`,
+      [RANKING.snapshotTtlHours],
+    );
+    expect(rows[0]).toEqual({ expired: 0, total: 2 }); // the unexpired one and the new one
   });
 
   it('RANK-TC16: a lecturer author earns V = 0.5 only while approved and active or restricted', async () => {
