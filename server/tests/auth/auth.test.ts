@@ -198,7 +198,7 @@ describe('auth cookie and CSRF (D35)', () => {
     await insertUser({ email: 'test1@mail.apu.edu.my', password: 'Passw0rd!' });
   });
 
-  it('AUTH-TC11: login and register set an httpOnly SameSite=Lax cookie for 1 hour and return no token in the body', async () => {
+  it('AUTH-TC11: login sets an httpOnly SameSite=Lax cookie for 1 hour; register sets none; no token in either body', async () => {
     const res = await login('test1@mail.apu.edu.my', 'Passw0rd!');
     expect(res.status).toBe(200);
     expect(res.body.token).toBeUndefined();
@@ -209,7 +209,7 @@ describe('auth cookie and CSRF (D35)', () => {
     const reg = await register({ ...student, email: 'new@mail.apu.edu.my' });
     expect(reg.status).toBe(201);
     expect(reg.body.token).toBeUndefined();
-    expect(setCookies(reg)[0]).toMatch(/^parp_token=[^;]+; Max-Age=3600; Path=\/; Expires=[^;]+; HttpOnly; SameSite=Lax$/);
+    expect(reg.headers['set-cookie']).toBeUndefined();
   });
 
   it('AUTH-TC13: logout clears the cookie with 204, even when the token is invalid', async () => {
@@ -233,6 +233,13 @@ describe('auth cookie and CSRF (D35)', () => {
     expect((await request(app).post(`/api/notes/${note}/like`).set('Cookie', Cookie)).status).toBe(403);
     expect((await request(app).delete(`/api/notes/${note}`).set('Cookie', Cookie).set('X-Requested-With', 'XMLHttpRequest')).status).toBe(403);
     expect((await request(app).get('/api/auth/me').set('Cookie', Cookie)).status).toBe(200);
+  });
+
+  it('AUTH-TC16: reads only the exact parp_token cookie among several', async () => {
+    const token = tokenFrom(await login('test1@mail.apu.edu.my', 'Passw0rd!'));
+    const me = (cookie: string) => request(app).get('/api/auth/me').set('Cookie', cookie);
+    expect((await me(`xparp_token=garbage; other=1; parp_token=${token}`)).status).toBe(200);
+    expect((await me(`xparp_token=${token}`)).status).toBe(401);
   });
 
   it('AUTH-TC15: the cookie carries the Secure flag when COOKIE_SECURE=true', async () => {

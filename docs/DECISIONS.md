@@ -508,9 +508,11 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy (drop the indexes through the down migration; remove the timer).
 
 ## D35 - JWT in an httpOnly cookie with a CSRF header (R1, 15 Oct 2026)
-- **Decision:** implements the D13 user review (14 Oct). Login and register set cookie `parp_token`: HttpOnly, SameSite=Lax,
+- **Decision:** implements the D13 user review (14 Oct). Login sets cookie `parp_token`: HttpOnly, SameSite=Lax,
   Path=/, Max-Age 3600 (the JWT lifetime; HS256 unchanged) and Secure when `COOKIE_SECURE` is true (default: only when
   `NODE_ENV=production`, because browsers drop Secure cookies on local http). The token is no longer in any response body.
+  Register sets no cookie: the client sends new users to the login page, so a cookie there would leave a hidden live
+  session (a risk on shared PCs).
   passport-jwt reads it from that cookie only, through a small extractor over the `Cookie` header (no cookie-parser or
   `cookie` dependency); the `Authorization: Bearer` extractor is removed so no page script can ever hold a token.
   `POST /api/auth/logout` clears the cookie with the same attributes and returns 204 without requiring a valid token.
@@ -528,5 +530,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   cover same-site subdomains); keeping the bearer header alongside the cookie (rejected: any script that can read a
   token defeats httpOnly); `cookie-parser` (rejected: one regex over one cookie name does the job).
 - **Why:** matches IR §2.3.6.2 (Dalimunthe et al., 2022): an XSS bug can no longer exfiltrate the token. Test cases
-  AUTH-TC11 to AUTH-TC15.
+  AUTH-TC11 to AUTH-TC16.
+- **Deploy notes (D29):** still to do: set `COOKIE_SECURE=true` explicitly on Fly rather than relying on
+  `NODE_ENV`. `trust proxy` must change from `'loopback'` to trust Fly's edge proxy (R11); otherwise every request appears
+  to come from the proxy and all users share one rate-limit bucket. Already done: the client prefixes API calls with `VITE_API_URL` (e.g.
+  `https://api.<domain>`, empty in development so the Vite proxy still applies); the cookie stays host-only (no Domain attribute), and `app.` and `api.` share a
+  registrable domain, so SameSite=Lax still sends it.
 - **Reversibility:** Medium (server extractor, CORS and CSRF middleware, client api wrapper and auth context).
