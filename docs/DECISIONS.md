@@ -263,7 +263,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (the notes `VISIBLE` predicate); anything else is 404, so a draft or contacts-only note is never revealed. Unliking,
   removing a bookmark and deleting your own comment do not re-check the note. Writes use `requireActive`; reads do not.
 - **Views:** logged once per user and note per 30 minutes (query-side `NOT EXISTS`), so reloading cannot inflate the
-  interest history. Window is a constant in `feed/repository.ts`.
+  interest history. Window is a constant in `engagement/repository.ts`.
 - **Status codes:** a new like (note or comment) returns 201, a repeated one 200, both with `{liked, likes}`;
   unlike returns 200 (ENG-TC1/TC3).
 - **Comments:** body is trimmed before the 1-1000 check; `slideNo` must be within the note's slide count; a parent must

@@ -2,7 +2,7 @@ import { type RequestHandler, Router } from 'express';
 import { z } from 'zod';
 import { invalidId } from '../../lib/validation';
 import { requireActive, requireAuth, requireRole } from '../auth/middleware';
-import { getTarget } from '../feed/repository';
+import { getTarget } from '../engagement/repository';
 import { isApprovedLecturer } from '../users/repository';
 import * as repo from './repository';
 
