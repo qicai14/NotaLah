@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { requireAuth, me } from '../auth/middleware';
-import { getFeedPage } from './service';
+import { getFeedPage, getFollowingPage } from './service';
 
 export const feedRouter = Router();
 
 feedRouter.get('/', requireAuth, async (req, res) => {
+  const tab = req.query.tab;
+  if (tab !== undefined && tab !== 'following') return res.status(400).json({ error: 'Invalid tab' });
   const raw = req.query.page ?? '1';
   if (typeof raw !== 'string' || !/^\d+$/.test(raw) || Number(raw) < 1 || Number(raw) > 1_000_000) {
     return res.status(400).json({ error: 'Invalid page' });
@@ -14,5 +16,5 @@ feedRouter.get('/', requireAuth, async (req, res) => {
   if (asOf !== null && (typeof rawAsOf !== 'string' || Number.isNaN(asOf.getTime()))) {
     return res.status(400).json({ error: 'Invalid asOf' });
   }
-  res.json(await getFeedPage(me(req).id, Number(raw), asOf));
+  res.json(await (tab === 'following' ? getFollowingPage : getFeedPage)(me(req).id, Number(raw), asOf));
 });

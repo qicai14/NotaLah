@@ -1,7 +1,7 @@
 import { getCandidates, getInteractionRows } from '../ranking/repository';
 import { buildInterestVector, scoreCandidate, type Components } from '../ranking/service';
 import type { NoteWithEngagement } from '../notes/repository';
-import { getCutoff, getNotesByIds } from './repository';
+import { getCutoff, getFollowingNotes, getNotesByIds } from './repository';
 
 const PAGE_SIZE = 10;
 
@@ -29,4 +29,13 @@ export async function getFeedPage(
     return note ? [{ ...note, score, components }] : [];
   });
   return { items, nextPage: ranked.length > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff };
+}
+
+/** One page of the Following feed: chronological, not ranked, so items carry no score (D36); same `asOf` paging. */
+export async function getFollowingPage(
+  viewerId: number, page: number, asOf: Date | null,
+): Promise<{ items: NoteWithEngagement[]; nextPage: number | null; asOf: Date }> {
+  const cutoff = await getCutoff(asOf);
+  const rows = await getFollowingNotes(viewerId, cutoff, PAGE_SIZE + 1, (page - 1) * PAGE_SIZE);
+  return { items: rows.slice(0, PAGE_SIZE), nextPage: rows.length > PAGE_SIZE ? page + 1 : null, asOf: cutoff };
 }

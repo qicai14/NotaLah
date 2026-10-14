@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, follow, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -60,5 +60,51 @@ describe('Feed', () => {
     expect((await get(viewer, '/api/feed?asOf=nope')).status).toBe(400);
     expect(p2.body.items.map((i: { id: number }) => i.id)).toEqual([ids[1], ids[0]]);
     expect(p2.body.nextPage).toBeNull();
+  });
+});
+
+describe('Following feed', () => {
+  const following = (uid: number, q = '') => get(uid, `/api/feed?tab=following${q}`);
+  const idsOf = (res: request.Response) => res.body.items.map((i: { id: number }) => i.id);
+
+  it('RANK-TC21: the Following feed lists only followed authors, newest first, without scores', async () => {
+    const [viewer, followed, other] = [await insertUser(), await insertUser(), await insertUser()];
+    await follow(viewer, followed);
+    await follow(other, viewer); // being followed does not bring their notes in
+    const older = await insertNote(followed);
+    const newer = await insertNote(followed);
+    await insertNote(other);
+    await insertNote(viewer);
+    const res = await following(viewer);
+    expect(res.status).toBe(200);
+    expect(idsOf(res)).toEqual([newer, older]);
+    expect(res.body.items[0]).not.toHaveProperty('score');
+    expect(res.body.items[0]).toMatchObject({ counts: { likes: 0, comments: 0 }, liked: false });
+    expect(res.body.nextPage).toBeNull();
+    expect((await get(viewer, '/api/feed?tab=nope')).status).toBe(400);
+  });
+
+  it('RANK-TC22: Following feed pages are stable with asOf', async () => {
+    const [viewer, author] = [await insertUser(), await insertUser()];
+    await follow(viewer, author);
+    const ids: number[] = [];
+    for (let i = 0; i < 12; i++) ids.push(await insertNote(author));
+    const p1 = await following(viewer);
+    expect(p1.body.items).toHaveLength(10);
+    expect(p1.body.nextPage).toBe(2);
+    await insertNote(author); // published after page 1 was served
+    const p2 = await following(viewer, `&page=2&asOf=${encodeURIComponent(p1.body.asOf)}`);
+    expect(idsOf(p2)).toEqual([ids[1], ids[0]]);
+    expect(p2.body.nextPage).toBeNull();
+  });
+
+  it('RANK-TC23: contacts-only notes appear in the Following feed only for friends', async () => {
+    const [author, friend, fan] = [await insertUser(), await insertUser(), await insertUser()];
+    await befriend(author, friend);
+    await follow(fan, author);
+    const pub = await insertNote(author);
+    const circle = await insertNote(author, { visibility: 'contacts' });
+    expect(idsOf(await following(friend))).toEqual([circle, pub]);
+    expect(idsOf(await following(fan))).toEqual([pub]);
   });
 });
