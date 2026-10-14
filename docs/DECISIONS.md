@@ -488,3 +488,38 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** reject a future asOf with 400 (rejected: breaks a harmless client clock skew); an index on the Super Like date (out of scope, no migration).
 - **Reversibility:** Easy (one constant, one SQL expression).
 
+
+## D31 - Canva-style slide editor, author-chosen slide size, images (user decision, 15 Oct 2026)
+- **Decision:** FR8's editor becomes a free-form canvas: each slide is a fixed-size board holding positioned elements
+  (text boxes with rich text, shapes, lines, images, code blocks, later video) with templates, deck themes, a curated
+  font list, colours, alignment, layers and undo, modelled on Canva's editor layout. The author picks the slide size per
+  note: 4:5, 9:16 or 16:9. Images come from uploads (JPEG/PNG/WebP up to 5 MB, re-encoded on the server, stored in
+  Cloudflare R2) or a stock-photo search through the Unsplash API. Slides change from one sanitised HTML block to a
+  validated JSON list of elements; text inside elements is still sanitised against the allow-list, and the search
+  document is built from the text elements. The canvas is DOM-based, not `<canvas>`, so slide text stays selectable for
+  FR18 annotations and readable by screen readers. Plan items R21 and R22.
+- **Alternatives:** structured layouts with rich styling only (smaller, but not the Canva-like authoring the user wants);
+  keeping the flowing TipTap editor with fonts and colours added (smallest, rejected for the same reason); a `<canvas>`
+  renderer such as Konva (rejected: text is not selectable, which breaks annotations and accessibility).
+- **Why:** the editor is the core authoring feature (Objective 3) and the user wants it comparable to tools students
+  already use.
+- **Reversibility:** Hard once notes exist in the new format (needs a data migration); decided before any production data.
+
+## D32 - Short video element on slides (user decision, 15 Oct 2026)
+- **Decision:** a slide may hold one video element: MP4 or WebM, up to 90 seconds and 50 MB, type, size and duration
+  validated on the server, stored in R2 with a poster frame, no transcoding. It autoplays muted in the feed and the
+  viewer taps for sound. Plan item R29, sharing R22's upload pipeline.
+- **Alternatives:** YouTube or Vimeo links only (no storage, less like the TikTok-style feed); no video.
+- **Reversibility:** Medium.
+
+## D33 - Optional AI writing assistant in the editor (user decision, 15 Oct 2026)
+- **Decision:** the editor gets an optional assistant that turns messy text or an imported file (.txt, .md, .docx, .pdf,
+  .pptx) into a draft deck, and rewrites, shortens or makes quiz questions from a selected text box. Calls go from the
+  server to any OpenAI-compatible provider configured by `AI_BASE_URL`, `AI_API_KEY` and `AI_MODEL`; output is
+  validated against the slide element schema and always lands as an editable draft. Notes made with it carry an
+  "AI-assisted" label, and each user has a daily limit. The ranking feed stays a deterministic heuristic. Plan item R28.
+- **Scope note:** this reverses the IR's exclusion of AI components (IR Section 1.6), so the report's scope and
+  limitations sections must record it as an extension added during Part II, with its academic-integrity safeguards
+  (label, author must edit and publish).
+- **Alternatives:** leave it to future work (keeps the IR exclusion); decide after supervisor meeting #2.
+- **Reversibility:** Easy (feature behind configuration; without a key the assistant is hidden).
