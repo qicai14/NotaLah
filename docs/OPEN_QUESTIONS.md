@@ -1,21 +1,31 @@
 # Open questions (only the user can answer)
 
-Working assumptions are in brackets; nothing is blocked on these.
+Reviewed with the user on 14 Oct 2026. Answers are recorded under each question; still-open items are marked **OPEN**.
 
-1. Final submission date? [Assumed ~29 Nov 2026, per IR Gantt.]
-2. Has Form 421 been emailed to the supervisor? [Unconfirmed.]
-3. Has supervisor meeting #1 (9 Oct) been logged on PG Bank? [Unconfirmed.]
-4. Meeting #2 booked? [Unconfirmed; PLAN.md targets ~28 Oct.]
-5. Lecturer sign-up: is there an APU staff email domain we can restrict to instead of / as well as admin approval (D6)?
-6. Stray folder C:/Users/reymy/Code%20Projects (25 duplicate wireframe PNGs from a path bug, 13 Oct) — safe to delete; autopilot's delete was blocked.
-7. IR Chapters 1-3 total about 29k words against the 18-20k standard for the whole report body. Cut
-   them, or keep them? [Assumed: the writer agent keeps the IR's substance in Chapters 1-3 until you
-   decide; no cuts made.]
-8. Final demonstration: deploy to the free-tier host documented in IR §2.3.9, or demo from local hosting? (Report §1.5 has a [TBC].)
-9. Chapters 1-3 now total about 31.5k words of prose plus ~4.9k in tables (writer step 2 kept all IR substance and added the
-   supervisor-requested appraisal and survey analysis). This sharpens question 7: decide which IR material to cut.
-10. Three references lack APA 7 details the writer could not verify (Gufroni & Zaman 2026 source; institutions for the
-    Gusenbauer and Lieu theses) and Shahzad et al. (2023) shows issue 15(5) against DOI su15010005 — please check.
-11. Chapter 4 adds about 7.6k words of prose (plus 7.4k inside tables), so Chapters 1-6 now hold about 39k words of
-    prose against the 18-20k standard, before Chapters 5-6 are written. Question 7/9 (what to cut) is now pressing.
-    [Assumed: nothing cut; tables are usually not counted, but Chapter 2 (16k) is the obvious place to trim.]
+1. Final submission date? **Answered:** around end of December 2026 to early January 2027, not 29 Nov. Exact date
+   still to confirm at the final briefing (week of 9 Nov). PLAN.md re-planned: same build pace, an extra Sprint 5,
+   UAT on the live site, December for the report and buffer.
+2. Has Form 421 been emailed to the supervisor? **Answered:** yes.
+3. Has supervisor meeting #1 (9 Oct) been logged on PG Bank? **OPEN:** not yet; to-do in PLAN.md Admin row.
+4. Meeting #2 booked? **OPEN:** not yet; to-do in PLAN.md Admin row (target ~28 Oct).
+5. Lecturer sign-up: an APU staff email domain? **Answered:** unknown; admin approval alone (D6) stands.
+6. Stray folder C:/Users/reymy/Code%20Projects. **Closed:** deleted by the user.
+7. Report length (questions 7, 9 and 11 merged): Chapters 1-4 hold about 39k words of prose against an 18-20k
+   standard, before Chapters 5-6. **Answered:** the writer drafts a cut plan (target about 25k words of prose: condense
+   Chapter 2 literature and similar systems to about 8k and keep the new appraisal sections; move the survey
+   cross-tabulation tables and Spearman detail to an appendix with a one-page summary in Chapter 3; Chapters 4-6 as
+   they are). No cuts until the user and the supervisor agree at meeting #2.
+8. Final demonstration hosting? **Answered:** live deployment with CI/CD (D29): Cloudflare Pages frontend on
+   `app.<domain>`, Express + Socket.io on Fly.io at `api.<domain>`, Neon Postgres, the free GitHub Student Pack
+   `.me` domain, GitHub Actions pipeline. Local hosting stays as the fallback. Report §1.5 and §2.3.9 to be updated.
+9. (Merged into 7.)
+10. References (researcher check, 14 Oct):
+    - Lieu (2024): confirmed. *A structured approach to online discussion* [Doctoral dissertation, Royal Holloway,
+      University of London]. Royal Holloway Research Portal.
+      https://pure.royalholloway.ac.uk/en/publications/a-structured-approach-to-online-discussion/
+    - Shahzad et al. (2023): confirmed via Crossref. *Sustainability, 15*(1), Article 5 (was 15(5)).
+      https://doi.org/10.3390/su15010005
+    - **OPEN:** Gufroni & Zaman (2026) and Gusenbauer (2024, thesis) could not be found in any index. The user must
+      find the original sources; if they cannot be found, replace or remove the citations. The writer applies the two
+      confirmed fixes.
+11. (Merged into 7.)

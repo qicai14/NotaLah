@@ -463,3 +463,18 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy. Re-runnable builder in the session scratchpad; backups `FYP_Submissions/backups/…_2336`
   (before Chapter 4) to `…_2345`.
 - **User review (14 Oct):** Keep.
+
+## D29 — Live deployment with CI/CD (user decision, 14 Oct 2026)
+- **Decision:** the final demonstration and UAT run on a live deployment. Frontend: Cloudflare Pages on `app.<domain>`.
+  Backend: Express + Socket.io on Fly.io (shared-cpu-1x, about $3/month, no cold starts) at `api.<domain>`. Database:
+  Neon free Postgres. Domain: the free `.me` domain from the GitHub Student Developer Pack. Both hosts sit under one
+  registrable domain, so the httpOnly SameSite=Lax auth cookie (D13 review) is same-site. Pipeline: GitHub Actions runs
+  typecheck, tests against a Postgres 17 service container and build on every push and PR; on `main` it runs dbmate
+  against Neon and deploys (Pages builds from git, Fly via `flyctl` with a token secret). Local hosting stays as the fallback.
+- **Alternatives:** Render free backend (rejected: about 1 min cold start after 15 min idle, bad for UAT); one origin
+  with Express serving the client (simplest, kept as the fallback; rejected as the main design because the user wants a
+  separate CDN frontend); Vercel/Netlify for the backend (cannot hold Socket.io connections); Render free Postgres (expires
+  after 30 days); Supabase (pauses after a week idle, 500 MB); Koyeb (now paid). Source: researcher notes, 14 Oct 2026.
+- **Why:** the user values end-to-end delivery (DevOps evidence for the report), and testers can use their own devices.
+  Beyond the IR, which documented a free-tier host with local fallback (§2.3.9); the report records the change.
+- **Reversibility:** Easy (fallback is local or one origin).
