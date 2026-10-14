@@ -1,13 +1,10 @@
 import { type FormEvent, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Field } from '../../components/Field';
-import { api, errorText, type User } from '../../lib/api';
+import { api, errorText } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
+import type { AdminUser } from '../../types';
 
-interface AdminUser extends Pick<User, 'id' | 'displayName' | 'email' | 'role' | 'status' | 'lecturerStatus'> {
-  upheldReports: number;
-  createdAt: string;
-}
 type Action = 'restrict' | 'suspend' | 'reinstate' | 'delete';
 const LABEL: Record<Action, string> = { restrict: 'Restrict', suspend: 'Suspend', reinstate: 'Reinstate', delete: 'Delete' };
 

@@ -9,6 +9,25 @@ export interface Slide {
   content: string;
 }
 
+export type Role = 'student' | 'lecturer' | 'admin';
+export type UserStatus = 'active' | 'restricted' | 'suspended' | 'deleted';
+export type LecturerStatus = 'pending' | 'approved' | 'rejected';
+
+export interface User {
+  id: number;
+  email: string;
+  displayName: string;
+  role: Role;
+  status: UserStatus;
+  lecturerStatus: LecturerStatus | null;
+  programme: string | null;
+}
+
+export interface AdminUser extends Pick<User, 'id' | 'displayName' | 'email' | 'role' | 'status' | 'lecturerStatus'> {
+  upheldReports: number;
+  createdAt: string;
+}
+
 export type Visibility = 'public' | 'contacts';
 
 /** A note as GET /api/notes/:id and the feed return it. */
@@ -21,7 +40,7 @@ export interface Note {
   module: ModuleRef | null;
   hashtags: string[];
   slides: Slide[];
-  author: { id: number; displayName: string; role: string; isVerifiedLecturer: boolean };
+  author: { id: number; displayName: string; role: Role; isVerifiedLecturer: boolean };
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
@@ -35,10 +54,8 @@ export interface Note {
   verifiedByMe: boolean;
 }
 
-export type FeedItem = Note;
-
 export interface FeedPage {
-  items: FeedItem[];
+  items: Note[];
   nextPage: number | null;
   asOf: string;
 }
@@ -77,14 +94,29 @@ export interface Comment extends CommentReply {
   replies: CommentReply[];
 }
 
+export interface ReportGroup extends Omit<Note, 'counts' | 'liked' | 'bookmarked' | 'verified' | 'verifiedBy' | 'verifiedByMe'> {
+  reportCount: number;
+  oldestReportAt: string;
+  reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: string }[];
+}
+
 export interface Profile {
   id: number;
   displayName: string;
-  role: string;
+  role: Role;
   programme: string | null;
   bio: string | null;
   avatarUrl: string | null;
   isVerifiedLecturer: boolean;
   notes: NoteSummary[];
   draftCount?: number;
+}
+
+export interface LecturerApplication {
+  id: number;
+  displayName: string;
+  email: string;
+  staffId: string | null;
+  programme: string | null;
+  createdAt: string;
 }

@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { api, loadSession, saveSession, type Session, type User } from '../../lib/api';
+import { api, loadSession, saveSession, type Session } from '../../lib/api';
+import type { User } from '../../types';
 
 export interface RegisterInput {
   displayName: string;

@@ -1,5 +1,6 @@
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './features/auth/AuthContext';
+import { isApprovedLecturer } from './lib/roles';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import AdminLecturers from './features/moderation/AdminLecturers';
 import AdminReports from './features/moderation/AdminReports';
@@ -76,7 +77,7 @@ function TabBar() {
 function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const verified = user?.role === 'lecturer' && user.lecturerStatus === 'approved';
+  const verified = isApprovedLecturer(user);
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">

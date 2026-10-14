@@ -1,14 +1,4 @@
-export type Role = 'student' | 'lecturer' | 'admin';
-
-export interface User {
-  id: number;
-  email: string;
-  displayName: string;
-  role: Role;
-  status: 'active' | 'restricted' | 'suspended' | 'deleted';
-  lecturerStatus: 'pending' | 'approved' | 'rejected' | null;
-  programme: string | null;
-}
+import type { User } from '../types';
 
 export interface Session {
   token: string;

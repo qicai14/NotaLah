@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, errorText } from '../../lib/api';
-import type { FeedItem, FeedPage } from '../../types';
+import type { FeedPage, Note } from '../../types';
 import { NoteCard } from './NoteCard';
 
 export default function Feed() {
-  const [items, setItems] = useState<FeedItem[]>([]);
+  const [items, setItems] = useState<Note[]>([]);
   const [next, setNext] = useState<number | null>(1); // page to fetch; null = finished
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

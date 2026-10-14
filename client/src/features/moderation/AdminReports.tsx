@@ -4,13 +4,7 @@ import { SlideViewer } from '../../components/SlideViewer';
 import { api, errorText } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
-import type { Note } from '../../types';
-
-interface ReportGroup extends Omit<Note, 'counts' | 'liked' | 'bookmarked' | 'verified' | 'verifiedBy' | 'verifiedByMe'> {
-  reportCount: number;
-  oldestReportAt: string;
-  reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: string }[];
-}
+import type { ReportGroup } from '../../types';
 
 /** Reported content queue (UC20, wireframe 23): open reports grouped by note, oldest first; resolve with a remark. */
 export default function AdminReports() {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { api, errorText } from '../lib/api';
+import { isApprovedLecturer } from '../lib/roles';
 import type { Note } from '../types';
 import { SuperLikeDialog } from '../features/verification/SuperLikeDialog';
 import { ReportDialog } from './ReportDialog';
@@ -13,7 +14,7 @@ type VerifyState = Pick<Note, 'verified' | 'verifiedBy' | 'verifiedByMe'>;
 /** Like, comments, save, report, lecturer Super Like and the Sprint 4 message placeholder; used by the feed card and the note detail. `onVerify` lets the parent redraw the verified frame. */
 export function NoteActions({ note, commentsLink = true, onVerify }: { note: Note; commentsLink?: boolean; onVerify(v: VerifyState): void }) {
   const { user } = useAuth();
-  const canSuperLike = user?.role === 'lecturer' && user.lecturerStatus === 'approved' && note.author.id !== user.id;
+  const canSuperLike = isApprovedLecturer(user) && user && note.author.id !== user.id;
   const [superLiking, setSuperLiking] = useState(false);
   const [liked, setLiked] = useState(note.liked);
   const [likes, setLikes] = useState(note.counts.likes);

@@ -1,9 +1,9 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Field } from '../../components/Field';
-import { api, ApiError, errorText, type User } from '../../lib/api';
+import { api, ApiError, errorText } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
-import type { Profile } from '../../types';
+import type { Profile, User } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 
 export default function EditProfile() {
