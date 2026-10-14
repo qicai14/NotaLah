@@ -488,6 +488,40 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** reject a future asOf with 400 (rejected: breaks a harmless client clock skew); an index on the Super Like date (out of scope, no migration).
 - **Reversibility:** Easy (one constant, one SQL expression).
 
+## D31 - Canva-style slide editor, author-chosen slide size, images (user decision, 15 Oct 2026)
+- **Decision:** FR8's editor becomes a free-form canvas: each slide is a fixed-size board holding positioned elements
+  (text boxes with rich text, shapes, lines, images, code blocks, later video) with templates, deck themes, a curated
+  font list, colours, alignment, layers and undo, modelled on Canva's editor layout. The author picks the slide size per
+  note: 4:5, 9:16 or 16:9. Images come from uploads (JPEG/PNG/WebP up to 5 MB, re-encoded on the server, stored in
+  Cloudflare R2) or a stock-photo search through the Unsplash API. Slides change from one sanitised HTML block to a
+  validated JSON list of elements; text inside elements is still sanitised against the allow-list, and the search
+  document is built from the text elements. The canvas is DOM-based, not `<canvas>`, so slide text stays selectable for
+  FR18 annotations and readable by screen readers. Plan items R21 and R22.
+- **Alternatives:** structured layouts with rich styling only (smaller, but not the Canva-like authoring the user wants);
+  keeping the flowing TipTap editor with fonts and colours added (smallest, rejected for the same reason); a `<canvas>`
+  renderer such as Konva (rejected: text is not selectable, which breaks annotations and accessibility).
+- **Why:** the editor is the core authoring feature (Objective 3) and the user wants it comparable to tools students
+  already use.
+- **Reversibility:** Hard once notes exist in the new format (needs a data migration); decided before any production data.
+
+## D32 - Short video element on slides (user decision, 15 Oct 2026)
+- **Decision:** a slide may hold one video element: MP4 or WebM, up to 90 seconds and 50 MB, type, size and duration
+  validated on the server, stored in R2 with a poster frame, no transcoding. It autoplays muted in the feed and the
+  viewer taps for sound. Plan item R29, sharing R22's upload pipeline.
+- **Alternatives:** YouTube or Vimeo links only (no storage, less like the TikTok-style feed); no video.
+- **Reversibility:** Medium.
+
+## D33 - Optional AI writing assistant in the editor (user decision, 15 Oct 2026)
+- **Decision:** the editor gets an optional assistant that turns messy text or an imported file (.txt, .md, .docx, .pdf,
+  .pptx) into a draft deck, and rewrites, shortens or makes quiz questions from a selected text box. Calls go from the
+  server to any OpenAI-compatible provider configured by `AI_BASE_URL`, `AI_API_KEY` and `AI_MODEL`; output is
+  validated against the slide element schema and always lands as an editable draft. Notes made with it carry an
+  "AI-assisted" label, and each user has a daily limit. The ranking feed stays a deterministic heuristic. Plan item R28.
+- **Scope note:** this reverses the IR's exclusion of AI components (IR Section 1.6), so the report's scope and
+  limitations sections must record it as an extension added during Part II, with its academic-integrity safeguards
+  (label, author must edit and publish).
+- **Alternatives:** leave it to future work (keeps the IR exclusion); decide after supervisor meeting #2.
+- **Reversibility:** Easy (feature behind configuration; without a key the assistant is hidden).
 
 ## D34 - Database tuning: indexes, pool settings, interaction retention (15 Oct 2026)
 - **Decision:** migration `20261015000001_query_indexes.sql` adds four indexes: `comment_like_comment_idx` on
@@ -537,6 +571,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `https://api.<domain>`, empty in development so the Vite proxy still applies); the cookie stays host-only (no Domain attribute), and `app.` and `api.` share a
   registrable domain, so SameSite=Lax still sends it.
 - **Reversibility:** Medium (server extractor, CORS and CSRF middleware, client api wrapper and auth context).
+
+## D36 - Number not used
+- Left unassigned when parallel branches reserved numbers on 15 Oct 2026; nothing refers to it.
 
 ## D37 - Programme catalogue endpoint and admin Modules API (R4, R5, 15 Oct 2026)
 
@@ -596,6 +633,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (rejected: rows shift as people follow and unfollow); offset paging for the Following feed (rejected for the same reason); a ranked Following feed (rejected, see above).
 - **Tests:** USR-TC12 to USR-TC21 and USR-TC24 (cursor tie-break), RANK-TC21 to RANK-TC23; NOTE-TC7 and USR-TC4 fixtures now use follows.
 - **Reversibility:** Medium (one migration with a down step that keeps mutual pairs; one-way follows are lost on rollback).
+
+## D39 — CI pipeline on GitHub Actions (R11/R26)
+- **Decision:** one workflow job runs typecheck, tests (Postgres 17 service, `parp_test` created with psql), build and a production-only `npm audit --audit-level=high` on every push and PR to `main`; it creates an empty `.env` because the dbmate npm scripts require the file (D29 covers deployment).
 
 ## D40 - Scale and payload fixes: feed snapshot, paged lists, shared write limit (R25, 15 Oct 2026)
 - **Rank once per asOf (audit #2):** migration `20261015000003_feed_snapshot.sql` adds `"FEED_SNAPSHOT_T"` (`fsn_usr_id`,
@@ -686,41 +726,3 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   every redesign); a Vitest workspace or `environmentMatchGlobs` (rejected: a per-file pragma is one line and explicit).
 - **Next:** Playwright end-to-end tests run against the real app after the redesign (R26 part 2).
 - **Reversibility:** Easy (dev dependencies and test files only; no runtime code changed).
-
-## D39 — CI pipeline on GitHub Actions (R11/R26)
-- **Decision:** one workflow job runs typecheck, tests (Postgres 17 service, `parp_test` created with psql), build and a production-only `npm audit --audit-level=high` on every push and PR to `main`; it creates an empty `.env` because the dbmate npm scripts require the file (D29 covers deployment).
-
-## D31 - Canva-style slide editor, author-chosen slide size, images (user decision, 15 Oct 2026)
-- **Decision:** FR8's editor becomes a free-form canvas: each slide is a fixed-size board holding positioned elements
-  (text boxes with rich text, shapes, lines, images, code blocks, later video) with templates, deck themes, a curated
-  font list, colours, alignment, layers and undo, modelled on Canva's editor layout. The author picks the slide size per
-  note: 4:5, 9:16 or 16:9. Images come from uploads (JPEG/PNG/WebP up to 5 MB, re-encoded on the server, stored in
-  Cloudflare R2) or a stock-photo search through the Unsplash API. Slides change from one sanitised HTML block to a
-  validated JSON list of elements; text inside elements is still sanitised against the allow-list, and the search
-  document is built from the text elements. The canvas is DOM-based, not `<canvas>`, so slide text stays selectable for
-  FR18 annotations and readable by screen readers. Plan items R21 and R22.
-- **Alternatives:** structured layouts with rich styling only (smaller, but not the Canva-like authoring the user wants);
-  keeping the flowing TipTap editor with fonts and colours added (smallest, rejected for the same reason); a `<canvas>`
-  renderer such as Konva (rejected: text is not selectable, which breaks annotations and accessibility).
-- **Why:** the editor is the core authoring feature (Objective 3) and the user wants it comparable to tools students
-  already use.
-- **Reversibility:** Hard once notes exist in the new format (needs a data migration); decided before any production data.
-
-## D32 - Short video element on slides (user decision, 15 Oct 2026)
-- **Decision:** a slide may hold one video element: MP4 or WebM, up to 90 seconds and 50 MB, type, size and duration
-  validated on the server, stored in R2 with a poster frame, no transcoding. It autoplays muted in the feed and the
-  viewer taps for sound. Plan item R29, sharing R22's upload pipeline.
-- **Alternatives:** YouTube or Vimeo links only (no storage, less like the TikTok-style feed); no video.
-- **Reversibility:** Medium.
-
-## D33 - Optional AI writing assistant in the editor (user decision, 15 Oct 2026)
-- **Decision:** the editor gets an optional assistant that turns messy text or an imported file (.txt, .md, .docx, .pdf,
-  .pptx) into a draft deck, and rewrites, shortens or makes quiz questions from a selected text box. Calls go from the
-  server to any OpenAI-compatible provider configured by `AI_BASE_URL`, `AI_API_KEY` and `AI_MODEL`; output is
-  validated against the slide element schema and always lands as an editable draft. Notes made with it carry an
-  "AI-assisted" label, and each user has a daily limit. The ranking feed stays a deterministic heuristic. Plan item R28.
-- **Scope note:** this reverses the IR's exclusion of AI components (IR Section 1.6), so the report's scope and
-  limitations sections must record it as an extension added during Part II, with its academic-integrity safeguards
-  (label, author must edit and publish).
-- **Alternatives:** leave it to future work (keeps the IR exclusion); decide after supervisor meeting #2.
-- **Reversibility:** Easy (feature behind configuration; without a key the assistant is hidden).
