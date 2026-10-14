@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
 
 export const MAX_SLIDES = 30;
-export const MAX_SLIDE_CHARS = 20_000;
+const MAX_SLIDE_CHARS = 20_000;
 export const MAX_HASHTAGS = 5;
 
 // Mirrors the TipTap StarterKit nodes the editor can produce (D20); every attribute is dropped.
@@ -13,7 +13,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
   transformTags: { b: 'strong', i: 'em', strike: 's', del: 's' },
 };
 
-export const sanitizeSlide = (html: string) => sanitizeHtml(html, OPTIONS);
+const sanitizeSlide = (html: string) => sanitizeHtml(html, OPTIONS);
 
 const plainText = (html: string) =>
   sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
@@ -44,7 +44,7 @@ export interface NoteInput {
   visibility: 'public' | 'contacts' | null;
 }
 
-export type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
+type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
 
 /** Validates and sanitises a create/replace body. Module existence is checked by the route. */
 export function parseNoteBody(body: unknown): Parsed {

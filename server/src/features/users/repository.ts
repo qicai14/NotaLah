@@ -54,7 +54,7 @@ export async function findUserById(id: number): Promise<UserRow | undefined> {
   return rows[0];
 }
 
-export interface NewUser {
+interface NewUser {
   email: string;
   passwordHash: string;
   displayName: string;
@@ -92,7 +92,7 @@ export async function upsertAdmin(email: string, passwordHash: string, displayNa
   return toAuthUser(rows[0]);
 }
 
-export interface LecturerApplication {
+interface LecturerApplication {
   id: number;
   displayName: string;
   email: string;

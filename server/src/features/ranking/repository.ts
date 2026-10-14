@@ -4,7 +4,7 @@ import { HASHTAGS_COL, VALID_VERIFICATIONS, VISIBLE, countsCol } from '../notes/
 import { RANKING } from './config';
 import type { Candidate, InteractionRow } from './service';
 
-export interface CandidateRow extends Candidate {
+interface CandidateRow extends Candidate {
   id: number;
 }
 

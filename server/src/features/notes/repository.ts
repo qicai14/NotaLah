@@ -3,7 +3,7 @@ import { inTransaction, pool } from '../../lib/pool';
 import { approvedLecturer, countingLecturer } from '../users/repository';
 import type { NoteInput } from './service';
 
-export interface ModuleRow {
+interface ModuleRow {
   id: number;
   code: string;
   name: string;
