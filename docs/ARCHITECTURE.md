@@ -40,8 +40,9 @@ server/src/features/messaging/    post-anchored messages, message requests from 
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
 client/src/App.tsx, main.tsx      routes and bootstrap
-client/src/components/            UI shared by several features (Field)
-client/src/lib/                   api.ts (fetch wrapper), roles.ts (role checks), useFetch.ts (data-loading hook), plus format and hashtag helpers
+client/src/components/            UI shared by several features (ConfirmButton, Dialog, Field, LecturerBadge,
+                                  NoteActions, ReportDialog, SlideViewer)
+client/src/lib/                   api.ts (fetch wrapper), roles.ts (role checks), useFetch.ts (data-loading hook), format.ts (timeAgo, labels), hashtags.ts
 client/src/types/                 shared client types
 client/src/features/<feature>/    pages and components of one feature: auth, users, notes, feed, search,
                                   messaging, verification, moderation (ranking has no UI)
