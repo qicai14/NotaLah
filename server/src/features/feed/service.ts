@@ -1,3 +1,4 @@
+import type { KeysetPage } from '../../lib/keyset';
 import { getCandidates, getInteractionRows } from '../ranking/repository';
 import { buildInterestVector, scoreCandidate, type Components } from '../ranking/service';
 import type { NoteWithEngagement } from '../notes/repository';
@@ -43,11 +44,10 @@ export async function getFeedPage(
   return { items, nextPage: total > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff };
 }
 
-/** One page of the Following feed: chronological, not ranked, so items carry no score (D38); same `asOf` paging. */
+/** One page of the Following feed: chronological, not ranked, so items carry no score; keyset cursor with the same `asOf` cutoff (D38). */
 export async function getFollowingPage(
-  viewerId: number, page: number, asOf: Date | null,
-): Promise<{ items: NoteWithEngagement[]; nextPage: number | null; asOf: Date }> {
+  viewerId: number, keyset: KeysetPage, asOf: Date | null,
+): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null; asOf: Date }> {
   const cutoff = await getCutoff(asOf);
-  const rows = await getFollowingNotes(viewerId, cutoff, PAGE_SIZE + 1, (page - 1) * PAGE_SIZE);
-  return { items: rows.slice(0, PAGE_SIZE), nextPage: rows.length > PAGE_SIZE ? page + 1 : null, asOf: cutoff };
+  return { ...(await getFollowingNotes(viewerId, cutoff, keyset)), asOf: cutoff };
 }

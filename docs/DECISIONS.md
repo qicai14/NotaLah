@@ -583,7 +583,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Cursor:** keyset on (`fol_created_at`, user id), sent as `<microseconds since epoch>_<id>` and built in SQL, because a
   JavaScript `Date` holds milliseconds only and a millisecond cursor would skip follows made within the same millisecond.
 - **Following feed:** `GET /api/feed?tab=following` lists visible published notes by followed authors, newest first, with the
-  same `page`/`asOf` paging and response shape as the ranked feed but without `score` and `components`. It is chronological
+  keyset paging as the other lists (D40, `lib/keyset.ts`) on (`pst_published_at`, id): `?cursor=` and `?limit=` (default 10, 1-100) with the `asOf` cutoff, answering `{items, nextCursor, asOf}` (400 "Invalid cursor" / "Invalid limit"), without `score` and `components`; keyset rather than offset because a note published or deleted between two requests would shift every later offset. It is chronological
   rather than ranked because a user who opens it has already chosen the authors; the value is "what is new from people I
   follow", and ranking would hide a followed author's latest note behind older popular ones. The ranked For You feed stays the
   default; any other `tab` value is 400 "Invalid tab".
@@ -593,7 +593,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   "contact" (UC04, UC10, UC15-UC18, Figures 4.7 and 4.12) and the ERD image.
 - **Alternatives:** keeping `"CONTACT_T"` beside follows (rejected: two relationships for one idea); a friends table maintained
   on each follow (rejected: a derived fact that can drift; two indexed `EXISTS` are cheap); offset paging for follower lists
-  (rejected: rows shift as people follow and unfollow); a ranked Following feed (rejected, see above).
+  (rejected: rows shift as people follow and unfollow); offset paging for the Following feed (rejected for the same reason); a ranked Following feed (rejected, see above).
 - **Tests:** USR-TC12 to USR-TC21 and USR-TC24 (cursor tie-break), RANK-TC21 to RANK-TC23; NOTE-TC7 and USR-TC4 fixtures now use follows.
 - **Reversibility:** Medium (one migration with a down step that keeps mutual pairs; one-way follows are lost on rollback).
 

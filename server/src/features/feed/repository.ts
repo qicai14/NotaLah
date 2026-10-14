@@ -1,3 +1,4 @@
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { pool } from '../../lib/pool';
 import { ENGAGEMENT_COLS, NOTE_COLS, NOTE_FROM, VISIBLE, type NoteWithEngagement } from '../notes/repository';
 import { follows } from '../users/repository';
@@ -18,16 +19,19 @@ export async function getNotesByIds(viewerId: number, ids: number[]): Promise<No
   return rows;
 }
 
-/** Visible published notes by authors the viewer follows, published by the cutoff, newest first (D38). */
-export async function getFollowingNotes(viewerId: number, cutoff: Date, limit: number, offset: number): Promise<NoteWithEngagement[]> {
-  const { rows } = await pool.query<NoteWithEngagement>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM}
+/** One page of visible published notes by authors the viewer follows, published by the cutoff, newest first; keyset on (published_at, id), D38. */
+export async function getFollowingNotes(
+  viewerId: number, cutoff: Date, { cursor, limit }: KeysetPage,
+): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<NoteWithEngagement & { cursor: string }>(
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor" ${NOTE_FROM}
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${follows('$1', 'p.pst_usr_id')} AND ${VISIBLE}
+       AND ($3::BIGINT IS NULL OR (p.pst_published_at, p.pst_id) < (${fromMicros('$3')}, $4::INT))
      ORDER BY p.pst_published_at DESC, p.pst_id DESC
-     LIMIT $3 OFFSET $4`,
-    [viewerId, cutoff, limit, offset],
+     LIMIT $5`,
+    [viewerId, cutoff, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
 }
 
 export interface RankedEntry {

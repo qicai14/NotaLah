@@ -80,22 +80,24 @@ describe('Following feed', () => {
     expect(idsOf(res)).toEqual([newer, older]);
     expect(res.body.items[0]).not.toHaveProperty('score');
     expect(res.body.items[0]).toMatchObject({ counts: { likes: 0, comments: 0 }, liked: false });
-    expect(res.body.nextPage).toBeNull();
+    expect(res.body.nextCursor).toBeNull();
     expect((await get(viewer, '/api/feed?tab=nope')).status).toBe(400);
+    expect((await following(viewer, '&cursor=abc')).status).toBe(400);
   });
 
-  it('RANK-TC22: Following feed pages are stable with asOf', async () => {
+  it('RANK-TC22: Following feed keyset pages are stable with asOf', async () => {
     const [viewer, author] = [await insertUser(), await insertUser()];
     await follow(viewer, author);
     const ids: number[] = [];
     for (let i = 0; i < 12; i++) ids.push(await insertNote(author));
     const p1 = await following(viewer);
     expect(p1.body.items).toHaveLength(10);
-    expect(p1.body.nextPage).toBe(2);
+    expect(idsOf(p1)).toEqual(ids.slice(2).reverse());
+    expect(p1.body.nextCursor).toMatch(/^\d+_\d+$/);
     await insertNote(author); // published after page 1 was served
-    const p2 = await following(viewer, `&page=2&asOf=${encodeURIComponent(p1.body.asOf)}`);
+    const p2 = await following(viewer, `&cursor=${p1.body.nextCursor}&asOf=${encodeURIComponent(p1.body.asOf)}`);
     expect(idsOf(p2)).toEqual([ids[1], ids[0]]);
-    expect(p2.body.nextPage).toBeNull();
+    expect(p2.body.nextCursor).toBeNull();
   });
 
   it('RANK-TC23: contacts-only notes appear in the Following feed only for friends', async () => {
