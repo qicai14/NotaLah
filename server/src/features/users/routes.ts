@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../auth/middleware';
+import { requireAuth, me } from '../auth/middleware';
 import { countDrafts, listNotesByAuthor } from '../notes/repository';
 import { idParam, issueMap } from '../../lib/validation';
 import { findProfile, updateProfile } from './repository';
@@ -24,7 +24,7 @@ usersRouter.put('/me', async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { displayName, programme, bio } = parsed.data;
   // omitted fields keep their value; an empty string clears to NULL (D22)
-  const user = await updateProfile(req.user!.id, {
+  const user = await updateProfile(me(req).id, {
     displayName,
     ...(programme !== undefined && { programme: programme || null }),
     ...(bio !== undefined && { bio: bio || null }),
@@ -35,7 +35,7 @@ usersRouter.put('/me', async (req, res) => {
 usersRouter.get('/:id', async (req, res) => {
   const profile = await findProfile(Number(req.params.id));
   if (!profile) return res.status(404).json({ error: 'User not found' });
-  const own = profile.id === req.user!.id;
-  const [notes, draftCount] = await Promise.all([listNotesByAuthor(profile.id, req.user!.id), own ? countDrafts(profile.id) : undefined]);
+  const own = profile.id === me(req).id;
+  const [notes, draftCount] = await Promise.all([listNotesByAuthor(profile.id, me(req).id), own ? countDrafts(profile.id) : undefined]);
   res.json({ user: { ...profile, notes, ...(own ? { draftCount } : {}) } });
 });

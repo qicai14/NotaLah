@@ -1,7 +1,7 @@
 import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
-import { requireAuth, requireRole } from '../auth/middleware';
+import { requireAuth, requireRole, me } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import * as repo from './repository';
 
@@ -19,7 +19,7 @@ async function decide(req: Request<{ userId: string }>, res: Response, approve: 
   const blank = typeof req.body?.reason !== 'string' || !req.body.reason.trim();
   const reason = approve && blank ? 'Approved' : requiredText(res, req.body?.reason, 'Reason'); // reason optional only when approving (D18)
   if (reason === undefined) return;
-  const user = await decideLecturer(userId, req.user!.id, approve, reason);
+  const user = await decideLecturer(userId, me(req).id, approve, reason);
   if (!user) {
     res.status(404).json({ error: 'No pending lecturer application for this user' });
     return;
@@ -48,7 +48,7 @@ adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   if (outcome !== 'dismiss' && outcome !== 'hide') return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
   const remark = requiredText(res, req.body?.remark, 'Remark');
   if (remark === undefined) return;
-  const resolved = await repo.resolveReports(Number(req.params.noteId), req.user!.id, outcome, remark);
+  const resolved = await repo.resolveReports(Number(req.params.noteId), me(req).id, outcome, remark);
   if (resolved === 0) return res.status(404).json({ error: 'No open reports for this note' });
   res.json({ outcome, resolved });
 });
@@ -61,11 +61,11 @@ adminRouter.get('/users', async (req, res) => {
 
 const ACTIONS: repo.AccountAction[] = ['restrict', 'suspend', 'reinstate', 'delete'];
 adminRouter.post('/users/:userId/:action', async (req, res) => {
-  const action = req.params.action as repo.AccountAction;
-  if (!ACTIONS.includes(action)) return res.status(404).json({ error: 'Not found' });
+  const action = ACTIONS.find((a) => a === req.params.action);
+  if (!action) return res.status(404).json({ error: 'Not found' });
   const reason = requiredText(res, req.body?.reason, 'Reason');
   if (reason === undefined) return;
-  const out = await repo.applyAccountAction(Number(req.params.userId), req.user!.id, action, reason);
+  const out = await repo.applyAccountAction(Number(req.params.userId), me(req).id, action, reason);
   if (out === 'not_found') return res.status(404).json({ error: 'User not found' });
   if (out === 'admin') return res.status(403).json({ error: 'Administrator accounts cannot be changed here' });
   if (out === 'deleted') return res.status(409).json({ error: 'This account has been deleted' });

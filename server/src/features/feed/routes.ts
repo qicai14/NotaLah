@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../auth/middleware';
+import { requireAuth, me } from '../auth/middleware';
 import { getFeedPage } from './service';
 
 export const feedRouter = Router();
@@ -14,5 +14,5 @@ feedRouter.get('/', requireAuth, async (req, res) => {
   if (asOf !== null && (typeof rawAsOf !== 'string' || Number.isNaN(asOf.getTime()))) {
     return res.status(400).json({ error: 'Invalid asOf' });
   }
-  res.json(await getFeedPage(req.user!.id, Number(raw), asOf));
+  res.json(await getFeedPage(me(req).id, Number(raw), asOf));
 });

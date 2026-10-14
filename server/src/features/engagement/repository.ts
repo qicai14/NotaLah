@@ -1,4 +1,4 @@
-import { pool } from '../../lib/pool';
+import { isUniqueViolation, pool } from '../../lib/pool';
 import { approvedLecturer } from '../users/repository';
 import { VISIBLE, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
 
@@ -186,7 +186,7 @@ export async function addReport(noteId: number, reporterId: number, reason: stri
     );
     return true;
   } catch (err) {
-    if ((err as { code?: string }).code === '23505') return false;
+    if (isUniqueViolation(err)) return false;
     throw err;
   }
 }

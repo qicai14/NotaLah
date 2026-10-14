@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireActive, requireAuth } from '../auth/middleware';
+import { requireActive, requireAuth, me } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import {
   createNote, getNoteMeta, getVisibleNote, listDrafts, listModules, moduleExists, replaceNote, softDeleteNote,
@@ -17,7 +17,7 @@ modulesRouter.get('/', async (_req, res) => {
 });
 
 notesRouter.get('/drafts', async (req, res) => {
-  res.json({ notes: await listDrafts(req.user!.id) });
+  res.json({ notes: await listDrafts(me(req).id) });
 });
 
 notesRouter.post('/', requireActive, async (req, res) => {
@@ -27,20 +27,20 @@ notesRouter.post('/', requireActive, async (req, res) => {
   if (n.moduleId !== null && !(await moduleExists(n.moduleId))) {
     return res.status(400).json({ error: 'Validation failed', errors: { moduleId: 'Module not found' } });
   }
-  const id = await createNote(req.user!.id, n);
-  res.status(201).json({ note: await getVisibleNote(id, req.user!.id) });
+  const id = await createNote(me(req).id, n);
+  res.status(201).json({ note: await getVisibleNote(id, me(req).id) });
 });
 
 notesRouter.get('/:id', async (req, res) => {
-  const note = await getVisibleNote(Number(req.params.id), req.user!.id);
+  const note = await getVisibleNote(Number(req.params.id), me(req).id);
   if (!note) return res.status(404).json({ error: 'Note not found' });
   res.json({ note });
 });
 
 notesRouter.put('/:id', requireActive, async (req, res) => {
-  const meta = await getNoteMeta(Number(req.params.id), req.user!.id);
+  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
   if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
+  if (meta.authorId !== me(req).id) return res.status(403).json({ error: 'Forbidden' });
   if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
 
   const parsed = parseNoteBody(req.body);
@@ -57,13 +57,13 @@ notesRouter.put('/:id', requireActive, async (req, res) => {
   }
   const id = Number(req.params.id);
   if (!(await replaceNote(id, n))) return res.status(404).json({ error: 'Note not found' });
-  res.json({ note: await getVisibleNote(id, req.user!.id) });
+  res.json({ note: await getVisibleNote(id, me(req).id) });
 });
 
 notesRouter.delete('/:id', async (req, res) => {
-  const meta = await getNoteMeta(Number(req.params.id), req.user!.id);
+  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
   if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.authorId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
+  if (meta.authorId !== me(req).id) return res.status(403).json({ error: 'Forbidden' });
   await softDeleteNote(Number(req.params.id));
   res.status(204).end();
 });

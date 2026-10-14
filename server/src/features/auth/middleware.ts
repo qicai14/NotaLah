@@ -1,4 +1,4 @@
-import type { RequestHandler } from 'express';
+import type { Request, RequestHandler } from 'express';
 import { passport } from './passport';
 import type { AuthUser, Role } from '../users/repository';
 
@@ -27,3 +27,9 @@ export const requireActive: RequestHandler = (req, res, next) => {
   }
   next();
 };
+
+/** The user requireAuth attached; throws 401 if a route forgot to use it. */
+export function me(req: Request): AuthUser {
+  if (!req.user) throw Object.assign(new Error('Unauthorized'), { status: 401 });
+  return req.user;
+}

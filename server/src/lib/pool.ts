@@ -23,3 +23,5 @@ export async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promi
     client.release(broken);
   }
 }
+
+export const isUniqueViolation = (err: unknown): boolean => (err as { code?: string }).code === '23505';

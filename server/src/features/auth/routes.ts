@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { BCRYPT_COST, type LoginInfo, passport, signToken } from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
+import { isUniqueViolation } from '../../lib/pool';
 import { issueMap } from '../../lib/validation';
 
 export const authRouter = Router();
@@ -72,7 +73,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
     return res.status(201).json({ user });
   } catch (err) {
     // Two registrations racing past the check above: the UNIQUE constraint decides.
-    if ((err as { code?: string }).code === '23505') return res.status(409).json(duplicate);
+    if (isUniqueViolation(err)) return res.status(409).json(duplicate);
     throw err;
   }
 });
