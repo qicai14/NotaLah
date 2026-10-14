@@ -10,15 +10,17 @@ pool.on('error', (err) => console.error('pg pool error', err));
 /** Runs fn inside BEGIN/COMMIT on one connection; rolls back and rethrows on error. */
 export async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
+  let failed = false;
   try {
     await client.query('BEGIN');
     const out = await fn(client);
     await client.query('COMMIT');
     return out;
   } catch (err) {
-    await client.query('ROLLBACK');
+    failed = true;
+    await client.query('ROLLBACK').catch(() => {});
     throw err;
   } finally {
-    client.release();
+    client.release(failed || undefined);
   }
 }

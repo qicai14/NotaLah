@@ -34,7 +34,7 @@ usersRouter.put('/me', async (req, res) => {
 usersRouter.get('/:id', async (req, res) => {
   const profile = invalidId(req.params.id) ? undefined : await findProfile(Number(req.params.id));
   if (!profile) return res.status(404).json({ error: 'User not found' });
-  const notes = await listNotesByAuthor(profile.id, req.user!.id);
   const own = profile.id === req.user!.id;
-  res.json({ user: { ...profile, notes, ...(own ? { draftCount: await countDrafts(profile.id) } : {}) } });
+  const [notes, draftCount] = await Promise.all([listNotesByAuthor(profile.id, req.user!.id), own ? countDrafts(profile.id) : undefined]);
+  res.json({ user: { ...profile, notes, ...(own ? { draftCount } : {}) } });
 });
