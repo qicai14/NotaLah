@@ -1,6 +1,8 @@
 # Decision log
 
-Choices made during the unattended run of 13 Oct 2026 that belong to the user. Review these first.
+Choices made during the unattended run of 13 Oct 2026 that belong to the user. All of D1-D28 were reviewed by the user on
+14 Oct 2026; each entry ends with a **User review (14 Oct)** line, which overrides the entry where they differ.
+Reversals and additions are scheduled in `PLAN.md` (Realign backlog).
 Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migration before data exists),
 **Hard** (would ripple through code and several chapters).
 
@@ -10,6 +12,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   browser bookmarks or downloads). Cost is one join table (`"BOOKMARK_T"`) and one toggle
   endpoint, so it fits Sprint 2 beside likes.
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D2 — FR15 filter by lecturer and academic term: **rework**
 - **Rework:** search results get two filters: *lecturer content* (posts authored by, or Super-Liked
@@ -19,6 +22,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** full TERM_T table maintained by admin (rejected: admin workload, no data source);
   cut entirely (rejected: lecturer search had 31.3% support in D5 and filters are cheap once FR4 exists).
 - **Reversibility:** Easy (filters are query parameters).
+- **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR.
 
 ## D3 — FR17 background audio on slide notes: **cut (future work)**
 - **Alternatives:** keep as Sprint 4 stretch; rework as a link to external audio.
@@ -27,6 +31,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   which serve the four objectives. With sprints compressed to one week, the time goes to FR1-FR7.
   Chapter 6 lists it under future enhancements.
 - **Reversibility:** Medium (adds an upload pipeline later; schema change is one nullable column).
+- **User review (14 Oct):** **Reverse.** FR17 is built. The author searches Deezer from the editor (through a server proxy: the Deezer API needs no key but sends no CORS headers) and attaches one track; the note stores provider, track id, title, artist and cover only, with no audio stored on our side. The slide viewer loops the 30-second preview behind the slides with a play/pause control; the preview URL is signed and expires, so it is fetched fresh when the note plays. If Deezer is unreachable the note works without audio. 30-second previews are acceptable (user). Alternatives considered: own upload (storage and copyright moderation), Spotify (new apps get no preview URLs, playback only through the visible embed), MusicBrainz (metadata only, no audio), YouTube (quota of about 100 searches a day; its policies forbid audio-only playback).
 
 ## D4 — FR18 peer/lecturer annotation of notes: **cut (covered by comments)**
 - **Alternatives:** inline annotations anchored to slide text ranges.
@@ -35,11 +40,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   pinning of lecturer comments; comments carry an optional slide number so feedback can point at
   a particular slide.
 - **Reversibility:** Medium.
+- **User review (14 Oct):** **Reverse.** FR18 is built as text-anchored annotations: select text on a slide and add an annotation (slide number, quoted text, offset) stored in a new `"ANNOTATION_T"`; highlights render on the slide with a side panel listing them; lecturer annotations carry the badge; the note's author can delete any annotation on their note; annotations are reportable like comments.
 
 ## D5 — FR16 direct reply to a set of notes: **keep, as one-level comment replies**
 - **Why:** low priority but nearly free once comments exist (`cmt_parent_id`). One level only, to avoid
   the deep-thread visibility problem the IR cites (Lieu, 2024).
 - **Reversibility:** Easy.
+- **User review (14 Oct):** **Modify.** Keep one level of replies. Add @mentions in comments and replies: a user can mention the person they are replying to (any participant in the thread) or any of their friends (mutual follows, D9), and the mentioned user gets a notification. Needs a notification inbox (shared with the UC20 and UC22 notifications).
 
 ## D6 — Lecturer accounts are approved by an administrator
 - **Decision:** anyone may register; choosing "Lecturer" creates the account with status
@@ -50,6 +57,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   see OPEN_QUESTIONS).
 - **Why:** without it any student could self-verify their own notes. Adds one admin use case.
 - **Reversibility:** Medium.
+- **User review (14 Oct):** Keep. Add a staff-email-domain check as well if a domain is confirmed (open question 5).
 
 ## D7 — Subjects modelled as a seeded module catalogue (`"MODULE_T"`)
 - **Decision:** each post references one module (code, name, programme), which serves FR4's
@@ -57,18 +65,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   migration; an admin UI for it is out of scope.
 - **Alternatives:** free-text module field on posts (rejected: inconsistent spellings defeat search).
 - **Reversibility:** Medium.
+- **User review (14 Oct):** Keep, and add an admin Modules page (list, add, rename) since the programme dropdown (D17) also depends on the catalogue. Beyond the IR.
 
 ## D8 — Use case set limited to the IR deliverables (§1.6.4)
 - Guest is shown as a separate actor for Register/Log In; Student, Lecturer and Admin inherit from
   an abstract *Registered User* to avoid repeating shared use cases. Lecturer inherits Student
   capabilities plus Super Like and reporting for plagiarism, as listed in §1.6.4.
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D9 — "Contact" is created by an accepted message request
 - **Decision:** there is no separate friend-request feature. When a recipient accepts a message
   request (FR6), both users become contacts, and contacts-only posts (FR10) are visible to them.
 - **Alternatives:** separate add-friend flow (rejected: two approval mechanisms for one idea).
 - **Reversibility:** Medium.
+- **User review (14 Oct):** **Reverse.** Contacts become an Instagram/TikTok-style follow model. Any student or lecturer can follow anyone (one-way allowed); a mutual follow makes the two users friends. Contacts-only posts (FR10) are visible to friends only. Friends can message each other directly; a message from a non-friend is a request the recipient must approve (FR6), and approving it opens that conversation only, without making them friends. New `"FOLLOW_T"` replaces `"CONTACT_T"` through a migration; profiles get Follow/Unfollow and follower/following counts. Also add a Following feed (notes from people you follow) beside the ranked feed.
 
 ## D10 — Interest vector computed from an interaction log, not stored
 - **Decision:** `"INTERACTION_T"` logs views/likes/comments; the ranking service derives each viewer's
@@ -77,6 +88,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** exact 14-day decay at any moment, and NFR5 re-tuning of interaction weights needs no data
   migration. If feed latency suffers, add a cached table later.
 - **Reversibility:** Easy (an additive cache table).
+- **User review (14 Oct):** Keep.
 
 ## D11 — Plain-SQL migrations with dbmate
 - **Decision:** migrations are `.sql` files in `server/db/migrations/` with `-- migrate:up/down`
@@ -86,6 +98,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** the SQL in the repository is exactly the SQL in Chapter 4.3/5.2 (uppercase keywords, quoted
   tables), and dbmate records applied versions in `schema_migrations`.
 - **Reversibility:** Easy before Sprint 2.
+- **User review (14 Oct):** Keep.
 
 ## D12 — Test case IDs carry a module prefix (AUTH-TC1 … ADM-TC10)
 - **Decision:** eight modules × TC1-TC10; automated test names start with the ID (e.g. `AUTH-TC3: …`).
@@ -93,6 +106,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** the standard asks for TC1-TC10 *per module*; a prefix keeps IDs unique across the report
   and lets Chapter 5 tables be filled straight from test output.
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D13 — Sprint 1 implementation details within the fixed IR stack
 - **Layout:** npm workspaces monorepo: `client/` (Vite + React + TS + Tailwind v4), `server/` (Express 5 + TS).
@@ -110,6 +124,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** Prisma/TypeORM (rejected, see D11); httpOnly-cookie sessions (rejected for Sprint 1:
   Socket.io handshake in Sprint 4 reuses the bearer token; revisit if XSS hardening is prioritised).
 - **Reversibility:** Medium.
+- **User review (14 Oct):** **Reverse the token storage only.** The JWT moves to an httpOnly, SameSite=Lax cookie (Secure in production), read by passport-jwt from the cookie and cleared on logout, with a required custom header on state-changing requests against CSRF; Socket.io (Sprint 4) authenticates the handshake from the same cookie. This matches IR §2.3.6.2 (Dalimunthe et al., 2022), and the report's "contrary to the IR" paragraph in Chapter 2 is removed. The rest of D13 is kept.
 
 ## D14 — Migration tool flags, TypeScript 5.9, CommonJS server
 - **Decision:** every dbmate script passes `--no-dump-schema`; the server compiles to CommonJS;
@@ -122,6 +137,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   older than two weeks); `npm audit` flags its `shell-quote` dependency (dev tool, runs fixed commands
   only); bump to 10.0.6 once it is two weeks old (about 22 Oct 2026).
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D15 — Report chapter layout: briefing numbering for Chapters 4-6
 - **Decision:** the .docx outline follows the structure guideline for front matter, Chapters 1-3, Chapter 6
@@ -137,6 +153,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   Word multilevel auto-numbering — rejected as fragile when sections are moved between steps.
 - **Why:** examiners mark against the briefing section numbers; every guideline item still has a home.
 - **Reversibility:** Easy (rename/move headings; the TOC regenerates).
+- **User review (14 Oct):** Keep.
 
 ## D16 — Report page layout and numbering
 - **Decision:** A4, margins left 40 mm / others 20 mm, header and footer 10 mm from the edge. Two sections:
@@ -152,6 +169,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   first-line indent on Normal (rejected: it would indent the cover page, captions and table cells).
 - **Why:** matches FINAL DOCUMENT STANDARDS, HEADER-AND-FOOTER.txt and the supervisor's indent feedback.
 - **Reversibility:** Easy. Backup of the pre-change file: `FYP_Submissions/backups/MR_LIM_QI_CAI_TP072229_APU3F2605SE_SE_FYP_DOC_20261013-0347.docx`.
+- **User review (14 Oct):** Keep.
 
 ## D17 — Sprint 1 auth details left open by the spec
 - **Decision:** register requires `role` ('student'|'lecturer') and a free-text `programme` (max 100);
@@ -167,6 +185,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   clearer); blocking restricted users at login (rejected: UC21 says restricted users can still read).
 - **Why:** most conventional secure option for each gap; nothing changes the schema.
 - **Reversibility:** Easy.
+- **User review (14 Oct):** **Modify.** Programme becomes a dropdown sourced from the programmes in `"MODULE_T"` on registration and Edit Profile (one GET endpoint), so FR4 programme search gets consistent values. The rest of D17 is kept.
 
 ## D18 — Lecturer approval API and admin bootstrap
 - **Decision:** approve takes an optional reason (logged as 'Approved' when absent); reject requires a
@@ -179,6 +198,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   insert-only script (rejected: no way to recover a lost admin password).
 - **Why:** UC22 and D6 without storing any credential in git.
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D19 — Feature-folder structure for every sprint
 - **Decision:** server code lives in `server/src/features/<feature>/` (auth, users, moderation, ranking, notes,
@@ -198,6 +218,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   more); keep `config/ranking.ts` (rejected: the ranking feature needs a home and few references existed).
 - **Why:** one agreed map so each sprint only fills folders; the folder name tells which FR and test table it serves.
 - **Reversibility:** Medium (imports touched across ~20 files).
+- **User review (14 Oct):** Keep.
 
 ## D20 — Sprint 2 implementation choices
 - **Slide content:** each slide is HTML produced by a TipTap editor (StarterKit: headings, bold, italic,
@@ -214,6 +235,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** Markdown slides (rejected: FR8 asks for a formatting interface, and survey users are not all
   technical); Quill/Lexical (TipTap has the smallest React integration for this feature set).
 - **Reversibility:** Medium for the editor (stored HTML), easy for the rest.
+- **User review (14 Oct):** Keep.
 
 ## D21 — Notes and profile API rules (Sprint 2, task 2A)
 - **Limits:** at most 30 slides per note and 20 000 characters per slide after sanitising; at most 5 hashtags
@@ -234,6 +256,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** returning 403 for every non-owner (rejected: leaks drafts' existence); allowing publish-to-draft
   (rejected: would pull a note out of feeds others already saw).
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D22 — Feed and engagement rules (Sprint 2, task 2B)
 - **Who can engage:** likes, views, comments, reports and bookmark-adds need a published note the viewer may see
@@ -271,6 +294,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   plain/lecture/revision/howto (default plain). `approvedLecturer(alias)` in `users/repository.ts` is the one SQL fragment for D21.
   Judgement: the pg driver returns millisecond `Date`s, so a note published in the same millisecond as the cutoff can drop off page 2 (accepted).
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D23 — Sprint 2 client choices (task 2C)
 - **TipTap 3.31.3** (`@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`) pinned exactly: 3.31.4 was under two weeks old. npm
@@ -295,6 +319,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   sanitiser because TipTap writes it on continued lists. The editor is keyed by note id and, after the first draft save, receives the saved
   note through router state instead of refetching. The mobile feed snaps through `scroll-snap-type` on `html` while the feed is mounted.
   A minimal client Vitest setup (node environment, pure logic only) covers the hashtag rules (NOTE-TC24).
+- **User review (14 Oct):** Keep.
 
 ## D24 — Ranking service and ranked feed (Sprint 3, task 3A)
 - **Scoring in the app:** `GET /api/feed` fetches candidates and the viewer's interactions, scores each note with the
@@ -337,6 +362,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   storing scores (rejected: stale as soon as a like or verification lands); loading full notes for all candidates
   (rejected: slide HTML for 500 notes per request).
 - **Reversibility:** Easy; constants are in config.
+- **User review (14 Oct):** Keep; tune after UAT (NFR5). Build the "why am I seeing this" panel showing E, R, V and M per feed card (beyond the IR).
 
 ## D25 — Report Chapters 1-3 written from the IR (documentation step 2)
 - **Decision:** IR text kept in substance; figures, OMML equations and tables copied from the IR .docx. Rewritten:
@@ -355,6 +381,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** full rewrite of 29k words (rejected: OPEN_QUESTIONS #7, risk of losing substance).
 - **Reversibility:** Easy. Backups in `FYP_Submissions/backups/` (…_0945 = before Ch 1, …_2321 before Ch 2,
   …_2322 before Ch 3, …_2323 before References, …_2324 before the sanitisation fix).
+- **User review (14 Oct):** Keep. Edit Chapters 1-3 to match the 14 Oct reversals: FR15, FR17 and FR18 are delivered (the requirement-change table shrinks), FR19 stays, and the Chapter 2 token-storage paragraph is rewritten for the httpOnly cookie (D13).
 
 ## D26 — Super Like, report queue and account actions API (Sprint 3, task 3B)
 - **Path:** Super Like is `POST`/`DELETE /api/notes/:id/verify`, matching every other note route; VER-TC1's test data
@@ -400,6 +427,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   and `verified` (`COUNTS_COL`), not the full engagement columns. `decide` (UC22) reuses `requiredText`; a reason stays
   optional only for approval. The client hides "Super Like" from a restricted lecturer but keeps "Remove Super Like".
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D27 — Super Like and admin console client choices (Sprint 3, task 3B)
 - **Super Like button** in the shared `NoteActions`; the card and the note detail own the verify state and pass an
@@ -413,6 +441,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Users page:** the search term lives in the URL (`?q=`), so that link and the back button work; action buttons are
   only those that change the status (no Reinstate for an active account), none for admins or deleted accounts.
 - **Reversibility:** Easy.
+- **User review (14 Oct):** Keep.
 
 ## D28 — Report Chapter 4 written from docs/chapter4 (documentation step 3)
 - **Decision:** Chapter 4 text and tables taken from `chapter4/CHAPTER4.md` (as of 13 Oct 23:37, 127 test cases) into the
@@ -433,3 +462,4 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   wide diagrams on portrait pages (rejected: same size as landscape, harder to read on screen).
 - **Reversibility:** Easy. Re-runnable builder in the session scratchpad; backups `FYP_Submissions/backups/…_2336`
   (before Chapter 4) to `…_2345`.
+- **User review (14 Oct):** Keep.
