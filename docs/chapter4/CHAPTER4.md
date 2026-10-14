@@ -740,6 +740,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC16 | Send several cookies whose names resemble the auth cookie | `xparp_token=garbage; other=1; parp_token=<valid>`; `xparp_token=<valid>` only | 200 (only the exact `parp_token` is read); 401 | | |
 | AUTH-TC17 | List programmes | GET /api/programmes with no login; extra module added in an existing programme | 200; `items` holds each catalogue programme once, sorted | | |
 | AUTH-TC18 | Register with a programme outside the catalogue | programme "Underwater Basket Weaving" | 400 "Choose a programme from the list"; no account created | | |
+| AUTH-TC19 | Shared rate-limit store | two store instances; key k hit twice, another key once; one decrement; window start moved back 61 s; reset; purge; a test limiter of 2 per minute on the store | Hits 1 then 2 across instances (reset time about a minute ahead); the other key counts 1; decrement leaves 1; next hit starts a new window at 1; reset deletes the row; purge removes the expired counter; the third request to the test limiter gets 429 | | |
 
 *Table 4.25: Note editor and publishing module test cases (NOTE)*
 
@@ -770,6 +771,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC23 | Note detail engagement state | Another user likes a published note, then GET /api/notes/:id as that user | `counts.likes` 1, `counts.comments` 0, `liked` true, `bookmarked` false, `verified` false | | |
 | NOTE-TC25 | Template choices | template "fancy"; "howto"; none | 400 "Invalid template"; stored as howto; defaults to plain | | |
 | NOTE-TC24 | Hashtag input rules (client) | Add `#Algebra, maths, Algebra`, then an invalid tag, then a sixth tag | `#` stripped, lowercased, duplicates ignored, invalid tag and a sixth tag rejected with a message | | |
+| NOTE-TC26 | Drafts keyset paging | 5 drafts with one shared edit time; GET /api/notes/drafts?limit=2, following nextCursor; limit 101 | Pages of 2, 2 and 1 list every draft once, highest id first; nextCursor null on the last page; 400 for limit 101 | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -799,6 +801,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC22 | Update profile with an unknown or valid programme | programme not in the catalogue; then "BSc (Hons) Information Technology" | 400 "Choose a programme from the list"; 200 with the programme stored | | |
 | USR-TC23 | Save a profile whose stored programme left the catalogue | user holds "Legacy Programme"; PUT with that programme and a new bio; another user sends the same programme | 200 and programme kept; 400 for the other user | | |
 | USR-TC24 | Follower paging with identical follow times | 23 followers inserted in one statement (same timestamp); GET followers, then with nextCursor | Pages 1 and 2 together list every follower exactly once, ordered by user id descending; nextCursor null after page 2 | | |
+| USR-TC25 | Profile notes paging | 52 published notes with one shared publish time; GET /api/users/:id, then GET /api/users/:id/notes?cursor=notesNextCursor; unknown user; cursor "x" | Profile embeds 50 notes and a notesNextCursor; the follow-up returns the last 2 with nextCursor null, all 52 in id order descending; 404 for the unknown user; 400 for the bad cursor | | |
 
 *Table 4.27: Ranking and feed module test cases (RANK)*
 
@@ -820,9 +823,15 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC14 | Old verified note stays a candidate | candidate window 2; two recent notes, an older unverified note and a still older verified note | Candidates are the two recent notes and the verified note; the older unverified note is excluded | | |
 | RANK-TC15 | Ranking snapshot stable across pages | 20 notes; page 1 and page 2 fetched with the returned asOf; then 20 likes and a Super Like added to the last note of page 2; page 2 fetched again with the same asOf | Page 2 lists the same notes with the same components; the shown like count is 20 (live); a feed with a fresh asOf moves that note onto page 1 | | |
 | RANK-TC16 | Lecturer-author bonus follows account status | notes by an approved lecturer who is active, one who is restricted and one who is suspended | Active and restricted authors' notes have the lecturer-author flag (V = 0.5); the suspended author's note is not a candidate for others and, for the author, has no flag | | |
+| RANK-TC17 | Future asOf is capped at now | one 5-hour-old note; feed requested with asOf 9999-01-01 | Status 200; returned asOf is not later than the database clock; the note's recency R is above 0 | | |
+| RANK-TC18 | Stale Super Like no longer makes an old note a candidate | candidate window 1; Super Liked notes 5000 h and 4000 h old, the first Super Like backdated beyond the verified window; one recent note | Candidates are the recent note and the note with the in-window Super Like | | |
+| RANK-TC19 | Stale Super Like keeps V for a newest-window note | one 5-hour-old note whose only Super Like is older than the verified window | The candidate is flagged verified and its feed component V is 1 | | |
+| RANK-TC20 | Old interactions are purged | interactions 100 and 95 days old and one 10 days old, interest window 90 days | Purge removes the two older rows and keeps the 10-day-old one; a second purge removes nothing | | |
 | RANK-TC21 | Following feed shows only followed authors | viewer follows one author; another user follows the viewer; notes by the followed author, the other user and the viewer | GET /api/feed?tab=following lists the followed author's notes newest first, without score; unknown tab 400 "Invalid tab" | | |
 | RANK-TC22 | Following feed paging stable with asOf | 12 notes by a followed author; page 1, then a new note, then page 2 with the returned asOf | Page 1 has 10 notes and nextPage 2; page 2 has the 2 oldest notes and excludes the new note | | |
 | RANK-TC23 | Contacts-only notes in the Following feed | author with a friend and a one-way follower; a public and a contacts-only note | Friend sees both notes; one-way follower sees only the public note | | |
+| RANK-TC24 | Later pages read the stored ranking | 20 notes, the oldest with 30 likes; page 1, then page 2 with asOf; the likes deleted and a 12-hour-old note added; page 2 again; snapshot deleted; page 2 again | One snapshot row after pages 1 and 2; page 2 unchanged after the changes; once the snapshot is deleted page 2 is recomputed, differs and includes the new note, and one snapshot is stored again | | |
+| RANK-TC25 | Expired feed snapshots are purged | snapshots created 3 h and 1 h ago (TTL 2 h); purge; another 3-hour-old snapshot, then a feed request | Purge deletes 1; the feed request deletes the viewer's expired snapshot and stores a new one, leaving 2 | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
@@ -845,6 +854,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC16 | Self-engagement | author likes own note; author and a reader comment | 400 "You cannot like your own note"; feed comment count 1 (author's own comment excluded) while the thread lists both | | |
 | ENG-TC17 | Author's own views and comments | author views and comments on own note; another user does too | No interaction rows for the author; one view and one comment interaction for the other user | | |
 | ENG-TC15 | Delete comment | non-author deletes; author deletes a comment with a reply and one without | 403; parent shown as "[deleted]" with its reply; the other omitted and a second delete gives 404 | | |
+| ENG-TC18 | Comments keyset paging | 5 student comments with one shared time, one liked, one deleted with no replies, one with a reply; a lecturer comment; limit 2 following nextCursor; no cursor; cursors "abc", "1_2", limits 0, 101, "x" | Pages of 2, 2, 1: lecturer, liked, then the rest by id, with the reply under its comment and the deleted one omitted; without a cursor all 5 and nextCursor null; 400 for each bad cursor or limit | | |
+| ENG-TC19 | Saved notes keyset paging | 5 bookmarks with one shared save time; GET /api/bookmarks?limit=2 following nextCursor; cursor "1" | Pages of 2, 2, 1 list every note once, highest id first; 400 for the bad cursor | | |
 
 *Table 4.29: Lecturer verification module test cases (VER)*
 
@@ -912,7 +923,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC13 | Create admin with missing or weak values | no ADMIN_EMAIL; password "short"; password with no uppercase | Each refused with a message naming the problem | | |
 | ADM-TC14 | Create admin for an existing email | valid values, email matching an existing account | Account promoted to admin, email normalised, can log in as admin | | |
 | ADM-TC15 | Lecturer applicants whose account is not active | pending applicants with status active, restricted, suspended, deleted; approve the non-active ones | Only the active applicant is listed (a restricted applicant waits until reinstated); approving the others returns 404 and changes nothing | | |
-| ADM-TC16 | Report queue grouping and resolve validation | 2 open reports on P (older), 1 on Q, 1 dismissed on R; outcome "archive"; remark of 301 characters | P then Q listed with counts 2 and 1 and their reasons; R not listed; 400 for the bad outcome and the long remark | | |
+| ADM-TC16 | Report queue grouping and resolve validation | 2 open reports on P (older), 1 on Q, 1 dismissed on R; outcome "archive"; remark of 301 characters | P then Q listed with counts 2 and 1 and their reasons, without slides; R not listed; 400 for the bad outcome and the long remark | | |
 | ADM-TC17 | Search users and reinstate | search "author" after one upheld report; suspend then reinstate; unknown action; unknown user | Author listed with role, status and upheld count 1; reinstated user can use the feed again; 404; 404 | | |
 | ADM-TC18 | Delete account | delete student S who has a published note and a draft; then reinstate S | S anonymised ("Deleted user", deleted-id@invalid), published note hidden, draft untouched, token 401; reinstate returns 409 | | |
 | ADM-TC19 | Reports on a deleted note | open report on note P; P's author deletes it; admin resolves P with outcome dismiss | P not in the report queue; resolve returns 404; the report stays open | | |
@@ -925,6 +936,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC26 | Rename a module | PATCH name and programme; then name only | 200; code unchanged; omitted field keeps its value | | |
 | ADM-TC27 | Rename an unknown module | id 999999; id "abc" | 404; 404 | | |
 | ADM-TC28 | Code is immutable | PATCH with code only; with {}; with a blank name | 400 each; stored code unchanged | | |
+| ADM-TC29 | Report queue paging | 23 reported notes whose reports share one time; GET /api/admin/reports, then with nextCursor; cursor "abc" | 20 groups and a nextCursor, then the last 3 with nextCursor null, in note id order; 400 for the bad cursor | | |
+| ADM-TC30 | Review panel loads the full note | GET /api/admin/reports/:noteId for a reported note, a note without reports, id "abc", the note after dismissal | Full note with 3 slides, report count 1 and the spam report; 404; 400; 404 | | |
 
 ## 4.5.2 User Acceptance Testing
 

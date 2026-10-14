@@ -596,3 +596,48 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (rejected: rows shift as people follow and unfollow); a ranked Following feed (rejected, see above).
 - **Tests:** USR-TC12 to USR-TC21 and USR-TC24 (cursor tie-break), RANK-TC21 to RANK-TC23; NOTE-TC7 and USR-TC4 fixtures now use follows.
 - **Reversibility:** Medium (one migration with a down step that keeps mutual pairs; one-way follows are lost on rollback).
+
+## D40 - Scale and payload fixes: feed snapshot, paged lists, shared write limit (R25, 15 Oct 2026)
+- **Rank once per asOf (audit #2):** migration `20261015000003_feed_snapshot.sql` adds `"FEED_SNAPSHOT_T"` (`fsn_usr_id`,
+  `fsn_as_of`, `fsn_pst_ids INTEGER[]` in ranked order, `fsn_scores DOUBLE PRECISION[]` holding `[score, E, R, V, M]` per id,
+  `fsn_created_at`; primary key (viewer, asOf), index on `fsn_created_at` for the purge). The first request for an asOf (page 1, or
+  any page whose snapshot is missing) ranks the candidates as in D24 and stores the result; a request that sends an `asOf` reads its
+  slice with array slicing (`fsn_pst_ids[11:20]`) and skips the candidate, interaction and scoring work. The API is unchanged. Snapshots
+  older than `RANKING.snapshotTtlHours` (2) are deleted by the daily purge (D34) and, for one viewer, whenever that viewer stores a new
+  one; a page requested after its snapshot expired is simply recomputed. The snapshot lives in Postgres, so any instance can serve the
+  next page. It also closes the D24 gap: an unlike, a deleted comment or a suspended verifier between pages no longer reorders later
+  pages for the same asOf (a note hidden or deleted since still drops out, because the page's notes are loaded through `VISIBLE`).
+  Measured on the test database with 500 notes (5 slides each, about 2,500 likes, 167 viewer interactions), mean of 20 requests through
+  Supertest: page 1 30.0 ms, page 2 from the snapshot 10.1 ms, page 2 recomputed 31.5 ms.
+- **Report queue (audit #4):** `GET /api/admin/reports` returns summaries (id, title, status, module, author id and name, report
+  count, oldest report time, the open reports) without slides, 20 per page, keyset on (oldest open report, note id) with `nextCursor`.
+  Keyset rather than offset paging because the queue shrinks while an admin works through it: with offsets, resolving five groups on
+  page 1 would make page 2 skip five. `GET /api/admin/reports/:noteId` returns the full note with its open reports (404 when it has
+  none or was deleted, 400 for a malformed id); `AdminReports.tsx` fetches it when a group is opened and shows only the first page until
+  the redesign adds "load more".
+- **Unbounded lists (audit #5):** comments, `GET /api/bookmarks`, profile notes and `GET /api/notes/drafts` take `?cursor=` and
+  `?limit=` (default 50, 1-100) and answer `nextCursor`; without a cursor they return the first page, so the current client keeps
+  working. Cursors are microseconds since the epoch built in SQL, as in D38: bookmarks on (saved at, note id), drafts on (updated at,
+  id), profile notes on (published at, id). The profile response embeds its first 50 notes plus `notesNextCursor`, and the new
+  `GET /api/users/:id/notes` continues from it (404 for an unknown or deleted user). Comments keep the ENG-TC7 order (approved
+  lecturer first, most liked, oldest), now applied in SQL so it can be paged, with the cursor `<0 pinned|1>_<likes>_<micros>_<id>`;
+  replies come with their top-level comment and are not paged. Likes are live, so a comment liked between two page requests can cross
+  the page boundary (accepted; the client can drop ids it already shows). A malformed cursor or limit is 400 "Invalid cursor" / "Invalid
+  limit". The parsing (zod), the microsecond SQL fragments and the page split are one module, `lib/keyset.ts`, which the D38 follower
+  lists now use too.
+- **Write rate limit (audit #6):** every POST, PUT, PATCH and DELETE under /api passes `writeLimiter`, 120 per minute keyed by the user
+  id in a valid auth cookie (verified with the JWT secret, before `requireAuth` runs) or the client IP when signed out; login and register
+  keep their 10 per minute per IP. Both count in `"RATE_LIMIT_T"` (`rlt_key`, `rlt_window_start`, `rlt_hits`; migration
+  `20261015000004_rate_limit.sql`) through `PgStore`, a small implementation of express-rate-limit's `Store` (one UPSERT per hit that
+  starts a new fixed window when the old one has passed), so the limits hold across instances with no new dependency. Settings are in
+  `RATE_LIMITS` in `features/auth/rateLimit.ts`; the daily purge deletes expired counters. Still skipped under `NODE_ENV=test`; the
+  store itself is tested directly.
+- **Alternatives:** an in-memory snapshot cache (rejected: lost on restart and not shared by instances); storing full feed items
+  (rejected: stale counts, and slide HTML for 500 notes); offset paging for the four lists (rejected: rows shift as users add and remove
+  them); a Redis store or `rate-limit-postgresql` (rejected: a new service or dependency for one UPSERT); a per-route write limit
+  (rejected: one limit for all writes is simpler and still stops a script flooding comments or likes).
+- **Not changed:** the client lists beyond AdminReports (the redesign adds "load more"); Chapter 4.3 ERD and schema table do not show
+  the two new tables yet.
+- **Tests:** RANK-TC24, RANK-TC25, ADM-TC29, ADM-TC30 (ADM-TC16 now expects no slides), ENG-TC18, ENG-TC19, NOTE-TC26, USR-TC25,
+  AUTH-TC19.
+- **Reversibility:** Easy (two migrations with down steps; the list routes accept the old call unchanged).

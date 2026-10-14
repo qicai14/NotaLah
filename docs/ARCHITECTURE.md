@@ -18,17 +18,19 @@ PostgreSQL. Errors thrown or rejected anywhere reach the handler in `app.ts` (Ex
 ## Folder map
 ```
 server/src/app.ts, server.ts      Express app (middleware, routers, error handler) and the listener
-server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health)
+server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health), keyset.ts (cursor paging, D40)
 server/src/types/                 types shared by several features
 server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create)
-server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes
+server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes,
+                                  rate limits on a Postgres store (rateLimit.ts, "RATE_LIMIT_T", D40)
 server/src/features/users/        USER_T repository, profiles, follows and follower lists ("FOLLOW_T", D38)
 server/src/features/moderation/   admin-only routes: lecturer approval (UC22), report queue (UC20), account
                                   restrict/suspend/reinstate/delete (UC21)
 server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
 server/src/features/verification/ lecturer Super Like of notes and its withdrawal, "VERIFICATION_T" (UC19)
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
-server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup)
+server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup,
+                                  per-asOf ranking snapshot "FEED_SNAPSHOT_T", D40)
 server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
 server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
 server/src/features/messaging/    post-anchored messages, message requests from non-friends, groups, Socket.io (Sprint 4)
