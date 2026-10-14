@@ -29,8 +29,14 @@ describe('api wrapper', () => {
     for (const [, init] of fetchMock.mock.calls) {
       expect(init.credentials).toBe('include');
       expect(init.headers['X-Requested-With']).toBe('parp');
+      if (init.method === 'GET') {
+        expect(init.headers['Content-Type']).toBeUndefined();
+        expect(init.body).toBeUndefined();
+      } else {
+        expect(init.headers['Content-Type']).toBe('application/json');
+        expect(init.body).toBe('{"a":1}');
+      }
     }
-    expect(fetchMock.mock.calls[1][1].headers['Content-Type']).toBe('application/json');
   });
 
   it('CLI-TC2: calls are prefixed with VITE_API_URL and /api', async () => {

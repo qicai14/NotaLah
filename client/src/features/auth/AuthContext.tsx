@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Wait for /me to settle, so protected routes do not bounce a signed-in user to /login.
-  if (!loaded) return <p>Loading…</p>;
+  if (!loaded) return <p role="status">Loading…</p>;
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -23,6 +23,7 @@ let routes: Record<string, () => Reply | Promise<Reply>>;
 
 beforeEach(() => {
   setSignedIn(false);
+  vi.stubEnv('VITE_API_URL', '');
   routes = {};
   vi.stubGlobal(
     'fetch',
@@ -36,6 +37,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 let logoutError: unknown;
@@ -62,11 +64,11 @@ describe('AuthProvider', () => {
     let release!: () => void;
     routes['/auth/me'] = () => new Promise((r) => (release = () => r({ status: 200, body: { user: student } })));
     mount();
-    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.getByRole('status')).toBeTruthy();
     expect(screen.queryByText('anonymous')).toBeNull();
     release();
     await screen.findByText('user:Sam Student');
-    expect(screen.queryByText('Loading…')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('CLI-TC7: /auth/me gives the signed-in user', async () => {
@@ -90,7 +92,7 @@ describe('AuthProvider', () => {
     expect(await screen.findByText('anonymous')).toBeTruthy();
   });
 
-  it('CLI-TC10: a failed logout keeps the user and surfaces the error', async () => {
+  it('CLI-TC10: a failed logout keeps the user and the error is thrown to the caller', async () => {
     logoutError = undefined;
     routes['/auth/me'] = () => ({ status: 200, body: { user: student } });
     routes['/auth/logout'] = () => ({ status: 500, body: { error: 'Logout failed' } });
