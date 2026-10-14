@@ -537,3 +537,22 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `https://api.<domain>`, empty in development so the Vite proxy still applies); the cookie stays host-only (no Domain attribute), and `app.` and `api.` share a
   registrable domain, so SameSite=Lax still sends it.
 - **Reversibility:** Medium (server extractor, CORS and CSRF middleware, client api wrapper and auth context).
+
+## D37 - Programme catalogue endpoint and admin Modules API (R4, R5, 15 Oct 2026)
+
+- **Decision:** (R4, modifies D17) `GET /api/programmes` (no login, register needs it) returns `{ items }`, the distinct
+  `mod_programme` values of `"MODULE_T"` sorted. Register and `PUT /api/users/me` accept a non-empty programme only if
+  one `SELECT EXISTS` finds it in the catalogue, else 400 "Choose a programme from the list"; an empty programme still
+  clears to NULL (D22). No hard-coded list. (R5, modifies D7) Admin Modules API under the admin router:
+  `GET /api/admin/modules` (all modules with `noteCount` of published notes, sorted by code), `POST` (code trimmed and
+  uppercased, `^[A-Z0-9][A-Z0-9-]*$` up to 20 characters, which accepts every seeded code; name 1-150; programme 1-100;
+  409 on a duplicate code) and `PATCH /:id` (name and/or programme; the code is immutable because notes and the
+  dissertation refer to it; 404 unknown id; 400 when nothing changes). Queries live in `features/modules/repository.ts`.
+  No delete, as it was not requested.
+- **Client:** the registration and Edit Profile dropdowns and the admin Modules page come with the client redesign;
+  this change is backend only.
+- **Why:** consistent programme values for FR4 programme search, and the catalogue stays editable without a migration.
+  Test cases AUTH-TC17, AUTH-TC18, USR-TC12, ADM-TC21 to ADM-TC28.
+- **Alternatives:** a programmes table (rejected: the catalogue already carries the programme, and a new table adds a
+  migration for no new data); hard-coded list (rejected, drifts from the catalogue).
+- **Reversibility:** High (two small routes and one repository file).
