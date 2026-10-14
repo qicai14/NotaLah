@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth, me } from '../auth/middleware';
 import { countDrafts, listNotesByAuthor } from '../notes/repository';
 import { idParam, issueMap } from '../../lib/validation';
+import { programmeExists } from '../modules/repository';
 import { findProfile, updateProfile } from './repository';
 
 export const usersRouter = Router();
@@ -23,6 +24,9 @@ usersRouter.put('/me', async (req, res) => {
   const parsed = profileSchema.safeParse(req.body && typeof req.body === 'object' ? req.body : {});
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { displayName, programme, bio } = parsed.data;
+  if (programme && !(await programmeExists(programme))) {
+    return res.status(400).json({ error: 'Validation failed', errors: { programme: 'Choose a programme from the list' } });
+  }
   // omitted fields keep their value; an empty string clears to NULL (D22)
   const user = await updateProfile(me(req).id, {
     displayName,

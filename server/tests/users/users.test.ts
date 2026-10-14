@@ -21,7 +21,7 @@ async function addNote(uid: number, title: string, status: string, visibility: s
 
 describe('Profiles', () => {
   it('USR-TC1: blank display name is rejected', async () => {
-    const res = await putMe(await insertUser(), { displayName: '  ', programme: 'SE', bio: '' });
+    const res = await putMe(await insertUser(), { displayName: '  ', programme: 'BSc (Hons) Computer Science', bio: '' });
     expect(res.status).toBe(400);
     expect(res.body.errors.displayName).toBe('Display name is required');
   });
@@ -34,11 +34,11 @@ describe('Profiles', () => {
 
   it('USR-TC3: a valid update is stored and shown on the profile', async () => {
     const uid = await insertUser();
-    const res = await putMe(uid, { displayName: 'Ann Lee', programme: 'BSc SE', bio: 'Hello' });
+    const res = await putMe(uid, { displayName: 'Ann Lee', programme: 'BSc (Hons) Computer Science', bio: 'Hello' });
     expect(res.status).toBe(200);
     expect(res.body.user.displayName).toBe('Ann Lee');
     const profile = (await getUser(uid, uid)).body.user;
-    expect(profile).toMatchObject({ displayName: 'Ann Lee', programme: 'BSc SE', bio: 'Hello' });
+    expect(profile).toMatchObject({ displayName: 'Ann Lee', programme: 'BSc (Hons) Computer Science', bio: 'Hello' });
   });
 
   it('USR-TC4: another user sees public notes only; drafts and contacts-only are hidden, draft count is own only', async () => {
@@ -92,14 +92,14 @@ describe('Profiles', () => {
 
   it('USR-TC11: omitted programme and bio keep their value; empty string clears', async () => {
     const uid = await insertUser();
-    await putMe(uid, { displayName: 'Ann', programme: 'SE', bio: 'Hi' });
+    await putMe(uid, { displayName: 'Ann', programme: 'BSc (Hons) Computer Science', bio: 'Hi' });
     const kept = await putMe(uid, { displayName: 'Ann B' });
-    expect(kept.body.user).toMatchObject({ displayName: 'Ann B', programme: 'SE' });
+    expect(kept.body.user).toMatchObject({ displayName: 'Ann B', programme: 'BSc (Hons) Computer Science' });
     expect((await getUser(uid, uid)).body.user.bio).toBe('Hi');
     await putMe(uid, { displayName: 'Ann B', bio: '' });
     const profile = (await getUser(uid, uid)).body.user;
     expect(profile.bio).toBeNull();
-    expect(profile.programme).toBe('SE');
+    expect(profile.programme).toBe('BSc (Hons) Computer Science');
   });
 
   it('USR-TC10: hidden and deleted notes are not listed on the profile', async () => {
@@ -110,5 +110,15 @@ describe('Profiles', () => {
     await addNote(owner, 'Deleted', 'deleted', 'public');
     const titles = (await getUser(viewer, owner)).body.user.notes.map((n: { title: string }) => n.title);
     expect(titles).toEqual(['Visible']);
+  });
+
+  it('USR-TC12: a programme outside the catalogue is rejected; a catalogue programme is accepted', async () => {
+    const uid = await insertUser();
+    const bad = await putMe(uid, { displayName: 'Ann', programme: 'Underwater Basket Weaving' });
+    expect(bad.status).toBe(400);
+    expect(bad.body.errors.programme).toBe('Choose a programme from the list');
+    const ok = await putMe(uid, { displayName: 'Ann', programme: 'BSc (Hons) Information Technology' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.user.programme).toBe('BSc (Hons) Information Technology');
   });
 });

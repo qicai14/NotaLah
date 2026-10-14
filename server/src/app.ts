@@ -8,6 +8,7 @@ import { authRouter } from './features/auth/routes';
 import { engagementRouter } from './features/engagement/routes';
 import { feedRouter } from './features/feed/routes';
 import { healthRouter } from './lib/health';
+import { programmesRouter } from './features/modules/routes';
 import { modulesRouter, notesRouter } from './features/notes/routes';
 import { usersRouter } from './features/users/routes';
 import { verificationRouter } from './features/verification/routes';
@@ -33,6 +34,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/modules', modulesRouter);
+app.use('/api/programmes', programmesRouter);
 app.use('/api/feed', feedRouter);
 app.use('/api', verificationRouter);
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
