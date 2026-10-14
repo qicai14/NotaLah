@@ -49,6 +49,13 @@ survive restyling.
 - On SIGTERM/SIGINT the server stops accepting connections, waits up to 10 s for in-flight requests, closes the pool and exits 0;
   a second signal or the timeout exits 1.
 
+## CI
+`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `npm ci`, typecheck, `npm test` (against a
+`postgres:17-alpine` service with a fresh `parp_test`), `npm run build`, then `npm audit --audit-level=high --omit=dev`.
+Open the failing step in the Actions run: typecheck errors show the file and line, test failures show the Vitest diff,
+and an audit failure lists the vulnerable package and advisory. Reproduce locally with `npm run db:up` and the same
+commands. Newer pushes to a branch cancel its still-running older run.
+
 ## Layout (full map in `docs/ARCHITECTURE.md`)
 - `client/src/` — `App.tsx` routes; `features/<feature>/` pages and components; `components/`, `lib/`, `types/` shared
 - `server/src/` — `app.ts`, `server.ts`; `lib/` (env, pool, health); `features/<feature>/` (auth, users, moderation,

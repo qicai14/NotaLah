@@ -686,3 +686,6 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   every redesign); a Vitest workspace or `environmentMatchGlobs` (rejected: a per-file pragma is one line and explicit).
 - **Next:** Playwright end-to-end tests run against the real app after the redesign (R26 part 2).
 - **Reversibility:** Easy (dev dependencies and test files only; no runtime code changed).
+
+## D39 — CI pipeline on GitHub Actions (R11/R26)
+- **Decision:** one workflow job runs typecheck, tests (Postgres 17 service, `parp_test` created with psql), build and a production-only `npm audit --audit-level=high` on every push and PR to `main`; it creates an empty `.env` because the dbmate npm scripts require the file (D29 covers deployment).
