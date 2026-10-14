@@ -15,10 +15,12 @@ export async function listProgrammes(): Promise<string[]> {
   return rows.map((r) => r.mod_programme);
 }
 
-export async function programmeExists(programme: string): Promise<boolean> {
+/** True when the catalogue has the programme, or (with userId) the user already holds it, so legacy values can be re-saved. */
+export async function programmeExists(programme: string, userId?: number): Promise<boolean> {
   const { rows } = await pool.query<{ ok: boolean }>(
-    `SELECT EXISTS (SELECT 1 FROM "MODULE_T" WHERE mod_programme = $1) AS "ok"`,
-    [programme],
+    `SELECT EXISTS (SELECT 1 FROM "MODULE_T" WHERE mod_programme = $1)
+         OR EXISTS (SELECT 1 FROM "USER_T" WHERE usr_id = $2 AND usr_programme = $1) AS "ok"`,
+    [programme, userId ?? null],
   );
   return rows[0].ok;
 }
@@ -33,15 +35,11 @@ export async function listAdminModules(): Promise<AdminModule[]> {
 }
 
 /** Throws a unique violation when the code exists; the caller maps it to 409. */
-export async function createModule(code: string, name: string, programme: string): Promise<AdminModule> {
+export async function createModule(m: { code: string; name: string; programme: string }): Promise<AdminModule> {
   const { rows } = await pool.query<AdminModule>(
-    `WITH m AS (
-       INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ($1, $2, $3)
-       RETURNING mod_id, mod_code, mod_name, mod_programme
-     )
-     SELECT m.mod_id AS "id", m.mod_code AS "code", m.mod_name AS "name", m.mod_programme AS "programme", 0 AS "noteCount"
-     FROM m`,
-    [code, name, programme],
+    `INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ($1, $2, $3)
+     RETURNING mod_id AS "id", mod_code AS "code", mod_name AS "name", mod_programme AS "programme", 0 AS "noteCount"`,
+    [m.code, m.name, m.programme],
   );
   return rows[0];
 }

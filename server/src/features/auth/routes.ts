@@ -62,7 +62,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
   if (body.role === 'lecturer' && !errors.staffId && !(typeof body.staffId === 'string' && body.staffId.trim())) {
     errors.staffId = 'Staff ID is required for lecturers';
   }
-  if (parsed.success && !errors.programme && !(await programmeExists(parsed.data.programme))) {
+  if (typeof body.programme === 'string' && !errors.programme && !(await programmeExists(body.programme.trim()))) {
     errors.programme = PROGRAMME_ERROR;
   }
   if (!parsed.success || Object.keys(errors).length > 0) {

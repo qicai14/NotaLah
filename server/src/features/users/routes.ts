@@ -24,7 +24,7 @@ usersRouter.put('/me', async (req, res) => {
   const parsed = profileSchema.safeParse(req.body && typeof req.body === 'object' ? req.body : {});
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { displayName, programme, bio } = parsed.data;
-  if (programme && !(await programmeExists(programme))) {
+  if (programme && !(await programmeExists(programme, me(req).id))) {
     return res.status(400).json({ error: 'Validation failed', errors: { programme: 'Choose a programme from the list' } });
   }
   // omitted fields keep their value; an empty string clears to NULL (D22)

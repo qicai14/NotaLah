@@ -549,10 +549,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   409 on a duplicate code) and `PATCH /:id` (name and/or programme; the code is immutable because notes and the
   dissertation refer to it; 404 unknown id; 400 when nothing changes). Queries live in `features/modules/repository.ts`.
   No delete, as it was not requested.
+- **Renaming a programme** is allowed (PATCH `programme`). Users keep their old value until they change it, so
+  `PUT /api/users/me` also accepts the programme the user already holds, otherwise a legacy or renamed value would block
+  every profile save. A malformed module id is 404, like the users router; the PATCH body is strict, so a `code` field is 400.
 - **Client:** the registration and Edit Profile dropdowns and the admin Modules page come with the client redesign;
   this change is backend only.
 - **Why:** consistent programme values for FR4 programme search, and the catalogue stays editable without a migration.
-  Test cases AUTH-TC17, AUTH-TC18, USR-TC12, ADM-TC21 to ADM-TC28.
+  Test cases AUTH-TC17, AUTH-TC18, USR-TC22, USR-TC23, ADM-TC21 to ADM-TC28.
 - **Alternatives:** a programmes table (rejected: the catalogue already carries the programme, and a new table adds a
   migration for no new data); hard-coded list (rejected, drifts from the catalogue).
 - **Reversibility:** High (two small routes and one repository file).

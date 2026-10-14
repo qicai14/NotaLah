@@ -2,10 +2,9 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
 import { requireAuth, requireRole, me } from '../auth/middleware';
-import { idParam } from '../../lib/validation';
+import { idParam, issueMap } from '../../lib/validation';
 import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
-import { issueMap } from '../../lib/validation';
 import * as repo from './repository';
 
 export const adminRouter = Router();
@@ -91,7 +90,7 @@ const newModuleSchema = z.object({
   name: moduleName,
   programme: moduleProgramme,
 });
-const moduleEditSchema = z.object({ name: moduleName.optional(), programme: moduleProgramme.optional() });
+const moduleEditSchema = z.strictObject({ name: moduleName.optional(), programme: moduleProgramme.optional() });
 
 const body = (req: Request) => (req.body && typeof req.body === 'object' ? req.body : {});
 
@@ -104,7 +103,7 @@ adminRouter.post('/modules', async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { code, name, programme } = parsed.data;
   try {
-    res.status(201).json({ module: await modules.createModule(code, name, programme) });
+    res.status(201).json({ module: await modules.createModule({ code, name, programme }) });
   } catch (err) {
     if (isUniqueViolation(err)) return res.status(409).json({ error: 'Module code already exists' });
     throw err;

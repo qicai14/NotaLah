@@ -107,7 +107,7 @@ describe('POST /api/auth/register', () => {
   });
 
   it('AUTH-TC17: GET /api/programmes needs no login and lists the distinct catalogue programmes, sorted', async () => {
-    await pool.query(`INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('ZZ1', 'Extra', 'BSc (Hons) Computer Science')`);
+    await pool.query(`INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('TST-ZZ1', 'Extra', 'BSc (Hons) Computer Science')`);
     const res = await request(app).get('/api/programmes');
     expect(res.status).toBe(200);
     expect(res.body.items).toEqual([
@@ -115,7 +115,7 @@ describe('POST /api/auth/register', () => {
       'BSc (Hons) Information Technology',
       'BSc (Hons) Software Engineering',
     ]);
-    await pool.query(`DELETE FROM "MODULE_T" WHERE mod_code = 'ZZ1'`);
+    await pool.query(`DELETE FROM "MODULE_T" WHERE mod_code = 'TST-ZZ1'`);
   });
 
   it('AUTH-TC18: registering with a programme outside the catalogue is rejected', async () => {

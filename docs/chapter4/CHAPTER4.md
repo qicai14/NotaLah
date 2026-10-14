@@ -786,7 +786,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC9 | View profile with a non-numeric id | GET /api/users/abc | 404 | | |
 | USR-TC11 | Partial profile update | PUT with only displayName; then bio "" | programme and bio keep their values; empty bio becomes NULL, programme untouched | | |
 | USR-TC10 | Hidden and deleted notes on a profile | owner has published, hidden and deleted notes | Only the published note is listed | | |
-| USR-TC12 | Update profile with an unknown or valid programme | programme not in the catalogue; then "BSc (Hons) Information Technology" | 400 "Choose a programme from the list"; 200 with the programme stored | | |
+| USR-TC22 | Update profile with an unknown or valid programme | programme not in the catalogue; then "BSc (Hons) Information Technology" | 400 "Choose a programme from the list"; 200 with the programme stored | | |
+| USR-TC23 | Save a profile whose stored programme left the catalogue | user holds "Legacy Programme"; PUT with that programme and a new bio; another user sends the same programme | 200 and programme kept; 400 for the other user | | |
 
 *Table 4.27: Ranking and feed module test cases (RANK)*
 

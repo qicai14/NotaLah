@@ -112,7 +112,7 @@ describe('Profiles', () => {
     expect(titles).toEqual(['Visible']);
   });
 
-  it('USR-TC12: a programme outside the catalogue is rejected; a catalogue programme is accepted', async () => {
+  it('USR-TC22: a programme outside the catalogue is rejected; a catalogue programme is accepted', async () => {
     const uid = await insertUser();
     const bad = await putMe(uid, { displayName: 'Ann', programme: 'Underwater Basket Weaving' });
     expect(bad.status).toBe(400);
@@ -120,5 +120,14 @@ describe('Profiles', () => {
     const ok = await putMe(uid, { displayName: 'Ann', programme: 'BSc (Hons) Information Technology' });
     expect(ok.status).toBe(200);
     expect(ok.body.user.programme).toBe('BSc (Hons) Information Technology');
+  });
+
+  it('USR-TC23: a user whose stored programme left the catalogue can still save the profile', async () => {
+    const uid = await insertUser();
+    await pool.query(`UPDATE "USER_T" SET usr_programme = 'Legacy Programme' WHERE usr_id = $1`, [uid]);
+    const kept = await putMe(uid, { displayName: 'Ann', programme: 'Legacy Programme', bio: 'New bio' });
+    expect(kept.status).toBe(200);
+    expect(kept.body.user.programme).toBe('Legacy Programme');
+    expect((await putMe(await insertUser(), { displayName: 'Bob', programme: 'Legacy Programme' })).status).toBe(400);
   });
 });
