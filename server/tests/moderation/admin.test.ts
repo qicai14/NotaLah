@@ -35,6 +35,7 @@ describe('admin lecturer approval (UC22)', () => {
         request(app).post(`${base}/${pending}/approve`),
         request(app).post(`${base}/${pending}/reject`).send({ reason: 'x' }),
         request(app).get('/api/admin/reports'),
+        request(app).get('/api/admin/reports/1'),
         request(app).post('/api/admin/reports/1/resolve').send({ outcome: 'dismiss', remark: 'x' }),
         request(app).get('/api/admin/users'),
         request(app).post(`/api/admin/users/${pending}/suspend`).send({ reason: 'x' }),
@@ -266,9 +267,38 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     expect(res.body.groups.map((g: { id: number }) => g.id)).toEqual([note, newer]);
     expect(res.body.groups[0]).toMatchObject({ title: 'Reported note', reportCount: 2, author: { id: author, displayName: 'Author A' } });
     expect(res.body.groups[0].reports.map((r: { reason: string }) => r.reason)).toEqual(['inaccurate', 'other']);
-    expect(res.body.groups[0].slides).toHaveLength(3);
+    expect(res.body.groups[0].slides).toBeUndefined(); // the queue carries summaries only; the review panel loads the note (ADM-TC30)
+    expect(res.body.nextCursor).toBeNull();
     expect((await resolve(note, { outcome: 'archive', remark: 'x' })).status).toBe(400);
     expect((await resolve(note, { outcome: 'hide', remark: 'x'.repeat(301) })).body.error).toBe('Remark must be at most 300 characters');
+  });
+
+  it('ADM-TC29: the report queue pages 20 groups at a time by oldest report, then note id', async () => {
+    const notes = [note];
+    for (let i = 0; i < 22; i++) notes.push(await insertNote(author));
+    for (const n of notes) await report(n);
+    await pool.query(`UPDATE "REPORT_T" SET rpt_created_at = '2026-10-01T00:00:00.123456Z'`); // one shared timestamp: ties break on id
+    const page = (cursor?: string) => request(app).get('/api/admin/reports').query(cursor ? { cursor } : {}).set(admin);
+    const p1 = await page();
+    expect(p1.body.groups).toHaveLength(20);
+    expect(p1.body.nextCursor).toMatch(/^\d+_\d+$/);
+    const p2 = await page(p1.body.nextCursor);
+    expect([...p1.body.groups, ...p2.body.groups].map((g: { id: number }) => g.id)).toEqual(notes);
+    expect(p2.body.nextCursor).toBeNull();
+    expect((await page('abc')).status).toBe(400);
+  });
+
+  it('ADM-TC30: the review panel fetches one reported note in full with its open reports', async () => {
+    await report(note, 'spam');
+    const get = (id: number | string) => request(app).get(`/api/admin/reports/${id}`).set(admin);
+    const res = await get(note);
+    expect(res.status).toBe(200);
+    expect(res.body.group).toMatchObject({ id: note, title: 'Reported note', reportCount: 1, reports: [{ reason: 'spam' }] });
+    expect(res.body.group.slides).toHaveLength(3);
+    expect((await get(await insertNote(author))).status).toBe(404); // no open reports
+    expect((await get('abc')).status).toBe(400);
+    await resolve(note, { outcome: 'dismiss', remark: 'Fine' });
+    expect((await get(note)).status).toBe(404);
   });
 
   it('ADM-TC17: user search lists role, status and upheld report count; reinstate restores access', async () => {

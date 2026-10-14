@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
 import { requireAuth, requireRole, me } from '../auth/middleware';
 import { idParam, issueMap } from '../../lib/validation';
+import { parseKeyset } from '../../lib/keyset';
 import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import * as repo from './repository';
@@ -41,8 +42,19 @@ function requiredText(res: Response, value: unknown, label: 'Remark' | 'Reason')
   res.status(400).json({ error: tooLong ? parsed.error.issues[0].message : `${label} is required` });
 }
 
-adminRouter.get('/reports', async (_req, res) => {
-  res.json({ groups: await repo.listOpenReports() });
+const REPORT_PAGE = 20;
+
+adminRouter.get('/reports', async (req, res) => {
+  const page = parseKeyset(req, res, 2, REPORT_PAGE);
+  if (!page) return;
+  const { items, nextCursor } = await repo.listOpenReports(page);
+  res.json({ groups: items, nextCursor });
+});
+
+adminRouter.get('/reports/:noteId', async (req, res) => {
+  const group = await repo.getOpenReportGroup(Number(req.params.noteId));
+  if (!group) return res.status(404).json({ error: 'No open reports for this note' });
+  res.json({ group });
 });
 
 adminRouter.post('/reports/:noteId/resolve', async (req, res) => {

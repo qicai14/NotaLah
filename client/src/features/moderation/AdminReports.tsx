@@ -4,18 +4,20 @@ import { SlideViewer } from '../../components/SlideViewer';
 import { api, errorText } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
-import type { ReportGroup } from '../../types';
+import type { ReportGroup, ReportSummary } from '../../types';
 
 /** Reported content queue (UC20, wireframe 23): open reports grouped by note, oldest first; resolve with a remark. */
 export default function AdminReports() {
-  const { data, setData, error, loading } = useFetch<{ groups: ReportGroup[] }>('/admin/reports');
+  // shortcut: shows the first page (20) only; the redesign adds "load more" with nextCursor
+  const { data, setData, error, loading } = useFetch<{ groups: ReportSummary[]; nextCursor: string | null }>('/admin/reports');
   const [openId, setOpenId] = useState<number | null>(null);
+  const detail = useFetch<{ group: ReportGroup }>(openId === null ? null : `/admin/reports/${openId}`);
   const [remark, setRemark] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [hidden, setHidden] = useState<{ id: number; name: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const open = data?.groups.find((g) => g.id === openId);
+  const open = detail.data?.group;
 
   async function resolve(e: FormEvent, outcome: 'dismiss' | 'hide') {
     e.preventDefault();
@@ -25,7 +27,7 @@ export default function AdminReports() {
     setFormError(null);
     try {
       await api(`/admin/reports/${open.id}/resolve`, { method: 'POST', body: { outcome, remark: remark.trim() } });
-      setData((d) => d && { groups: d.groups.filter((g) => g.id !== open.id) });
+      setData((d) => d && { ...d, groups: d.groups.filter((g) => g.id !== open.id) });
       setStatus(`"${open.title}" ${outcome === 'hide' ? 'hidden' : 'kept visible'}; ${open.reportCount} report(s) resolved.`);
       setHidden(outcome === 'hide' ? { id: open.author.id, name: open.author.displayName } : null);
       setOpenId(null);
@@ -48,9 +50,9 @@ export default function AdminReports() {
           </Link>
         )}
       </p>
-      {error && (
+      {(error ?? detail.error) && (
         <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
+          {error ?? detail.error}
         </p>
       )}
       {loading && <p className="text-slate-500">Loading…</p>}

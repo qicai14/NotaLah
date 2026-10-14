@@ -98,6 +98,11 @@ export interface ReportGroup extends Omit<Note, 'counts' | 'liked' | 'bookmarked
   reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: string }[];
 }
 
+/** A row of the report queue: the review panel fetches the full ReportGroup on open. */
+export type ReportSummary = Pick<ReportGroup, 'id' | 'title' | 'status' | 'module' | 'reportCount' | 'oldestReportAt' | 'reports'> & {
+  author: Pick<ReportGroup['author'], 'id' | 'displayName'>;
+};
+
 export interface Profile {
   id: number;
   displayName: string;

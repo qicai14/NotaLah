@@ -1,31 +1,69 @@
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { NOTE_COLS, NOTE_FROM, type Note } from '../notes/repository';
 import type { LecturerStatus, Role, UserStatus } from '../users/repository';
 
-/** A reported note (full, for the review preview) with its open reports. */
+type Reports = { id: number; reason: string; details: string | null; reporter: string; createdAt: Date }[];
+
+/** A reported note in the queue: summary columns, no slides (D40). */
+export interface ReportSummary {
+  id: number;
+  title: string;
+  status: string;
+  module: { id: number; code: string; name: string } | null;
+  author: { id: number; displayName: string };
+  reportCount: number;
+  oldestReportAt: Date;
+  reports: Reports;
+}
+
+/** A reported note (full, for the review panel) with its open reports. */
 export interface ReportGroup extends Note {
   reportCount: number;
   oldestReportAt: Date;
-  reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: Date }[];
+  reports: Reports;
 }
 
-/** Open reports grouped by note, the note with the oldest open report first; a note its author deleted drops out (D26). */
-export async function listOpenReports(): Promise<ReportGroup[]> {
-  const { rows } = await pool.query<ReportGroup>(
-    `WITH g AS (
+/** Open reports grouped by note ($1 = one note id, or NULL for all); a note its author deleted drops out (D26). */
+const OPEN_GROUPS = `
+     WITH g AS (
        SELECT r.rpt_pst_id, COUNT(*)::INT AS n, MIN(r.rpt_created_at) AS oldest,
               json_agg(json_build_object('id', r.rpt_id, 'reason', r.rpt_reason, 'details', r.rpt_details,
                                          'reporter', ru.usr_display_name, 'createdAt', r.rpt_created_at)
                        ORDER BY r.rpt_created_at, r.rpt_id) AS reports
        FROM "REPORT_T" r JOIN "USER_T" ru ON ru.usr_id = r.rpt_reporter_id
-       WHERE r.rpt_status = 'open'
-       GROUP BY r.rpt_pst_id)
-     SELECT ${NOTE_COLS}, g.n AS "reportCount", g.oldest AS "oldestReportAt", g.reports AS "reports"
+       WHERE r.rpt_status = 'open' AND ($1::INT IS NULL OR r.rpt_pst_id = $1)
+       GROUP BY r.rpt_pst_id)`;
+const GROUP_COLS = `g.n AS "reportCount", g.oldest AS "oldestReportAt", g.reports AS "reports"`;
+
+/** One page of the queue, the note with the oldest open report first; keyset on (oldest report, note id), D40. */
+export async function listOpenReports({ cursor, limit }: KeysetPage): Promise<{ items: ReportSummary[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<ReportSummary & { cursor: string }>(
+    `${OPEN_GROUPS}
+     SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_status AS "status",
+            CASE WHEN m.mod_id IS NULL THEN NULL
+                 ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+            json_build_object('id', u.usr_id, 'displayName', u.usr_display_name) AS "author", ${GROUP_COLS},
+            ${micros('g.oldest')} || '_' || p.pst_id AS "cursor"
      ${NOTE_FROM} JOIN g ON g.rpt_pst_id = p.pst_id
-     WHERE p.pst_status <> 'deleted'
-     ORDER BY g.oldest, p.pst_id`,
+     WHERE p.pst_status <> 'deleted' AND ($2::BIGINT IS NULL OR (g.oldest, p.pst_id) > (${fromMicros('$2')}, $3::INT))
+     ORDER BY g.oldest, p.pst_id
+     LIMIT $4`,
+    [null, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
+}
+
+/** The full note with its open reports, or undefined when it has none or was deleted. */
+export async function getOpenReportGroup(noteId: number): Promise<ReportGroup | undefined> {
+  const { rows } = await pool.query<ReportGroup>(
+    `${OPEN_GROUPS}
+     SELECT ${NOTE_COLS}, ${GROUP_COLS}
+     ${NOTE_FROM} JOIN g ON g.rpt_pst_id = p.pst_id
+     WHERE p.pst_status <> 'deleted'`,
+    [noteId],
+  );
+  return rows[0];
 }
 
 /**
