@@ -15,7 +15,7 @@ export async function getNotesByIds(viewerId: number, ids: number[]): Promise<No
   return rows;
 }
 
-/** Visible published notes by authors the viewer follows, published by the cutoff, newest first (D36). */
+/** Visible published notes by authors the viewer follows, published by the cutoff, newest first (D38). */
 export async function getFollowingNotes(viewerId: number, cutoff: Date, limit: number, offset: number): Promise<NoteWithEngagement[]> {
   const { rows } = await pool.query<NoteWithEngagement>(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM}

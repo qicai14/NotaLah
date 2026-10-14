@@ -1,6 +1,6 @@
 # server feature: messaging
 
-Will hold: Post-anchored private messages, contact approval and named group chats over Socket.io.
+Will hold: Post-anchored private messages, message requests and named group chats over Socket.io. Friends (a mutual follow, `friends()` in `users/repository.ts`, D38) message directly; a non-friend's first message is a request, and approving it opens that conversation without making them friends.
 
 Contents: conversation repositories, routes and the Socket.io gateway.
 

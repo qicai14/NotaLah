@@ -82,7 +82,7 @@ const NEW_STATUS: Record<AccountAction, UserStatus> = { restrict: 'restricted', 
 
 /**
  * Applies an account action and logs it in "ACCOUNT_ACTION_T" in one transaction (UC21). Delete also anonymises the
- * profile (the row stays for foreign keys), hides the user's published notes and removes their follows both ways (D36). Returns the updated user, or a reason
+ * profile (the row stays for foreign keys), hides the user's published notes and removes their follows both ways (D38). Returns the updated user, or a reason
  * it was refused: unknown user, administrator target, or an already deleted account.
  */
 export async function applyAccountAction(

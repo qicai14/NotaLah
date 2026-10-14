@@ -31,7 +31,7 @@ export async function getFeedPage(
   return { items, nextPage: ranked.length > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff };
 }
 
-/** One page of the Following feed: chronological, not ranked, so items carry no score (D36); same `asOf` paging. */
+/** One page of the Following feed: chronological, not ranked, so items carry no score (D38); same `asOf` paging. */
 export async function getFollowingPage(
   viewerId: number, page: number, asOf: Date | null,
 ): Promise<{ items: NoteWithEngagement[]; nextPage: number | null; asOf: Date }> {

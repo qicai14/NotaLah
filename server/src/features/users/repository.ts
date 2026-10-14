@@ -165,10 +165,10 @@ export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>)
 export const follows = (a: string, b: string) =>
   `EXISTS (SELECT 1 FROM "FOLLOW_T" WHERE fol_follower_id = ${a} AND fol_followee_id = ${b})`;
 
-/** SQL: `a` and `b` follow each other, which makes them friends (D36). */
+/** SQL: `a` and `b` follow each other, which makes them friends (D38). */
 export const friends = (a: string, b: string) => `(${follows(a, b)} AND ${follows(b, a)})`;
 
-/** Accounts that can be followed and that appear in follow lists and counts: not deleted or suspended (D36). */
+/** Accounts that can be followed and that appear in follow lists and counts: not deleted or suspended (D38). */
 const LISTED = `IN ('active', 'restricted')`;
 
 export interface FollowState {
