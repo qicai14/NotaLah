@@ -27,4 +27,5 @@ Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Confi
 - Schema changes only through new dbmate migration files (`-- migrate:up` / `-- migrate:down`); never edit an applied one.
 - Ranking constants live only in `server/src/features/ranking/config.ts` (NFR5).
 - Test names start with the TC ID from `docs/chapter4/4.5_test_cases.md` (e.g. `AUTH-TC3: ...`).
-- Commit after each working step.
+- Work on a feature branch, never `main`; PR to `main`, merge only when conflict-free and tests pass.
+- Short commit subjects (< ~60 chars); no `Co-Authored-By` lines.
