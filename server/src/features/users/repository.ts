@@ -1,4 +1,4 @@
-import { fromMicros, micros, toPage } from '../../lib/keyset';
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 
 export type Role = 'student' | 'lecturer' | 'admin';
@@ -235,13 +235,6 @@ export interface FollowListItem {
   isFriend: boolean;
 }
 
-/** Keyset position: microseconds since the epoch of the follow, then the listed user's id. */
-export interface FollowCursor {
-  micros: string;
-  userId: number;
-}
-
-const FOLLOW_PAGE = 20;
 const SIDES = {
   followers: { list: 'fol_follower_id', of: 'fol_followee_id' },
   following: { list: 'fol_followee_id', of: 'fol_follower_id' },
@@ -249,7 +242,7 @@ const SIDES = {
 
 /** One page of a user's followers or followings (not deleted or suspended), newest follow first. */
 export async function listFollows(
-  userId: number, viewerId: number, side: keyof typeof SIDES, cursor: FollowCursor | null,
+  userId: number, viewerId: number, side: keyof typeof SIDES, { cursor, limit }: KeysetPage,
 ): Promise<{ items: FollowListItem[]; nextCursor: string | null }> {
   const { list, of } = SIDES[side];
   const { rows } = await pool.query<FollowListItem & { cursor: string }>(
@@ -262,9 +255,9 @@ export async function listFollows(
        AND ($3::BIGINT IS NULL OR (f.fol_created_at, u.usr_id) < (${fromMicros('$3')}, $4::INT))
      ORDER BY f.fol_created_at DESC, u.usr_id DESC
      LIMIT $5`,
-    [viewerId, userId, cursor?.micros ?? null, cursor?.userId ?? null, FOLLOW_PAGE + 1],
+    [viewerId, userId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return toPage(rows, FOLLOW_PAGE);
+  return toPage(rows, limit);
 }
 
 export async function updateProfile(

@@ -57,14 +57,11 @@ usersRouter.delete('/:id/follow', async (req, res) => {
 
 for (const side of ['followers', 'following'] as const) {
   usersRouter.get(`/:id/${side}`, async (req, res) => {
-    const raw = req.query.cursor;
-    const m = raw === undefined ? null : /^(\d{1,17})_(\d{1,10})$/.exec(String(raw));
-    if (raw !== undefined && (typeof raw !== 'string' || !m || Number(m[2]) > 2147483647)) {
-      return res.status(400).json({ error: 'Invalid cursor' });
-    }
+    const page = parseKeyset(req, res, 2, 20);
+    if (!page) return;
     const user = Number(req.params.id);
     if (!(await findProfile(user, me(req).id))) return res.status(404).json({ error: 'User not found' });
-    res.json(await listFollows(user, me(req).id, side, m ? { micros: m[1], userId: Number(m[2]) } : null));
+    res.json(await listFollows(user, me(req).id, side, page));
   });
 }
 
