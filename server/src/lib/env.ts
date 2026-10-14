@@ -16,6 +16,8 @@ const schema = z.object({
   PG_POOL_MAX: z.coerce.number().int().positive().default(10),
   PG_IDLE_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(30000),
   PG_CONNECTION_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(10000),
+  // Optional error tracking (D41); empty means off.
+  SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
   CLIENT_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   // Secure auth cookie (D35); defaults to on in production only, since local http would drop it.
   COOKIE_SECURE: z

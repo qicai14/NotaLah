@@ -2,6 +2,8 @@ import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import { env } from './lib/env';
+import { reportError } from './lib/errorReporting';
+import { logger, requestLogger } from './lib/logger';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { authRouter } from './features/auth/routes';
@@ -19,6 +21,7 @@ export const app = express();
 // Behind the Vite dev proxy every request arrives from loopback; trust its X-Forwarded-For (D17).
 app.set('trust proxy', 'loopback');
 
+app.use(requestLogger);
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true, allowedHeaders: ['Content-Type', 'X-Requested-With'] }));
 
@@ -48,9 +51,12 @@ app.use('/api', (_req, res) => {
 });
 
 // Express 5 forwards rejected async handlers here.
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const status = typeof err?.status === 'number' ? err.status : 500;
-  if (status >= 500) console.error(err);
+  if (status >= 500) {
+    (req.log ?? logger).error({ err }, 'unhandled route error');
+    reportError(err, { requestId: String(req.id) });
+  }
   res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
 };
 app.use(errorHandler);

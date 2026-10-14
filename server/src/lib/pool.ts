@@ -1,5 +1,6 @@
 import { Pool, type PoolClient } from 'pg';
 import { env } from './env';
+import { logger } from './logger';
 
 const connectionString = process.env.NODE_ENV === 'test' ? env.TEST_DATABASE_URL : env.DATABASE_URL;
 if (!connectionString) throw new Error('TEST_DATABASE_URL is required when NODE_ENV=test');
@@ -10,7 +11,7 @@ export const pool = new Pool({
   idleTimeoutMillis: env.PG_IDLE_TIMEOUT_MS,
   connectionTimeoutMillis: env.PG_CONNECTION_TIMEOUT_MS,
 });
-pool.on('error', (err) => console.error('pg pool error', err));
+pool.on('error', (err) => logger.error({ err }, 'pg pool error'));
 
 export async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
