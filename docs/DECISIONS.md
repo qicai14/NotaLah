@@ -643,6 +643,12 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Review fixes:** the comments query filters on `cmt_pst_id` in the outer select and in the reply `EXISTS`, so both scans use
   `comment_post_idx` (EXPLAIN on 60,000 comments: index scan for the top-level page, bitmap index scan for the rows and replies);
   `tokenSubject` and the JWT strategy share one verify-options constant (AUTH-TC20 covers forged and expired tokens).
+  The "deleted comment still has live replies" check was an `EXISTS` inside an `OR`, which the planner turned into a hash of every
+  live reply in `"COMMENT_T"` (a full seq scan of 50,000 rows whenever the note had a deleted top-level comment). Migration
+  `20261015000005_comment_parent_index.sql` adds the partial index `comment_parent_idx` on `cmt_parent_id` (non-null only), and the
+  check is now a `LEFT JOIN LATERAL ... LIMIT 1` that probes that index once per deleted comment (a one-time filter skips the rest).
+  EXPLAIN ANALYZE on 60,000 comments, for a note with 50 deleted top-level comments (half with live replies): index scan on
+  `comment_parent_idx` (50 probes), no seq scan of `"COMMENT_T"`, 9.3 ms down to 1.2 ms.
 - **Tests:** RANK-TC24 to RANK-TC27, ADM-TC29, ADM-TC30 (ADM-TC16 now expects no slides), ENG-TC18, ENG-TC19, NOTE-TC26, USR-TC25,
   AUTH-TC19, AUTH-TC20.
 - **Reversibility:** Easy (two migrations with down steps; the list routes accept the old call unchanged).
