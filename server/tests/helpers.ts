@@ -76,3 +76,13 @@ export async function insertNote(authorId: number, o: NoteOpts = {}): Promise<nu
   }
   return id;
 }
+
+export async function follow(follower: number, followee: number): Promise<void> {
+  await pool.query(`INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) VALUES ($1, $2)`, [follower, followee]);
+}
+
+/** Makes two users friends (a mutual follow, D36). */
+export async function befriend(a: number, b: number): Promise<void> {
+  await follow(a, b);
+  await follow(b, a);
+}

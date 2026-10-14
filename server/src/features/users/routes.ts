@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { requireAuth, me } from '../auth/middleware';
+import { requireActive, requireAuth, me } from '../auth/middleware';
 import { countDrafts, listNotesByAuthor } from '../notes/repository';
 import { idParam, issueMap } from '../../lib/validation';
-import { findProfile, updateProfile } from './repository';
+import { findProfile, follow, getFollowState, listFollows, unfollow, updateProfile } from './repository';
 
 export const usersRouter = Router();
 usersRouter.use(requireAuth);
@@ -32,8 +32,36 @@ usersRouter.put('/me', async (req, res) => {
   res.json({ user });
 });
 
+usersRouter.post('/:id/follow', requireActive, async (req, res) => {
+  const target = Number(req.params.id);
+  if (target === me(req).id) return res.status(400).json({ error: 'You cannot follow yourself' });
+  const out = await follow(me(req).id, target);
+  if (out === 'not_found') return res.status(404).json({ error: 'User not found' });
+  res.status(out === 'created' ? 201 : 200).json(await getFollowState(me(req).id, target));
+});
+
+// no requireActive: a restricted user can still undo (D22 removal rule)
+usersRouter.delete('/:id/follow', async (req, res) => {
+  const target = Number(req.params.id);
+  await unfollow(me(req).id, target);
+  res.json(await getFollowState(me(req).id, target));
+});
+
+for (const side of ['followers', 'following'] as const) {
+  usersRouter.get(`/:id/${side}`, async (req, res) => {
+    const raw = req.query.cursor;
+    const m = raw === undefined ? null : /^(\d{1,17})_(\d{1,10})$/.exec(String(raw));
+    if (raw !== undefined && (typeof raw !== 'string' || !m || Number(m[2]) > 2147483647)) {
+      return res.status(400).json({ error: 'Invalid cursor' });
+    }
+    const user = Number(req.params.id);
+    if (!(await findProfile(user, me(req).id))) return res.status(404).json({ error: 'User not found' });
+    res.json(await listFollows(user, me(req).id, side, m ? { micros: m[1], userId: Number(m[2]) } : null));
+  });
+}
+
 usersRouter.get('/:id', async (req, res) => {
-  const profile = await findProfile(Number(req.params.id));
+  const profile = await findProfile(Number(req.params.id), me(req).id);
   if (!profile) return res.status(404).json({ error: 'User not found' });
   const own = profile.id === me(req).id;
   const [notes, draftCount] = await Promise.all([listNotesByAuthor(profile.id, me(req).id), own ? countDrafts(profile.id) : undefined]);

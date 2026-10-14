@@ -82,7 +82,7 @@ const NEW_STATUS: Record<AccountAction, UserStatus> = { restrict: 'restricted', 
 
 /**
  * Applies an account action and logs it in "ACCOUNT_ACTION_T" in one transaction (UC21). Delete also anonymises the
- * profile (the row stays for foreign keys) and hides the user's published notes. Returns the updated user, or a reason
+ * profile (the row stays for foreign keys), hides the user's published notes and removes their follows both ways (D36). Returns the updated user, or a reason
  * it was refused: unknown user, administrator target, or an already deleted account.
  */
 export async function applyAccountAction(
@@ -107,6 +107,7 @@ export async function applyAccountAction(
       // shortcut: a note published in a concurrent request just after this UPDATE stays visible (the deleted user's token
       // is refused from the next request); lock the user's posts first if that race ever matters.
       await client.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_usr_id = $1 AND pst_status = 'published'`, [userId]);
+      await client.query(`DELETE FROM "FOLLOW_T" WHERE fol_follower_id = $1 OR fol_followee_id = $1`, [userId]);
     } else {
       await client.query(`UPDATE "USER_T" SET usr_status = $2 WHERE usr_id = $1`, [userId, NEW_STATUS[action]]);
     }

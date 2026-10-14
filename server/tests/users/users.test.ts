@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -45,7 +45,7 @@ describe('Profiles', () => {
     const owner = await insertUser();
     const contact = await insertUser();
     const stranger = await insertUser();
-    await pool.query(`INSERT INTO "CONTACT_T" (con_usr_id, con_contact_id) VALUES ($1, $2)`, [owner, contact]);
+    await befriend(owner, contact);
     await addNote(owner, 'Public', 'published', 'public');
     await addNote(owner, 'Private circle', 'published', 'contacts');
     await addNote(owner, 'Secret draft', 'draft', null);

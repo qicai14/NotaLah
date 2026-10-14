@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, CSRF, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, CSRF, follow, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -98,11 +98,12 @@ describe('Notes', () => {
     expect(rows[0].hit).toBe(true);
   });
 
-  it('NOTE-TC7: contacts-only note is visible to a contact but not to a non-contact', async () => {
+  it('NOTE-TC7: contacts-only note is visible to a friend (mutual follow) but not to a one-way follower', async () => {
     const author = await insertUser();
     const contact = await insertUser();
     const stranger = await insertUser();
-    await pool.query(`INSERT INTO "CONTACT_T" (con_usr_id, con_contact_id) VALUES ($1, $2)`, [author, contact]);
+    await befriend(author, contact);
+    await follow(stranger, author); // a one-way follow is not enough
     const res = await post(author, await publishBody({ visibility: 'contacts' }));
     expect(res.status).toBe(201);
     const id = res.body.note.id;

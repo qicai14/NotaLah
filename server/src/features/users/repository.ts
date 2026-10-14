@@ -161,16 +161,111 @@ export const countingLecturer = (alias: string) => `(${approvedLecturer(alias)} 
 export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>
   u.role === 'lecturer' && u.lecturerStatus === 'approved';
 
-/** Public profile fields; undefined for unknown or deleted accounts. */
-export async function findProfile(id: number): Promise<Profile | undefined> {
-  const { rows } = await pool.query<Profile>(
+/** SQL: user `a` follows user `b` (any SQL expressions). */
+export const follows = (a: string, b: string) =>
+  `EXISTS (SELECT 1 FROM "FOLLOW_T" WHERE fol_follower_id = ${a} AND fol_followee_id = ${b})`;
+
+/** SQL: `a` and `b` follow each other, which makes them friends (D36). */
+export const friends = (a: string, b: string) => `(${follows(a, b)} AND ${follows(b, a)})`;
+
+/** Accounts that can be followed and that appear in follow lists and counts: not deleted or suspended (D36). */
+const LISTED = `IN ('active', 'restricted')`;
+
+export interface FollowState {
+  followerCount: number;
+  followingCount: number;
+  followedByMe: boolean;
+  followsMe: boolean;
+  isFriend: boolean;
+}
+
+/** Follow columns of USER_T alias u as viewer $1 sees them. */
+const FOLLOW_STATE_COLS = `
+            (SELECT COUNT(*)::INT FROM "FOLLOW_T" f JOIN "USER_T" fu ON fu.usr_id = f.fol_follower_id
+             WHERE f.fol_followee_id = u.usr_id AND fu.usr_status ${LISTED}) AS "followerCount",
+            (SELECT COUNT(*)::INT FROM "FOLLOW_T" f JOIN "USER_T" fu ON fu.usr_id = f.fol_followee_id
+             WHERE f.fol_follower_id = u.usr_id AND fu.usr_status ${LISTED}) AS "followingCount",
+            ${follows('$1', 'u.usr_id')} AS "followedByMe", ${follows('u.usr_id', '$1')} AS "followsMe",
+            ${friends('$1', 'u.usr_id')} AS "isFriend"`;
+
+/** Public profile fields plus the viewer's follow state; undefined for unknown or deleted accounts. */
+export async function findProfile(id: number, viewerId: number): Promise<(Profile & FollowState) | undefined> {
+  const { rows } = await pool.query<Profile & FollowState>(
     `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_role AS "role", usr_programme AS "programme",
             usr_bio AS "bio", usr_avatar_url AS "avatarUrl",
-            ${approvedLecturer('u')} AS "isVerifiedLecturer"
-     FROM "USER_T" u WHERE usr_id = $1 AND usr_status <> 'deleted'`,
-    [id],
+            ${approvedLecturer('u')} AS "isVerifiedLecturer", ${FOLLOW_STATE_COLS}
+     FROM "USER_T" u WHERE usr_id = $2 AND usr_status <> 'deleted'`,
+    [viewerId, id],
   );
   return rows[0];
+}
+
+export async function getFollowState(viewerId: number, targetId: number): Promise<FollowState> {
+  const { rows } = await pool.query<FollowState>(`SELECT ${FOLLOW_STATE_COLS} FROM "USER_T" u WHERE u.usr_id = $2`, [viewerId, targetId]);
+  return rows[0];
+}
+
+/** Follows a user who is not deleted or suspended; 'exists' when already following. */
+export async function follow(followerId: number, followeeId: number): Promise<'created' | 'exists' | 'not_found'> {
+  const { rows } = await pool.query<{ found: boolean; created: boolean }>(
+    `WITH t AS (SELECT usr_id FROM "USER_T" WHERE usr_id = $2 AND usr_status ${LISTED}),
+          ins AS (INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) SELECT $1, usr_id FROM t
+                  ON CONFLICT DO NOTHING RETURNING 1)
+     SELECT EXISTS (SELECT 1 FROM t) AS "found", EXISTS (SELECT 1 FROM ins) AS "created"`,
+    [followerId, followeeId],
+  );
+  return !rows[0].found ? 'not_found' : rows[0].created ? 'created' : 'exists';
+}
+
+export async function unfollow(followerId: number, followeeId: number): Promise<void> {
+  await pool.query(`DELETE FROM "FOLLOW_T" WHERE fol_follower_id = $1 AND fol_followee_id = $2`, [followerId, followeeId]);
+}
+
+export interface FollowListItem {
+  id: number;
+  displayName: string;
+  role: Role;
+  isVerifiedLecturer: boolean;
+  followedByMe: boolean;
+  isFriend: boolean;
+}
+
+/** Keyset position: microseconds since the epoch of the follow, then the listed user's id. */
+export interface FollowCursor {
+  micros: string;
+  userId: number;
+}
+
+const FOLLOW_PAGE = 20;
+const SIDES = {
+  followers: { list: 'fol_follower_id', of: 'fol_followee_id' },
+  following: { list: 'fol_followee_id', of: 'fol_follower_id' },
+} as const;
+
+/** One page of a user's followers or followings (not deleted or suspended), newest follow first. */
+export async function listFollows(
+  userId: number, viewerId: number, side: keyof typeof SIDES, cursor: FollowCursor | null,
+): Promise<{ items: FollowListItem[]; nextCursor: string | null }> {
+  const { list, of } = SIDES[side];
+  // the cursor is built in SQL at microsecond precision; a JS Date would round to milliseconds and skip rows
+  const { rows } = await pool.query<FollowListItem & { cursor: string }>(
+    `SELECT u.usr_id AS "id", u.usr_display_name AS "displayName", u.usr_role AS "role",
+            ${approvedLecturer('u')} AS "isVerifiedLecturer",
+            ${follows('$1', 'u.usr_id')} AS "followedByMe", ${friends('$1', 'u.usr_id')} AS "isFriend",
+            (EXTRACT(EPOCH FROM f.fol_created_at) * 1000000)::BIGINT || '_' || u.usr_id AS "cursor"
+     FROM "FOLLOW_T" f JOIN "USER_T" u ON u.usr_id = f.${list}
+     WHERE f.${of} = $2 AND u.usr_status ${LISTED}
+       AND ($3::BIGINT IS NULL
+            OR (f.fol_created_at, u.usr_id) < (TIMESTAMPTZ 'epoch' + $3::BIGINT * INTERVAL '1 microsecond', $4::INT))
+     ORDER BY f.fol_created_at DESC, u.usr_id DESC
+     LIMIT $5`,
+    [viewerId, userId, cursor?.micros ?? null, cursor?.userId ?? null, FOLLOW_PAGE + 1],
+  );
+  const page = rows.slice(0, FOLLOW_PAGE);
+  return {
+    items: page.map(({ cursor: _cursor, ...item }) => item),
+    nextCursor: rows.length > FOLLOW_PAGE ? page[page.length - 1].cursor : null,
+  };
 }
 
 export async function updateProfile(

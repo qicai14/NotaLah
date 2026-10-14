@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
 import { inTransaction, pool } from '../../lib/pool';
-import { approvedLecturer, countingLecturer } from '../users/repository';
+import { approvedLecturer, countingLecturer, friends } from '../users/repository';
 import type { NoteInput } from './service';
 
 interface ModuleRow {
@@ -23,12 +23,10 @@ export async function moduleExists(id: number): Promise<boolean> {
   return rowCount === 1;
 }
 
-/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
+/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or, when contacts-only, by a friend of the viewer (mutual follow, D36). */
 export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND
-    (p.pst_visibility = 'public' OR EXISTS (SELECT 1 FROM "CONTACT_T" c
-       WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
-          OR (c.con_usr_id = $1 AND c.con_contact_id = p.pst_usr_id))))))`;
+    (p.pst_visibility = 'public' OR ${friends('$1', 'p.pst_usr_id')}))))`;
 
 /** The note's hashtag names, alphabetical (alias p = POST_T). */
 export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
