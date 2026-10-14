@@ -506,3 +506,27 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** each index serves a query the application already runs; the purge keeps the table bounded; pool limits matter on the
   small Neon and Fly tiers (D29). The delete is idempotent, so several instances running it is harmless.
 - **Reversibility:** Easy (drop the indexes through the down migration; remove the timer).
+
+## D35 - JWT in an httpOnly cookie with a CSRF header (R1, 15 Oct 2026)
+- **Decision:** implements the D13 user review (14 Oct). Login and register set cookie `parp_token`: HttpOnly, SameSite=Lax,
+  Path=/, Max-Age 3600 (the JWT lifetime; HS256 unchanged) and Secure when `COOKIE_SECURE` is true (default: only when
+  `NODE_ENV=production`, because browsers drop Secure cookies on local http). The token is no longer in any response body.
+  passport-jwt reads it from that cookie only, through a small extractor over the `Cookie` header (no cookie-parser or
+  `cookie` dependency); the `Authorization: Bearer` extractor is removed so no page script can ever hold a token.
+  `POST /api/auth/logout` clears the cookie with the same attributes and returns 204 without requiring a valid token.
+  CSRF: one middleware in `app.ts` rejects every /api request other than GET, HEAD and OPTIONS (so POST, PUT, PATCH,
+  DELETE, login and register included) with 403 `{ error: 'Forbidden' }` unless it carries `X-Requested-With: parp`.
+  A cross-site page can only add a custom header through a CORS preflight, and CORS allows only `CLIENT_ORIGIN`
+  (now with `credentials: true` and allowed headers Content-Type and X-Requested-With). SameSite=Lax already keeps the
+  cookie off cross-site subresource and POST requests; the header covers same-site but cross-origin pages and older
+  browsers. The client keeps the user only in React state, learns it from `GET /api/auth/me` on load (a 401 there means
+  logged out, with no redirect) and keeps the 401 -> `/login?expired=1` redirect for calls made while signed in.
+  Socket.io (Sprint 4) must authenticate its handshake from the same cookie and check `Origin` (messaging README).
+- **Alternatives:** double-submit CSRF token (rejected: needs a readable token cookie or an extra endpoint plus client
+  plumbing, and buys nothing over a preflighted custom header while CORS is locked to one origin); SameSite=Strict
+  (rejected: a user following a link to PARP from email or Moodle would arrive logged out, and Strict alone still does not
+  cover same-site subdomains); keeping the bearer header alongside the cookie (rejected: any script that can read a
+  token defeats httpOnly); `cookie-parser` (rejected: one regex over one cookie name does the job).
+- **Why:** matches IR §2.3.6.2 (Dalimunthe et al., 2022): an XSS bug can no longer exfiltrate the token. Test cases
+  AUTH-TC11 to AUTH-TC15.
+- **Reversibility:** Medium (server extractor, CORS and CSRF middleware, client api wrapper and auth context).

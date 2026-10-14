@@ -2,7 +2,7 @@
 
 ## Tiers
 ```
-Browser (React + Vite)  --HTTP /api, JWT bearer-->  Express API  --pg, parameterised SQL-->  PostgreSQL 17
+Browser (React + Vite)  --HTTP /api, JWT cookie-->  Express API  --pg, parameterised SQL-->  PostgreSQL 17
                         <--Socket.io (Sprint 4)-->  (same process)
 ```
 The client never talks to the database. In development Vite serves the client on :5173 and proxies `/api`
@@ -21,7 +21,7 @@ server/src/app.ts, server.ts      Express app (middleware, routers, error handle
 server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health)
 server/src/types/                 types shared by several features
 server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create)
-server/src/features/auth/         passport strategies, JWT, requireAuth/requireRole, register/login/me routes
+server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes
 server/src/features/users/        USER_T repository
 server/src/features/moderation/   admin-only routes: lecturer approval (UC22), report queue (UC20), account
                                   restrict/suspend/reinstate/delete (UC21)
