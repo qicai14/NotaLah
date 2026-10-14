@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { requireActive, requireAuth, me } from '../auth/middleware';
 import { countDrafts, listNotesByAuthor } from '../notes/repository';
-import { idParam, issueMap } from '../../lib/validation';
+import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { programmeExists } from '../modules/repository';
 import { findProfile, follow, getFollowState, listFollows, unfollow, updateProfile } from './repository';
@@ -23,7 +23,7 @@ const profileSchema = z.object({
 });
 
 usersRouter.put('/me', async (req, res) => {
-  const parsed = profileSchema.safeParse(req.body && typeof req.body === 'object' ? req.body : {});
+  const parsed = profileSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { displayName, programme, bio } = parsed.data;
   if (programme && !(await programmeExists(programme, me(req).id))) {

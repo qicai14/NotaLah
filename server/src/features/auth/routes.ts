@@ -15,7 +15,7 @@ import { requireAuth } from './middleware';
 import { authLimiter } from './rateLimit';
 import { programmeExists } from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
-import { issueMap } from '../../lib/validation';
+import { bodyOrEmpty, issueMap } from '../../lib/validation';
 
 export const authRouter = Router();
 
@@ -43,7 +43,7 @@ const registerSchema = z.object({
 });
 
 authRouter.post('/register', authLimiter, async (req, res) => {
-  const body: Record<string, unknown> = req.body && typeof req.body === 'object' ? req.body : {};
+  const body = bodyOrEmpty(req);
   const parsed = registerSchema.safeParse(body);
   const errors = issueMap(parsed.error?.issues ?? []);
   // Cross-field rules run on the raw body so they are reported alongside per-field errors.
@@ -85,7 +85,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
 });
 
 authRouter.post('/login', authLimiter, (req, res, next) => {
-  const { email, password } = req.body ?? {};
+  const { email, password } = bodyOrEmpty(req);
   if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }

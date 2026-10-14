@@ -1,6 +1,6 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
-import { NOTE_COLS, NOTE_FROM, type Note } from '../notes/repository';
+import { MODULE_COL, NOTE_COLS, NOTE_FROM, type Note } from '../notes/repository';
 import type { LecturerStatus, Role, UserStatus } from '../users/repository';
 
 type Reports = { id: number; reason: string; details: string | null; reporter: string; createdAt: Date }[];
@@ -41,8 +41,7 @@ export async function listOpenReports({ cursor, limit }: KeysetPage): Promise<{ 
   const { rows } = await pool.query<ReportSummary & { cursor: string }>(
     `${OPEN_GROUPS}
      SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_status AS "status",
-            CASE WHEN m.mod_id IS NULL THEN NULL
-                 ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+            ${MODULE_COL},
             json_build_object('id', u.usr_id, 'displayName', u.usr_display_name) AS "author", ${GROUP_COLS},
             ${micros('g.oldest')} || '_' || p.pst_id AS "cursor"
      ${NOTE_FROM} JOIN g ON g.rpt_pst_id = p.pst_id

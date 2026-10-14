@@ -1,12 +1,10 @@
 import { app } from './app';
 import { assertWeightsSumToOne } from './features/ranking/config';
-import { purgeOldRateLimits } from './features/auth/rateLimit';
-import { purgeFeedSnapshots } from './features/feed/repository';
-import { purgeOldInteractions } from './features/ranking/repository';
 import { env } from './lib/env';
 import { initErrorReporting } from './lib/errorReporting';
 import { logger } from './lib/logger';
 import { pool } from './lib/pool';
+import { purgeAll } from './lib/purge';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -16,8 +14,8 @@ void initErrorReporting().catch((err) => logger.error({ err }, 'error reporting 
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, 'server listening'));
 
 const purge = () =>
-  Promise.all([purgeOldInteractions(), purgeFeedSnapshots(), purgeOldRateLimits()]).then(
-    ([interactions, snapshots, limits]) => logger.info({ interactions, snapshots, limits }, 'daily purge done'),
+  purgeAll().then(
+    (counts) => logger.info(counts, 'daily purge done'),
     (err) => logger.error({ err }, 'daily purge failed'),
   );
 let purgeInterval: NodeJS.Timeout | undefined;

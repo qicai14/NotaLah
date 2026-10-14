@@ -4,6 +4,10 @@ import { inTransaction, pool } from '../../lib/pool';
 import { approvedLecturer, countingLecturer, friends } from '../users/repository';
 import type { NoteInput } from './service';
 
+/** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
+export const MODULE_COL = `CASE WHEN m.mod_id IS NULL THEN NULL
+       ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module"`;
+
 /** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or, when contacts-only, by a friend of the viewer (mutual follow, D38). */
 export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND
@@ -32,8 +36,7 @@ export interface Note {
 /** Note columns (contract: alias p = POST_T; use with NOTE_FROM). */
 export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "template", p.pst_status AS "status",
          p.pst_visibility AS "visibility",
-         CASE WHEN m.mod_id IS NULL THEN NULL
-              ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+         ${MODULE_COL},
          ${HASHTAGS_COL},
          COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'content', s.sld_content)
                                    ORDER BY s.sld_position)
@@ -99,8 +102,7 @@ export interface DraftSummary {
 export async function listDrafts(authorId: number, { cursor, limit }: KeysetPage): Promise<{ items: DraftSummary[]; nextCursor: string | null }> {
   const { rows } = await pool.query<DraftSummary & { cursor: string }>(
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
-            CASE WHEN m.mod_id IS NULL THEN NULL
-                 ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+            ${MODULE_COL},
             ${HASHTAGS_COL},
             p.pst_updated_at AS "updatedAt", ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id

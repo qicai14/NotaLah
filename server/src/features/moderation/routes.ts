@@ -2,7 +2,7 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { decideLecturer, listPendingLecturers } from '../users/repository';
 import { requireAuth, requireRole, me } from '../auth/middleware';
-import { idParam, issueMap } from '../../lib/validation';
+import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
@@ -104,14 +104,12 @@ const newModuleSchema = z.object({
 });
 const moduleEditSchema = z.strictObject({ name: moduleName.optional(), programme: moduleProgramme.optional() });
 
-const body = (req: Request) => (req.body && typeof req.body === 'object' ? req.body : {});
-
 adminRouter.get('/modules', async (_req, res) => {
   res.json({ modules: await modules.listAdminModules() });
 });
 
 adminRouter.post('/modules', async (req, res) => {
-  const parsed = newModuleSchema.safeParse(body(req));
+  const parsed = newModuleSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { code, name, programme } = parsed.data;
   try {
@@ -124,7 +122,7 @@ adminRouter.post('/modules', async (req, res) => {
 
 // The code is immutable: notes and the dissertation refer to it, so only name and programme can change.
 adminRouter.patch('/modules/:moduleId', async (req, res) => {
-  const parsed = moduleEditSchema.safeParse(body(req));
+  const parsed = moduleEditSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { name, programme } = parsed.data;
   if (name === undefined && programme === undefined) return res.status(400).json({ error: 'Nothing to change' });
