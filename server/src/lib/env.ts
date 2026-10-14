@@ -13,6 +13,9 @@ const schema = z.object({
   TEST_DATABASE_URL: z.string().min(1).optional(),
   JWT_SECRET: z.string().min(16),
   PORT: z.coerce.number().int().positive().default(4000),
+  PG_POOL_MAX: z.coerce.number().int().positive().default(10),
+  PG_IDLE_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(30000),
+  PG_CONNECTION_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(5000),
   CLIENT_ORIGIN: z.string().min(1).default('http://localhost:5173'),
 });
 
