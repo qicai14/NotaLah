@@ -12,12 +12,12 @@ Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Confi
 - `npm run build`, `npm run typecheck`
 
 ## Layout (details: `docs/ARCHITECTURE.md`)
-- `server/src/{app,server}.ts`; `lib/` (env, pool, health); `types/`; `scripts/createAdmin.ts`.
-- `server/src/features/<feature>/` for auth, users, moderation, verification, ranking, notes, feed, engagement, search,
+- `server/src/{app,server}.ts`; `lib/` (logger, errorReporting, validation, keyset, purge, pool, env, health); `types/`; `scripts/` (createAdmin, purgeInteractions).
+- `server/src/features/<feature>/` for auth, users, moderation, verification, ranking, modules, notes, feed, engagement, search,
   messaging. Request order: auth `middleware.ts` (`requireAuth`, `requireRole(...)`, role/status always read
   from the DB) -> `routes.ts` -> `repository.ts` (the only SQL). Empty features hold a README naming their FRs and sprint.
 - `server/tests/<feature>/` mirrors features; `helpers.ts` and `globalSetup.ts` are shared.
-- `client/src/features/<feature>/` holds pages and components per feature; shared `components/`, `lib/`, `types/`.
+- `client/src/features/<feature>/` holds pages and components per feature; shared `components/`, `lib/` (api, roles, useFetch), `types/`.
 - `server/db/migrations/` dbmate migrations; `docs/` decisions, chapter4-6, testing/{unit,uat}, screenshots,
   code-snippets, sprints.
 

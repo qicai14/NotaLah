@@ -18,9 +18,11 @@ PostgreSQL. Errors thrown or rejected anywhere reach the handler in `app.ts` (Ex
 ## Folder map
 ```
 server/src/app.ts, server.ts      Express app (middleware, routers, error handler) and the listener
-server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health), keyset.ts (cursor paging, D40)
+server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health), keyset.ts (cursor paging, D40),
+                                  validation.ts (zod issue map, id params, body guard), logger.ts (pino, redaction), errorReporting.ts,
+                                  purge.ts (the daily purge set)
 server/src/types/                 types shared by several features
-server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create)
+server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create; purgeInteractions.ts, npm run db:purge-interactions)
 server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes,
                                   rate limits on a Postgres store (rateLimit.ts, "RATE_LIMIT_T", D40)
 server/src/features/users/        USER_T repository, profiles, follows and follower lists ("FOLLOW_T", D38)
@@ -28,17 +30,18 @@ server/src/features/moderation/   admin-only routes: lecturer approval (UC22), r
                                   restrict/suspend/reinstate/delete (UC21)
 server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
 server/src/features/verification/ lecturer Super Like of notes and its withdrawal, "VERIFICATION_T" (UC19)
+server/src/features/modules/      module and programme catalogue: GET /api/modules (signed in), GET /api/programmes (public, D37)
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
 server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup,
                                   per-asOf ranking snapshot "FEED_SNAPSHOT_T", D40)
-server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
+server/src/features/engagement/   likes, comments, reports, bookmarks, interactions for ranking (Sprint 2)
 server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
 server/src/features/messaging/    post-anchored messages, message requests from non-friends, groups, Socket.io (Sprint 4)
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
 client/src/App.tsx, main.tsx      routes and bootstrap
 client/src/components/            UI shared by several features (Field)
-client/src/lib/                   api.ts (fetch wrapper, session storage)
+client/src/lib/                   api.ts (fetch wrapper), roles.ts (role checks), useFetch.ts (data-loading hook), plus format and hashtag helpers
 client/src/types/                 shared client types
 client/src/features/<feature>/    pages and components of one feature: auth, users, notes, feed, search,
                                   messaging, verification, moderation (ranking has no UI)
@@ -54,7 +57,7 @@ docker/                           Postgres init script (creates parp_test)
 - A feature owns its routes, repository, tests and (client side) pages. A feature imports another feature only
   through that feature's exported functions, never its SQL; shared code goes to `lib/`, `types/` or `components/`.
 - Exception to the no-SQL rule: `notes/repository.ts` exports SQL fragments other features reuse so the rules exist once:
-  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
+  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `MODULE_COL` (alias `m`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
   aliases `p`, `u`, `m`) and `SUMMARY_COLS` (aliases `p`, `m`). Callers keep those aliases and bind `$1` to the viewer.
 - Tables are UPPERCASE `_T`, double-quoted in SQL; columns lowercase with a table prefix; SQL keywords UPPERCASE.
 - All ranking constants live in `server/src/features/ranking/config.ts`.
