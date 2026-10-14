@@ -236,6 +236,32 @@ describe('Ranked feed', () => {
     expect(rows[0]).toEqual({ expired: 0, total: 2 }); // the unexpired one and the new one
   });
 
+  it('RANK-TC26: a viewer keeps at most snapshotsPerViewer snapshots, the newest; other viewers are untouched', async () => {
+    const [viewer, other] = [await insertUser(), await insertUser()];
+    await feed(other);
+    const asOfs: string[] = [];
+    for (let i = 0; i < RANKING.snapshotsPerViewer + 2; i++) asOfs.push((await feed(viewer)).body.asOf);
+    const kept = async (uid: number) =>
+      (await pool.query<{ t: Date }>(`SELECT fsn_as_of AS t FROM "FEED_SNAPSHOT_T" WHERE fsn_usr_id = $1 ORDER BY fsn_as_of`, [uid]))
+        .rows.map((r) => r.t.toISOString());
+    expect(await kept(viewer)).toEqual(asOfs.slice(-RANKING.snapshotsPerViewer));
+    expect(await kept(other)).toHaveLength(1);
+  });
+
+  it('RANK-TC27: a note hidden after page 1 is left out of page 2 although the snapshot still lists it', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
+    const page = async (n: number, asOf?: string) =>
+      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(viewer))).body;
+    const first = await page(1);
+    const victim = (await page(2, first.asOf)).items[0].id;
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [victim]);
+    const second = await page(2, first.asOf);
+    expect(second.items.map((i: Item) => i.id)).not.toContain(victim);
+    expect(second.items).toHaveLength(9);
+  });
+
   it('RANK-TC16: a lecturer author earns V = 0.5 only while approved and active or restricted', async () => {
     const viewer = await insertUser();
     const active = await lecturer();

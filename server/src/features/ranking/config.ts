@@ -23,6 +23,8 @@ export const RANKING = Object.freeze({
   verifiedCandidateWindowDays: 180,
   /** A ranked feed stored for one asOf is kept this long for later pages, then purged (D40). */
   snapshotTtlHours: 2,
+  /** Snapshots kept per viewer: bounds the table when someone reloads page 1 many times within the TTL (D40). */
+  snapshotsPerViewer: 4,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {
