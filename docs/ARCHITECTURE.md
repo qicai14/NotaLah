@@ -34,7 +34,7 @@ server/src/features/modules/      module and programme catalogue: GET /api/modul
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
 server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup,
                                   per-asOf ranking snapshot "FEED_SNAPSHOT_T", D40)
-server/src/features/engagement/   likes, comments, reports, bookmarks, interactions for ranking (Sprint 2)
+server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
 server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
 server/src/features/messaging/    post-anchored messages, message requests from non-friends, groups, Socket.io (Sprint 4)
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)

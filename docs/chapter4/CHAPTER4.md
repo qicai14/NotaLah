@@ -828,13 +828,14 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC18 | Stale Super Like no longer makes an old note a candidate | candidate window 1; Super Liked notes 5000 h and 4000 h old, the first Super Like backdated beyond the verified window; one recent note | Candidates are the recent note and the note with the in-window Super Like | | |
 | RANK-TC19 | Stale Super Like keeps V for a newest-window note | one 5-hour-old note whose only Super Like is older than the verified window | The candidate is flagged verified and its feed component V is 1 | | |
 | RANK-TC20 | Old interactions are purged | interactions 100 and 95 days old and one 10 days old, interest window 90 days | Purge removes the two older rows and keeps the 10-day-old one; a second purge removes nothing | | |
-| RANK-TC21 | Following feed shows only followed authors | viewer follows one author; another user follows the viewer; notes by the followed author, the other user and the viewer | GET /api/feed?tab=following lists the followed author's notes newest first, without score; unknown tab 400 "Invalid tab" | | |
-| RANK-TC22 | Following feed paging stable with asOf | 12 notes by a followed author; page 1, then a new note, then page 2 with the returned asOf | Page 1 has 10 notes and nextPage 2; page 2 has the 2 oldest notes and excludes the new note | | |
+| RANK-TC21 | Following feed shows only followed authors | viewer follows one author; another user follows the viewer; notes by the followed author, the other user and the viewer | GET /api/feed?tab=following lists the followed author's notes newest first, without score, with nextCursor null; unknown tab 400 "Invalid tab"; malformed cursor 400 | | |
+| RANK-TC22 | Following feed keyset paging stable with asOf | 12 notes by a followed author; page 1, then a new note, then page 2 with page 1's nextCursor and the returned asOf | Page 1 has the 10 newest notes and a nextCursor; page 2 has the 2 oldest notes, excludes the new note and has nextCursor null | | |
 | RANK-TC23 | Contacts-only notes in the Following feed | author with a friend and a one-way follower; a public and a contacts-only note | Friend sees both notes; one-way follower sees only the public note | | |
 | RANK-TC24 | Later pages read the stored ranking | 20 notes, the oldest with 30 likes; page 1, then page 2 with asOf; the likes deleted and a 12-hour-old note added; page 2 again; snapshot deleted; page 2 again | One snapshot row after pages 1 and 2; page 2 unchanged after the changes; once the snapshot is deleted page 2 is recomputed, differs and includes the new note, and one snapshot is stored again | | |
 | RANK-TC25 | Expired feed snapshots are purged | snapshots created 3 h and 1 h ago (TTL 2 h); purge; another 3-hour-old snapshot, then a feed request | Purge deletes 1; the feed request deletes the viewer's expired snapshot and stores a new one, leaving 2 | | |
 | RANK-TC26 | Snapshots per viewer are capped | another viewer loads the feed once; the viewer loads page 1 six times (cap 4) | The viewer keeps exactly the 4 newest snapshots (by asOf); the other viewer keeps its 1 | | |
 | RANK-TC27 | Hidden note never leaks through a snapshot | 20 notes; page 1, then page 2 with asOf; the first note of page 2 hidden; page 2 again with the same asOf | The hidden note is not returned; page 2 lists the other 9 notes | | |
+| RANK-TC28 | Author's own hidden note never leaks through a snapshot | 20 notes by the viewer; page 1, then page 2 with asOf; the first note of page 2 hidden by a moderator; page 2 again with the same asOf | The hidden note is not returned to its author; page 2 lists the other 9 notes | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
@@ -949,7 +950,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC1 | Health check with the database up | GET /api/health | 200 with status ok, db up | | |
 | OPS-TC2 | Health check with the database unreachable | GET /api/health while the database query fails | 503 with status degraded, db down | | |
 | OPS-TC3 | Request id reused or replaced | no X-Request-Id; "abc-123"; "bad id<script>" | Response carries a generated UUID; "abc-123" echoed; a new UUID instead of the unsafe value | | |
-| OPS-TC4 | Secrets are redacted from logs | log a request with a parp_token cookie and a response with a Set-Cookie parp_token | Log output shows [redacted] and never contains a parp_token value | | |
+| OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie parp_token header and a body with a password | Log output shows [redacted] and contains neither the parp_token value nor the password | | |
 
 *Table 4.34: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
