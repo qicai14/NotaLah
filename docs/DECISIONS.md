@@ -478,3 +478,6 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** the user values end-to-end delivery (DevOps evidence for the report), and testers can use their own devices.
   Beyond the IR, which documented a free-tier host with local fallback (§2.3.9); the report records the change.
 - **Reversibility:** Easy (fallback is local or one origin).
+
+## D39 — CI pipeline on GitHub Actions (R11/R26)
+- **Decision:** one workflow job runs typecheck, tests (Postgres 17 service, `parp_test` created with psql), build and a production-only `npm audit --audit-level=high` on every push and PR to `main`; it creates an empty `.env` because the dbmate npm scripts require the file (D29 covers deployment).
