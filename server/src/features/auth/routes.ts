@@ -13,10 +13,13 @@ import {
 } from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
+import { programmeExists } from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import { issueMap } from '../../lib/validation';
 
 export const authRouter = Router();
+
+const PROGRAMME_ERROR = 'Choose a programme from the list';
 
 const required = (label: string) =>
   z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`);
@@ -58,6 +61,9 @@ authRouter.post('/register', authLimiter, async (req, res) => {
   }
   if (body.role === 'lecturer' && !errors.staffId && !(typeof body.staffId === 'string' && body.staffId.trim())) {
     errors.staffId = 'Staff ID is required for lecturers';
+  }
+  if (typeof body.programme === 'string' && !errors.programme && !(await programmeExists(body.programme.trim()))) {
+    errors.programme = PROGRAMME_ERROR;
   }
   if (!parsed.success || Object.keys(errors).length > 0) {
     return res.status(400).json({ error: 'Validation failed', errors });

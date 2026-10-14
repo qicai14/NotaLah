@@ -16,7 +16,7 @@ const student = {
   email: 'test1@mail.apu.edu.my',
   password: 'Passw0rd!',
   confirmPassword: 'Passw0rd!',
-  programme: 'Software Engineering',
+  programme: 'BSc (Hons) Software Engineering',
   role: 'student',
 };
 
@@ -104,6 +104,25 @@ describe('POST /api/auth/register', () => {
     const res = await register({ ...student, role: 'lecturer' });
     expect(res.status).toBe(400);
     expect(res.body.errors).toEqual({ staffId: 'Staff ID is required for lecturers' });
+  });
+
+  it('AUTH-TC17: GET /api/programmes needs no login and lists the distinct catalogue programmes, sorted', async () => {
+    await pool.query(`INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('TST-ZZ1', 'Extra', 'BSc (Hons) Computer Science')`);
+    const res = await request(app).get('/api/programmes');
+    expect(res.status).toBe(200);
+    expect(res.body.items).toEqual([
+      'BSc (Hons) Computer Science',
+      'BSc (Hons) Information Technology',
+      'BSc (Hons) Software Engineering',
+    ]);
+    await pool.query(`DELETE FROM "MODULE_T" WHERE mod_code = 'TST-ZZ1'`);
+  });
+
+  it('AUTH-TC18: registering with a programme outside the catalogue is rejected', async () => {
+    const res = await register({ ...student, programme: 'Underwater Basket Weaving' });
+    expect(res.status).toBe(400);
+    expect(res.body.errors.programme).toBe('Choose a programme from the list');
+    expect(await userCount()).toBe(0);
   });
 });
 
