@@ -2,12 +2,12 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { bearer, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-const auth = (uid: number) => ({ Authorization: bearer(uid) });
+const auth = asUser;
 const post = (uid: number, url: string, body?: object) => request(app).post(url).set(auth(uid)).send(body);
 const del = (uid: number, url: string) => request(app).delete(url).set(auth(uid));
 const get = (uid: number, url: string) => request(app).get(url).set(auth(uid));
@@ -33,7 +33,7 @@ describe('Engagement', () => {
   });
 
   it('ENG-TC1: like a note', async () => {
-    expect((await request(app).post('/api/notes/abc/like')).status).toBe(404); // id check runs before auth, from the URL text only
+    expect((await request(app).post('/api/notes/abc/like').set(CSRF)).status).toBe(404); // id check runs before auth, from the URL text only
     const [a, b] = [await insertUser(), await insertUser()];
     const p = await insertNote(b);
     const res = await post(a, `/api/notes/${p}/like`);

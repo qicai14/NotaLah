@@ -2,12 +2,12 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { bearer, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-const auth = (uid: number) => ({ Authorization: bearer(uid) });
+const auth = asUser;
 const post = (uid: number, url: string, body?: object) => request(app).post(url).set(auth(uid)).send(body);
 const get = (uid: number, url: string) => request(app).get(url).set(auth(uid));
 const comment = (uid: number, noteId: number, body: object) => post(uid, `/api/notes/${noteId}/comments`, body);

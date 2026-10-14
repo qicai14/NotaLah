@@ -1,8 +1,16 @@
 import bcrypt from 'bcryptjs';
-import { Router } from 'express';
+import { type Response, Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
-import { BCRYPT_COST, type LoginInfo, passport, signToken } from './passport';
+import {
+  AUTH_COOKIE,
+  authCookieOptions,
+  BCRYPT_COST,
+  type LoginInfo,
+  passport,
+  signToken,
+  TOKEN_TTL_SECONDS,
+} from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
 import { isUniqueViolation } from '../../lib/pool';
@@ -30,6 +38,10 @@ const registerSchema = z.object({
   role: z.enum(['student', 'lecturer'], { error: 'Role must be student or lecturer' }),
   staffId: z.string().trim().max(20, 'Staff ID must be at most 20 characters').optional(),
 });
+
+function setAuthCookie(res: Response, user: AuthUser): void {
+  res.cookie(AUTH_COOKIE, signToken(user), { ...authCookieOptions(), maxAge: TOKEN_TTL_SECONDS * 1000 });
+}
 
 const authLimiter = rateLimit({
   windowMs: 60_000,
@@ -70,6 +82,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
       lecturerStatus: isLecturer ? 'pending' : null,
       staffId: isLecturer ? (d.staffId ?? null) : null,
     });
+    setAuthCookie(res, user);
     return res.status(201).json({ user });
   } catch (err) {
     // Two registrations racing past the check above: the UNIQUE constraint decides.
@@ -88,8 +101,15 @@ authRouter.post('/login', authLimiter, (req, res, next) => {
     if (!user) {
       return res.status(info?.status ?? 401).json({ error: info?.message ?? 'Invalid email or password' });
     }
-    res.json({ token: signToken(user), user });
+    setAuthCookie(res, user);
+    res.json({ user });
   })(req, res, next);
+});
+
+// No requireAuth: an expired or invalid token must still be able to log out.
+authRouter.post('/logout', (_req, res) => {
+  res.clearCookie(AUTH_COOKIE, authCookieOptions());
+  res.status(204).end();
 });
 
 authRouter.get('/me', requireAuth, (req, res) => {

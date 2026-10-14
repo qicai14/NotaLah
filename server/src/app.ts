@@ -18,7 +18,14 @@ export const app = express();
 app.set('trust proxy', 'loopback');
 
 app.use(helmet());
-app.use(cors({ origin: env.CLIENT_ORIGIN }));
+app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true, allowedHeaders: ['Content-Type', 'X-Requested-With'] }));
+
+// CSRF (D35): a cross-site page cannot add this header without a preflight, which CORS refuses for other origins.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+app.use('/api', (req, res, next) => {
+  if (SAFE_METHODS.has(req.method) || req.get('X-Requested-With') === 'parp') return next();
+  res.status(403).json({ error: 'Forbidden' });
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(passport.initialize());
 

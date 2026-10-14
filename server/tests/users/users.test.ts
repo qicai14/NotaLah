@@ -2,13 +2,13 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { bearer, insertUser, truncateAll } from '../helpers';
+import { asUser, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-const putMe = (uid: number, body: object) => request(app).put('/api/users/me').set('Authorization', bearer(uid)).send(body);
-const getUser = (viewer: number, id: number) => request(app).get(`/api/users/${id}`).set('Authorization', bearer(viewer));
+const putMe = (uid: number, body: object) => request(app).put('/api/users/me').set(asUser(uid)).send(body);
+const getUser = (viewer: number, id: number) => request(app).get(`/api/users/${id}`).set(asUser(viewer));
 
 async function addNote(uid: number, title: string, status: string, visibility: string | null) {
   const mod = (await pool.query<{ mod_id: number }>(`SELECT mod_id FROM "MODULE_T" LIMIT 1`)).rows[0].mod_id;
@@ -87,7 +87,7 @@ describe('Profiles', () => {
 
   it('USR-TC9: a non-numeric user id is 404', async () => {
     const uid = await insertUser();
-    expect((await request(app).get('/api/users/abc').set('Authorization', bearer(uid))).status).toBe(404);
+    expect((await request(app).get('/api/users/abc').set(asUser(uid))).status).toBe(404);
   });
 
   it('USR-TC11: omitted programme and bio keep their value; empty string clears', async () => {

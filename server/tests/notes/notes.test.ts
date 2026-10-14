@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { bearer, insertUser, truncateAll } from '../helpers';
+import { asUser, CSRF, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -20,10 +20,10 @@ const publishBody = async (over: object = {}) => ({
   ...over,
 });
 
-const post = (uid: number, body: object) => request(app).post('/api/notes').set('Authorization', bearer(uid)).send(body);
+const post = (uid: number, body: object) => request(app).post('/api/notes').set(asUser(uid)).send(body);
 const put = (uid: number, id: number, body: object) =>
-  request(app).put(`/api/notes/${id}`).set('Authorization', bearer(uid)).send(body);
-const get = (uid: number, id: number) => request(app).get(`/api/notes/${id}`).set('Authorization', bearer(uid));
+  request(app).put(`/api/notes/${id}`).set(asUser(uid)).send(body);
+const get = (uid: number, id: number) => request(app).get(`/api/notes/${id}`).set(asUser(uid));
 const count = async () => Number((await pool.query('SELECT COUNT(*) FROM "POST_T"')).rows[0].count);
 
 describe('Notes', () => {
@@ -66,7 +66,7 @@ describe('Notes', () => {
     const res = await post(uid, { title: 'Draft 1', status: 'draft' });
     expect(res.status).toBe(201);
     expect(res.body.note).toMatchObject({ status: 'draft', module: null, hashtags: [], slides: [], publishedAt: null });
-    const drafts = await request(app).get('/api/notes/drafts').set('Authorization', bearer(uid));
+    const drafts = await request(app).get('/api/notes/drafts').set(asUser(uid));
     expect(drafts.body.notes.map((n: { title: string }) => n.title)).toEqual(['Draft 1']);
     // Not public: another user gets 404 (feed/search exclusion arrives with those features).
     expect((await get(await insertUser(), res.body.note.id)).status).toBe(404);
@@ -130,7 +130,7 @@ describe('Notes', () => {
     const b = await insertUser();
     const id = (await post(a, await publishBody())).body.note.id;
     expect((await put(b, id, await publishBody({ title: 'hijack' }))).status).toBe(403);
-    expect((await request(app).delete(`/api/notes/${id}`).set('Authorization', bearer(b))).status).toBe(403);
+    expect((await request(app).delete(`/api/notes/${id}`).set(asUser(b))).status).toBe(403);
     const note = (await get(a, id)).body.note;
     expect(note.title).toBe('MVC basics');
     expect(note.status).toBe('published');
@@ -165,7 +165,7 @@ describe('Notes', () => {
     const author = await insertUser();
     const viewer = await insertUser();
     const id = (await post(author, await publishBody())).body.note.id;
-    await request(app).post(`/api/notes/${id}/like`).set('Authorization', bearer(viewer));
+    await request(app).post(`/api/notes/${id}/like`).set(asUser(viewer));
     const note = (await get(viewer, id)).body.note;
     expect(note.counts).toEqual({ likes: 1, comments: 0 });
     expect(note.liked).toBe(true);
@@ -219,7 +219,7 @@ describe('Notes', () => {
   it('NOTE-TC17: author deletes own note (soft delete) and it then returns 404', async () => {
     const uid = await insertUser();
     const id = (await post(uid, await publishBody())).body.note.id;
-    expect((await request(app).delete(`/api/notes/${id}`).set('Authorization', bearer(uid))).status).toBe(204);
+    expect((await request(app).delete(`/api/notes/${id}`).set(asUser(uid))).status).toBe(204);
     expect((await get(uid, id)).status).toBe(404);
     const { rows } = await pool.query(`SELECT pst_status FROM "POST_T" WHERE pst_id = $1`, [id]);
     expect(rows[0].pst_status).toBe('deleted');
@@ -237,16 +237,16 @@ describe('Notes', () => {
 
   it('NOTE-TC19: modules list and unauthenticated requests', async () => {
     const uid = await insertUser();
-    const res = await request(app).get('/api/modules').set('Authorization', bearer(uid));
+    const res = await request(app).get('/api/modules').set(asUser(uid));
     expect(res.status).toBe(200);
     expect(res.body.modules[0]).toHaveProperty('code');
     expect((await request(app).get('/api/modules')).status).toBe(401);
-    expect((await request(app).post('/api/notes').send({})).status).toBe(401);
+    expect((await request(app).post('/api/notes').set(CSRF).send({})).status).toBe(401);
   });
 });
 
 describe('Notes access rules (D21)', () => {
-  const del = (uid: number, id: number) => request(app).delete(`/api/notes/${id}`).set('Authorization', bearer(uid));
+  const del = (uid: number, id: number) => request(app).delete(`/api/notes/${id}`).set(asUser(uid));
 
   it('NOTE-TC20: a stranger gets 404 on PUT and DELETE of a draft and of a contacts-only note', async () => {
     const author = await insertUser();
@@ -266,7 +266,7 @@ describe('Notes access rules (D21)', () => {
     await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [id]);
     expect((await put(author, id, await publishBody())).status).toBe(403);
     expect((await get(other, id)).status).toBe(404);
-    const profile = await request(app).get(`/api/users/${author}`).set('Authorization', bearer(other));
+    const profile = await request(app).get(`/api/users/${author}`).set(asUser(other));
     expect(profile.body.user.notes).toEqual([]);
   });
 });

@@ -5,7 +5,7 @@ import { pool } from '../../src/lib/pool';
 import { RANKING } from '../../src/features/ranking/config';
 import { getCandidates, getInteractionRows, purgeOldInteractions } from '../../src/features/ranking/repository';
 import { buildInterestVector } from '../../src/features/ranking/service';
-import { bearer, insertUser, truncateAll, type TestUserInput } from '../helpers';
+import { asUser, insertUser, truncateAll, type TestUserInput } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -39,7 +39,7 @@ const verify = (noteId: number, lecturerId: number) =>
 const lecturer = (status: TestUserInput['status'] = 'active') =>
   insertUser({ role: 'lecturer', lecturerStatus: 'approved', status, staffId: `S${Math.random()}`.slice(0, 12) });
 const dbNow = async (): Promise<Date> => (await pool.query<{ t: Date }>('SELECT NOW() AS t')).rows[0].t;
-const feed = (uid: number) => request(app).get('/api/feed').set({ Authorization: bearer(uid) });
+const feed = (uid: number) => request(app).get('/api/feed').set(asUser(uid));
 
 interface Item {
   id: number;
@@ -104,7 +104,7 @@ describe('Ranked feed', () => {
     const author = await insertUser();
     const viewer = await insertUser();
     await insertNote(author, ['sql'], 5);
-    const res = await request(app).get('/api/feed').query({ asOf: '9999-01-01T00:00:00Z' }).set({ Authorization: bearer(viewer) });
+    const res = await request(app).get('/api/feed').query({ asOf: '9999-01-01T00:00:00Z' }).set(asUser(viewer));
     expect(res.status).toBe(200);
     expect(new Date(res.body.asOf).getTime()).toBeLessThanOrEqual((await dbNow()).getTime());
     expect(res.body.items).toHaveLength(1);
@@ -176,7 +176,7 @@ describe('Ranked feed', () => {
     const viewer = await insertUser();
     for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
     const page = async (n: number, asOf?: string) =>
-      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set({ Authorization: bearer(viewer) })).body;
+      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(viewer))).body;
     const first = await page(1);
     const before: Item[] = (await page(2, first.asOf)).items;
     const last = before[before.length - 1].id;

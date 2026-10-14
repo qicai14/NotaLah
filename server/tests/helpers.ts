@@ -45,9 +45,12 @@ export async function insertUser(u: TestUserInput = {}): Promise<number> {
   return rows[0].usr_id;
 }
 
-/** A valid bearer header for an existing user id; the role claim is ignored by the server. */
-export function bearer(id: number): string {
-  return `Bearer ${signToken({ id, role: 'student' } as AuthUser)}`;
+/** CSRF header every state-changing /api request must carry (D35). */
+export const CSRF = { 'X-Requested-With': 'parp' };
+
+/** Headers for an existing user id: the auth cookie plus the CSRF header. The role claim is ignored by the server. */
+export function asUser(id: number): Record<string, string> {
+  return { Cookie: `parp_token=${signToken({ id, role: 'student' } as AuthUser)}`, ...CSRF };
 }
 
 export interface NoteOpts {
