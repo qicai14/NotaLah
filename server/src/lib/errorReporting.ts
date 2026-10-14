@@ -12,9 +12,7 @@ export async function initErrorReporting(): Promise<void> {
     dsn: env.SENTRY_DSN,
     sendDefaultPii: false,
     beforeSend(event) {
-      delete event.request?.cookies;
-      delete event.request?.data;
-      delete event.request?.headers;
+      delete event.request;
       return event;
     },
   });

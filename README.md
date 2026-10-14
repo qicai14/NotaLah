@@ -33,9 +33,9 @@ email. Clear the password from `.env` afterwards.
 
 ## Operations
 - Logs are one JSON line per event on stdout (pino); silent under `NODE_ENV=test`. Each request logs method, path, status,
-  duration and user id (when signed in); cookies, authorization and password fields are redacted. `GET /api/health` is not logged.
+  duration and user id (when signed in); set-cookie and password fields are redacted and headers are never logged. `GET /api/health` is not logged.
 - Every response has an `X-Request-Id` header. A short `[A-Za-z0-9._-]` id sent by the caller is reused, otherwise a UUID is made.
-- `SENTRY_DSN` (optional) turns on Sentry for 5xx errors, tagged with the request id; cookies, headers and bodies are stripped.
+- `SENTRY_DSN` (optional) turns on Sentry for 5xx errors, tagged with the request id; the request (URL, headers, cookies, body) is stripped.
   Without it nothing is loaded and no network calls are made.
 - `GET /api/health` returns `{ status, db }` and 503 when Postgres is unreachable (use it as the readiness check).
 - On SIGTERM/SIGINT the server stops accepting connections, waits up to 10 s for in-flight requests, closes the pool and exits 0;

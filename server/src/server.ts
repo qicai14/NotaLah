@@ -41,6 +41,7 @@ function shutdown(signal: string): void {
     logger.error({ timeoutMs: SHUTDOWN_TIMEOUT_MS }, 'shutdown timed out, forcing exit');
     process.exit(1);
   }, SHUTDOWN_TIMEOUT_MS).unref();
+  // Sprint 4: call io.close() (Socket.io) before server.close, or open sockets keep it from draining.
   server.close(() => {
     logger.info('in-flight requests drained, closing database pool');
     pool.end().then(
@@ -54,7 +55,6 @@ function shutdown(signal: string): void {
       },
     );
   });
-  server.closeIdleConnections();
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));

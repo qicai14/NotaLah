@@ -646,19 +646,19 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Context:** the server logged with `console.*`, had no way to tie a log line to a request, no error tracking and no clean stop on
   deploy (Fly sends SIGTERM/SIGINT), so in-flight requests and pool connections were dropped.
 - **Decision:** `lib/logger.ts` holds one pino logger plus `pino-http` middleware mounted first in `app.ts`. It logs JSON, redacts
-  cookie, authorization, set-cookie and password fields, and is silent under `NODE_ENV=test`. The request id is the caller's
+  set-cookie and password fields, and is silent under `NODE_ENV=test`. The request id is the caller's
   `X-Request-Id` when it matches `[A-Za-z0-9._-]{1,64}`, else `crypto.randomUUID()`, and is echoed in the response header. Health checks
   are not logged. Pretty printing was left out (`pino-pretty` is not a dependency; plain JSON is readable enough in dev).
 - **Sentry:** `lib/errorReporting.ts` imports `@sentry/node` dynamically only when `SENTRY_DSN` is set (zod-validated optional URL), so
   without it there is no load and no network traffic. The central error handler calls `reportError(err, { requestId })` for 5xx only;
-  `beforeSend` deletes request cookies, headers and body.
+  Sentry receives 5xx route errors plus uncaught crashes and no request data (`beforeSend` deletes `event.request`, since the URL or query can carry a searched email). The request log serialises only id, method and path, never headers.
 - **Shutdown:** `server.ts` handles SIGTERM/SIGINT once: `server.close`, clear the purge timers, wait up to `SHUTDOWN_TIMEOUT_MS`
-  (10 s), `pool.end()`, exit 0. A second signal or the timeout exits 1. Each step is logged.
+  (10 s), `pool.end()`, exit 0. A second signal or the timeout exits 1. Each step is logged. `fly.toml` needs `kill_timeout = 15` because shutdown waits up to 10 s. When Socket.io arrives (Sprint 4), `io.close()` must run before `server.close`.
 - **Readiness:** `GET /api/health` already ran `SELECT 1` and answered `{ status, db }` with 503 when it failed; kept, and the 503
   path is now tested (OPS-TC2) by making `pool.query` reject once.
 - **Versions:** pino 10.3.1 (10.4.0 is under two weeks old), pino-http 11.0.0, @sentry/node 10.75.3 (11.x and later 10.76 are under
   two weeks old; adds 19 packages).
 - **Alternatives:** winston (slower, no request middleware of this quality); always loading Sentry (rejected: breaks the "no network
   without a DSN" rule); a shutdown helper module (rejected: one caller).
-- **Tests:** OPS-TC1 to OPS-TC3. The signal handling itself is not unit tested.
+- **Tests:** OPS-TC1 to OPS-TC4 (TC4 checks log redaction). The signal handling itself is not unit tested.
 - **Reversibility:** Easy (remove the middleware, logger and handlers; no data or schema change).

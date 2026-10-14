@@ -1,6 +1,8 @@
 import request from 'supertest';
 import { afterAll, beforeEach, expect, it, vi } from 'vitest';
 import { app } from '../../src/app';
+import pino from 'pino';
+import { loggerOptions } from '../../src/lib/logger';
 import { pool } from '../../src/lib/pool';
 import { truncateAll } from '../helpers';
 
@@ -28,4 +30,14 @@ it('OPS-TC3: every response carries an X-Request-Id, reusing a safe incoming one
   expect(kept.headers['x-request-id']).toBe('abc-123');
   const unsafe = await request(app).get('/api/health').set('X-Request-Id', 'bad id<script>');
   expect(unsafe.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
+});
+
+it('OPS-TC4: log redaction hides the set-cookie header and password fields', () => {
+  const lines: string[] = [];
+  const log = pino({ ...loggerOptions, level: 'info' }, { write: (l: string) => void lines.push(l) });
+  log.info({ res: { headers: { 'set-cookie': ['parp_token=secret123; HttpOnly'] } }, body: { password: 'hunter2' } }, 'x');
+  const out = lines.join('');
+  expect(out).toContain('[redacted]');
+  expect(out).not.toContain('parp_token=');
+  expect(out).not.toContain('hunter2');
 });

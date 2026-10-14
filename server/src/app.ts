@@ -3,7 +3,7 @@ import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import { env } from './lib/env';
 import { reportError } from './lib/errorReporting';
-import { logger, requestLogger } from './lib/logger';
+import { requestLogger } from './lib/logger';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { authRouter } from './features/auth/routes';
@@ -54,7 +54,7 @@ app.use('/api', (_req, res) => {
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const status = typeof err?.status === 'number' ? err.status : 500;
   if (status >= 500) {
-    (req.log ?? logger).error({ err }, 'unhandled route error');
+    res.err = err;
     reportError(err, { requestId: String(req.id) });
   }
   res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
