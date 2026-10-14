@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { RANKING } from '../../src/features/ranking/config';
-import { getCandidates, getInteractionRows } from '../../src/features/ranking/repository';
+import { getCandidates, getInteractionRows, purgeOldInteractions } from '../../src/features/ranking/repository';
 import { buildInterestVector } from '../../src/features/ranking/service';
 import { bearer, insertUser, truncateAll, type TestUserInput } from '../helpers';
 
@@ -133,6 +133,22 @@ describe('Ranked feed', () => {
     expect((await getCandidates(viewer, await dbNow())).find((c) => c.id === note)!.verified).toBe(true);
     const item: Item = (await feed(viewer)).body.items.find((i: Item) => i.id === note);
     expect(item.components.V).toBe(1);
+  });
+
+  it('RANK-TC20: interactions older than the interest window are purged, newer ones kept', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const note = await insertNote(author, ['sql']);
+    const win = RANKING.interestWindowDays;
+    for (const days of [win + 10, win + 5, 10]) {
+      await pool.query(
+        `INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type, int_created_at) VALUES ($1, $2, 'view', NOW() - make_interval(days => $3))`,
+        [viewer, note, days],
+      );
+    }
+    expect(await purgeOldInteractions()).toBe(2);
+    expect((await pool.query(`SELECT 1 FROM "INTERACTION_T"`)).rowCount).toBe(1);
+    expect(await purgeOldInteractions()).toBe(0);
   });
 
   it('RANK-TC13: a verified, relevant note is surfaced ahead of a more-liked unverified irrelevant one (NFR3)', async () => {
