@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { api, loadSession, saveSession, type Session } from '../../lib/api';
+import { api, setSignedIn } from '../../lib/api';
 import type { User } from '../../types';
 
 export interface RegisterInput {
@@ -15,8 +15,8 @@ export interface RegisterInput {
 interface AuthValue {
   user: User | null;
   login(email: string, password: string): Promise<User>;
-  logout(): void;
-  /** Replaces the stored user (after a profile edit) without touching the token. */
+  logout(): Promise<void>;
+  /** Replaces the signed-in user (after a profile edit); the auth cookie is unchanged. */
   setUser(user: User): void;
   register(input: RegisterInput): Promise<User>;
 }
@@ -24,37 +24,36 @@ interface AuthValue {
 const AuthContext = createContext<AuthValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(loadSession);
+  const [user, setUserState] = useState<User | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
-  const update = (next: Session | null) => {
-    saveSession(next);
-    setSession(next);
+  const update = (next: User | null) => {
+    setSignedIn(next !== null);
+    setUserState(next);
   };
 
-  // Refresh the stored user once on load, so an approval or rename shows without logging in again.
+  // The token is in an httpOnly cookie the page cannot read, so ask the server who is signed in (D35).
+  // A 401 here just means logged out; api() only redirects once a user is known.
   useEffect(() => {
-    const current = loadSession();
-    if (!current) return;
     api<{ user: User }>('/auth/me')
-      .then(({ user }) => {
-        if (loadSession()?.token === current.token) update({ token: current.token, user }); // ignore if logged out or re-logged in meanwhile
-      })
-      .catch(() => {});
+      .then(({ user }) => update(user))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   const value: AuthValue = {
-    user: session?.user ?? null,
+    user,
     async login(email, password) {
-      const next = await api<Session>('/auth/login', { method: 'POST', body: { email, password } });
-      update(next);
+      const next = await api<{ user: User }>('/auth/login', { method: 'POST', body: { email, password } });
+      update(next.user);
       return next.user;
     },
-    logout() {
+    async logout() {
+      await api('/auth/logout', { method: 'POST' }).catch(() => {});
       update(null);
     },
     setUser(next) {
-      const current = loadSession();
-      if (current) update({ token: current.token, user: next });
+      if (user) update(next);
     },
     async register(input) {
       const { user } = await api<{ user: User }>('/auth/register', { method: 'POST', body: input });
@@ -62,6 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   };
 
+  // Render nothing until /me settles, so protected routes do not bounce a signed-in user to /login.
+  if (!loaded) return null;
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
