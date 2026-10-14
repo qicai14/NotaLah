@@ -88,7 +88,7 @@ export async function listComments(
        FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
        WHERE c.cmt_pst_id = $2 AND c.cmt_parent_id IS NULL
          AND (NOT c.cmt_is_deleted
-              OR EXISTS (SELECT 1 FROM "COMMENT_T" r WHERE r.cmt_parent_id = c.cmt_id AND NOT r.cmt_is_deleted))),
+              OR EXISTS (SELECT 1 FROM "COMMENT_T" r WHERE r.cmt_pst_id = c.cmt_pst_id AND r.cmt_parent_id = c.cmt_id AND NOT r.cmt_is_deleted))),
      pg AS (
        SELECT * FROM top
        WHERE $3::BIGINT IS NULL OR (unpinned, -likes, at, id) > ($3::BIGINT, -$4::BIGINT, ${fromMicros('$5')}, $6::INT)
@@ -104,7 +104,7 @@ export async function listComments(
             EXISTS (SELECT 1 FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id AND clk_usr_id = $1) AS "likedByMe",
             pg.unpinned || '_' || pg.likes || '_' || ${micros('pg.at')} || '_' || pg.id AS "cursor"
      FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id LEFT JOIN pg ON pg.id = c.cmt_id
-     WHERE pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT c.cmt_is_deleted)
+     WHERE c.cmt_pst_id = $2 AND (pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT c.cmt_is_deleted))
      ORDER BY pg.unpinned, pg.likes DESC, c.cmt_created_at, c.cmt_id`,
     [viewerId, noteId, ...(cursor ?? [null, null, null, null]), limit + 1],
   );
