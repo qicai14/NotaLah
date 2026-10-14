@@ -8,6 +8,26 @@ export interface AdminModule {
   noteCount: number;
 }
 
+interface ModuleRow {
+  id: number;
+  code: string;
+  name: string;
+  programme: string;
+}
+
+export async function listModules(): Promise<ModuleRow[]> {
+  const { rows } = await pool.query<ModuleRow>(
+    `SELECT mod_id AS "id", mod_code AS "code", mod_name AS "name", mod_programme AS "programme"
+     FROM "MODULE_T" ORDER BY mod_code`,
+  );
+  return rows;
+}
+
+export async function moduleExists(id: number): Promise<boolean> {
+  const { rowCount } = await pool.query(`SELECT 1 FROM "MODULE_T" WHERE mod_id = $1`, [id]);
+  return rowCount === 1;
+}
+
 export async function listProgrammes(): Promise<string[]> {
   const { rows } = await pool.query<{ mod_programme: string }>(
     `SELECT DISTINCT mod_programme FROM "MODULE_T" ORDER BY mod_programme`,

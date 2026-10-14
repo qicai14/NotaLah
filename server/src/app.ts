@@ -11,8 +11,8 @@ import { writeLimiter } from './features/auth/rateLimit';
 import { engagementRouter } from './features/engagement/routes';
 import { feedRouter } from './features/feed/routes';
 import { healthRouter } from './lib/health';
-import { programmesRouter } from './features/modules/routes';
-import { modulesRouter, notesRouter } from './features/notes/routes';
+import { modulesRouter, programmesRouter } from './features/modules/routes';
+import { notesRouter } from './features/notes/routes';
 import { usersRouter } from './features/users/routes';
 import { verificationRouter } from './features/verification/routes';
 

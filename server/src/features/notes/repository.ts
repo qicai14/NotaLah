@@ -4,26 +4,6 @@ import { inTransaction, pool } from '../../lib/pool';
 import { approvedLecturer, countingLecturer, friends } from '../users/repository';
 import type { NoteInput } from './service';
 
-interface ModuleRow {
-  id: number;
-  code: string;
-  name: string;
-  programme: string;
-}
-
-export async function listModules(): Promise<ModuleRow[]> {
-  const { rows } = await pool.query<ModuleRow>(
-    `SELECT mod_id AS "id", mod_code AS "code", mod_name AS "name", mod_programme AS "programme"
-     FROM "MODULE_T" ORDER BY mod_code`,
-  );
-  return rows;
-}
-
-export async function moduleExists(id: number): Promise<boolean> {
-  const { rowCount } = await pool.query(`SELECT 1 FROM "MODULE_T" WHERE mod_id = $1`, [id]);
-  return rowCount === 1;
-}
-
 /** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or, when contacts-only, by a friend of the viewer (mutual follow, D38). */
 export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND

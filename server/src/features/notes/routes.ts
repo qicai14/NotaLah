@@ -3,19 +3,14 @@ import { requireActive, requireAuth, me } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import {
-  createNote, getNoteMeta, getVisibleNote, listDrafts, listModules, moduleExists, replaceNote, softDeleteNote,
+  createNote, getNoteMeta, getVisibleNote, listDrafts, replaceNote, softDeleteNote,
 } from './repository';
+import { moduleExists } from '../modules/repository';
 import { parseNoteBody } from './service';
 
 export const notesRouter = Router();
-export const modulesRouter = Router();
 notesRouter.use(requireAuth);
 notesRouter.param('id', idParam('Note not found'));
-modulesRouter.use(requireAuth);
-
-modulesRouter.get('/', async (_req, res) => {
-  res.json({ modules: await listModules() });
-});
 
 notesRouter.get('/drafts', async (req, res) => {
   const page = parseKeyset(req, res, 2);
