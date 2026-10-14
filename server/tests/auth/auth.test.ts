@@ -6,6 +6,8 @@ import { app } from '../../src/app';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { requireAuth } from '../../src/features/auth/middleware';
+import { PgStore, purgeOldRateLimits } from '../../src/features/auth/rateLimit';
+import { type Options, rateLimit } from 'express-rate-limit';
 import { asUser, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
@@ -270,5 +272,39 @@ describe('auth cookie and CSRF (D35)', () => {
     } finally {
       env.COOKIE_SECURE = before;
     }
+  });
+});
+
+describe('Shared rate-limit store (D40)', () => {
+  const store = () => {
+    const s = new PgStore('test:');
+    s.init({ windowMs: 60_000 } as Options);
+    return s;
+  };
+  const hits = async (key: string) =>
+    (await pool.query(`SELECT rlt_hits FROM "RATE_LIMIT_T" WHERE rlt_key = $1`, [key])).rows[0]?.rlt_hits;
+
+  it('AUTH-TC19: the Postgres store counts per key, restarts after the window, and is shared by instances', async () => {
+    const [a, b] = [store(), store()]; // two API instances
+    expect((await a.increment('k')).totalHits).toBe(1);
+    const second = await b.increment('k');
+    expect(second.totalHits).toBe(2);
+    expect(second.resetTime!.getTime()).toBeGreaterThan(Date.now() + 50_000);
+    expect((await a.increment('other')).totalHits).toBe(1);
+    await b.decrement('k');
+    expect(await hits('test:k')).toBe(1);
+    await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_window_start = NOW() - INTERVAL '61 seconds' WHERE rlt_key = 'test:k'`);
+    expect((await a.increment('k')).totalHits).toBe(1); // a new window
+    await a.resetKey('k');
+    expect(await hits('test:k')).toBeUndefined();
+    await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_window_start = NOW() - INTERVAL '2 minutes'`);
+    expect(await purgeOldRateLimits()).toBe(1);
+
+    const limited = express().use(rateLimit({ windowMs: 60_000, limit: 2, store: new PgStore('e2e:') })).post('/', (_req, res) => {
+      res.status(204).end();
+    });
+    const statuses: number[] = [];
+    for (let i = 0; i < 3; i++) statuses.push((await request(limited).post('/')).status);
+    expect(statuses).toEqual([204, 204, 429]);
   });
 });

@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import {
   AUTH_COOKIE,
@@ -13,6 +12,7 @@ import {
 } from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
+import { authLimiter } from './rateLimit';
 import { programmeExists } from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import { issueMap } from '../../lib/validation';
@@ -40,15 +40,6 @@ const registerSchema = z.object({
   programme: required('Programme').max(100, 'Programme must be at most 100 characters'),
   role: z.enum(['student', 'lecturer'], { error: 'Role must be student or lecturer' }),
   staffId: z.string().trim().max(20, 'Staff ID must be at most 20 characters').optional(),
-});
-
-const authLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 10,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
-  message: { error: 'Too many attempts. Try again in a minute.' },
 });
 
 authRouter.post('/register', authLimiter, async (req, res) => {

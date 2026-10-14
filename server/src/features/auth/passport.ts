@@ -39,6 +39,17 @@ export function authCookieOptions(): CookieOptions {
 // The token is read from the httpOnly cookie only, never a bearer header, so page script can never hold it (D35).
 const fromAuthCookie = (req: Request): string | null => req.headers.cookie?.match(COOKIE_PATTERN)?.[1] ?? null;
 
+/** The user id in a valid auth cookie, or null; keys the write rate limit before requireAuth runs (D40). */
+export function tokenSubject(req: Request): string | null {
+  const token = fromAuthCookie(req);
+  if (!token) return null;
+  try {
+    return (jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] }) as { sub?: string }).sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** `info.status` tells the login route which HTTP status to send when `user` is false. */
 export interface LoginInfo {
   status: 401 | 403;

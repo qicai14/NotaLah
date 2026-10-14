@@ -5,6 +5,7 @@ import { env } from './lib/env';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { authRouter } from './features/auth/routes';
+import { writeLimiter } from './features/auth/rateLimit';
 import { engagementRouter } from './features/engagement/routes';
 import { feedRouter } from './features/feed/routes';
 import { healthRouter } from './lib/health';
@@ -27,6 +28,8 @@ app.use('/api', (req, res, next) => {
   if (SAFE_METHODS.has(req.method) || req.get('X-Requested-With') === 'parp') return next();
   res.status(403).json({ error: 'Forbidden' });
 });
+// Write limit per user, or per IP when signed out, counted in Postgres so it holds across instances (D40).
+app.use('/api', (req, res, next) => (SAFE_METHODS.has(req.method) ? next() : writeLimiter(req, res, next)));
 app.use(express.json({ limit: '1mb' }));
 app.use(passport.initialize());
 
