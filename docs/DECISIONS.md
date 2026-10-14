@@ -488,3 +488,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** reject a future asOf with 400 (rejected: breaks a harmless client clock skew); an index on the Super Like date (out of scope, no migration).
 - **Reversibility:** Easy (one constant, one SQL expression).
 
+
+## D34 - Database tuning: indexes, pool settings, interaction retention (15 Oct 2026)
+- **Decision:** migration `20261015000001_query_indexes.sql` adds four indexes: `comment_like_comment_idx` on
+  `"COMMENT_LIKE_T" (clk_cmt_id)` (like counts per comment; the primary key leads with the user), `interaction_user_post_time_idx` on
+  `"INTERACTION_T" (int_usr_id, int_pst_id, int_created_at DESC)` (the 30-minute view dedupe in `logView`), `report_post_idx` on
+  `"REPORT_T" (rpt_pst_id)` (upheld-report counts per note; the existing partial unique index covers open reports only) and
+  `message_request_recipient_pending_idx`, a partial index on `"MESSAGE_REQUEST_T" (mrq_recipient_id) WHERE mrq_status = 'pending'`
+  (the Sprint 4 inbox). `interaction_user_time_idx` is kept: the ranking interest query filters on user and time range only, which
+  the new index cannot serve as well. EXPLAIN on 200,000 seeded interactions and 400,000 comment likes showed an index scan on the
+  new index for the dedupe query and a bitmap scan on `comment_like_comment_idx`. The pool reads `PG_POOL_MAX` (10),
+  `PG_IDLE_TIMEOUT_MS` (30000) and `PG_CONNECTION_TIMEOUT_MS` (5000) from the environment, validated by zod. `"INTERACTION_T"` rows
+  older than `RANKING.interestWindowDays` (90) are deleted by `purgeOldInteractions`, run daily by an unref'd timer in `server.ts`
+  (first run 1 minute after start) and on demand with `npm run db:purge-interactions -w server`.
+- **Alternatives:** table partitioning of interactions (rejected: needless at this scale); keeping all history (rejected: ranking
+  ignores rows past the window, D24, so they only slow the table); a cron service outside the process (rejected: one more moving part).
+- **Why:** each index serves a query the application already runs; the purge keeps the table bounded; pool limits matter on the
+  small Neon and Fly tiers (D29). The delete is idempotent, so several instances running it is harmless.
+- **Reversibility:** Easy (drop the indexes through the down migration; remove the timer).
