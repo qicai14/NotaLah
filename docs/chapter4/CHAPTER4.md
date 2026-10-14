@@ -20,7 +20,7 @@
 
 	The Administrator actor is placed on the opposite side of the system boundary because its use cases concern moderation rather than content. Administrators review reported content (UC20), suspend, restrict or delete accounts (UC21), and approve lecturer registrations (UC22). The last of these was added during design and is not listed in the Investigation Report; without it, any user could select the lecturer role at registration and verify their own notes, which would undermine the lecturer validation component that carries the joint-highest weight in the ranking formula (Section 2.3.4.4). Administrators also share the Search Content (UC14) and Log Out (UC03) use cases, the former supporting moderation searches by username or hashtag as specified in Section 1.6.4.
 
-	Four relationships refine the base use cases. Assign Module and Hashtags is an included use case of Create Slide Note because hashtags are mandatory at creation; the relevance component of the ranking formula divides by the number of hashtags on a post, so a note without hashtags cannot be scored. Save Draft, Reply to Comment, Filter by Lecturer or Date Range, and Send Message Request are modelled as extensions because each occurs only under a condition: the author chooses not to publish yet, the user responds to an existing comment, the user narrows a result set, or the recipient of a post-anchored message is not yet a contact. The last extension implements FR6, which requires approval before a non-contact can deliver a message.
+	Four relationships refine the base use cases. Assign Module and Hashtags is an included use case of Create Slide Note because hashtags are mandatory at creation; the relevance component of the ranking formula divides by the number of hashtags on a post, so a note without hashtags cannot be scored. Save Draft, Reply to Comment, Filter by Lecturer or Date Range, and Send Message Request are modelled as extensions because each occurs only under a condition: the author chooses not to publish yet, the user responds to an existing comment, the user narrows a result set, or the recipient of a post-anchored message is not yet a friend (a user who follows the sender and is followed back). The last extension implements FR6, which requires approval before a non-friend can deliver a message.
 
 	Three low-priority requirements from Table 14 are not represented as use cases. Background audio on slide notes (FR17) and peer annotation (FR18) were removed from the Part II scope, and filtering by academic term (FR15) was reworked into a published-date filter. The justification for each change is recorded in the Sprint 0 review, consistent with the agreement with the supervisor that low-priority requirements are cut or reworked only with written justification.
 
@@ -81,7 +81,7 @@
 | Preconditions | The user is logged in. |
 | Postconditions | Updated profile details are stored and shown on the user's notes and profile page. |
 | Standard Process | 1. User opens their profile page. <br> 2. System displays profile details and the user's notes. <br> 3. User selects "Edit Profile". <br> 4. User edits the fields and saves. <br> 5. System validates and stores the changes. <br> 6. System displays the updated profile. |
-| Alternative Process | **Step 1a: User views another user's profile** <br> 1a.1 System displays that user's public details and only the notes the viewer is allowed to see (public, or contacts-only if the two users are contacts). <br> 1a.2 Use case ends without editing. |
+| Alternative Process | **Step 1a: User views another user's profile** <br> 1a.1 System displays that user's public details and only the notes the viewer is allowed to see (public, or contacts-only if the two users are friends, meaning they follow each other). <br> 1a.2 Use case ends without editing. |
 | Exception Flow | **Step 5a: Invalid input** <br> 5a.1 System rejects an empty display name or an image larger than 2 MB and returns to step 4. |
 
 *Table 4.5: UC05 Create Slide Note use case specification*
@@ -117,13 +117,13 @@
 | **Component** | **Description** |
 | --- | --- |
 | Use case | UC07_Publish Note |
-| Description | Allows an author to publish a completed note with a chosen visibility. Public notes enter every viewer's ranked feed; contacts-only notes are visible to the author's contacts. |
+| Description | Allows an author to publish a completed note with a chosen visibility. Public notes enter every viewer's ranked feed; contacts-only notes are visible to the author's friends (users who follow each other). |
 | Actors | Student, Lecturer |
 | Requirements | FR10, FR9; FR2 (lecturer badge on lecturer-authored notes) |
 | Preconditions | The note has a title, at least one non-empty slide, a module and at least one hashtag. |
 | Postconditions | The note is stored with status "published", a visibility value and a publication time, and becomes eligible for the feed and search. |
 | Standard Process | 1. User selects "Publish". <br> 2. System displays three visibility options of equal size: Public, Contacts only, Keep as private draft. <br> 3. User selects Public. <br> 4. System validates completeness. <br> 5. System stores the note as published and records the publication time. <br> 6. System opens the published note. |
-| Alternative Process | **Step 3a: User selects Contacts only** <br> 3a.1 System publishes the note visible only to the author's contacts. <br> **Step 3b: User selects Keep as private draft** <br> 3b.1 System performs UC06_Save Draft instead. <br> **Step 6a: Author is an approved lecturer** <br> 6a.1 System shows the lecturer checkmark badge on the author's picture in the note. |
+| Alternative Process | **Step 3a: User selects Contacts only** <br> 3a.1 System publishes the note visible only to the author's friends. <br> **Step 3b: User selects Keep as private draft** <br> 3b.1 System performs UC06_Save Draft instead. <br> **Step 6a: Author is an approved lecturer** <br> 6a.1 System shows the lecturer checkmark badge on the author's picture in the note. |
 | Exception Flow | **Step 4a: Note incomplete** <br> 4a.1 System lists the missing elements and returns to the editor. |
 
 *Table 4.8: UC08 Edit or Delete Own Note use case specification*
@@ -233,9 +233,9 @@
 | Actors | Student, Lecturer |
 | Requirements | FR7, FR6 (extension Send Message Request), Objective 4 |
 | Preconditions | The user is logged in, can see the note, and is not its author. |
-| Postconditions | A message referencing the note is delivered to the author's conversation, or held as a pending message request if the two users are not contacts. |
-| Standard Process | 1. User selects "Message author" on a note. <br> 2. System opens a chat window with the note preview card attached. <br> 3. User types a message and sends it. <br> 4. System confirms the two users are contacts. <br> 5. System stores the message with the note reference and delivers it in real time. <br> 6. Recipient sees the message and note card in the conversation. |
-| Alternative Process | **Step 4a: Users are not contacts (Send Message Request)** <br> 4a.1 System stores the message as a pending message request instead of delivering it to the conversation. <br> 4a.2 System notifies the recipient of a new request. <br> 4a.3 Sender sees "Request sent; you can message freely once accepted". |
+| Postconditions | A message referencing the note is delivered to the author's conversation, or held as a pending message request if the two users are not friends. |
+| Standard Process | 1. User selects "Message author" on a note. <br> 2. System opens a chat window with the note preview card attached. <br> 3. User types a message and sends it. <br> 4. System confirms the two users are friends (each follows the other). <br> 5. System stores the message with the note reference and delivers it in real time. <br> 6. Recipient sees the message and note card in the conversation. |
+| Alternative Process | **Step 4a: Users are not friends (Send Message Request)** <br> 4a.1 System stores the message as a pending message request instead of delivering it to the conversation. <br> 4a.2 System notifies the recipient of a new request. <br> 4a.3 Sender sees "Request sent; you can message freely once accepted". |
 | Exception Flow | **Step 4b: A pending request already exists** <br> 4b.1 System informs the sender and does not create another request. <br> **Step 4c: Recipient previously declined the sender** <br> 4c.1 System does not deliver the request and shows the same "Request sent" message, so the decline is not disclosed. |
 
 *Table 4.16: UC16 Respond to Message Request use case specification*
@@ -243,24 +243,24 @@
 | **Component** | **Description** |
 | --- | --- |
 | Use case | UC16_Respond to Message Request |
-| Description | Allows a recipient to accept or decline a message request from a non-contact. Accepting makes both users contacts and delivers the held message. |
+| Description | Allows a recipient to accept or decline a message request from a non-friend. Accepting opens a conversation and delivers the held message, without making the two users friends. |
 | Actors | Student, Lecturer |
 | Requirements | FR6 |
 | Preconditions | The user has at least one pending message request. |
-| Postconditions | The request is accepted (users become contacts and a conversation opens) or declined (no conversation is created). |
-| Standard Process | 1. User opens "Message Requests". <br> 2. System lists pending requests with sender, attached note card and first message. <br> 3. User selects "Accept". <br> 4. System records both users as contacts, creates the conversation and moves the held message into it. <br> 5. System notifies the sender in real time. |
+| Postconditions | The request is accepted (a conversation opens, but the users do not become friends) or declined (no conversation is created). |
+| Standard Process | 1. User opens "Message Requests". <br> 2. System lists pending requests with sender, attached note card and first message. <br> 3. User selects "Accept". <br> 4. System creates the direct conversation and moves the held message into it. <br> 5. System notifies the sender in real time. |
 | Alternative Process | **Step 3a: User declines** <br> 3a.1 System marks the request declined and removes it from the list. The sender is not notified. |
 | Exception Flow | **Step 4a: Sender account suspended meanwhile** <br> 4a.1 System removes the request and displays "This user is unavailable". |
 
-*Table 4.17: UC17 Chat with Contact use case specification*
+*Table 4.17: UC17 Chat with Friend use case specification*
 
 | **Component** | **Description** |
 | --- | --- |
-| Use case | UC17_Chat with Contact |
-| Description | Allows two contacts to exchange private messages in real time, with optional note cards attached. |
+| Use case | UC17_Chat with Friend |
+| Description | Allows two friends to exchange private messages in real time, with optional note cards attached. |
 | Actors | Student, Lecturer |
 | Requirements | FR9, IR deliverable "direct private messaging with established friends" |
-| Preconditions | Both users are contacts. |
+| Preconditions | Both users are friends (they follow each other). |
 | Postconditions | Messages are stored and delivered to the other participant. |
 | Standard Process | 1. User opens Messages. <br> 2. System lists conversations ordered by latest message. <br> 3. User opens a conversation. <br> 4. System loads recent messages. <br> 5. User types and sends a message. <br> 6. System stores it and pushes it to the other participant over the socket connection. |
 | Alternative Process | **Step 6a: Recipient offline** <br> 6a.1 The message is stored and appears, with an unread count, when the recipient next opens Messages. <br> **Step 5a: User attaches a note** <br> 5a.1 User selects "Attach note" and picks a note they can see; the message carries the note card. |
@@ -271,13 +271,13 @@
 | **Component** | **Description** |
 | --- | --- |
 | Use case | UC18_Manage Group Chat |
-| Description | Allows a user to create a named group chat with contacts for coursework teams, add or remove members, and leave the group. |
+| Description | Allows a user to create a named group chat with friends for coursework teams, add or remove members, and leave the group. |
 | Actors | Student, Lecturer |
 | Requirements | FR13 |
-| Preconditions | The user is logged in and has at least two contacts. |
+| Preconditions | The user is logged in and has at least two friends. |
 | Postconditions | A named group conversation exists with the selected members, who can exchange messages as in UC17. |
-| Standard Process | 1. User selects "New Group". <br> 2. System displays a name field and the user's contacts. <br> 3. User enters a group name and selects two or more contacts. <br> 4. User selects "Create". <br> 5. System creates the group with the user as owner and notifies members. |
-| Alternative Process | **Step 1a: Owner manages an existing group** <br> 1a.1 Owner renames the group, adds contacts or removes members. <br> **Step 1b: Member leaves** <br> 1b.1 Member selects "Leave group" and no longer receives its messages. |
+| Standard Process | 1. User selects "New Group". <br> 2. System displays a name field and the user's friends. <br> 3. User enters a group name and selects two or more friends. <br> 4. User selects "Create". <br> 5. System creates the group with the user as owner and notifies members. |
+| Alternative Process | **Step 1a: Owner manages an existing group** <br> 1a.1 Owner renames the group, adds friends or removes members. <br> **Step 1b: Member leaves** <br> 1b.1 Member selects "Leave group" and no longer receives its messages. |
 | Exception Flow | **Step 4a: Name empty or fewer than two members** <br> 4a.1 System disables "Create" and states the requirement. |
 
 *Table 4.19: UC19 Super Like (Verify) Note use case specification*
@@ -344,7 +344,7 @@
 
 	Figure 4.2 shows the static structure of PARP as domain classes, their attributes and operations, and the two services that hold the system's core logic. The User hierarchy mirrors the use case diagram: User is abstract and holds identity, credentials, role and account status together with the operations every account shares, namely registration, login, logout, profile update and search. Student adds the content and communication operations, Lecturer specialises Student with the Super Like operations and its staff identifier, and Administrator carries the moderation operations. Modelling Lecturer as a subclass of Student, rather than as a sibling, expresses in the type structure the same rule the server enforces at run time: a lecturer can do everything a student can, plus verification.
 
-	Post is the central content class and is composed of one or more Slide objects, drawn as composition because a slide has no existence outside its note and is deleted with it. Comment is likewise composed into Post and has a reflexive association that represents one level of replies. Post is associated with Hashtag in a many-to-many relationship, and with Like, Verification, Bookmark, Report and Interaction as association classes that record who acted on which note and when. The messaging classes are separated from content: MessageRequest holds a first message from a non-contact and creates a Conversation when accepted, Conversation is composed of Message objects, and both MessageRequest and Message carry an optional association to Post, which is the class-level expression of post-anchored messaging (FR7).
+	Post is the central content class and is composed of one or more Slide objects, drawn as composition because a slide has no existence outside its note and is deleted with it. Comment is likewise composed into Post and has a reflexive association that represents one level of replies. Post is associated with Hashtag in a many-to-many relationship, and with Like, Verification, Bookmark, Report and Interaction as association classes that record who acted on which note and when. The messaging classes are separated from content: MessageRequest holds a first message from a non-friend and creates a Conversation when accepted, Conversation is composed of Message objects, and both MessageRequest and Message carry an optional association to Post, which is the class-level expression of post-anchored messaging (FR7).
 
 	RankingService and SearchService are drawn as service classes because they own behaviour that spans many entities. RankingService exposes one operation per component of the scoring formula in Section 2.3.4, namely engagement, recency, validation and relevance, together with buildInterestVector and the composite score operation. Separating the components into individual operations allows each to be unit tested against fixed inputs, which is the verification approach committed to in Section 2.3.4.10. Every weight and constant is read from RankingConfig, a single configuration object whose initial values are those of Section 2.3.4.7, so that the re-evaluation of the weights required by NFR5 after user acceptance testing changes one file and no scoring code.
 
@@ -380,7 +380,7 @@
 
 *Figure 4.7: Activity diagram for post-anchored messaging*
 
-	Figure 4.7 shows how a user messages the author of a note (UC15 and UC16), which delivers Objective 4. The message always carries the note it was sent from, so the conversation opens with its academic context attached. The first decision applies FR6: messages between contacts are delivered immediately, while a message to a non-contact is held as a request. Duplicate requests are prevented, and the recipient's decision determines the outcome. Accepting adds both users as contacts, creates the conversation and moves the held message into it; declining closes the request without notifying the sender. This design reflects the survey finding that 75 percent of respondents wanted approval before receiving messages from non-contacts, while keeping the note-anchored first message that 78.1 percent rated useful.
+	Figure 4.7 shows how a user messages the author of a note (UC15 and UC16), which delivers Objective 4. The message always carries the note it was sent from, so the conversation opens with its academic context attached. The first decision applies FR6: messages between friends (two users who follow each other) are delivered immediately, while a message to a non-friend is held as a request. Duplicate requests are prevented, and the recipient's decision determines the outcome. Accepting creates the conversation and moves the held message into it, but does not make the two users friends; declining closes the request without notifying the sender. This design reflects the survey finding that 75 percent of respondents wanted approval before receiving messages from non-friends, while keeping the note-anchored first message that 78.1 percent rated useful.
 
 # 4.2.5 Sequence Diagrams
 
@@ -414,7 +414,7 @@
 
 *Figure 4.12: Sequence diagram for post-anchored messaging*
 
-	Figure 4.12 shows messaging over Socket.io, where the connection is authenticated with the same JSON Web Token during the handshake, so every event already carries a verified sender. MessagingService checks the contact relationship first. For contacts, the message is stored with its post reference and pushed to a room named after the recipient, so delivery reaches every device on which the recipient is connected. For non-contacts, the message is stored as a pending request, and a partial unique index in the database rejects a second pending request between the same pair, so the duplicate check cannot be bypassed by concurrent requests. Acceptance is processed in one transaction that updates the request, creates the two contact rows and the conversation, and moves the held message, so the two users never become contacts without the conversation that should accompany it.
+	Figure 4.12 shows messaging over Socket.io, where the connection is authenticated with the same JSON Web Token during the handshake, so every event already carries a verified sender. MessagingService checks friendship first, which is a mutual follow: a row in FOLLOW_T in each direction. For friends, the message is stored with its post reference and pushed to a room named after the recipient, so delivery reaches every device on which the recipient is connected. For non-friends, the message is stored as a pending request, and a partial unique index in the database rejects a second pending request between the same pair, so the duplicate check cannot be bypassed by concurrent requests. Acceptance is processed in one transaction that updates the request, creates the conversation and moves the held message, so a request is never marked accepted without the conversation that should accompany it. Acceptance does not create follow rows, because friendship is decided only by the users' own follows.
 
 # 4.3 Database Design
 
@@ -424,19 +424,21 @@
 
 *Figure 4.13: PARP entity relationship diagram (crow's foot notation)*
 
-	Figure 4.13 presents the relational data model of PARP as nineteen entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
+	Figure 4.13 presents the relational data model of PARP as twenty-one entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
-	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities; the second foreign keys to USER_T in FOLLOW_T, MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
+	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
+
+	Two entities were added after the first design to meet the scale and reliability targets, and a third replaced an earlier one. FOLLOW_T replaced the original CONTACT_T, which stored a symmetric pair created by an accepted message request. A directed follow with a composite primary key and a check that a user cannot follow themselves is a single relationship from which friendship is derived at query time as a pair of follows in opposite directions, so there is no second table that could drift out of step; the migration that introduced it copied each existing contact into both directions. FEED_SNAPSHOT_T stores, for one viewer and one request time, the ranked list of post identifiers and their scores as arrays. The first page of the For You feed ranks the candidates once and writes this row, and later pages read a slice of it, so that a viewer paging through the feed sees a stable order and the ranking work is not repeated for every page; rows are short-lived and are deleted when they expire. RATE_LIMIT_T is an operational table with no foreign key to any other entity: it holds one counter per rate-limit key (a user identifier or an address) and time window, so that the request limits are enforced consistently across several server instances. It is therefore drawn in Figure 4.13 as a standalone entity.
 
 ## 4.3.2 Database Schema
 
-	Table 4.23 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Five PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
+	Table 4.23 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
 
 *Table 4.23: PARP database schema*
 
-The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_3.png`.
+The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_4.png`.
 
 | Table name | Field name | Data type | Size | Constraint | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -545,8 +547,25 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | aac_action | VARCHAR | 20 | NOT NULL, CHECK (restrict, suspend, reinstate, delete, approve_lecturer, reject_lecturer) | Action taken |
 | | aac_reason | VARCHAR | 300 | NOT NULL | Recorded justification |
 | | aac_created_at | TIMESTAMPTZ | | NOT NULL | Time of action |
+| FEED_SNAPSHOT_T | fsn_usr_id | INTEGER | | PK, FK → USER_T, NOT NULL, ON DELETE CASCADE | Viewer the snapshot was ranked for |
+| | fsn_as_of | TIMESTAMPTZ | | PK, NOT NULL | Request time the ranking is pinned to |
+| | fsn_pst_ids | INTEGER[] | | NOT NULL | Post identifiers in ranked order; later pages read a slice |
+| | fsn_scores | DOUBLE PRECISION[] | | NOT NULL | Score and components for each post, in the same order |
+| | fsn_created_at | TIMESTAMPTZ | | NOT NULL, default now; indexed | Time stored; used to purge expired snapshots |
+| RATE_LIMIT_T | rlt_key | VARCHAR | 200 | PK, NOT NULL | Rate-limit key built from the user identifier or client address |
+| | rlt_window_start | TIMESTAMPTZ | | NOT NULL | Start of the current fixed window |
+| | rlt_hits | INTEGER | | NOT NULL | Requests counted in the window |
 
-	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors.
+
+	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors. Migrations added after the initial schema create further indexes, each for one access path:
+
+- `comment_like_comment_idx` on COMMENT_LIKE_T (clk_cmt_id): counts the likes of each comment when comments are listed.
+- `interaction_user_post_time_idx` on INTERACTION_T (int_usr_id, int_pst_id, int_created_at DESC): finds a viewer's latest interaction with a note for the view-logging window and the interest vector.
+- `report_post_idx` on REPORT_T (rpt_pst_id): groups reports by note in the moderation queue.
+- `message_request_recipient_pending_idx` on MESSAGE_REQUEST_T (mrq_recipient_id), partial on pending requests: lists a recipient's open requests without scanning resolved ones.
+- `follow_followee_idx` on FOLLOW_T (fol_followee_id): lists a user's followers and checks the reverse direction of a follow.
+- `feed_snapshot_created_idx` on FEED_SNAPSHOT_T (fsn_created_at): deletes expired snapshots.
+- `comment_parent_idx` on COMMENT_T (cmt_parent_id), partial on replies: checks whether a deleted top-level comment still has live replies.
 
 # 4.4 Interface Design
 
