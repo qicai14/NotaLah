@@ -11,9 +11,10 @@ const btn = 'rounded-md border border-slate-300 px-3 py-1 text-sm disabled:opaci
 
 type VerifyState = Pick<Note, 'verified' | 'verifiedBy' | 'verifiedByMe'>;
 
+/** `onVerify` lets the parent redraw the verified frame without a refetch. */
 export function NoteActions({ note, commentsLink = true, onVerify }: { note: Note; commentsLink?: boolean; onVerify(v: VerifyState): void }) {
   const { user } = useAuth();
-  const canSuperLike = isApprovedLecturer(user) && user && note.author.id !== user.id;
+  const canSuperLike = isApprovedLecturer(user) && note.author.id !== user.id;
   const [superLiking, setSuperLiking] = useState(false);
   const [liked, setLiked] = useState(note.liked);
   const [likes, setLikes] = useState(note.counts.likes);

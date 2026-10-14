@@ -33,6 +33,7 @@ describe('Engagement', () => {
   });
 
   it('ENG-TC1: like a note', async () => {
+    expect((await request(app).post('/api/notes/abc/like')).status).toBe(404); // id check runs before auth, from the URL text only
     const [a, b] = [await insertUser(), await insertUser()];
     const p = await insertNote(b);
     const res = await post(a, `/api/notes/${p}/like`);

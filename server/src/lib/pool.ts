@@ -28,4 +28,4 @@ export async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promi
   }
 }
 
-export const isUniqueViolation = (err: unknown): boolean => (err as { code?: string }).code === '23505';
+export const isUniqueViolation = (err: unknown): boolean => err instanceof Error && 'code' in err && err.code === '23505';
