@@ -2,7 +2,7 @@
 
 Post engagement: views, likes, comments and replies, reports, bookmarks.
 
-Serves: FR14, FR16. Test table: `ENG-TC*` in `docs/chapter4/4.5_test_cases.md`; tests in `server/tests/engagement/`.
+Serves: FR14, FR16 (UC10 like, UC11 comment, UC12 report, UC13 bookmark). Test table: `ENG-TC*` except ENG-TC11, which is in `tests/feed/`, in `docs/chapter4/4.5_test_cases.md`; tests in `server/tests/engagement/`.
 Decisions: D20, D22.
 
 - `repository.ts`: all SQL. Reuses `VISIBLE` and `SUMMARY_COLS` from `notes/repository.ts`.

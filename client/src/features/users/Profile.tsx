@@ -5,6 +5,7 @@ import type { Profile as ProfileData } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { LecturerBadge } from '../../components/LecturerBadge';
 
+/** One component serves /users/:id and /profile; /profile adds Edit and the drafts count. */
 export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();

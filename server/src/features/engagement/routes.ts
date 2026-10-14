@@ -104,6 +104,7 @@ const reportSchema = z.object({
   details: z.string({ error: 'Invalid details' }).trim().max(500, 'Details must be at most 500 characters').nullish(),
 });
 
+// UC12
 engagementRouter.post('/notes/:noteId/report', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
@@ -121,6 +122,7 @@ engagementRouter.post('/notes/:noteId/report', requireAuth, requireActive, async
   res.status(201).json({ reported: true });
 });
 
+// UC13
 engagementRouter.post('/notes/:noteId/bookmark', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
