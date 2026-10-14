@@ -604,9 +604,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   any page whose snapshot is missing) ranks the candidates as in D24 and stores the result; a request that sends an `asOf` reads its
   slice with array slicing (`fsn_pst_ids[11:20]`) and skips the candidate, interaction and scoring work. The API is unchanged. Snapshots
   older than `RANKING.snapshotTtlHours` (2) are deleted by the daily purge (D34) and, for one viewer, whenever that viewer stores a new
-  one; a page requested after its snapshot expired is simply recomputed. The snapshot lives in Postgres, so any instance can serve the
+  one, and the same write also keeps only that viewer's newest `RANKING.snapshotsPerViewer` (4), so reloading page 1 many times within the TTL cannot grow the table; a page requested after its snapshot expired or was dropped is simply recomputed. The snapshot lives in Postgres, so any instance can serve the
   next page. It also closes the D24 gap: an unlike, a deleted comment or a suspended verifier between pages no longer reorders later
-  pages for the same asOf (a note hidden or deleted since still drops out, because the page's notes are loaded through `VISIBLE`).
+  pages for the same asOf (a note hidden or deleted since still drops out, because the page's notes are loaded through `VISIBLE`, so a snapshot cannot leak it; RANK-TC27).
   Measured on the test database with 500 notes (5 slides each, about 2,500 likes, 167 viewer interactions), mean of 20 requests through
   Supertest: page 1 30.0 ms, page 2 from the snapshot 10.1 ms, page 2 recomputed 31.5 ms.
 - **Report queue (audit #4):** `GET /api/admin/reports` returns summaries (id, title, status, module, author id and name, report
@@ -636,8 +636,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (rejected: stale counts, and slide HTML for 500 notes); offset paging for the four lists (rejected: rows shift as users add and remove
   them); a Redis store or `rate-limit-postgresql` (rejected: a new service or dependency for one UPSERT); a per-route write limit
   (rejected: one limit for all writes is simpler and still stops a script flooding comments or likes).
-- **Not changed:** the client lists beyond AdminReports (the redesign adds "load more"); Chapter 4.3 ERD and schema table do not show
-  the two new tables yet.
-- **Tests:** RANK-TC24, RANK-TC25, ADM-TC29, ADM-TC30 (ADM-TC16 now expects no slides), ENG-TC18, ENG-TC19, NOTE-TC26, USR-TC25,
-  AUTH-TC19.
+- **Client until the redesign:** CommentPanel asks for `?limit=100` so new comments are not lost past 50 top-level comments; Saved,
+  Drafts and Profile show their first 50; each carries a `shortcut:` comment, and "load more" comes with the redesign. AdminReports
+  reloads the queue when resolving empties the loaded page and more groups exist.
+- **Report follow-up:** the Chapter 4.3 ERD and schema table must gain `"FEED_SNAPSHOT_T"` and `"RATE_LIMIT_T"`; they do not show them yet.
+- **Review fixes:** the comments query filters on `cmt_pst_id` in the outer select and in the reply `EXISTS`, so both scans use
+  `comment_post_idx` (EXPLAIN on 60,000 comments: index scan for the top-level page, bitmap index scan for the rows and replies);
+  `tokenSubject` and the JWT strategy share one verify-options constant (AUTH-TC20 covers forged and expired tokens).
+- **Tests:** RANK-TC24 to RANK-TC27, ADM-TC29, ADM-TC30 (ADM-TC16 now expects no slides), ENG-TC18, ENG-TC19, NOTE-TC26, USR-TC25,
+  AUTH-TC19, AUTH-TC20.
 - **Reversibility:** Easy (two migrations with down steps; the list routes accept the old call unchanged).
