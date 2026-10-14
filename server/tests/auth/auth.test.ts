@@ -7,6 +7,9 @@ import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { requireAuth } from '../../src/features/auth/middleware';
 import { PgStore, purgeOldRateLimits } from '../../src/features/auth/rateLimit';
+import { signToken, tokenSubject } from '../../src/features/auth/passport';
+import type { AuthUser } from '../../src/features/users/repository';
+import type { Request } from 'express';
 import { type Options, rateLimit } from 'express-rate-limit';
 import { asUser, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
@@ -272,6 +275,19 @@ describe('auth cookie and CSRF (D35)', () => {
     } finally {
       env.COOKIE_SECURE = before;
     }
+  });
+});
+
+describe('Rate-limit key from the auth cookie (D40)', () => {
+  it('AUTH-TC20: tokenSubject returns the id of a valid cookie and null for a forged or expired token', () => {
+    const req = (token: string) => ({ headers: { cookie: `parp_token=${token}` } }) as Request;
+    expect(tokenSubject(req(signToken({ id: 42, role: 'student' } as AuthUser)))).toBe('42');
+    const forged = jwt.sign({ role: 'admin' }, 'another-secret-of-length', { algorithm: 'HS256', subject: '42' });
+    expect(tokenSubject(req(forged))).toBeNull();
+    const exp = Math.floor(Date.now() / 1000) - 60;
+    const expired = jwt.sign({ role: 'student', exp }, env.JWT_SECRET, { algorithm: 'HS256', subject: '42' });
+    expect(tokenSubject(req(expired))).toBeNull();
+    expect(tokenSubject({ headers: {} } as Request)).toBeNull();
   });
 });
 

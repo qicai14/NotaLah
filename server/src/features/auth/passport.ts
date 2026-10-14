@@ -39,12 +39,15 @@ export function authCookieOptions(): CookieOptions {
 // The token is read from the httpOnly cookie only, never a bearer header, so page script can never hold it (D35).
 const fromAuthCookie = (req: Request): string | null => req.headers.cookie?.match(COOKIE_PATTERN)?.[1] ?? null;
 
+/** Verification rules shared by the JWT strategy and tokenSubject, so the rate-limit key never trusts a token the strategy would reject. */
+const JWT_VERIFY = { algorithms: ['HS256'] as jwt.Algorithm[] };
+
 /** The user id in a valid auth cookie, or null; keys the write rate limit before requireAuth runs (D40). */
 export function tokenSubject(req: Request): string | null {
   const token = fromAuthCookie(req);
   if (!token) return null;
   try {
-    return (jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] }) as { sub?: string }).sub ?? null;
+    return (jwt.verify(token, env.JWT_SECRET, JWT_VERIFY) as { sub?: string }).sub ?? null;
   } catch {
     return null;
   }
@@ -78,7 +81,7 @@ passport.use(
     {
       jwtFromRequest: fromAuthCookie,
       secretOrKey: env.JWT_SECRET,
-      algorithms: ['HS256'],
+      ...JWT_VERIFY,
     },
     // The user is reloaded on every request so role changes and suspensions apply immediately (D13).
     async (payload: { sub?: string }, done: (err: unknown, user?: AuthUser | false) => void) => {

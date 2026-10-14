@@ -9,7 +9,7 @@ import type { ReportGroup, ReportSummary } from '../../types';
 /** Reported content queue (UC20, wireframe 23): open reports grouped by note, oldest first; resolve with a remark. */
 export default function AdminReports() {
   // shortcut: shows the first page (20) only; the redesign adds "load more" with nextCursor
-  const { data, setData, error, loading } = useFetch<{ groups: ReportSummary[]; nextCursor: string | null }>('/admin/reports');
+  const { data, setData, error, loading, reload } = useFetch<{ groups: ReportSummary[]; nextCursor: string | null }>('/admin/reports');
   const [openId, setOpenId] = useState<number | null>(null);
   const detail = useFetch<{ group: ReportGroup }>(openId === null ? null : `/admin/reports/${openId}`);
   const [remark, setRemark] = useState('');
@@ -28,6 +28,7 @@ export default function AdminReports() {
     try {
       await api(`/admin/reports/${open.id}/resolve`, { method: 'POST', body: { outcome, remark: remark.trim() } });
       setData((d) => d && { ...d, groups: d.groups.filter((g) => g.id !== open.id) });
+      if (data?.nextCursor && data.groups.every((g) => g.id === open.id)) reload(); // page emptied: fetch the next groups
       setStatus(`"${open.title}" ${outcome === 'hide' ? 'hidden' : 'kept visible'}; ${open.reportCount} report(s) resolved.`);
       setHidden(outcome === 'hide' ? { id: open.author.id, name: open.author.displayName } : null);
       setOpenId(null);

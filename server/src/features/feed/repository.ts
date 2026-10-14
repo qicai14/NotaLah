@@ -35,14 +35,19 @@ export interface RankedEntry {
   components: Components;
 }
 
-/** Stores the viewer's ranking for one asOf (one row of [score, E, R, V, M] per id) and drops their expired snapshots (D40). */
+/** Stores the viewer's ranking for one asOf (one row of [score, E, R, V, M] per id) and drops their expired snapshots and all but the newest snapshotsPerViewer (D40). */
 export async function saveSnapshot(viewerId: number, asOf: Date, ranked: RankedEntry[]): Promise<void> {
   await pool.query(
-    `WITH expired AS (DELETE FROM "FEED_SNAPSHOT_T" WHERE fsn_usr_id = $1 AND fsn_created_at < NOW() - make_interval(hours => $5))
+    `WITH expired AS (
+       DELETE FROM "FEED_SNAPSHOT_T"
+       WHERE fsn_usr_id = $1
+         AND (fsn_created_at < NOW() - make_interval(hours => $5)
+              OR fsn_as_of IN (SELECT fsn_as_of FROM "FEED_SNAPSHOT_T" WHERE fsn_usr_id = $1
+                               ORDER BY fsn_created_at DESC, fsn_as_of DESC OFFSET $6)))
      INSERT INTO "FEED_SNAPSHOT_T" (fsn_usr_id, fsn_as_of, fsn_pst_ids, fsn_scores) VALUES ($1, $2, $3, $4)
      ON CONFLICT DO NOTHING`,
     [viewerId, asOf, ranked.map((r) => r.id), ranked.map(({ score, components: c }) => [score, c.E, c.R, c.V, c.M]),
-     RANKING.snapshotTtlHours],
+     RANKING.snapshotTtlHours, RANKING.snapshotsPerViewer - 1],
   );
 }
 
