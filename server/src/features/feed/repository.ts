@@ -20,8 +20,8 @@ export type FeedItem = NoteWithEngagement & { score: number; components: Compone
 export async function getFeedPage(
   viewerId: number, page: number, asOf: Date | null,
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
-  // the cutoff comes from the database clock, the same one that stamps pst_published_at (D22)
-  const cutoff = (await pool.query<{ t: Date }>(`SELECT COALESCE($1::TIMESTAMPTZ, NOW()) AS "t"`, [asOf])).rows[0].t;
+  // the cutoff comes from the database clock, the same one that stamps pst_published_at (D22); a future asOf is capped at now (D30)
+  const cutoff = (await pool.query<{ t: Date }>(`SELECT LEAST(COALESCE($1::TIMESTAMPTZ, NOW()), NOW()) AS "t"`, [asOf])).rows[0].t;
   const [candidates, interactions] = await Promise.all([getCandidates(viewerId, cutoff), getInteractionRows(viewerId, cutoff)]);
   const interest = buildInterestVector(interactions, cutoff);
   const ranked = candidates

@@ -99,6 +99,30 @@ describe('Ranked feed', () => {
     expect(ids).not.toContain(oldPlain);
   });
 
+  it('RANK-TC17: a future asOf is capped at now, so every score stays finite', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    await insertNote(author, ['sql'], 5);
+    const res = await request(app).get('/api/feed').query({ asOf: '9999-01-01T00:00:00Z' }).set({ Authorization: bearer(viewer) });
+    expect(res.status).toBe(200);
+    expect(new Date(res.body.asOf).getTime()).toBeLessThanOrEqual(Date.now());
+    expect(res.body.items).toHaveLength(1);
+    expect(Number.isFinite(res.body.items[0].score)).toBe(true);
+  });
+
+  it('RANK-TC18: a Super Like older than the verified window no longer surfaces an old note', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const stale = await insertNote(author, ['sql'], 5000);
+    const fresh = await insertNote(author, ['sql'], 4000);
+    await verify(stale, await lecturer());
+    await verify(fresh, await lecturer());
+    await pool.query(`UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`, [RANKING.verifiedCandidateWindowDays + 1, stale]);
+    const recent = await insertNote(author, ['sql'], 1);
+    const ids = (await getCandidates(viewer, new Date(), 1)).map((c) => c.id);
+    expect(ids.sort()).toEqual([recent, fresh].sort());
+  });
+
   it('RANK-TC13: a verified, relevant note is surfaced ahead of a more-liked unverified irrelevant one (NFR3)', async () => {
     const author = await insertUser();
     const viewer = await insertUser();

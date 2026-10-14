@@ -17,6 +17,8 @@ export const RANKING = Object.freeze({
   interestWindowDays: 90,
   /** Most recent published notes scored per feed request; older notes are scored only if verified (D24). */
   candidateLimit: 500,
+  /** Only Super Likes made within this many days before asOf surface an old note as a candidate (D30). */
+  verifiedCandidateWindowDays: 180,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {

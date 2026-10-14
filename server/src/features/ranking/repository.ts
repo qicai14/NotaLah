@@ -10,7 +10,7 @@ export interface CandidateRow extends Candidate {
 
 /**
  * Published notes the viewer may see, published at or before asOf: the newest `limit` united with every note holding a
- * valid Super Like made by asOf, with only what scoring needs; the page's full notes are loaded afterwards (D24).
+ * valid Super Like made within verifiedCandidateWindowDays before asOf, with only what scoring needs; the page's full notes are loaded afterwards (D24).
  * Likes, comments and Super Likes count only up to asOf, so one asOf always gives the same ranking (pages cannot skip
  * or repeat a note when engagement lands between page requests).
  */
@@ -22,7 +22,8 @@ export async function getCandidates(viewerId: number, asOf: Date, limit: number 
        WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
        ORDER BY p.pst_published_at DESC, p.pst_id DESC
        LIMIT $3),
-     verified AS (SELECT DISTINCT v.ver_pst_id AS pst_id ${VALID_VERIFICATIONS} AND v.ver_created_at <= $2::TIMESTAMPTZ)
+     verified AS (SELECT DISTINCT v.ver_pst_id AS pst_id ${VALID_VERIFICATIONS} AND v.ver_created_at <= $2::TIMESTAMPTZ
+       AND v.ver_created_at > $2::TIMESTAMPTZ - make_interval(days => $4))
      SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", ${HASHTAGS_COL},
             ${countingLecturer('u')} AS "lecturerAuthor", ${countsCol('$2::TIMESTAMPTZ')},
             p.pst_id IN (SELECT pst_id FROM verified) AS "verified"
@@ -30,7 +31,7 @@ export async function getCandidates(viewerId: number, asOf: Date, limit: number 
      JOIN "POST_T" p ON p.pst_id = ids.pst_id
      JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}`,
-    [viewerId, asOf, limit],
+    [viewerId, asOf, limit, RANKING.verifiedCandidateWindowDays],
   );
   return rows;
 }
