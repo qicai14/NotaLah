@@ -4,6 +4,7 @@ import { issueMap, invalidId } from '../../lib/validation';
 import { isApprovedLecturer } from '../users/repository';
 import { requireActive, requireAuth } from '../auth/middleware';
 import * as repo from './repository';
+import { getFeedPage } from './service';
 
 export const feedRouter = Router();
 /** Mounted at /api; auth is applied per route so unrelated /api paths keep their own behaviour. */
@@ -29,7 +30,7 @@ feedRouter.get('/', requireAuth, async (req, res) => {
   if (asOf !== null && (typeof rawAsOf !== 'string' || Number.isNaN(asOf.getTime()))) {
     return res.status(400).json({ error: 'Invalid asOf' });
   }
-  res.json(await repo.getFeedPage(req.user!.id, Number(raw), asOf));
+  res.json(await getFeedPage(req.user!.id, Number(raw), asOf));
 });
 
 // ---- views and likes ----

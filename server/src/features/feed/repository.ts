@@ -1,43 +1,21 @@
 import { pool } from '../../lib/pool';
 import { approvedLecturer } from '../users/repository';
 import { ENGAGEMENT_COLS, NOTE_COLS, NOTE_FROM, SUMMARY_COLS, VISIBLE, type NoteSummary, type NoteWithEngagement } from '../notes/repository';
-import { getCandidates, getInteractionRows } from '../ranking/repository';
-import { buildInterestVector, scoreCandidate, type Components } from '../ranking/service';
 
-export const PAGE_SIZE = 10;
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
 const VIEW_WINDOW_MINUTES = 30;
 
-// ---- Feed ------------------------------------------------------------------------------------
+/** The feed cutoff comes from the database clock, the same one that stamps pst_published_at (D22); a future asOf is capped at now (D30). */
+export async function getCutoff(asOf: Date | null): Promise<Date> {
+  return (await pool.query<{ t: Date }>(`SELECT LEAST(COALESCE($1::TIMESTAMPTZ, NOW()), NOW()) AS "t"`, [asOf])).rows[0].t;
+}
 
-export type FeedItem = NoteWithEngagement & { score: number; components: Components };
-
-/**
- * One page of the ranked feed (page is 1-based). Candidates are scored in the app and sorted by score, then
- * newest, then id (IR 2.3.4, D24). `asOf` freezes the candidate set, recency and the engagement that is scored, so
- * pages stay stable; the counts shown on each item are live (D24).
- */
-export async function getFeedPage(
-  viewerId: number, page: number, asOf: Date | null,
-): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
-  // the cutoff comes from the database clock, the same one that stamps pst_published_at (D22); a future asOf is capped at now (D30)
-  const cutoff = (await pool.query<{ t: Date }>(`SELECT LEAST(COALESCE($1::TIMESTAMPTZ, NOW()), NOW()) AS "t"`, [asOf])).rows[0].t;
-  const [candidates, interactions] = await Promise.all([getCandidates(viewerId, cutoff), getInteractionRows(viewerId, cutoff)]);
-  const interest = buildInterestVector(interactions, cutoff);
-  const ranked = candidates
-    .map((c) => ({ id: c.id, publishedAt: c.publishedAt, ...scoreCandidate(c, interest, cutoff) }))
-    .sort((a, b) => b.score - a.score || b.publishedAt.getTime() - a.publishedAt.getTime() || b.id - a.id);
-  const slice = ranked.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const { rows } = slice.length === 0 ? { rows: [] } : await pool.query<NoteWithEngagement>(
+export async function getNotesByIds(viewerId: number, ids: number[]): Promise<NoteWithEngagement[]> {
+  const { rows } = await pool.query<NoteWithEngagement>(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = ANY($2::INT[]) AND ${VISIBLE}`,
-    [viewerId, slice.map((r) => r.id)],
+    [viewerId, ids],
   );
-  const notes = new Map(rows.map((n) => [n.id, n]));
-  const items = slice.flatMap(({ id, score, components }) => {
-    const note = notes.get(id); // gone only if hidden or deleted since the candidate query
-    return note ? [{ ...note, score, components }] : [];
-  });
-  return { items, nextPage: ranked.length > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff };
+  return rows;
 }
 
 // ---- Engagement targets ----------------------------------------------------------------------
