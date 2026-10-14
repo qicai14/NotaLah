@@ -72,7 +72,6 @@ export const NOTE_FROM = `
 /** Super Likes that count (alias v): by an approved lecturer whose account is active or restricted (D24). Ends in a WHERE clause, so callers append AND conditions. */
 export const VALID_VERIFICATIONS = `FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id WHERE ${countingLecturer('vu')}`;
 
-/** True when the note (alias p) has at least one valid Super Like. */
 export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id)`;
 
 /** Display name of the earliest valid verifier of note p, or NULL (FR2 "Verified by"). */
@@ -186,7 +185,6 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   );
 }
 
-/** Inserts the post, its slides and hashtags in one transaction; returns the new id. */
 export function createNote(authorId: number, n: NoteInput): Promise<number> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ pst_id: number }>(
@@ -200,7 +198,6 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
   });
 }
 
-/** Full replace of the post's fields, slides and hashtags in one transaction. */
 export function replaceNote(id: number, n: NoteInput): Promise<boolean> {
   return inTransaction(async (c) => {
     const { rowCount } = await c.query(

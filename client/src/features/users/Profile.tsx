@@ -5,7 +5,6 @@ import type { Profile as ProfileData } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { LecturerBadge } from '../../components/LecturerBadge';
 
-/** /users/:id shows any user; /profile shows the signed-in user with Edit and the drafts count. */
 export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();

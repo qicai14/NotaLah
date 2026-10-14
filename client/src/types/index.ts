@@ -30,7 +30,6 @@ export interface AdminUser extends Pick<User, 'id' | 'displayName' | 'email' | '
 
 export type Visibility = 'public' | 'contacts';
 
-/** A note as GET /api/notes/:id and the feed return it. */
 export interface Note {
   id: number;
   title: string;
@@ -68,7 +67,6 @@ export interface DraftSummary {
   updatedAt: string;
 }
 
-/** Light note row used by profiles and the saved list. */
 export interface NoteSummary {
   id: number;
   title: string;

@@ -38,7 +38,6 @@ function requiredText(res: Response, value: unknown, label: 'Remark' | 'Reason')
   res.status(400).json({ error: tooLong ? parsed.error.issues[0].message : `${label} is required` });
 }
 
-// ---- report queue (UC20) ----
 adminRouter.get('/reports', async (_req, res) => {
   res.json({ groups: await repo.listOpenReports() });
 });
@@ -53,7 +52,6 @@ adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   res.json({ outcome, resolved });
 });
 
-// ---- account management (UC21) ----
 adminRouter.get('/users', async (req, res) => {
   const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
   res.json({ users: await repo.searchUsers(q) });

@@ -2,7 +2,6 @@ import type { Request, RequestHandler } from 'express';
 import { passport } from './passport';
 import type { AuthUser, Role } from '../users/repository';
 
-/** Rejects the request with 401 unless it carries a valid bearer token for an active account. */
 export const requireAuth: RequestHandler = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
     if (err) return next(err);

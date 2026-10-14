@@ -11,7 +11,6 @@ const btn = 'rounded-md border border-slate-300 px-3 py-1 text-sm disabled:opaci
 
 type VerifyState = Pick<Note, 'verified' | 'verifiedBy' | 'verifiedByMe'>;
 
-/** Like, comments, save, report, lecturer Super Like and the Sprint 4 message placeholder; used by the feed card and the note detail. `onVerify` lets the parent redraw the verified frame. */
 export function NoteActions({ note, commentsLink = true, onVerify }: { note: Note; commentsLink?: boolean; onVerify(v: VerifyState): void }) {
   const { user } = useAuth();
   const canSuperLike = isApprovedLecturer(user) && user && note.author.id !== user.id;

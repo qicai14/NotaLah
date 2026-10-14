@@ -7,7 +7,6 @@ if (!connectionString) throw new Error('TEST_DATABASE_URL is required when NODE_
 export const pool = new Pool({ connectionString });
 pool.on('error', (err) => console.error('pg pool error', err));
 
-/** Runs fn inside BEGIN/COMMIT on one connection; rolls back and rethrows on error. */
 export async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   let broken = false;

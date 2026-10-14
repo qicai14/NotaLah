@@ -10,7 +10,6 @@ export const engagementRouter = Router();
 
 engagementRouter.param('noteId', idParam('Note not found'));
 engagementRouter.param('commentId', idParam('Comment not found'));
-/** The target note id when the viewer may engage with it, else sends 404 and returns undefined. */
 async function target(req: Request, res: Response) {
   const id = Number(req.params.noteId);
   const t = await repo.getTarget(id, me(req).id);
@@ -18,7 +17,6 @@ async function target(req: Request, res: Response) {
   return { id, ...t };
 }
 
-// ---- views and likes ----
 engagementRouter.post('/notes/:noteId/view', requireAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
@@ -38,7 +36,6 @@ engagementRouter.delete('/notes/:noteId/like', requireAuth, async (req, res) => 
   res.json({ liked: false, likes: await repo.unlikeNote(Number(req.params.noteId), me(req).id) }); // no visibility check (D22)
 });
 
-// ---- comments ----
 engagementRouter.get('/notes/:noteId/comments', requireAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
@@ -71,7 +68,6 @@ engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, asy
   res.status(201).json({ comment: { ...comment, body, slideNo, parentId } });
 });
 
-/** Loads the comment for the viewer or sends 404. */
 async function commentOf(req: Request, res: Response) {
   const id = Number(req.params.commentId);
   const c = await repo.getVisibleComment(id, me(req).id);
@@ -101,7 +97,6 @@ engagementRouter.delete('/comments/:commentId/like', requireAuth, async (req, re
   res.json({ liked: false, likes: await repo.unlikeComment(Number(req.params.commentId), me(req).id) }); // no visibility check (D22)
 });
 
-// ---- reports (UC12) ----
 const EVERYONE_REASONS = ['inaccurate', 'inappropriate', 'spam', 'other'];
 const LECTURER_REASONS = ['plagiarism', 'copyright'];
 const reportSchema = z.object({
@@ -126,7 +121,6 @@ engagementRouter.post('/notes/:noteId/report', requireAuth, requireActive, async
   res.status(201).json({ reported: true });
 });
 
-// ---- bookmarks (UC13) ----
 engagementRouter.post('/notes/:noteId/bookmark', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;

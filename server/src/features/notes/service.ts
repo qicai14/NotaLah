@@ -54,7 +54,6 @@ export function parseNoteBody(body: unknown): Parsed {
   const d = parsed.success ? parsed.data : undefined;
   const publishing = obj.status === 'published';
 
-  // Hashtags: strip one leading '#', lowercase, validate, dedupe.
   const tags: string[] = [];
   if (obj.hashtags !== undefined && !Array.isArray(obj.hashtags)) errors.hashtags = 'Hashtags must be a list';
   for (const raw of Array.isArray(obj.hashtags) ? obj.hashtags : []) {

@@ -5,8 +5,6 @@ import { VISIBLE, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
 const VIEW_WINDOW_MINUTES = 30;
 
-// ---- Engagement targets ----------------------------------------------------------------------
-
 export interface Target {
   authorId: number;
   slideCount: number;
@@ -23,7 +21,6 @@ export async function getTarget(noteId: number, viewerId: number): Promise<Targe
   return rows[0];
 }
 
-/** Records a view unless this user already viewed the note within the window. */
 // shortcut: check-then-insert is not atomic, so two simultaneous views can both log; the client guards per mount (D22).
 export async function logView(noteId: number, viewerId: number): Promise<void> {
   await pool.query(
@@ -35,8 +32,6 @@ export async function logView(noteId: number, viewerId: number): Promise<void> {
     [viewerId, noteId, VIEW_WINDOW_MINUTES],
   );
 }
-
-// ---- Likes -----------------------------------------------------------------------------------
 
 const noteLikes = async (noteId: number): Promise<number> =>
   (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "LIKE_T" WHERE lik_pst_id = $1`, [noteId])).rows[0].n;
@@ -55,8 +50,6 @@ export async function unlikeNote(noteId: number, userId: number): Promise<number
   await pool.query(`DELETE FROM "LIKE_T" WHERE lik_usr_id = $1 AND lik_pst_id = $2`, [userId, noteId]);
   return noteLikes(noteId);
 }
-
-// ---- Comments --------------------------------------------------------------------------------
 
 export interface CommentRow {
   id: number;
@@ -175,8 +168,6 @@ export async function unlikeComment(id: number, userId: number): Promise<number>
   return commentLikes(id);
 }
 
-// ---- Reports and bookmarks -------------------------------------------------------------------
-
 /** Returns false when the user already has an open report on the note (partial unique index, SQLSTATE 23505). */
 export async function addReport(noteId: number, reporterId: number, reason: string, details: string | null): Promise<boolean> {
   try {
@@ -203,7 +194,6 @@ export interface SavedNote extends NoteSummary {
   savedAt: Date;
 }
 
-/** Saved notes the viewer can still see, newest saved first. */
 export async function listBookmarks(userId: number): Promise<SavedNote[]> {
   const { rows } = await pool.query<SavedNote>(
     `SELECT ${SUMMARY_COLS}, b.bmk_created_at AS "savedAt"

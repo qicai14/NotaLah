@@ -2,8 +2,6 @@ import { inTransaction, pool } from '../../lib/pool';
 import { NOTE_COLS, NOTE_FROM, type Note } from '../notes/repository';
 import type { LecturerStatus, Role, UserStatus } from '../users/repository';
 
-// ---- Report queue (UC20) ---------------------------------------------------------------------
-
 /** A reported note (full, for the review preview) with its open reports. */
 export interface ReportGroup extends Note {
   reportCount: number;
@@ -50,8 +48,6 @@ export async function resolveReports(noteId: number, adminId: number, outcome: '
   });
 }
 
-// ---- Account management (UC21) --------------------------------------------------------------
-
 export interface AdminUserRow {
   id: number;
   displayName: string;
@@ -68,7 +64,6 @@ const ADMIN_USER_COLS = `u.usr_id AS "id", u.usr_display_name AS "displayName", 
             (SELECT COUNT(*)::INT FROM "REPORT_T" r JOIN "POST_T" rp ON rp.pst_id = r.rpt_pst_id
              WHERE rp.pst_usr_id = u.usr_id AND r.rpt_status = 'upheld') AS "upheldReports"`;
 
-/** Accounts whose name or email contains q (case-insensitive), alphabetical. */
 // shortcut: first 50 matches only; add paging if the user base outgrows a search box.
 export async function searchUsers(q: string): Promise<AdminUserRow[]> {
   const { rows } = await pool.query<AdminUserRow>(

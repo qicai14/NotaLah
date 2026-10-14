@@ -58,7 +58,6 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   return data as T;
 }
 
-/** Message to show for any thrown error: the first field error of an ApiError, else its message, else a friendly fallback. */
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return Object.values(e.errors ?? {})[0] || e.message;
   return 'Could not reach the server. Please try again.';
