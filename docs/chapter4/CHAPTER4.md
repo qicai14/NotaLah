@@ -951,11 +951,30 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC3 | Request id reused or replaced | no X-Request-Id; "abc-123"; "bad id<script>" | Response carries a generated UUID; "abc-123" echoed; a new UUID instead of the unsafe value | | |
 | OPS-TC4 | Secrets are redacted from logs | log a request with a parp_token cookie and a response with a Set-Cookie parp_token | Log output shows [redacted] and never contains a parp_token value | | |
 
+*Table 4.34: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| CLI-TC1 | API calls send the cookie and CSRF header | GET, POST, PUT, PATCH and DELETE through the api wrapper | Every request has credentials include and X-Requested-With parp; bodies carry Content-Type application/json | | |
+| CLI-TC2 | API base URL prefix | VITE_API_URL set to a host; VITE_API_URL empty | Request goes to the host plus /api/notes; to /api/notes when empty | | |
+| CLI-TC3 | Expired session while signed in | 401 on an authenticated call after sign-in, twice | Browser is sent to /login?expired=1 once; both calls reject | | |
+| CLI-TC4 | 401 while signed out | 401 from /auth/me with nobody signed in | Call rejects and there is no redirect, so no loop | | |
+| CLI-TC5 | Server error text is surfaced | 400 with an error message and a field error | Thrown error carries the status, the message and the field errors | | |
+| CLI-TC6 | Auth provider waits for /auth/me | /auth/me still pending, then resolved | Loading text shown, children hidden, then the signed-in page appears | | |
+| CLI-TC7 | Signed-in state from /auth/me | /auth/me returns a student | The user is available to the page | | |
+| CLI-TC8 | Logged out on 401 | /auth/me returns 401 | The user is null and the page renders as signed out | | |
+| CLI-TC9 | Logout success | Sign in, then log out (204) | The user is cleared | | |
+| CLI-TC10 | Logout failure keeps the session | Sign in, then log out and the server returns 500 | The user stays signed in and the error message is thrown to the caller | | |
+| CLI-TC11 | Protected route, signed out | Open a protected route with no session | Redirected to /login; protected content is not shown | | |
+| CLI-TC12 | Protected route, wrong role | A student opens an admin-only route; an admin opens it | Student sees the permission alert and no content; admin sees the content | | |
+| CLI-TC13 | Approved lecturer type guard | Approved lecturer, pending lecturer, rejected lecturer, approved-status student, admin, null, undefined | True only for the approved lecturer | | |
+| CLI-TC14 | Stale fetch response ignored | useFetch path changes from /a to /b before /a answers | The /a response is dropped; data stays empty and loading until /b answers | | |
+
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.34: UAT tester details*
+*Table 4.35: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -963,7 +982,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.35: UAT scenario tasks*
+*Table 4.36: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -982,7 +1001,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.36: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.37: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -992,7 +1011,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.37: UAT feedback and developer response*
+*Table 4.38: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1003,7 +1022,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.38: Ranking weight re-evaluation (NFR5)*
+*Table 4.39: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

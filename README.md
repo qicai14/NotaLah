@@ -24,12 +24,20 @@ email. Clear the password from `.env` afterwards.
 ## Commands
 | Command | Does |
 |---|---|
-| `npm test` | server tests (migrates `parp_test` first) |
+| `npm test` | server tests (migrates `parp_test` first), then client tests |
+| `npm test -w client` | client tests only (no database needed) |
 | `npm run build` / `npm run typecheck` | both workspaces |
 | `npm run db:down` | stop Postgres (data kept in the `parp_pgdata` volume) |
 | `npm run db:rollback -w server` | undo the last migration |
 | `npm run db:status -w server` | list applied migrations |
 | `npm run admin:create -w server` | create or reset the admin from `ADMIN_*` env values |
+
+
+### Client tests
+Vitest in `client/`, named `*.test.ts(x)` beside the code, each name starting with its `CLI-TC` ID. They mock `fetch`, so no
+server or database is needed. Files that render components start with `// @vitest-environment jsdom` and use React Testing
+Library; the rest stay in the faster node environment. Tests check behaviour (text, roles, redirects), not markup, so they
+survive restyling.
 
 ## Operations
 - Logs are one JSON line per event on stdout (pino); silent under `NODE_ENV=test`. Each request logs method, path, status,

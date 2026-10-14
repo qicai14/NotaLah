@@ -673,3 +673,16 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   without a DSN" rule); a shutdown helper module (rejected: one caller).
 - **Tests:** OPS-TC1 to OPS-TC4 (TC4 checks log redaction). The signal handling itself is not unit tested.
 - **Reversibility:** Easy (remove the middleware, logger and handlers; no data or schema change).
+
+## D42 - Client test foundation: jsdom and React Testing Library (R26 part 1, 15 Oct 2026)
+- **Context:** the client had one logic test, and none of the auth, API-wrapper or route-guard behaviour added by D35 and the R1/R25 fixes.
+- **Decision:** dev dependencies `jsdom` 30.1.1, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2 (RTL peer) and
+  `@testing-library/user-event` 14.6.7, all exact and over two weeks old (newer patch releases of jsdom and user-event were not).
+  The default Vitest environment stays node; only files that render React start with `// @vitest-environment jsdom`, so pure
+  logic tests (api.ts, roles.ts, hashtags.ts) do not pay for jsdom. `fetch` is stubbed per test; nothing reaches a server.
+  Tests are behaviour-first (visible text, roles, redirects, thrown errors) and avoid class names and DOM structure, because the
+  frontend redesign is pending and should not break them. Cases are CLI-TC1 to CLI-TC14 in Chapter 4.5.
+- **Alternatives:** happy-dom (rejected: less complete, RTL and jsdom are the documented pair); snapshot tests (rejected: break on
+  every redesign); a Vitest workspace or `environmentMatchGlobs` (rejected: a per-file pragma is one line and explicit).
+- **Next:** Playwright end-to-end tests run against the real app after the redesign (R26 part 2).
+- **Reversibility:** Easy (dev dependencies and test files only; no runtime code changed).
