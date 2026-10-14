@@ -7,6 +7,7 @@ import { useFetch } from '../../lib/useFetch';
 import type { DraftSummary } from '../../types';
 
 export default function Drafts() {
+  // shortcut: first 50 drafts only (API default page); "load more" with nextCursor comes with the redesign
   const { data, setData, error, loading } = useFetch<{ notes: DraftSummary[] }>('/notes/drafts');
   const [actionError, setActionError] = useState<string | null>(null);
 

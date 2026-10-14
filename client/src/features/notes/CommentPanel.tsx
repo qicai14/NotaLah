@@ -134,7 +134,8 @@ function CommentRow({ c, pinned, canReply, replying, onReply, onChanged, onError
 }
 
 export function CommentPanel({ noteId, slideCount }: { noteId: number; slideCount: number }) {
-  const { data, error, loading, reload } = useFetch<{ comments: Comment[] }>(`/notes/${noteId}/comments`);
+  // shortcut: first 100 top-level comments only (the API maximum); "load more" with nextCursor comes with the redesign
+  const { data, error, loading, reload } = useFetch<{ comments: Comment[] }>(`/notes/${noteId}/comments?limit=100`);
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const common = { onChanged: () => (setActionError(null), reload()), onError: setActionError };
