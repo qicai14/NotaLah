@@ -52,12 +52,10 @@ has been reviewed by you yet.**
 - Latest backup: `FYP_Submissions/backups/…_20261013-2345.docx`.
 - **Report length is now the main writing risk:** about 39k words of prose against an 18-20k standard (open questions 7, 9, 11).
 
-## Needs your decision
-1. **D2-D4 scope cuts are to be reversed** (your scope rule, 14 Oct): FR15 term filter, FR17 background audio, FR18 annotation.
-2. **D13 token storage:** the JWT sits in `sessionStorage`, while IR §2.3.6.2 cites Dalimunthe et al. (2022) and promises an httpOnly cookie.
-3. D6 (admin approval of lecturers, new FR19), D9 (contacts via accepted message request), D17 (programme as free text).
-4. Report length (open questions 7/9/11) and demo hosting (open question 8).
-5. Everything else in `docs/DECISIONS.md` (D1-D28) and `docs/OPEN_QUESTIONS.md` (1-11).
+## Decisions (reviewed 14 Oct)
+All of D1-D28 and the open questions were decided with the user on 14 Oct (see the "User review" line under each
+decision, D29, and `docs/OPEN_QUESTIONS.md`). Reversed: D3, D4, D9, D13 token storage. Modified: D2, D5, D7, D17, D24.
+The resulting work is the Realign backlog (R0-R16) in `../PLAN.md`. Deadline is now end Dec 2026 / early Jan 2027.
 
 ## Broken or half-done
 - **Dev database `parp` not migrated and no admin exists.** Setup: `npm run db:migrate -w server`, add `ADMIN_EMAIL`,
