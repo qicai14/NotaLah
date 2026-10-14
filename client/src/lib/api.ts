@@ -22,7 +22,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   const headers: Record<string, string> = { 'X-Requested-With': 'parp' };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api${path}`, {
     method: options.method ?? 'GET',
     headers,
     credentials: 'include',

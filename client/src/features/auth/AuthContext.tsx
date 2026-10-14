@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return next.user;
     },
     async logout() {
-      await api('/auth/logout', { method: 'POST' }).catch(() => {});
+      await api('/auth/logout', { method: 'POST' }); // on failure the cookie may still be live, so stay signed in
       update(null);
     },
     setUser(next) {
@@ -61,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   };
 
-  // Render nothing until /me settles, so protected routes do not bounce a signed-in user to /login.
-  if (!loaded) return null;
+  // Wait for /me to settle, so protected routes do not bounce a signed-in user to /login.
+  if (!loaded) return <p>Loading…</p>;
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
