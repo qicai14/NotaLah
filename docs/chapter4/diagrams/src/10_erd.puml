@@ -187,6 +187,7 @@ entity "COLLABORATOR_T" as CLB {
   * clb_role : VARCHAR(4)
   * clb_added_by : INTEGER <<FK>>
   * clb_created_at : TIMESTAMPTZ
+  clb_edited_at : TIMESTAMPTZ
 }
 entity "SHARE_LINK_T" as SHL {
   * shl_id : INTEGER <<PK>>

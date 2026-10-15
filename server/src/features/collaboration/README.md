@@ -13,11 +13,13 @@ collaborator read rule, `coauthors`, the edited-since-verification rule) live in
 | `POST /api/notes/:id/links` | owner | `{role}`; 201 `{role, token, url}`; revokes the previous link of that role; only the SHA-256 is stored |
 | `DELETE /api/notes/:id/links/:role` | owner | 204 |
 | `GET /api/share/:token` | anyone, IP-limited | view link: `{role: 'view', note}` for guests too; edit link: 401 for guests, else `{role: 'edit', note}`; 404 bad, revoked, hidden or suspended |
-| `POST /api/share/:token` | signed-in, active | joins an edit link as an edit collaborator; 400 for a view link |
+| `POST /api/share/:token` | signed-in, active | joins an edit link as an edit collaborator; 400 for a view link; 403 while the author is not active |
 | `POST /api/notes/:id/requests` | anyone who can read the note, not owner or editor | `{message?}` (max 300); 201; 409 duplicate pending or already an editor |
 | `POST /api/notes/:id/requests/:requestId` | owner | `{decision: 'approve'|'decline', role?}` (role default edit); 409 already decided |
 | `GET /api/notes/shared` | signed-in | keyset page of notes the user collaborates on, with role and owner |
 | `POST` / `DELETE /api/notes/:id/lock` | owner, editor | take or renew for `lockTtlSeconds` (120 s), 423 with `lockedBy` when someone else holds it; release |
 
-`PUT /api/notes/:id` accepts edit collaborators (content only, `baseUpdatedAt` required, 409 stale, 423 locked).
+`PUT /api/notes/:id` accepts edit collaborators (content only, `baseUpdatedAt` required, 409 stale, 423 locked, 403 while
+the author is not active). An editor's first save sets `clb_edited_at`; only then are they credited in `coauthors` and
+reach their followers' Following feed. `GET /api/notes/:id` adds `myRole`. Co-authors count as authors for like and verify.
 Test table: `COL-TC*` in `docs/chapter4/4.5_test_cases.md`.

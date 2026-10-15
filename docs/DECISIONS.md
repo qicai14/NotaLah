@@ -808,6 +808,19 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   is nothing to guard. Removing a collaborator also releases their lock. The lock TTL (120 s), token size and request
   message limit live in `collaboration/config.ts`, not the ranking config. R8 notifications will read the pending
   requests and `editedSinceVerification`; there is no separate list endpoint for lecturers yet.
-- **Tests:** COL-TC1 to COL-TC18.
+- **Review fixes (same day):**
+  - Credit only after the first edit: `clb_edited_at` is set on an editor's first successful save. `coauthors` and the
+    Following-feed reach use only edit collaborators with that stamp, so an owner cannot put someone's name on a note or
+    push it to their followers by inviting them. Access itself is unchanged: an invited editor can read and edit at once.
+  - Edit collaborators count as authors for like (400) and Super Like (409), so a co-author cannot raise E or V of their
+    own work. View collaborators can still like.
+  - The request log replaces `/api/share/<token>` with `/api/share/[token]` (`logPath`), since a token grants access.
+  - `GET /api/notes/:id` (and the share-link GET) add `myRole` (`owner`, `edit`, `view` or null) for the editor UI; the
+    feed does not carry it.
+  - Co-authors may edit, lock or join an edit link only while the author is `active` (UC21); reading is unchanged.
+    `replaceNote` re-checks the editor's role under `FOR UPDATE`, link regeneration locks the note row so concurrent
+    requests cannot break the one-active-link index, a downgrade to view frees that user's lock, and a re-confirmation
+    updates the remark when one is sent.
+- **Tests:** COL-TC1 to COL-TC24, OPS-TC5.
 - **Reversibility:** Medium. The migration has a down step; dropping the feature means reverting the PUT role check,
   `VALID_VERIFICATIONS` and the Following-feed clause.
