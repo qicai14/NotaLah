@@ -746,3 +746,24 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **UC17 "Chat with Friend"** and **UC18 group chats limited to friends** confirmed.
 - **AI assistant (D33):** provider Groq, model `openai/gpt-oss-120b`, configured by the user in `.env`.
 - The decisions logged without the user overnight (D30-D42) are accepted.
+
+## D44 - Collaboration (R30) and guest browsing (R31) specs (15 Oct 2026, user interview)
+**R30 collaboration**
+- Any note can be shared, draft or published. An edit never resets `pst_published_at`; engagement stays with the note;
+  a content edit after a Super Like marks the note "edited since verification" and removes V until the lecturer
+  re-confirms (lecturer notified through R8); hashtag edits change M at once; the note also appears in the Following
+  feed of each co-author's followers.
+- Owner access options: view link and edit link (random tokens, revocable and regenerable), invite specific users with
+  view or edit, and viewer requests to collaborate that the owner approves or declines from notifications. A view link
+  opens a draft or friends-only note for that token only.
+- Co-authors edit content (slides, hashtags, music) only; the owner alone publishes, deletes, changes visibility and
+  manages access. Co-authors are credited on the card.
+- One editor at a time (soft lock plus the `baseUpdatedAt` 409 check). Real-time co-editing (Yjs over Socket.io) is a
+  stretch goal for the December buffer; if unbuilt it goes to Chapter 7 as future work.
+
+**R31 guest browsing**
+- Signed-out visitors land on a short Welcome page (Browse as guest, Log in, Register).
+- Guests can read the Feed (public notes only, M = 0, snapshot keyed by IP and asOf), open a note with its comments,
+  view public profiles and search public notes. This reverses D43's "search prompts login".
+- Like, save, comment, report, follow, message and create open a Log in / Register sheet that returns the visitor to
+  the same note afterwards. Friends-only and private notes never reach guests; guest endpoints are rate-limited by IP.
