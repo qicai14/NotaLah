@@ -761,6 +761,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC18 | Register with a programme outside the catalogue | programme "Underwater Basket Weaving" | 400 "Choose a programme from the list"; no account created | | |
 | AUTH-TC19 | Shared rate-limit store | two store instances; key k hit twice, another key once; one decrement; window start moved back 61 s; reset; purge; a test limiter of 2 per minute on the store | Hits 1 then 2 across instances (reset time about a minute ahead); the other key counts 1; decrement leaves 1; next hit starts a new window at 1; reset deletes the row; purge removes the expired counter; the third request to the test limiter gets 429 | | |
 | AUTH-TC20 | Rate-limit key ignores invalid tokens | auth cookie from signToken for user 42; a token signed with another secret; an expired token; no cookie | tokenSubject returns "42" for the valid cookie and null for the forged, expired and missing ones | | |
+| AUTH-TC21 | Guest reads are rate-limited by IP | guest GET /api/users/:id; the guest counter set to the limit (120 per minute); the same request again, then signed in | 200; 429 "Too many requests. Log in or try again in a minute."; signed-in request 200 (not counted) | | |
 
 *Table 4.25: Note editor and publishing module test cases (NOTE)*
 
@@ -792,6 +793,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC25 | Template choices | template "fancy"; "howto"; none | 400 "Invalid template"; stored as howto; defaults to plain | | |
 | NOTE-TC24 | Hashtag input rules (client) | Add `#Algebra, maths, Algebra`, then an invalid tag, then a sixth tag | `#` stripped, lowercased, duplicates ignored, invalid tag and a sixth tag rejected with a message | | |
 | NOTE-TC26 | Drafts keyset paging | 5 drafts with one shared edit time; GET /api/notes/drafts?limit=2, following nextCursor; limit 101 | Pages of 2, 2 and 1 list every draft once, highest id first; nextCursor null on the last page; 400 for limit 101 | | |
+| NOTE-TC27 | Guest opens notes | no cookie: a public note, a contacts-only note, a hidden note, a draft, a note by a suspended author; `parp_token=garbage` | Public note 200 with liked and bookmarked false; 404 for each of the others; an invalid cookie is treated as a guest (200 public, 404 contacts-only); the author's friend still gets the contacts-only note | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -801,7 +803,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC2 | Update profile with a bio that is too long | bio of 301 characters | 400 "Bio must be at most 300 characters" | | |
 | USR-TC3 | Update profile with valid details | displayName "Ann Lee", programme, bio "Hello" | 200; values stored and shown on the profile | | |
 | USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, friend (mutual follow), owner | Stranger sees the public note only; friend also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
-| USR-TC5 | View unknown user or without token | user 99999; no Authorization header | 404; 401 | | |
+| USR-TC5 | View unknown user; edit profile without token | user 99999; PUT /api/users/me with no cookie | 404; 401 | | |
 | USR-TC6 | Update profile with over-long fields | displayName 51 characters, programme 101 characters | 400 naming both limits | | |
 | USR-TC7 | Update profile with empty optional fields | programme "", bio "  " | 200; stored as NULL | | |
 | USR-TC8 | View a deleted account | user with status deleted | 404 | | |
@@ -822,6 +824,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC23 | Save a profile whose stored programme left the catalogue | user holds "Legacy Programme"; PUT with that programme and a new bio; another user sends the same programme | 200 and programme kept; 400 for the other user | | |
 | USR-TC24 | Follower paging with identical follow times | 23 followers inserted in one statement (same timestamp); GET followers, then with nextCursor | Pages 1 and 2 together list every follower exactly once, ordered by user id descending; nextCursor null after page 2 | | |
 | USR-TC25 | Profile notes paging | 52 published notes with one shared publish time; GET /api/users/:id, then GET /api/users/:id/notes?cursor=notesNextCursor; unknown user; cursor "x" | Profile embeds 50 notes and a notesNextCursor; the follow-up returns the last 2 with nextCursor null, all 52 in id order descending; 404 for the unknown user; 400 for the bad cursor | | |
+| USR-TC26 | Guest views a profile | no cookie: GET /api/users/:id and /api/users/:id/notes of an author with a public and a contacts-only note; user 99999 | 200 with follower and following counts, followedByMe false, no draftCount, and only the public note in both lists; 404; a signed-in friend sees both notes | | |
 
 *Table 4.27: Ranking and feed module test cases (RANK)*
 
@@ -836,7 +839,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC7 | Composite score reproduces IR worked example | E, R, V, M values of the five posts in Table 10 (IR §2.3.4.8) | Scores 0.860, 0.590, 0.544, 0.336, 0.248 (±0.002, as the table's inputs are rounded) in that order | | |
 | RANK-TC8 | Weights read from configuration | change w3 in config to 0.40, w1 to 0.20 | Scores change accordingly without code change; weights that do not sum to 1 are rejected at start-up | | |
 | RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-friend | Only published, permitted posts returned | | |
-| RANK-TC10 | Feed request without token and with invalid page | no token; page = -1 | 401; 400 "Invalid page" | | |
+| RANK-TC10 | Feed request with an invalid page, signed out and signed in | page = -1, 0, "abc", 1.5 | 400 "Invalid page" each time | | |
 | RANK-TC11 | Verified student note outranks an identical unverified one | four student notes of equal age and tags; Super Liked by an approved active lecturer, by a restricted one, by a suspended one, and none | The active and restricted lecturers' notes first with V = 1.0 and a score higher by w3; the suspended lecturer's and the plain note have V = 0 | | |
 | RANK-TC12 | Interest vector weighting, decay and normalisation | viewer view, like and comment today on #viewed, #liked, #commented; comment 14 days ago on #older; comment 91 days ago on #ancient | #commented 1.0, #liked 0.6, #viewed 0.2, #older 0.5, #ancient absent; maximum weight 1.0; no history gives an empty vector | | |
 | RANK-TC13 | Verified, relevant note surfaced ahead of popular irrelevant note (NFR3) | viewer interested in #sql; verified #sql note 24 h old with no likes; unverified #art note with 10 likes | #sql note ranked above the #art note although its E is lower | | |
@@ -855,6 +858,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC26 | Snapshots per viewer are capped | another viewer loads the feed once; the viewer loads page 1 six times (cap 4) | The viewer keeps exactly the 4 newest snapshots (by asOf); the other viewer keeps its 1 | | |
 | RANK-TC27 | Hidden note never leaks through a snapshot | 20 notes; page 1, then page 2 with asOf; the first note of page 2 hidden; page 2 again with the same asOf | The hidden note is not returned; page 2 lists the other 9 notes | | |
 | RANK-TC28 | Author's own hidden note never leaks through a snapshot | 20 notes by the viewer; page 1, then page 2 with asOf; the first note of page 2 hidden by a moderator; page 2 again with the same asOf | The hidden note is not returned to its author; page 2 lists the other 9 notes | | |
+| RANK-TC29 | Guest feed shows only public notes with M = 0 | no cookie; a public note (hashtag #sql, liked by another user who interacted with it), a contacts-only, hidden, draft and suspended-author note; page 2 with asOf | Only the public note, with liked and bookmarked false and component M = 0; page 2 empty; no snapshot row stored; the signed-in friend still sees both of the author's visible notes, has M > 0 and gets one snapshot | | |
+| RANK-TC30 | Guest requests the Following feed | no cookie; GET /api/feed?tab=following | 401 "Unauthorized" | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
@@ -879,6 +884,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC15 | Delete comment | non-author deletes; author deletes a comment with a reply and one without | 403; parent shown as "[deleted]" with its reply; the other omitted and a second delete gives 404 | | |
 | ENG-TC18 | Comments keyset paging | 5 student comments with one shared time, one liked, one deleted with no replies, one with a reply; a lecturer comment; limit 2 following nextCursor; no cursor; cursors "abc", "1_2", limits 0, 101, "x" | Pages of 2, 2, 1: lecturer, liked, then the rest by id, with the reply under its comment and the deleted one omitted; without a cursor all 5 and nextCursor null; 400 for each bad cursor or limit | | |
 | ENG-TC19 | Saved notes keyset paging | 5 bookmarks with one shared save time; GET /api/bookmarks?limit=2 following nextCursor; cursor "1" | Pages of 2, 2, 1 list every note once, highest id first; 400 for the bad cursor | | |
+| ENG-TC20 | Guest reads comments; views are not logged | no cookie: comments of a public note with one reply, and of the contacts-only, hidden, draft and suspended-author notes; POST view | 200 with the comment, likedByMe false, and its reply; 404 for each of the others; view 401 and no interaction row added | | |
+| ENG-TC21 | Guest writes are refused | no cookie, with the CSRF header: like and unlike, save and unsave, comment, delete and like a comment, report, Super Like, follow and unfollow, create, edit and delete a note, edit profile; GET saved notes, drafts and follow lists; one like without the CSRF header | 401 for every write and list; 403 without the CSRF header; no like, bookmark or report rows created | | |
 
 *Table 4.29: Lecturer verification module test cases (VER)*
 
