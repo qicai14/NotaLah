@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
+import { replaceNote } from '../../src/features/notes/repository';
 import { getCandidates } from '../../src/features/ranking/repository';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, CSRF, follow, insertNote, insertUser, truncateAll } from '../helpers';
@@ -295,16 +296,18 @@ describe('Collaboration (R30)', () => {
   it('COL-TC15: a slide edit removes V until the lecturer re-confirms', async () => {
     const c = await cast('published');
     const lect = await lecturer();
-    expect((await api.post(lect, `/api/notes/${c.note}/verify`)).status).toBe(201);
+    expect((await api.post(lect, `/api/notes/${c.note}/verify`, { remark: 'Accurate' })).status).toBe(201);
     const verifiedIn = async () => (await getCandidates(c.stranger, await dbNow())).find((x) => x.id === c.note)!.verified;
     expect(await verifiedIn()).toBe(true);
 
-    await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { slides: ['<p>new content</p>'] }));
+    await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { slides: ['<p>new content</p>'] })).expect(200);
     const after = (await api.get(c.stranger, `/api/notes/${c.note}`)).body.note;
     expect(after).toMatchObject({ verified: false, verifiedBy: null, editedSinceVerification: true });
     expect(await verifiedIn()).toBe(false);
 
-    expect((await api.post(lect, `/api/notes/${c.note}/verify`)).status).toBe(200);
+    const again = await api.post(lect, `/api/notes/${c.note}/verify`, { remark: 'Checked the new slide' });
+    expect(again.status).toBe(200);
+    expect(again.body.remark).toBe('Checked the new slide');
     const back = (await api.get(c.stranger, `/api/notes/${c.note}`)).body.note;
     expect(back).toMatchObject({ verified: true, editedSinceVerification: false });
     expect(await verifiedIn()).toBe(true);
@@ -313,46 +316,130 @@ describe('Collaboration (R30)', () => {
   it('COL-TC16: hashtag-only edits keep V; title edits drop it; no edit moves pst_published_at', async () => {
     const c = await cast('published');
     const lect = await lecturer();
-    await api.post(lect, `/api/notes/${c.note}/verify`);
+    await api.post(lect, `/api/notes/${c.note}/verify`).expect(201);
     const published = async () =>
       (await pool.query(`SELECT pst_published_at FROM "POST_T" WHERE pst_id = $1`, [c.note])).rows[0].pst_published_at.getTime();
     const before = await published();
-    await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { hashtags: ['retagged'] }));
+    await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { hashtags: ['retagged'] })).expect(200);
     const tagged = (await api.get(c.stranger, `/api/notes/${c.note}`)).body.note;
     expect(tagged).toMatchObject({ hashtags: ['retagged'], verified: true, editedSinceVerification: false });
-    await api.put(c.owner, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { title: 'Renamed' }));
+    await api.put(c.owner, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { title: 'Renamed' })).expect(200);
     expect((await api.get(c.stranger, `/api/notes/${c.note}`)).body.note.verified).toBe(false);
     expect(await published()).toBe(before);
 
     const draft = await cast('draft');
-    await api.put(draft.editor, `/api/notes/${draft.note}`, await editBody(draft.owner, draft.note, { title: 'Draft edit' }));
+    await api.put(draft.editor, `/api/notes/${draft.note}`, await editBody(draft.owner, draft.note, { title: 'Draft edit' })).expect(200);
     const { rows } = await pool.query(`SELECT pst_content_edited_at, pst_published_at FROM "POST_T" WHERE pst_id = $1`, [draft.note]);
     expect(rows[0]).toEqual({ pst_content_edited_at: null, pst_published_at: null });
   });
 
-  it('COL-TC17: the Following feed includes notes co-authored by a followed user, not viewed ones', async () => {
+  it('COL-TC17: the Following feed reaches co-authors\' followers only after their first edit, and lists a note once', async () => {
     const c = await cast('published');
     const fan = await insertUser();
     await follow(fan, c.editor);
     const viewerFan = await insertUser();
     await follow(viewerFan, c.viewer);
     const ids = async (who: number) => (await api.get(who, '/api/feed?tab=following')).body.items.map((n: { id: number }) => n.id);
+    expect(await ids(fan)).toEqual([]); // invited but has not edited: no reach
+    await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { title: 'Co-authored' })).expect(200);
     expect(await ids(fan)).toEqual([c.note]);
     expect(await ids(viewerFan)).toEqual([]);
+    await follow(fan, c.owner);
+    expect(await ids(fan)).toEqual([c.note]); // followed as author and co-author: listed once
+
     const contacts = await cast('published', 'contacts');
     await follow(fan, contacts.editor);
+    await api.put(contacts.editor, `/api/notes/${contacts.note}`, await editBody(contacts.owner, contacts.note, { title: 'Edited' })).expect(200);
     expect(await ids(fan)).toEqual([c.note]); // a friends-only note still needs friendship with the owner
     await befriend(fan, contacts.owner);
-    expect(await ids(fan)).toEqual(expect.arrayContaining([c.note, contacts.note]));
+    expect((await ids(fan)).sort()).toEqual([c.note, contacts.note].sort());
   });
 
-  it('COL-TC18: note payloads credit edit collaborators as co-authors', async () => {
+  it('COL-TC18: co-author credit starts at the first edit; the detail reports the viewer\'s role', async () => {
     const c = await cast('published');
+    const detail = async (who: Who) => (await api.get(who, `/api/notes/${c.note}`)).body.note;
+    expect((await detail(null)).coauthors).toEqual([]); // invited only: no credit
+    await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { hashtags: ['tagged'] })).expect(200);
     const coauthors = [{ id: c.editor, displayName: 'Editor' }];
-    expect((await api.get(null, `/api/notes/${c.note}`)).body.note.coauthors).toEqual(coauthors);
+    expect((await detail(null)).coauthors).toEqual(coauthors);
     const feed = (await api.get(c.stranger, '/api/feed')).body.items.find((n: { id: number }) => n.id === c.note);
     expect(feed.coauthors).toEqual(coauthors);
+    expect(feed).not.toHaveProperty('myRole');
+    expect([await detail(c.owner), await detail(c.editor), await detail(c.viewer), await detail(c.stranger), await detail(null)]
+      .map((n) => n.myRole)).toEqual(['owner', 'edit', 'view', null, null]);
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [c.editor]);
-    expect((await api.get(null, `/api/notes/${c.note}`)).body.note.coauthors).toEqual([]);
+    expect((await detail(null)).coauthors).toEqual([]);
+  });
+
+  it('COL-TC19: an edit collaborator cannot like or Super Like the note they co-author', async () => {
+    const owner = await insertUser();
+    const lectEditor = await lecturer();
+    const note = await insertNote(owner);
+    await addCollaborator(note, lectEditor, 'edit', owner);
+    const like = await api.post(lectEditor, `/api/notes/${note}/like`);
+    expect(like.status).toBe(400);
+    expect(like.body.error).toBe('You cannot like your own note');
+    const verify = await api.post(lectEditor, `/api/notes/${note}/verify`);
+    expect(verify.status).toBe(409);
+    expect(verify.body.error).toBe('Cannot verify own note');
+  });
+
+  it('COL-TC20: a request id from another note cannot be decided (IDOR)', async () => {
+    const a = await cast('published');
+    const b = await cast('published');
+    const rid = (await api.post(b.stranger, `/api/notes/${b.note}/requests`)).body.id;
+    expect((await api.post(a.owner, `/api/notes/${a.note}/requests/${rid}`, { decision: 'approve' })).status).toBe(404);
+    const { rows } = await pool.query(`SELECT crq_status FROM "COLLAB_REQUEST_T" WHERE crq_id = $1`, [rid]);
+    expect(rows[0].crq_status).toBe('pending');
+    expect(await collaborators(a.note)).toHaveLength(2);
+  });
+
+  it('COL-TC21: V stays on a never-edited note and on a save that resends unchanged formatted slides', async () => {
+    const owner = await insertUser();
+    const editor = await insertUser();
+    const lect = await lecturer();
+    const id = (await api.post(owner, '/api/notes', {
+      title: 'Rich', slides: ['<h2>Heading</h2><p><strong>bold</strong> and <em>em</em></p>', '<ul><li>a</li><li>b</li></ul>'],
+      moduleId: (await pool.query(`SELECT mod_id FROM "MODULE_T" ORDER BY mod_id LIMIT 1`)).rows[0].mod_id,
+      hashtags: ['rich'], status: 'published', visibility: 'public',
+    })).body.note.id;
+    await addCollaborator(id, editor, 'edit', owner);
+    await api.post(lect, `/api/notes/${id}/verify`).expect(201);
+    await api.post(editor, `/api/notes/${id}/lock`).expect(200);
+    expect((await api.get(null, `/api/notes/${id}`)).body.note).toMatchObject({ verified: true, editedSinceVerification: false });
+    await api.put(editor, `/api/notes/${id}`, await editBody(owner, id, { hashtags: ['rich', 'retagged'] })).expect(200);
+    const { rows } = await pool.query(`SELECT pst_content_edited_at FROM "POST_T" WHERE pst_id = $1`, [id]);
+    expect(rows[0].pst_content_edited_at).toBeNull();
+    expect((await api.get(null, `/api/notes/${id}`)).body.note.verified).toBe(true);
+  });
+
+  it('COL-TC22: downgrading an editor frees their lock, and a lost edit role is re-checked inside the save', async () => {
+    const c = await cast();
+    await api.post(c.editor, `/api/notes/${c.note}/lock`).expect(200);
+    await api.put(c.owner, `/api/notes/${c.note}/collaborators/${c.editor}`, { role: 'view' }).expect(200);
+    expect((await api.post(c.owner, `/api/notes/${c.note}/lock`)).status).toBe(200);
+    const input = { title: 'x', template: 'plain', slides: [], moduleId: null, hashtags: [], status: 'draft' as const, visibility: null };
+    expect(await replaceNote(c.note, input, c.editor, null)).toBe('forbidden');
+    expect(await replaceNote(c.note, input, c.stranger, null)).toBe('forbidden');
+  });
+
+  it('COL-TC23: co-authors cannot edit, lock or join while the author is restricted; reading still works', async () => {
+    const c = await cast();
+    const { token } = (await api.post(c.owner, `/api/notes/${c.note}/links`, { role: 'edit' })).body;
+    const body = await editBody(c.owner, c.note);
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'restricted' WHERE usr_id = $1`, [c.owner]);
+    expect((await api.put(c.editor, `/api/notes/${c.note}`, body)).status).toBe(403);
+    expect((await api.post(c.editor, `/api/notes/${c.note}/lock`)).status).toBe(403);
+    expect((await api.post(c.stranger, `/api/share/${token}`)).status).toBe(403);
+    expect((await api.get(c.editor, `/api/notes/${c.note}`)).status).toBe(200);
+    expect((await api.get(c.stranger, `/api/share/${token}`)).status).toBe(200);
+  });
+
+  it('COL-TC24: concurrent link regenerations all succeed and leave one active link', async () => {
+    const c = await cast();
+    const results = await Promise.all(Array.from({ length: 5 }, () => api.post(c.owner, `/api/notes/${c.note}/links`, { role: 'view' })));
+    expect(results.map((r) => r.status)).toEqual([201, 201, 201, 201, 201]);
+    const { rows } = await pool.query(`SELECT COUNT(*)::INT AS n FROM "SHARE_LINK_T" WHERE shl_pst_id = $1 AND shl_revoked_at IS NULL`, [c.note]);
+    expect(rows[0].n).toBe(1);
   });
 });
