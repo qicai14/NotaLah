@@ -324,7 +324,7 @@ export function block(blockerId: number, blockedId: number): Promise<'created' |
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ id: number; role: Role; status: UserStatus }>(
       `SELECT usr_id AS "id", usr_role AS "role", usr_status AS "status" FROM "USER_T"
-       WHERE usr_id IN ($1, $2) ORDER BY usr_id FOR UPDATE`,
+       WHERE usr_id IN ($1, $2) ORDER BY usr_id FOR NO KEY UPDATE`,
       [blockerId, blockedId],
     );
     const target = rows.find((r) => r.id === blockedId);
