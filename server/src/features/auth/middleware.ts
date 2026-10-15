@@ -12,11 +12,17 @@ export const requireAuth: RequestHandler = (req, res, next) => {
   })(req, res, next);
 };
 
-/** For guest-readable GETs (R31, D44): a valid cookie attaches the user; a missing, invalid or expired one makes a guest, rate-limited by IP. */
+/**
+ * For guest-readable GETs (R31, D44): a valid cookie attaches the user; a missing, invalid or expired one makes a guest,
+ * rate-limited by IP. `X-Viewer: guest` lets a client that thinks it is signed in notice its session expired (D45).
+ */
 export const optionalAuth: RequestHandler = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
     if (err) return next(err);
-    if (!user) return guestReadLimiter(req, res, next);
+    if (!user) {
+      res.set('X-Viewer', 'guest');
+      return guestReadLimiter(req, res, next);
+    }
     req.user = user;
     next();
   })(req, res, next);

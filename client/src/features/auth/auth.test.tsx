@@ -29,7 +29,7 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string) => {
       const { status, body } = await (routes[url.replace('/api', '')] ?? (() => ({ status: 404 })))();
-      return { status, ok: status < 400, json: () => Promise.resolve(body ?? {}) };
+      return { status, ok: status < 400, headers: new Headers(), json: () => Promise.resolve(body ?? {}) };
     }),
   );
 });
