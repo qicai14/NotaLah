@@ -11,6 +11,7 @@ CREATE TABLE "COLLABORATOR_T" (
     clb_role       VARCHAR(4)  NOT NULL CHECK (clb_role IN ('view', 'edit')),
     clb_added_by   INTEGER     NOT NULL REFERENCES "USER_T" (usr_id),
     clb_created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    clb_edited_at  TIMESTAMPTZ,
     PRIMARY KEY (clb_pst_id, clb_usr_id)
 );
 CREATE INDEX collaborator_user_idx ON "COLLABORATOR_T" (clb_usr_id);

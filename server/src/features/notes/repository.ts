@@ -1,7 +1,7 @@
 import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
-import { approvedLecturer, countingLecturer, friends } from '../users/repository';
+import { approvedLecturer, countingLecturer, friends, userRef } from '../users/repository';
 import type { NoteInput } from './service';
 
 /** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
@@ -19,6 +19,12 @@ export const SHAREABLE = `(p.pst_status IN ('draft', 'published')
 
 /** SQL: the collaborator role ('view' | 'edit') of user $1 on post p, or NULL when there is none or p is not SHAREABLE. */
 export const COLLAB_ROLE = `(SELECT c.clb_role FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND ${SHAREABLE})`;
+
+/** SQL (alias c = COLLABORATOR_T): an edit collaborator who has saved the note at least once, so an invitation alone never credits anyone or reaches their followers (D46). */
+export const CREDITED_EDITOR = `(c.clb_role = 'edit' AND c.clb_edited_at IS NOT NULL)`;
+
+/** SQL: the viewer's access to post p ($1 = viewer id): 'owner', a collaborator role, or NULL. */
+const MY_ROLE = `CASE WHEN p.pst_usr_id = $1 THEN 'owner' ELSE ${COLLAB_ROLE} END`;
 
 /** SQL: viewer $1 may read post p, as anyone it is VISIBLE to or as a collaborator (R30). */
 const READABLE = `(${VISIBLE} OR ${COLLAB_ROLE} IS NOT NULL)`;
@@ -54,10 +60,9 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
                    FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
                            'isVerifiedLecturer', ${approvedLecturer('u')}) AS "author",
-         COALESCE((SELECT json_agg(json_build_object('id', cu.usr_id, 'displayName', cu.usr_display_name)
-                                   ORDER BY c.clb_created_at, cu.usr_id)
+         COALESCE((SELECT json_agg(${userRef('cu')} ORDER BY c.clb_edited_at, cu.usr_id)
                    FROM "COLLABORATOR_T" c JOIN "USER_T" cu ON cu.usr_id = c.clb_usr_id
-                   WHERE c.clb_pst_id = p.pst_id AND c.clb_role = 'edit' AND cu.usr_status IN ('active', 'restricted')),
+                   WHERE c.clb_pst_id = p.pst_id AND ${CREDITED_EDITOR} AND cu.usr_status IN ('active', 'restricted')),
                   '[]'::JSON) AS "coauthors",
          p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"`;
 
@@ -108,9 +113,11 @@ export interface NoteWithEngagement extends Note {
  * The note as the API returns it, or undefined when it does not exist or the viewer may not read it. `viaLink` is for a
  * caller that already resolved a share link to this note: any SHAREABLE note is then returned (R30).
  */
-export async function getVisibleNote(id: number, viewerId: number, viaLink = false): Promise<NoteWithEngagement | undefined> {
-  const { rows } = await pool.query<NoteWithEngagement>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : READABLE}`,
+export async function getVisibleNote(
+  id: number, viewerId: number, viaLink = false,
+): Promise<(NoteWithEngagement & { myRole: NoteRole | null }) | undefined> {
+  const { rows } = await pool.query<NoteWithEngagement & { myRole: NoteRole | null }>(
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole" ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : READABLE}`,
     [viewerId, id],
   );
   return rows[0];
@@ -141,13 +148,20 @@ export async function listDrafts(authorId: number, { cursor, limit }: KeysetPage
   return toPage(rows, limit);
 }
 
+export type NoteRole = 'owner' | 'edit' | 'view';
+
+/** 403 message when a co-author tries to edit, lock or join while the author's account is not active (UC21). */
+export const NOT_EDITABLE = 'This note cannot be edited while its author is restricted';
+
 export interface NoteMeta {
   authorId: number;
+  /** The author's account is active: co-authors may only edit, lock or join then (UC21, D46). */
+  authorActive: boolean;
   status: string;
   visibility: 'public' | 'contacts' | null;
   moduleId: number | null;
   /** The viewer's access: the owner, a collaborator role, or null. */
-  role: 'owner' | 'edit' | 'view' | null;
+  role: NoteRole | null;
   /** The viewer may read the note: VISIBLE or a collaborator. */
   visible: boolean;
 }
@@ -156,7 +170,8 @@ export interface NoteMeta {
 export async function getNoteMeta(id: number, viewerId: number): Promise<NoteMeta | undefined> {
   const { rows } = await pool.query<NoteMeta>(
     `SELECT p.pst_usr_id AS "authorId", p.pst_status AS "status", p.pst_visibility AS "visibility", p.pst_mod_id AS "moduleId",
-            CASE WHEN p.pst_usr_id = $1 THEN 'owner' ELSE ${COLLAB_ROLE} END AS "role", ${READABLE} AS "visible"
+            ${MY_ROLE} AS "role", ${READABLE} AS "visible",
+            EXISTS (SELECT 1 FROM "USER_T" a WHERE a.usr_id = p.pst_usr_id AND a.usr_status = 'active') AS "authorActive"
      FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status <> 'deleted'`,
     [viewerId, id],
   );
@@ -214,25 +229,29 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
   });
 }
 
-export type ReplaceResult = 'ok' | 'gone' | 'locked' | 'stale';
+export type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
 
 /**
  * Replaces the note as `editorId` (the owner or an edit collaborator). Refuses with 'locked' while another user holds a
- * live soft lock, and with 'stale' when `baseUpdatedAt` is given and differs from pst_updated_at (R30). An edit never moves
+ * live soft lock, with 'stale' when `baseUpdatedAt` is given and differs from pst_updated_at, and with 'forbidden' when the
+ * editor lost edit access since the route checked it (R30). A co-author's first save starts their credit (clb_edited_at, D46). An edit never moves
  * pst_published_at; a title or slide change to a published note stamps pst_content_edited_at, which voids older Super Likes.
  */
 export function replaceNote(id: number, n: NoteInput, editorId: number, baseUpdatedAt: Date | null): Promise<ReplaceResult> {
   return inTransaction(async (c) => {
-    const { rows } = await c.query<{ status: string; title: string; updatedAt: Date; lockedByOther: boolean; slides: string[] }>(
-      `SELECT pst_status AS "status", pst_title AS "title", pst_updated_at AS "updatedAt",
-              COALESCE(pst_lock_usr_id <> $2 AND pst_lock_expires_at > NOW(), FALSE) AS "lockedByOther",
-              ARRAY(SELECT sld_content FROM "SLIDE_T" WHERE sld_pst_id = pst_id ORDER BY sld_position) AS "slides"
-       FROM "POST_T" WHERE pst_id = $1 AND pst_status IN ('draft', 'published')
-       FOR UPDATE`,
-      [id, editorId],
+    const { rows } = await c.query<{
+      status: string; title: string; updatedAt: Date; role: NoteRole | null; lockedByOther: boolean; slides: string[];
+    }>(
+      `SELECT p.pst_status AS "status", p.pst_title AS "title", p.pst_updated_at AS "updatedAt", ${MY_ROLE} AS "role",
+              COALESCE(p.pst_lock_usr_id <> $1 AND p.pst_lock_expires_at > NOW(), FALSE) AS "lockedByOther",
+              ARRAY(SELECT sld_content FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id ORDER BY sld_position) AS "slides"
+       FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status IN ('draft', 'published')
+       FOR UPDATE OF p`,
+      [editorId, id],
     );
     const cur = rows[0];
     if (!cur) return 'gone'; // deleted or hidden since the permission check
+    if (cur.role !== 'owner' && cur.role !== 'edit') return 'forbidden';
     if (cur.lockedByOther) return 'locked';
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
@@ -247,6 +266,12 @@ export function replaceNote(id: number, n: NoteInput, editorId: number, baseUpda
       [id, n.moduleId, n.title, n.template, n.status, n.visibility, contentEdited],
     );
     await writeChildren(c, id, n);
+    if (cur.role === 'edit') {
+      await c.query(
+        `UPDATE "COLLABORATOR_T" SET clb_edited_at = COALESCE(clb_edited_at, NOW()) WHERE clb_pst_id = $1 AND clb_usr_id = $2`,
+        [id, editorId],
+      );
+    }
     return 'ok';
   });
 }

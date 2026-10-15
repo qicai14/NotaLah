@@ -3,11 +3,11 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { env } from '../../lib/env';
 import { parseKeyset } from '../../lib/keyset';
-import { isUniqueViolation } from '../../lib/pool';
+import { isUniqueViolation, pool } from '../../lib/pool';
 import { bodyOrEmpty, idParam } from '../../lib/validation';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { guestReadLimiter } from '../auth/rateLimit';
-import { getNoteMeta, getVisibleNote, type NoteMeta } from '../notes/repository';
+import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
 import { COLLABORATION } from './config';
 import * as repo from './repository';
 
@@ -101,6 +101,7 @@ collaborationRouter.post('/share/:token', requireAuth, requireActive, async (req
   const found = await link(req, res);
   if (!found) return;
   if (found.role !== 'edit') return res.status(400).json({ error: 'A view link cannot be joined' });
+  if (!found.ownerActive) return res.status(403).json({ error: NOT_EDITABLE });
   if (found.ownerId !== me(req).id) await repo.joinAsEditor(found.noteId, me(req).id, found.ownerId);
   res.json({ noteId: found.noteId, role: found.ownerId === me(req).id ? 'owner' : 'edit' });
 });
@@ -148,6 +149,7 @@ collaborationRouter.post('/notes/:id/lock', requireAuth, requireActive, async (r
   const meta = await access(req, res, 'owner', 'edit');
   if (!meta) return;
   if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
+  if (!meta.authorActive) return res.status(403).json({ error: NOT_EDITABLE });
   const lock = await repo.takeLock(Number(req.params.id), me(req).id);
   if (!lock.ok) return res.status(423).json({ error: 'Another collaborator is editing this note', lockedBy: lock.holder });
   res.json({ expiresAt: lock.expiresAt });
@@ -155,6 +157,6 @@ collaborationRouter.post('/notes/:id/lock', requireAuth, requireActive, async (r
 
 collaborationRouter.delete('/notes/:id/lock', requireAuth, async (req, res) => {
   if (!(await access(req, res, 'owner', 'edit'))) return;
-  await repo.releaseLock(Number(req.params.id), me(req).id);
+  await repo.releaseLock(pool, Number(req.params.id), me(req).id);
   res.status(204).end();
 });

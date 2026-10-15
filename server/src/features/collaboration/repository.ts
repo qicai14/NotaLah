@@ -1,6 +1,8 @@
+import type { Pool, PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { SHAREABLE } from '../notes/repository';
+import { userRef as person } from '../users/repository';
 import { COLLABORATION } from './config';
 
 export type CollabRole = 'view' | 'edit';
@@ -16,7 +18,7 @@ export interface NoteAccess {
   requests: { id: number; user: Person; message: string | null; createdAt: Date }[];
 }
 
-const person = (alias: string) => `json_build_object('id', ${alias}.usr_id, 'displayName', ${alias}.usr_display_name)`;
+type Queryable = Pool | PoolClient;
 
 /** Everything the owner manages on one note; active links never include their token. */
 export async function getAccess(noteId: number): Promise<NoteAccess> {
@@ -42,31 +44,45 @@ export async function getAccess(noteId: number): Promise<NoteAccess> {
   return { collaborators: collaborators.rows, links: links.rows, requests: requests.rows };
 }
 
-/** Adds the user as a collaborator or changes their role; false when no active or restricted account has that id. */
-export async function setCollaborator(noteId: number, userId: number, role: CollabRole, addedBy: number): Promise<boolean> {
-  const { rowCount } = await pool.query(
+/** Releases the note's edit lock if this user holds it. */
+export async function releaseLock(q: Queryable, noteId: number, userId: number): Promise<void> {
+  await q.query(
+    `UPDATE "POST_T" SET pst_lock_usr_id = NULL, pst_lock_expires_at = NULL WHERE pst_id = $1 AND pst_lock_usr_id = $2`,
+    [noteId, userId],
+  );
+}
+
+/**
+ * Adds the user as a collaborator or changes their role, keeping any credit already earned; a move to view frees their
+ * lock. False when no active or restricted account has that id.
+ */
+async function upsertCollaborator(q: Queryable, noteId: number, userId: number, role: CollabRole, addedBy: number): Promise<boolean> {
+  const { rowCount } = await q.query(
     `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by)
      SELECT $1, usr_id, $3, $4 FROM "USER_T" WHERE usr_id = $2 AND usr_status IN ('active', 'restricted')
      ON CONFLICT (clb_pst_id, clb_usr_id) DO UPDATE SET clb_role = EXCLUDED.clb_role`,
     [noteId, userId, role, addedBy],
   );
+  if (role === 'view') await releaseLock(q, noteId, userId);
   return rowCount === 1;
 }
+
+export const setCollaborator = (noteId: number, userId: number, role: CollabRole, addedBy: number): Promise<boolean> =>
+  inTransaction((c) => upsertCollaborator(c, noteId, userId, role, addedBy));
 
 /** Removes the collaborator and releases any edit lock they hold on the note. */
 export function removeCollaborator(noteId: number, userId: number): Promise<void> {
   return inTransaction(async (c) => {
     await c.query(`DELETE FROM "COLLABORATOR_T" WHERE clb_pst_id = $1 AND clb_usr_id = $2`, [noteId, userId]);
-    await c.query(
-      `UPDATE "POST_T" SET pst_lock_usr_id = NULL, pst_lock_expires_at = NULL WHERE pst_id = $1 AND pst_lock_usr_id = $2`,
-      [noteId, userId],
-    );
+    await releaseLock(c, noteId, userId);
   });
 }
 
 /** Revokes the note's active link of this role, if any, and stores the hash of its replacement. */
 export function replaceLink(noteId: number, role: CollabRole, tokenHash: string): Promise<void> {
   return inTransaction(async (c) => {
+    // Serialises concurrent regenerations, which would otherwise both insert and hit the one-active-link index (500).
+    await c.query(`SELECT 1 FROM "POST_T" WHERE pst_id = $1 FOR UPDATE`, [noteId]);
     await c.query(
       `UPDATE "SHARE_LINK_T" SET shl_revoked_at = NOW() WHERE shl_pst_id = $1 AND shl_role = $2 AND shl_revoked_at IS NULL`,
       [noteId, role],
@@ -83,23 +99,21 @@ export async function revokeLink(noteId: number, role: CollabRole): Promise<void
 }
 
 /** The active link with this token hash on a SHAREABLE note, or undefined. */
-export async function findLink(tokenHash: string): Promise<{ noteId: number; ownerId: number; role: CollabRole } | undefined> {
+export async function findLink(
+  tokenHash: string,
+): Promise<{ noteId: number; ownerId: number; ownerActive: boolean; role: CollabRole } | undefined> {
   const { rows } = await pool.query(
-    `SELECT p.pst_id AS "noteId", p.pst_usr_id AS "ownerId", s.shl_role AS "role"
-     FROM "SHARE_LINK_T" s JOIN "POST_T" p ON p.pst_id = s.shl_pst_id
+    `SELECT p.pst_id AS "noteId", p.pst_usr_id AS "ownerId", o.usr_status = 'active' AS "ownerActive", s.shl_role AS "role"
+     FROM "SHARE_LINK_T" s JOIN "POST_T" p ON p.pst_id = s.shl_pst_id JOIN "USER_T" o ON o.usr_id = p.pst_usr_id
      WHERE s.shl_token_hash = $1 AND s.shl_revoked_at IS NULL AND ${SHAREABLE}`,
     [tokenHash],
   );
   return rows[0];
 }
 
-/** Redeems an edit link: the user becomes (or is upgraded to) an edit collaborator, credited as added by the owner. */
+/** Redeems an edit link: the user becomes (or is upgraded to) an edit collaborator, recorded as added by the owner. */
 export async function joinAsEditor(noteId: number, userId: number, ownerId: number): Promise<void> {
-  await pool.query(
-    `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by) VALUES ($1, $2, 'edit', $3)
-     ON CONFLICT (clb_pst_id, clb_usr_id) DO UPDATE SET clb_role = 'edit'`,
-    [noteId, userId, ownerId],
-  );
+  await upsertCollaborator(pool, noteId, userId, 'edit', ownerId);
 }
 
 /** Throws a unique violation when the user already has a pending request on the note; the caller maps it to 409. */
@@ -130,13 +144,7 @@ export function decideRequest(
       `UPDATE "COLLAB_REQUEST_T" SET crq_status = $2, crq_decided_at = NOW() WHERE crq_id = $1`,
       [requestId, approve ? 'approved' : 'declined'],
     );
-    if (approve) {
-      await c.query(
-        `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by) VALUES ($1, $2, $3, $4)
-         ON CONFLICT (clb_pst_id, clb_usr_id) DO UPDATE SET clb_role = EXCLUDED.clb_role`,
-        [noteId, rows[0].userId, role, ownerId],
-      );
-    }
+    if (approve) await upsertCollaborator(c, noteId, rows[0].userId, role, ownerId);
     return 'ok';
   });
 }
@@ -187,12 +195,4 @@ export async function takeLock(
   );
   return { ok: false, holder: rows[0]?.holder ?? null }; // null: the holder released it between the two statements
 
-}
-
-/** Releases the lock if this user holds it. */
-export async function releaseLock(noteId: number, userId: number): Promise<void> {
-  await pool.query(
-    `UPDATE "POST_T" SET pst_lock_usr_id = NULL, pst_lock_expires_at = NULL WHERE pst_id = $1 AND pst_lock_usr_id = $2`,
-    [noteId, userId],
-  );
 }
