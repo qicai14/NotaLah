@@ -33,7 +33,7 @@ const TAG_MATCH = `EXISTS (SELECT 1 FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h 
                    WHERE ph.phs_pst_id = p.pst_id AND h.hsh_name = $2)`;
 
 /** Title, slide text and hashtags through the GIN-indexed search document, or the note's module (CTE `mods`) by code, name or programme. */
-const TEXT_MATCH = `(p.pst_search_doc @@ websearch_to_tsquery('english', $2) OR p.pst_mod_id IN (SELECT mod_id FROM mods))`;
+const TEXT_MATCH = `(p.pst_search_doc @@ websearch_to_tsquery('english', $2) OR p.pst_mod_id = ANY (ARRAY(SELECT mod_id FROM mods)))`;
 
 /**
  * Every published note viewer $1 may see that matches `q` and the filters, with only what ordering needs (D48). Suspended
