@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<title>Guest search results</title>
+<defs><clipPath id="clip1"><rect x="1230.33" y="599.02" width="177.67" height="16.89"/></clipPath></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+<rect x="272" y="116.75" width="1136" height="1" fill="#d6d6d6"/>
+<text x="272" y="100.23" font-size="15" font-weight="600" fill="#1c1c1c">Top</text>
+<rect x="272" y="115.25" width="24.81" height="2.5" rx="1.25" fill="#1c1c1c"/>
+<text x="324.83" y="100.23" font-size="15" font-weight="600" fill="#6b6b6b">Notes</text>
+<text x="393.06" y="100.23" font-size="15" font-weight="600" fill="#6b6b6b">People</text>
+<text x="467.19" y="100.23" font-size="15" font-weight="600" fill="#6b6b6b">Hashtags</text>
+<text x="558" y="100.23" font-size="15" font-weight="600" fill="#6b6b6b">Modules</text>
+<rect x="272" y="133.75" width="80.36" height="32" rx="16" fill="#ffffff"/>
+<rect x="272.75" y="134.5" width="78.86" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<g transform="translate(284 142.25) scale(0.63)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 8v6l-4-2v-4z"></path></g>
+<text x="305" y="154.22" font-size="13" font-weight="600" fill="#474747">Filters</text>
+<rect x="360.36" y="133.75" width="116.2" height="32" rx="16" fill="#ffffff"/>
+<rect x="361.11" y="134.5" width="114.7" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="372.36" y="154.22" font-size="13" font-weight="600" fill="#474747">Module: any</text>
+<g transform="translate(451.56 143.25) scale(0.54)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<text x="1257.91" y="154.03" font-size="12" fill="#6b6b6b">Public notes only · 31 results</text>
+<text x="272" y="199.89" font-size="16" font-weight="600" fill="#1c1c1c">People</text>
+<text x="1372.88" y="197.62" font-size="12" font-weight="600" fill="#6b6b6b">See all</text>
+<rect x="272" y="220.94" width="370.66" height="80" rx="12" fill="#f2f2f2"/>
+<rect x="286" y="234.94" width="52" height="52" rx="26" fill="#474747"/>
+<text x="301.64" y="268.04" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#ffffff">LC</text>
+<text x="350" y="256.67" font-size="14" font-weight="600" fill="#1c1c1c">Dr Lee Chin Wei</text>
+<rect x="457.42" y="244" width="15" height="15" rx="7.5" fill="#1c1c1c"/>
+<g transform="translate(459.67 246.25) scale(0.44)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
+<text x="350" y="275.55" font-size="13" fill="#6b6b6b">Lecturer · 1.8K followers</text>
+<rect x="561.97" y="244.94" width="66.69" height="32" rx="16" fill="#3a3a3a"/>
+<text x="575.97" y="265.41" font-size="13" font-weight="600" fill="#ffffff">Follow</text>
+<rect x="654.66" y="220.94" width="370.67" height="80" rx="12" fill="#f2f2f2"/>
+<rect x="668.66" y="234.94" width="52" height="52" rx="26" fill="#cdcdcd"/>
+<text x="680.19" y="268.04" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#474747">TM</text>
+<text x="732.66" y="256.67" font-size="14" font-weight="600" fill="#1c1c1c">Tan Mei Ling</text>
+<text x="732.66" y="275.55" font-size="13" fill="#6b6b6b">Computer Science · 210 followers</text>
+<rect x="944.64" y="244.94" width="66.69" height="32" rx="16" fill="#3a3a3a"/>
+<text x="958.64" y="265.41" font-size="13" font-weight="600" fill="#ffffff">Follow</text>
+<rect x="1037.33" y="220.94" width="370.66" height="80" rx="12" fill="#f2f2f2"/>
+<rect x="1051.33" y="234.94" width="52" height="52" rx="26" fill="#cdcdcd"/>
+<text x="1063.55" y="268.04" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#474747">AH</text>
+<text x="1115.33" y="256.67" font-size="14" font-weight="600" fill="#1c1c1c">Aiman Hakim</text>
+<text x="1115.33" y="275.55" font-size="13" fill="#6b6b6b">Information Technology · 96</text>
+<rect x="1327.3" y="244.94" width="66.69" height="32" rx="16" fill="#3a3a3a"/>
+<text x="1341.3" y="265.41" font-size="13" font-weight="600" fill="#ffffff">Follow</text>
+<text x="272" y="335.08" font-size="16" font-weight="600" fill="#1c1c1c">Notes</text>
+<text x="1372.88" y="332.81" font-size="12" font-weight="600" fill="#6b6b6b">See all</text>
+<g id="tile-1">
+<rect x="272" y="356.13" width="177.66" height="236.88" rx="10" fill="#ededed"/>
+<rect x="272.5" y="356.63" width="176.66" height="235.88" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="273" y="357.13" width="175.66" height="234.88" rx="9" fill="#ffffff"/>
+<text x="285.28" y="390.91" font-size="5.27" font-weight="600" fill="#6b6b6b">CT030-3-2</text>
+<text x="285.28" y="414.24" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Normalisation,</text>
+<text x="285.28" y="433.2" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">1NF to 3NF</text>
+<rect x="285.28" y="448.98" width="135.98" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="285.28" y="458.45" width="113.31" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="285.28" y="467.92" width="123.89" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="280" y="364.13" width="66.23" height="20" rx="5" fill="#ffffff"/>
+<rect x="280.5" y="364.63" width="65.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<g transform="translate(286 368.63) scale(0.46)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
+<text x="300" y="378.22" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
+<rect x="280" y="563.61" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(286 567.3) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="304" y="578.59" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
+</g>
+<text x="272" y="611.9" font-size="13" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF</text>
+<text x="272" y="628.87" font-size="12" fill="#6b6b6b">Aina Rahman</text>
+<g id="tile-2">
+<rect x="463.66" y="356.13" width="177.67" height="236.89" rx="10" fill="#ededed"/>
+<rect x="464.16" y="356.63" width="176.67" height="235.89" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="464.66" y="357.13" width="175.67" height="234.89" rx="9" fill="#f2f2f2"/>
+<text x="476.95" y="390.91" font-size="5.27" font-weight="600" fill="#6b6b6b">CT030-3-2</text>
+<text x="476.95" y="414.24" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Crow's foot</text>
+<text x="476.95" y="433.2" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">notation</text>
+<rect x="476.95" y="498.92" width="35.14" height="38.64" rx="2.81" fill="#e6e6e6"/>
+<rect x="515.59" y="477.84" width="35.14" height="59.72" rx="2.81" fill="#474747"/>
+<rect x="554.23" y="509.47" width="35.14" height="28.09" rx="2.81" fill="#e6e6e6"/>
+<rect x="592.88" y="488.38" width="35.14" height="49.19" rx="2.81" fill="#e6e6e6"/>
+<rect x="471.66" y="563.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(477.66 567.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="495.66" y="578.61" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
+</g>
+<text x="463.66" y="611.91" font-size="13" font-weight="600" fill="#1c1c1c">Crow's foot notation</text>
+<text x="463.66" y="628.89" font-size="12" fill="#6b6b6b">Dr Lee Chin Wei</text>
+<g id="tile-3">
+<rect x="655.33" y="356.13" width="177.67" height="236.89" rx="10" fill="#ededed"/>
+<rect x="655.83" y="356.63" width="176.67" height="235.89" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="656.33" y="357.13" width="175.67" height="234.89" rx="9" fill="#f2f2f2"/>
+<rect x="668.63" y="369.42" width="151.08" height="127.2" rx="5.27" fill="#f2f2f2"/>
+<path d="M668.63 369.42L819.7 496.63M819.7 369.42L668.63 496.63" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="669.38" y="370.17" width="149.58" height="125.7" rx="4.52" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="668.63" y="507.92" font-size="5.27" font-weight="600" fill="#6b6b6b">CT030-3-2</text>
+<text x="668.63" y="531.26" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">SQL joins in one</text>
+<text x="668.63" y="550.21" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">page</text>
+<rect x="663.33" y="563.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(669.33 567.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="687.33" y="578.61" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
+</g>
+<text x="655.33" y="611.91" font-size="13" font-weight="600" fill="#1c1c1c">SQL joins in one page</text>
+<text x="655.33" y="628.89" font-size="12" fill="#6b6b6b">Chloe Wong</text>
+<g id="tile-4">
+<rect x="847" y="356.13" width="177.66" height="236.88" rx="10" fill="#ededed"/>
+<rect x="847.5" y="356.63" width="176.66" height="235.88" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="848" y="357.13" width="175.66" height="234.88" rx="9" fill="#ffffff"/>
+<text x="860.28" y="390.91" font-size="5.27" font-weight="600" fill="#6b6b6b">CT044-3-2</text>
+<text x="860.28" y="414.24" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Recursion, traced</text>
+<rect x="860.28" y="430.03" width="135.98" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="860.28" y="439.5" width="113.31" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="860.28" y="448.97" width="123.89" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="855" y="563.61" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(861 567.3) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="879" y="578.59" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
+</g>
+<text x="847" y="611.9" font-size="13" font-weight="600" fill="#1c1c1c">Recursion, traced</text>
+<text x="847" y="628.87" font-size="12" fill="#6b6b6b">Lim Qi Cai</text>
+<g id="tile-5">
+<rect x="1038.66" y="356.13" width="177.67" height="236.89" rx="10" fill="#ededed"/>
+<rect x="1039.16" y="356.63" width="176.67" height="235.89" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="1039.66" y="357.13" width="175.67" height="234.89" rx="9" fill="#ffffff"/>
+<text x="1051.95" y="453.62" font-size="5.27" font-weight="600" fill="#6b6b6b">CT044-3-2</text>
+<text x="1051.95" y="479.92" font-size="21.08" font-weight="700" letter-spacing="-0.84" fill="#1c1c1c">O(n log n)</text>
+<rect x="1051.95" y="487.86" width="105.75" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="1051.95" y="497.33" width="75.53" height="3.86" rx="1.76" fill="#e6e6e6"/>
+<rect x="1046.66" y="364.13" width="66.23" height="20" rx="5" fill="#ffffff"/>
+<rect x="1047.16" y="364.63" width="65.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<g transform="translate(1052.66 368.63) scale(0.46)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
+<text x="1066.66" y="378.22" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
+<rect x="1046.66" y="563.63" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1052.66 567.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1070.66" y="578.61" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
+</g>
+<text x="1038.66" y="611.91" font-size="13" font-weight="600" fill="#1c1c1c">O(n log n)</text>
+<text x="1038.66" y="628.89" font-size="12" fill="#6b6b6b">Dr Siti Aminah</text>
+<g id="tile-6">
+<rect x="1230.33" y="356.13" width="177.67" height="236.89" rx="10" fill="#ededed"/>
+<rect x="1230.83" y="356.63" width="176.67" height="235.89" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="1231.33" y="357.13" width="175.67" height="234.89" rx="9" fill="#f2f2f2"/>
+<text x="1243.63" y="390.91" font-size="5.27" font-weight="600" fill="#6b6b6b">AICT004</text>
+<text x="1243.63" y="414.24" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Use case diagrams:</text>
+<text x="1243.63" y="433.2" font-size="17.57" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">include vs extend</text>
+<rect x="1243.63" y="498.92" width="35.14" height="38.64" rx="2.81" fill="#e6e6e6"/>
+<rect x="1282.27" y="477.84" width="35.14" height="59.72" rx="2.81" fill="#474747"/>
+<rect x="1320.91" y="509.47" width="35.14" height="28.09" rx="2.81" fill="#e6e6e6"/>
+<rect x="1359.55" y="488.38" width="35.14" height="49.19" rx="2.81" fill="#e6e6e6"/>
+<rect x="1238.33" y="563.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1244.33 567.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1262.33" y="578.61" font-size="12" font-weight="700" fill="#1c1c1c">415</text>
+</g>
+<g clip-path="url(#clip1)">
+<text x="1230.33" y="611.91" font-size="13" font-weight="600" fill="#1c1c1c">Use case diagrams: include vs extend</text>
+</g>
+<text x="1230.33" y="628.89" font-size="12" fill="#6b6b6b">Hafiz Ismail</text>
+<g id="top-7">
+<rect x="272" y="14" width="520" height="44" rx="22" fill="#ffffff"/>
+<rect x="273" y="15" width="518" height="42" rx="21" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<g transform="translate(286 27) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
+<text x="312" y="41.15" font-size="14" fill="#1c1c1c">#normalisation</text>
+<g transform="translate(762 28) scale(0.67)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<rect x="1327.48" y="20" width="88.52" height="32" rx="16" fill="#3a3a3a"/>
+<g transform="translate(1341.48 28) scale(0.67)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h4M14 8l4 4-4 4M18 12H8"></path></g>
+<text x="1365.48" y="40.47" font-size="13" font-weight="600" fill="#ffffff">Log in</text>
+</g>
+<g id="nav-8">
+<rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
+<rect x="239" y="0" width="1" height="900" fill="#d6d6d6"/>
+<rect x="20" y="21" width="30" height="30" rx="9" fill="#1c1c1c"/>
+<text x="30.08" y="42.55" font-size="16" font-weight="700" fill="#ffffff">P</text>
+<text x="58" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
+<g transform="translate(193 25) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
+<rect x="12" y="70" width="216" height="40" rx="20" fill="#e6e6e6"/>
+<g transform="translate(26 81) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
+<text x="54" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
+<g transform="translate(24 132) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
+<text x="62" y="149.35" font-size="15" fill="#474747">Feed</text>
+<rect x="12" y="168" width="216" height="44" rx="10" fill="#e6e6e6"/>
+<g transform="translate(24 178) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></g>
+<text x="62" y="195.35" font-size="15" font-weight="700" fill="#1c1c1c">Explore</text>
+<rect x="16" y="228" width="208" height="182.56" rx="12" fill="#ffffff"/>
+<rect x="16.5" y="228.5" width="207" height="181.56" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="30" y="255.9" font-size="13" fill="#474747">Minim veniam quis nostrud</text>
+<text x="30" y="274.08" font-size="13" fill="#474747">exercitation ullamco laboris nisi</text>
+<text x="30" y="292.27" font-size="13" fill="#474747">aliquip ex ea commodo.</text>
+<rect x="30" y="306.56" width="180" height="40" rx="20" fill="#3a3a3a"/>
+<text x="100.33" y="332.08" font-size="14" font-weight="600" fill="#ffffff">Log in</text>
+<rect x="30" y="356.56" width="180" height="40" rx="20" fill="#ffffff"/>
+<rect x="30.75" y="357.31" width="178.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="94.23" y="382.08" font-size="14" font-weight="600" fill="#1c1c1c">Register</text>
+<text x="24" y="858.2" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy</text>
+<text x="24" y="878.59" font-size="12" fill="#6b6b6b">© 2026 PARP</text>
+</g>
+</svg>

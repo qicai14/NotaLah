@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<title>Drafts</title>
+<defs></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+<text x="272" y="80.23" font-size="15" fill="#6b6b6b">Ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation.</text>
+<g id="tile-1">
+<rect x="272" y="105.75" width="211.19" height="281.58" rx="10" fill="#f2f2f2"/>
+<rect x="272.5" y="106.25" width="210.19" height="280.58" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<g transform="translate(363.59 218.39) scale(1.17)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="346.81" y="269.7" font-size="14" font-weight="600" fill="#474747">New note</text>
+</g>
+<g id="tile-2">
+<rect x="503.19" y="105.75" width="211.2" height="281.59" rx="10" fill="#ededed"/>
+<rect x="503.69" y="106.25" width="210.2" height="280.59" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="504.19" y="106.75" width="209.2" height="279.59" rx="9" fill="#ffffff"/>
+<text x="518.83" y="147.32" font-size="6.28" font-weight="600" fill="#6b6b6b">CT030-3-2</text>
+<text x="518.83" y="175.68" font-size="20.92" font-weight="700" letter-spacing="-0.52" fill="#1c1c1c">Indexing: B-tree vs</text>
+<text x="518.83" y="198.28" font-size="20.92" font-weight="700" letter-spacing="-0.52" fill="#1c1c1c">hash</text>
+<rect x="518.83" y="216.23" width="161.92" height="4.59" rx="2.09" fill="#e6e6e6"/>
+<rect x="518.83" y="227.52" width="134.94" height="4.59" rx="2.09" fill="#e6e6e6"/>
+<rect x="518.83" y="238.8" width="147.53" height="4.59" rx="2.09" fill="#e6e6e6"/>
+<rect x="674.39" y="113.75" width="32" height="32" rx="16" fill="#ffffff"/>
+<g transform="translate(682.39 121.75) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle></g>
+</g>
+<text x="503.19" y="406.24" font-size="13" font-weight="600" fill="#1c1c1c">Indexing: B-tree vs hash</text>
+<text x="503.19" y="423.21" font-size="12" fill="#6b6b6b">Edited 2h ago · 4 slides</text>
+<g id="tile-3">
+<rect x="734.39" y="105.75" width="211.2" height="281.59" rx="10" fill="#ededed"/>
+<rect x="734.89" y="106.25" width="210.2" height="280.59" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="735.39" y="106.75" width="209.2" height="279.59" rx="9" fill="#f2f2f2"/>
+<rect x="750.03" y="121.39" width="179.92" height="151.28" rx="6.28" fill="#f2f2f2"/>
+<path d="M750.03 121.39L929.95 272.67M929.95 121.39L750.03 272.67" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="750.78" y="122.14" width="178.42" height="149.78" rx="5.53" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="750.03" y="286.46" font-size="6.28" font-weight="600" fill="#6b6b6b">CT076-3-2</text>
+<text x="750.03" y="314.82" font-size="20.92" font-weight="700" letter-spacing="-0.52" fill="#1c1c1c">React hooks cheat</text>
+<text x="750.03" y="337.42" font-size="20.92" font-weight="700" letter-spacing="-0.52" fill="#1c1c1c">sheet</text>
+<rect x="905.59" y="113.75" width="32" height="32" rx="16" fill="#ffffff"/>
+<g transform="translate(913.59 121.75) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle></g>
+</g>
+<text x="734.39" y="406.24" font-size="13" font-weight="600" fill="#1c1c1c">React hooks cheat sheet</text>
+<text x="734.39" y="423.21" font-size="12" fill="#6b6b6b">Edited yesterday · 7 slides · shared</text>
+<g id="tile-4">
+<rect x="965.59" y="105.75" width="211.2" height="281.59" rx="10" fill="#ededed"/>
+<rect x="966.09" y="106.25" width="210.2" height="280.59" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="966.59" y="106.75" width="209.2" height="279.59" rx="9" fill="#ffffff"/>
+<rect x="1136.8" y="113.75" width="32" height="32" rx="16" fill="#ffffff"/>
+<g transform="translate(1144.8 121.75) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle></g>
+</g>
+<text x="965.59" y="406.24" font-size="13" font-weight="600" fill="#1c1c1c">Untitled note</text>
+<text x="965.59" y="423.21" font-size="12" fill="#6b6b6b">Edited 3 Oct · 1 slide</text>
+<g id="tile-5">
+<rect x="1196.8" y="105.75" width="211.19" height="281.58" rx="10" fill="#ededed"/>
+<rect x="1197.3" y="106.25" width="210.19" height="280.58" rx="9.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="1197.8" y="106.75" width="209.19" height="279.58" rx="9" fill="#f2f2f2"/>
+<text x="1212.44" y="147.32" font-size="6.28" font-weight="600" fill="#6b6b6b">CT050-3-2</text>
+<text x="1212.44" y="175.68" font-size="20.92" font-weight="700" letter-spacing="-0.52" fill="#1c1c1c">Page replacement:</text>
+<text x="1212.44" y="198.28" font-size="20.92" font-weight="700" letter-spacing="-0.52" fill="#1c1c1c">LRU</text>
+<rect x="1212.44" y="275.47" width="41.84" height="46.02" rx="3.35" fill="#e6e6e6"/>
+<rect x="1258.45" y="250.38" width="41.84" height="71.11" rx="3.35" fill="#474747"/>
+<rect x="1304.47" y="288.02" width="41.84" height="33.47" rx="3.35" fill="#e6e6e6"/>
+<rect x="1350.48" y="262.92" width="41.84" height="58.56" rx="3.35" fill="#e6e6e6"/>
+<rect x="1367.98" y="113.75" width="32" height="32" rx="16" fill="#ffffff"/>
+<g transform="translate(1375.98 121.75) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#1c1c1c" stroke="none"></circle></g>
+</g>
+<text x="1196.8" y="406.22" font-size="13" font-weight="600" fill="#1c1c1c">Page replacement: LRU</text>
+<text x="1196.8" y="423.2" font-size="12" fill="#6b6b6b">Edited 28 Sep · 5 slides</text>
+<g id="pop-6">
+<rect x="866.44" y="167.25" width="201.5" height="165.5" rx="12.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="867.19" y="168" width="200" height="164" rx="12" fill="#ffffff"/>
+<rect x="873.19" y="174" width="188" height="38" rx="8" fill="#e6e6e6"/>
+<g transform="translate(883.19 184) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="911.19" y="198.15" font-size="14" font-weight="600" fill="#1c1c1c">Continue editing</text>
+<g transform="translate(883.19 222) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<text x="911.19" y="236.15" font-size="14" fill="#1c1c1c">Share</text>
+<g transform="translate(883.19 260) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path></g>
+<text x="911.19" y="274.15" font-size="14" fill="#1c1c1c">Duplicate</text>
+<g transform="translate(883.19 298) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></g>
+<text x="911.19" y="312.15" font-size="14" fill="#1c1c1c">Delete draft</text>
+</g>
+<g id="top-7">
+<rect x="272" y="20" width="32" height="32" rx="16" fill="#e6e6e6"/>
+<g transform="translate(279 27) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></g>
+<text x="316" y="44.18" font-size="22" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Drafts</text>
+<text x="389.27" y="41.35" font-size="15" font-weight="600" fill="#6b6b6b">4</text>
+<rect x="1278" y="20" width="90" height="32" rx="16" fill="#ffffff"/>
+<rect x="1278.75" y="20.75" width="88.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<g transform="translate(1292 28) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="1316" y="40.47" font-size="13" font-weight="600" fill="#1c1c1c">Create</text>
+<rect x="1380" y="18" width="36" height="36" rx="18" fill="#cdcdcd"/>
+<text x="1390.03" y="40.47" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#474747">LQ</text>
+</g>
+<g id="nav-8">
+<rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
+<rect x="239" y="0" width="1" height="900" fill="#d6d6d6"/>
+<rect x="20" y="21" width="30" height="30" rx="9" fill="#1c1c1c"/>
+<text x="30.08" y="42.55" font-size="16" font-weight="700" fill="#ffffff">P</text>
+<text x="58" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
+<g transform="translate(193 25) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
+<rect x="12" y="70" width="216" height="40" rx="20" fill="#e6e6e6"/>
+<g transform="translate(26 81) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
+<text x="54" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
+<g transform="translate(24 132) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
+<text x="62" y="149.35" font-size="15" fill="#474747">Feed</text>
+<g transform="translate(24 178) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<text x="62" y="195.35" font-size="15" fill="#474747">Following</text>
+<g transform="translate(24 224) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></g>
+<text x="62" y="241.35" font-size="15" fill="#474747">Explore</text>
+<rect x="23" y="269" width="26" height="26" rx="8" fill="#3a3a3a"/>
+<g transform="translate(27 273) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="62" y="287.35" font-size="15" fill="#474747">Create</text>
+<g transform="translate(24 316) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"></path><path d="m10 13.5 4.5-4.5"></path></g>
+<text x="62" y="333.35" font-size="15" fill="#474747">Messages</text>
+<rect x="196" y="318" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="202.83" y="332.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
+<g transform="translate(24 362) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></g>
+<text x="62" y="379.35" font-size="15" fill="#474747">Notifications</text>
+<rect x="196" y="364" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="202.83" y="378.1" font-size="11" font-weight="700" fill="#ffffff">3</text>
+<g transform="translate(24 408) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"></path></g>
+<text x="62" y="425.35" font-size="15" fill="#474747">Saved</text>
+<rect x="12" y="444" width="216" height="44" rx="10" fill="#e6e6e6"/>
+<g transform="translate(24 454) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4.2-6.5 8-6.5s7 2.5 8 6.5"></path></g>
+<text x="62" y="471.35" font-size="15" font-weight="700" fill="#1c1c1c">Profile</text>
+<g transform="translate(24 500) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#474747" stroke="none"></circle></g>
+<text x="62" y="517.35" font-size="15" fill="#474747">More</text>
+<text x="24" y="858.2" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy</text>
+<text x="24" y="878.59" font-size="12" fill="#6b6b6b">© 2026 PARP</text>
+</g>
+</svg>
