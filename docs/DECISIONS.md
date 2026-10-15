@@ -872,8 +872,12 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     list, its follow lists and follow/unfollow (404, as for a deleted account); the admin check reads the viewer's role
     from the database. Comments use the deleted-comment path: a suspended author's comment shows as
     `[comment unavailable]` with no author or pin only while it has visible replies, and their replies are omitted.
-    Co-author credit and `verifiedBy` already dropped suspended users. An admin sees the profile and the comments, but the
-    notes stay withdrawn (D26) and are reviewed through the report queue. The client still labels any author-less
-    comment "deleted"; the UI pass should show the body text instead.
-  - Not changed: likes and comments by suspended users still count in E and the shown counts.
+    Co-author credit and `verifiedBy` already dropped suspended users. An admin also sees the published notes on the
+    profile and in the note detail (`VISIBLE_OR_ADMIN`); the shared `VISIBLE` is unchanged, so the feed still withdraws
+    them for everyone (D26). Unfollowing a user who became hidden answers 204. The shown comment count leaves out
+    suspended authors' comments, and replying to or liking such a comment is refused as for a deleted one. The client
+    shows an author-less comment as its body text alone.
+  - Review fixes: a self-like or co-author like logs no `INTERACTION_T` row, so M is not skewed. `OWN_LIKE` reads the
+    current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
+  - Not changed: likes by suspended users, and their comments in E, still count.
   - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.

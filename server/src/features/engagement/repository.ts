@@ -43,14 +43,17 @@ export async function logView(noteId: number, viewerId: number): Promise<void> {
 const noteLikes = async (noteId: number): Promise<number> =>
   (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "LIKE_T" WHERE lik_pst_id = $1`, [noteId])).rows[0].n;
 
-/** Idempotent: the interaction is logged only when the like row is new. */
+/** Idempotent: the interaction is logged only when the like row is new, and never for the author or an edit co-author (D47). */
 export async function likeNote(noteId: number, userId: number): Promise<{ added: boolean; likes: number }> {
-  const { rowCount } = await pool.query(
-    `WITH ins AS (INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING 1)
-     INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) SELECT $1, $2, 'like' FROM ins`,
+  const { rows } = await pool.query<{ added: boolean }>(
+    `WITH ins AS (INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING 1),
+          i AS (INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) SELECT $1, $2, 'like' FROM ins
+                WHERE $1 <> (SELECT pst_usr_id FROM "POST_T" WHERE pst_id = $2)
+                  AND NOT EXISTS (SELECT 1 FROM "COLLABORATOR_T" WHERE clb_pst_id = $2 AND clb_usr_id = $1 AND clb_role = 'edit'))
+     SELECT EXISTS (SELECT 1 FROM ins) AS "added"`,
     [userId, noteId],
   );
-  return { added: rowCount === 1, likes: await noteLikes(noteId) };
+  return { added: rows[0].added, likes: await noteLikes(noteId) };
 }
 
 export async function unlikeNote(noteId: number, userId: number): Promise<number> {
@@ -131,7 +134,8 @@ export async function listComments(
 
 export async function getParent(id: number): Promise<{ noteId: number; parentId: number | null } | undefined> {
   const { rows } = await pool.query<{ noteId: number; parentId: number | null }>(
-    `SELECT cmt_pst_id AS "noteId", cmt_parent_id AS "parentId" FROM "COMMENT_T" WHERE cmt_id = $1 AND NOT cmt_is_deleted`,
+    `SELECT c.cmt_pst_id AS "noteId", c.cmt_parent_id AS "parentId" FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
+     WHERE c.cmt_id = $1 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended'`,
     [id],
   );
   return rows[0];
@@ -160,12 +164,12 @@ export interface CommentMeta {
   noteId: number;
 }
 
-/** A live comment on a published note the viewer may see; undefined otherwise. */
+/** A live comment by an author who is not suspended, on a published note the viewer may see; undefined otherwise. */
 export async function getVisibleComment(id: number, viewerId: number): Promise<CommentMeta | undefined> {
   const { rows } = await pool.query<CommentMeta>(
     `SELECT c.cmt_usr_id AS "authorId", c.cmt_pst_id AS "noteId"
-     FROM "COMMENT_T" c JOIN "POST_T" p ON p.pst_id = c.cmt_pst_id
-     WHERE c.cmt_id = $2 AND NOT c.cmt_is_deleted AND p.pst_status = 'published' AND ${VISIBLE}`,
+     FROM "COMMENT_T" c JOIN "POST_T" p ON p.pst_id = c.cmt_pst_id JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
+     WHERE c.cmt_id = $2 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended' AND p.pst_status = 'published' AND ${VISIBLE}`,
     [viewerId, id],
   );
   return rows[0];

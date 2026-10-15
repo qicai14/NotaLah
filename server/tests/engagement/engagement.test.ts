@@ -111,6 +111,9 @@ describe('Engagement', () => {
       ]);
       expect(shown.map((c) => c.replies.map((r) => r.body))).toEqual([['reader reply'], []]);
     }
+    expect((await get(reader, `/api/notes/${p}`)).body.note.counts.comments).toBe(2); // the reader's two comments only
+    expect((await comment(reader, p, { body: 'x', parentId: withReply })).status).toBe(400); // like a deleted parent
+    expect((await post(reader, `/api/comments/${withReply}/like`)).status).toBe(404);
     const all: Shown[] = (await get(admin, url)).body.comments;
     expect(all.map((c) => [c.body, c.pinned])).toEqual([['lecturer note', true], ['lonely', true], ['reader top', false]]);
     expect(all[2].replies.map((r) => r.body)).toEqual(['suspended reply']);
@@ -122,6 +125,7 @@ describe('Engagement', () => {
     const res = await post(a, `/api/notes/${p}/like`);
     expect(res.status).toBe(201);
     expect(res.body).toEqual({ liked: true, likes: 1 });
+    expect(await interactions('like')).toBe(0); // a self-like is not an interest signal
     await comment(a, p, { body: 'author reply' });
     await comment(b, p, { body: 'reader comment' });
     const feed = (await get(b, '/api/feed')).body.items[0];

@@ -1,7 +1,7 @@
 import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
-import { approvedLecturer, countingLecturer, friends, userRef } from '../users/repository';
+import { approvedLecturer, countingLecturer, friends, userRef, viewerIsAdmin } from '../users/repository';
 import type { NoteInput } from './service';
 
 /** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
@@ -28,6 +28,9 @@ const MY_ROLE = `CASE WHEN p.pst_usr_id = $1 THEN 'owner' ELSE ${COLLAB_ROLE} EN
 
 /** SQL: viewer $1 may read post p, as anyone it is VISIBLE to or as a collaborator (R30). */
 const READABLE = `(${VISIBLE} OR ${COLLAB_ROLE} IS NOT NULL)`;
+
+/** VISIBLE, or any published post for an admin, so a suspended author's notes stay reviewable on their profile and detail (D47); the feed keeps plain VISIBLE. */
+const VISIBLE_OR_ADMIN = `(${VISIBLE} OR (p.pst_status = 'published' AND ${viewerIsAdmin('$1')}))`;
 
 /** The note's hashtag names, alphabetical (alias p = POST_T). */
 export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
@@ -93,11 +96,13 @@ const OWN_LIKE = `(l.lik_usr_id = p.pst_usr_id OR EXISTS (SELECT 1 FROM "COLLABO
 /**
  * Like and comment counts of note p (the author's own comments are not counted, D22). With `asOf` (an SQL expression)
  * these are the ranking inputs (D24): only rows created by then, and no likes by the author or an edit collaborator (D47).
+ * Without it they are the shown counts, which leave out comments by suspended authors as readers do not see them (D47).
  */
 export const countsCol = (asOf?: string) => `json_build_object(
               'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" l WHERE l.lik_pst_id = p.pst_id${asOf ? ` AND l.lik_created_at <= ${asOf} AND NOT ${OWN_LIKE}` : ''}),
               'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted
-                           AND cmt_usr_id <> p.pst_usr_id${asOf ? ` AND cmt_created_at <= ${asOf}` : ''})) AS "counts"`;
+                           AND cmt_usr_id <> p.pst_usr_id${asOf ? ` AND cmt_created_at <= ${asOf}`
+                             : ` AND NOT EXISTS (SELECT 1 FROM "USER_T" cu WHERE cu.usr_id = cmt_usr_id AND cu.usr_status = 'suspended')`})) AS "counts"`;
 
 /** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; `verified`/`verifiedBy` per VERIFIED, `verifiedByMe` = the viewer's own Super Like) shared by the feed and the note detail so the counts exist once. */
 export const ENGAGEMENT_COLS = `${countsCol()},
@@ -124,7 +129,7 @@ export async function getVisibleNote(
   id: number, viewerId: number, viaLink = false,
 ): Promise<(NoteWithEngagement & { myRole: NoteRole | null }) | undefined> {
   const { rows } = await pool.query<NoteWithEngagement & { myRole: NoteRole | null }>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole" ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : READABLE}`,
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole" ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : `(${READABLE} OR ${VISIBLE_OR_ADMIN})`}`,
     [viewerId, id],
   );
   return rows[0];
@@ -307,7 +312,7 @@ export async function listNotesByAuthor(
   const { rows } = await pool.query<NoteSummary & { cursor: string }>(
     `SELECT ${SUMMARY_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
-     WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE}
+     WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE_OR_ADMIN}
        AND ($3::BIGINT IS NULL OR (p.pst_published_at, p.pst_id) < (${fromMicros('$3')}, $4::INT))
      ORDER BY p.pst_published_at DESC, p.pst_id DESC
      LIMIT $5`,

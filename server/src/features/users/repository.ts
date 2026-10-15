@@ -234,8 +234,10 @@ export async function follow(followerId: number, followeeId: number): Promise<'c
   return !rows[0].found ? 'not_found' : rows[0].created ? 'created' : 'exists';
 }
 
-export async function unfollow(followerId: number, followeeId: number): Promise<void> {
-  await pool.query(`DELETE FROM "FOLLOW_T" WHERE fol_follower_id = $1 AND fol_followee_id = $2`, [followerId, followeeId]);
+/** True when a follow row was removed. */
+export async function unfollow(followerId: number, followeeId: number): Promise<boolean> {
+  const { rowCount } = await pool.query(`DELETE FROM "FOLLOW_T" WHERE fol_follower_id = $1 AND fol_followee_id = $2`, [followerId, followeeId]);
+  return rowCount === 1;
 }
 
 export interface FollowListItem {

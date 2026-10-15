@@ -48,9 +48,9 @@ usersRouter.post('/:id/follow', requireAuth, requireActive, async (req, res) => 
 // no requireActive: a restricted user can still undo (D22 removal rule)
 usersRouter.delete('/:id/follow', requireAuth, async (req, res) => {
   const target = Number(req.params.id);
-  await unfollow(me(req).id, target);
+  const removed = await unfollow(me(req).id, target);
   const state = await getFollowState(me(req).id, target);
-  if (!state) return res.status(404).json({ error: 'User not found' });
+  if (!state) return removed ? res.status(204).end() : res.status(404).json({ error: 'User not found' }); // a hidden target still lets the follower leave
   res.json(state);
 });
 

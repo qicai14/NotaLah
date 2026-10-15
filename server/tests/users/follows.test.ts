@@ -61,11 +61,16 @@ describe('Follows', () => {
       }
     }
     expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(0);
+    const later = await insertUser();
+    await followReq(a, later);
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [later]);
+    expect((await unfollowReq(a, later)).status).toBe(204); // a hidden target can still be left
+    expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(0);
   });
 
   it('USR-TC27: a suspended profile is 404 for guests and signed-in users and open to admins', async () => {
     const [suspended, fan, admin] = [await insertUser(), await insertUser(), await insertUser({ role: 'admin' })];
-    await insertNote(suspended);
+    const note = await insertNote(suspended);
     await follow(fan, suspended);
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [suspended]);
     const profile = `/api/users/${suspended}`;
@@ -76,7 +81,10 @@ describe('Follows', () => {
     }
     const asAdmin = (await get(admin, profile)).body.user;
     expect(asAdmin).toMatchObject({ id: suspended, followerCount: 1 });
-    expect(asAdmin.notes).toEqual([]); // the notes stay withdrawn (D26); admins review them through reports
+    expect(asAdmin.notes.map((n: { id: number }) => n.id)).toEqual([note]);
+    expect((await get(admin, `/api/notes/${note}`)).status).toBe(200);
+    expect((await get(fan, `/api/notes/${note}`)).status).toBe(404);
+    expect((await get(admin, '/api/feed')).body.items).toEqual([]); // the feed keeps D26 for admins too
     expect((await get(fan, `/api/users/${fan}/following`)).body.items).toEqual([]);
   });
 
