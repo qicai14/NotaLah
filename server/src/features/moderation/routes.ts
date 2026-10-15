@@ -13,6 +13,7 @@ adminRouter.use(requireAuth, requireRole('admin'));
 adminRouter.param('userId', idParam('Invalid user id', 400));
 adminRouter.param('noteId', idParam('Invalid note id', 400));
 adminRouter.param('moduleId', idParam('Module not found'));
+adminRouter.param('termId', idParam('Term not found'));
 
 adminRouter.get('/lecturer-applications', async (_req, res) => {
   res.json({ applications: await listPendingLecturers() });
@@ -129,4 +130,46 @@ adminRouter.patch('/modules/:moduleId', async (req, res) => {
   const updated = await modules.updateModule(Number(req.params.moduleId), { name, programme });
   if (!updated) return res.status(404).json({ error: 'Module not found' });
   res.json({ module: updated });
+});
+
+const termSchema = z
+  .object({
+    name: z.string({ error: 'Name is required' }).trim().min(1, 'Name is required').max(50, 'Name must be at most 50 characters'),
+    startDate: z.iso.date({ error: 'Start date must be a date (YYYY-MM-DD)' }),
+    endDate: z.iso.date({ error: 'End date must be a date (YYYY-MM-DD)' }),
+  })
+  .refine((t) => t.startDate < t.endDate, { path: ['endDate'], message: 'End date must be after the start date' });
+
+adminRouter.get('/terms', async (_req, res) => {
+  res.json({ terms: await modules.listTerms() });
+});
+
+// Overlapping terms are allowed: intakes differ per programme (D48).
+adminRouter.post('/terms', async (req, res) => {
+  const parsed = termSchema.safeParse(bodyOrEmpty(req));
+  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  try {
+    res.status(201).json({ term: await modules.createTerm(parsed.data) });
+  } catch (err) {
+    if (isUniqueViolation(err)) return res.status(409).json({ error: 'A term with this name already exists' });
+    throw err;
+  }
+});
+
+adminRouter.put('/terms/:termId', async (req, res) => {
+  const parsed = termSchema.safeParse(bodyOrEmpty(req));
+  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  try {
+    const term = await modules.updateTerm(Number(req.params.termId), parsed.data);
+    if (!term) return res.status(404).json({ error: 'Term not found' });
+    res.json({ term });
+  } catch (err) {
+    if (isUniqueViolation(err)) return res.status(409).json({ error: 'A term with this name already exists' });
+    throw err;
+  }
+});
+
+adminRouter.delete('/terms/:termId', async (req, res) => {
+  if (!(await modules.deleteTerm(Number(req.params.termId)))) return res.status(404).json({ error: 'Term not found' });
+  res.status(204).end();
 });

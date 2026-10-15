@@ -75,3 +75,52 @@ export async function updateModule(id: number, p: { name?: string; programme?: s
   const { rows } = await pool.query<AdminModule>(`${MODULE_SELECT} WHERE m.mod_id = $1`, [id]);
   return rows[0];
 }
+
+export interface Term {
+  id: number;
+  name: string;
+  /** YYYY-MM-DD, inclusive. */
+  startDate: string;
+  /** YYYY-MM-DD, inclusive. */
+  endDate: string;
+}
+
+// to_char keeps DATE values as calendar strings; pg would turn them into JS Dates at local midnight.
+const TERM_COLS = `trm_id AS "id", trm_name AS "name", to_char(trm_start_date, 'YYYY-MM-DD') AS "startDate",
+       to_char(trm_end_date, 'YYYY-MM-DD') AS "endDate"`;
+
+/** Academic terms, newest first (FR15). */
+export async function listTerms(): Promise<Term[]> {
+  const { rows } = await pool.query<Term>(`SELECT ${TERM_COLS} FROM "TERM_T" ORDER BY trm_start_date DESC, trm_id DESC`);
+  return rows;
+}
+
+export async function getTerm(id: number): Promise<Term | undefined> {
+  const { rows } = await pool.query<Term>(`SELECT ${TERM_COLS} FROM "TERM_T" WHERE trm_id = $1`, [id]);
+  return rows[0];
+}
+
+type TermInput = Omit<Term, 'id'>;
+
+/** Throws a unique violation when the name exists; the caller maps it to 409. */
+export async function createTerm(t: TermInput): Promise<Term> {
+  const { rows } = await pool.query<Term>(
+    `INSERT INTO "TERM_T" (trm_name, trm_start_date, trm_end_date) VALUES ($1, $2, $3) RETURNING ${TERM_COLS}`,
+    [t.name, t.startDate, t.endDate],
+  );
+  return rows[0];
+}
+
+/** Replaces a term; undefined when the id is unknown. Throws a unique violation when another term has the name. */
+export async function updateTerm(id: number, t: TermInput): Promise<Term | undefined> {
+  const { rows } = await pool.query<Term>(
+    `UPDATE "TERM_T" SET trm_name = $2, trm_start_date = $3, trm_end_date = $4 WHERE trm_id = $1 RETURNING ${TERM_COLS}`,
+    [id, t.name, t.startDate, t.endDate],
+  );
+  return rows[0];
+}
+
+export async function deleteTerm(id: number): Promise<boolean> {
+  const { rowCount } = await pool.query(`DELETE FROM "TERM_T" WHERE trm_id = $1`, [id]);
+  return rowCount === 1;
+}
