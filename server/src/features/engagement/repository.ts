@@ -1,7 +1,10 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
-import { approvedLecturer } from '../users/repository';
+import { approvedLecturer, viewerIsAdmin } from '../users/repository';
 import { VISIBLE, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
+
+/** SQL: comment c (author alias u) shows as unavailable: deleted, or by a suspended author and the viewer $1 is not an admin (D47). */
+const GONE = (c: string, u: string) => `(${c}.cmt_is_deleted OR (${u}.usr_status = 'suspended' AND NOT ${viewerIsAdmin('$1')}))`;
 
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
 const VIEW_WINDOW_MINUTES = 30;
@@ -77,7 +80,8 @@ export interface Comment extends Reply {
 /**
  * One page of top-level comments with their live replies: approved-lecturer comments first, then most liked, then oldest
  * (ENG-TC7). Keyset on (pinned, likes, created_at, id), D40; likes are live, so a comment liked between page requests can
- * cross the page boundary. A deleted comment shows as [deleted] only while it has live replies; deleted replies are omitted.
+ * cross the page boundary. A GONE comment shows as [deleted] or [comment unavailable] only while it has replies that are
+ * not GONE; GONE replies are omitted.
  */
 // shortcut: replies are not paged; page them too if one thread ever grows to thousands of replies.
 export async function listComments(
@@ -86,29 +90,29 @@ export async function listComments(
   const { rows } = await pool.query<CommentRow & { cursor: string | null }>(
     `WITH top AS (
        SELECT c.cmt_id AS id, c.cmt_created_at AS at,
-              CASE WHEN NOT c.cmt_is_deleted AND ${approvedLecturer('u')} THEN 0 ELSE 1 END AS unpinned,
+              CASE WHEN NOT ${GONE('c', 'u')} AND ${approvedLecturer('u')} THEN 0 ELSE 1 END AS unpinned,
               (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS likes
        FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
             -- LATERAL keeps the probe per deleted comment on comment_parent_idx; an OR-ed EXISTS is planned as a hash of every reply
-            LEFT JOIN LATERAL (SELECT 1 AS live FROM "COMMENT_T" r
-                               WHERE c.cmt_is_deleted AND r.cmt_parent_id = c.cmt_id AND NOT r.cmt_is_deleted LIMIT 1) lr ON TRUE
-       WHERE c.cmt_pst_id = $2 AND c.cmt_parent_id IS NULL AND (NOT c.cmt_is_deleted OR lr.live IS NOT NULL)),
+            LEFT JOIN LATERAL (SELECT 1 AS live FROM "COMMENT_T" r JOIN "USER_T" ru ON ru.usr_id = r.cmt_usr_id
+                               WHERE ${GONE('c', 'u')} AND r.cmt_parent_id = c.cmt_id AND NOT ${GONE('r', 'ru')} LIMIT 1) lr ON TRUE
+       WHERE c.cmt_pst_id = $2 AND c.cmt_parent_id IS NULL AND (NOT ${GONE('c', 'u')} OR lr.live IS NOT NULL)),
      pg AS (
        SELECT * FROM top
        WHERE $3::BIGINT IS NULL OR (unpinned, -likes, at, id) > ($3::BIGINT, -$4::BIGINT, ${fromMicros('$5')}, $6::INT)
        ORDER BY unpinned, likes DESC, at, id
        LIMIT $7)
      SELECT c.cmt_id AS "id", c.cmt_parent_id AS "parentId", c.cmt_slide_no AS "slideNo",
-            CASE WHEN c.cmt_is_deleted THEN '[deleted]' ELSE c.cmt_body END AS "body",
+            CASE WHEN c.cmt_is_deleted THEN '[deleted]' WHEN ${GONE('c', 'u')} THEN '[comment unavailable]' ELSE c.cmt_body END AS "body",
             c.cmt_is_deleted AS "deleted", c.cmt_created_at AS "createdAt",
-            CASE WHEN c.cmt_is_deleted THEN NULL
+            CASE WHEN ${GONE('c', 'u')} THEN NULL
                  ELSE json_build_object('id', u.usr_id, 'displayName', u.usr_display_name,
                         'isVerifiedLecturer', ${approvedLecturer('u')}) END AS "author",
             (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS "likes",
             EXISTS (SELECT 1 FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id AND clk_usr_id = $1) AS "likedByMe",
             pg.unpinned || '_' || pg.likes || '_' || ${micros('pg.at')} || '_' || pg.id AS "cursor"
      FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id LEFT JOIN pg ON pg.id = c.cmt_id
-     WHERE c.cmt_pst_id = $2 AND (pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT c.cmt_is_deleted))
+     WHERE c.cmt_pst_id = $2 AND (pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT ${GONE('c', 'u')}))
      ORDER BY pg.unpinned, pg.likes DESC, c.cmt_created_at, c.cmt_id`,
     [viewerId, noteId, ...(cursor ?? [null, null, null, null]), limit + 1],
   );

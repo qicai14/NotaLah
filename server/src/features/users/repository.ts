@@ -175,6 +175,12 @@ export const follows = (a: string, b: string) =>
 /** SQL: `a` and `b` follow each other, which makes them friends (D38). */
 export const friends = (a: string, b: string) => `(${follows(a, b)} AND ${follows(b, a)})`;
 
+/** SQL: viewer `v` (an id expression) is an admin; GUEST_ID matches no account. */
+export const viewerIsAdmin = (v: string) => `EXISTS (SELECT 1 FROM "USER_T" va WHERE va.usr_id = ${v} AND va.usr_role = 'admin')`;
+
+/** SQL: account u may be shown to viewer $1: not deleted, and not suspended unless the viewer is an admin (D26, D47). */
+const SHOWN_USER = `(u.usr_status <> 'deleted' AND (u.usr_status <> 'suspended' OR ${viewerIsAdmin('$1')}))`;
+
 /** Accounts that appear in follow lists and counts: not deleted or suspended (D38). */
 const LISTED = `IN ('active', 'restricted')`;
 
@@ -195,31 +201,31 @@ const FOLLOW_STATE_COLS = `
             ${follows('$1', 'u.usr_id')} AS "followedByMe", ${follows('u.usr_id', '$1')} AS "followsMe",
             ${friends('$1', 'u.usr_id')} AS "isFriend"`;
 
-/** Public profile fields plus the viewer's follow state; undefined for unknown or deleted accounts. */
+/** Public profile fields plus the viewer's follow state; undefined for unknown accounts and those not SHOWN_USER. */
 export async function findProfile(id: number, viewerId: number): Promise<(Profile & FollowState) | undefined> {
   const { rows } = await pool.query<Profile & FollowState>(
     `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_role AS "role", usr_programme AS "programme",
             usr_bio AS "bio", usr_avatar_url AS "avatarUrl",
             ${approvedLecturer('u')} AS "isVerifiedLecturer", ${FOLLOW_STATE_COLS}
-     FROM "USER_T" u WHERE usr_id = $2 AND usr_status <> 'deleted'`,
+     FROM "USER_T" u WHERE usr_id = $2 AND ${SHOWN_USER}`,
     [viewerId, id],
   );
   return rows[0];
 }
 
-/** The follow state of a user who is not deleted, as the viewer sees it; undefined for unknown or deleted users. */
+/** The follow state of a SHOWN_USER as the viewer sees it; undefined otherwise. */
 export async function getFollowState(viewerId: number, targetId: number): Promise<FollowState | undefined> {
   const { rows } = await pool.query<FollowState>(
-    `SELECT ${FOLLOW_STATE_COLS} FROM "USER_T" u WHERE u.usr_id = $2 AND u.usr_status <> 'deleted'`,
+    `SELECT ${FOLLOW_STATE_COLS} FROM "USER_T" u WHERE u.usr_id = $2 AND ${SHOWN_USER}`,
     [viewerId, targetId],
   );
   return rows[0];
 }
 
-/** Follows a user who is not deleted (the profile rule, D38); 'exists' when already following. */
+/** Follows a SHOWN_USER (the profile rule: a profile you can open can be followed, D38); 'exists' when already following. */
 export async function follow(followerId: number, followeeId: number): Promise<'created' | 'exists' | 'not_found'> {
   const { rows } = await pool.query<{ found: boolean; created: boolean }>(
-    `WITH t AS (SELECT usr_id FROM "USER_T" WHERE usr_id = $2 AND usr_status <> 'deleted'),
+    `WITH t AS (SELECT u.usr_id FROM "USER_T" u WHERE u.usr_id = $2 AND ${SHOWN_USER}),
           ins AS (INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) SELECT $1, usr_id FROM t
                   ON CONFLICT DO NOTHING RETURNING 1)
      SELECT EXISTS (SELECT 1 FROM t) AS "found", EXISTS (SELECT 1 FROM ins) AS "created"`,

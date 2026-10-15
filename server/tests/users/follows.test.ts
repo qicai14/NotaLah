@@ -52,16 +52,32 @@ describe('Follows', () => {
     expect((await followReq(r, b)).status).toBe(403);
   });
 
-  it('USR-TC16: a suspended user can be followed; a deleted or unknown user is 404 for follow and unfollow', async () => {
+  it('USR-TC16: a suspended, deleted or unknown user is 404 for follow and unfollow', async () => {
     const a = await insertUser();
-    expect((await followReq(a, await insertUser({ status: 'suspended' }))).status).toBe(201);
-    for (const target of [await insertUser({ status: 'deleted' }), 99999]) {
+    for (const target of [await insertUser({ status: 'suspended' }), await insertUser({ status: 'deleted' }), 99999]) {
       for (const res of [await followReq(a, target), await unfollowReq(a, target)]) {
         expect(res.status).toBe(404);
         expect(res.body.error).toBe('User not found');
       }
     }
-    expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(1);
+    expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(0);
+  });
+
+  it('USR-TC27: a suspended profile is 404 for guests and signed-in users and open to admins', async () => {
+    const [suspended, fan, admin] = [await insertUser(), await insertUser(), await insertUser({ role: 'admin' })];
+    await insertNote(suspended);
+    await follow(fan, suspended);
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [suspended]);
+    const profile = `/api/users/${suspended}`;
+    for (const url of [profile, `${profile}/notes`]) expect((await request(app).get(url)).status).toBe(404);
+    for (const url of [profile, `${profile}/notes`, `${profile}/followers`, `${profile}/following`]) {
+      expect((await get(fan, url)).status).toBe(404);
+      expect((await get(admin, url)).status).toBe(200);
+    }
+    const asAdmin = (await get(admin, profile)).body.user;
+    expect(asAdmin).toMatchObject({ id: suspended, followerCount: 1 });
+    expect(asAdmin.notes).toEqual([]); // the notes stay withdrawn (D26); admins review them through reports
+    expect((await get(fan, `/api/users/${fan}/following`)).body.items).toEqual([]);
   });
 
   it('USR-TC17: a mutual follow makes two users friends; a one-way follow does not', async () => {

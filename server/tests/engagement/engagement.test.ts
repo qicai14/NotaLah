@@ -92,6 +92,30 @@ describe('Engagement', () => {
     expect((await del(other, `/api/notes/${open}/bookmark`)).status).toBe(200);
   });
 
+  it('ENG-TC22: comments and replies by a suspended author are unavailable except to admins', async () => {
+    const [author, reader, gone, admin] = [await insertUser(), await insertUser(), await lecturer(), await insertUser({ role: 'admin' })];
+    const p = await insertNote(author);
+    const withReply = (await comment(gone, p, { body: 'lecturer note' })).body.comment.id;
+    await comment(reader, p, { body: 'reader reply', parentId: withReply });
+    await comment(gone, p, { body: 'lonely' });
+    const kept = (await comment(reader, p, { body: 'reader top' })).body.comment.id;
+    await comment(gone, p, { body: 'suspended reply', parentId: kept });
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [gone]);
+    type Shown = { body: string; author: unknown; pinned: boolean; replies: { body: string }[] };
+    const url = `/api/notes/${p}/comments`;
+    for (const res of [await request(app).get(url), await get(reader, url)]) {
+      const shown: Shown[] = res.body.comments;
+      expect(shown.map((c) => [c.body, c.author, c.pinned])).toEqual([
+        ['[comment unavailable]', null, false],
+        ['reader top', expect.anything(), false],
+      ]);
+      expect(shown.map((c) => c.replies.map((r) => r.body))).toEqual([['reader reply'], []]);
+    }
+    const all: Shown[] = (await get(admin, url)).body.comments;
+    expect(all.map((c) => [c.body, c.pinned])).toEqual([['lecturer note', true], ['lonely', true], ['reader top', false]]);
+    expect(all[2].replies.map((r) => r.body)).toEqual(['suspended reply']);
+  });
+
   it('ENG-TC16: the author may like their own note; own comments are not counted in engagement', async () => {
     const [a, b] = [await insertUser(), await insertUser()];
     const p = await insertNote(a);
