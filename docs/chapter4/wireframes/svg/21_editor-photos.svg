@@ -181,17 +181,18 @@
 <g id="ebar-7">
 <rect x="0" y="0" width="1440" height="56" fill="#ffffff"/>
 <rect x="0" y="55" width="1440" height="1" fill="#d6d6d6"/>
-<text x="26" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Home</text>
-<rect x="83.75" y="16" width="1" height="24" fill="#d6d6d6"/>
-<text x="104.75" y="33.15" font-size="14" font-weight="600" fill="#1c1c1c">TCP vs UDP</text>
-<text x="199.7" y="32.28" font-size="12" fill="#6b6b6b">Saved 14:32</text>
-<rect x="275.05" y="16" width="1" height="24" fill="#d6d6d6"/>
-<text x="300.05" y="32.28" font-size="12" font-weight="600" fill="#474747">Undo</text>
-<text x="361.89" y="32.28" font-size="12" font-weight="600" fill="#474747" fill-opacity="0.45">Redo</text>
-<rect x="413.83" y="16" width="1" height="24" fill="#d6d6d6"/>
-<rect x="427.33" y="10.5" width="100.92" height="35" rx="7.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
-<text x="434.83" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">4:5 Portrait</text>
-<g transform="translate(506.75 21) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<g transform="translate(26 19) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></g>
+<text x="52" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Home</text>
+<rect x="109.75" y="16" width="1" height="24" fill="#d6d6d6"/>
+<text x="130.75" y="33.15" font-size="14" font-weight="600" fill="#1c1c1c">TCP vs UDP</text>
+<text x="225.7" y="32.28" font-size="12" fill="#6b6b6b">Saved 14:32</text>
+<rect x="301.05" y="16" width="1" height="24" fill="#d6d6d6"/>
+<text x="326.05" y="32.28" font-size="12" font-weight="600" fill="#474747">Undo</text>
+<text x="387.89" y="32.28" font-size="12" font-weight="600" fill="#474747" fill-opacity="0.45">Redo</text>
+<rect x="439.83" y="16" width="1" height="24" fill="#d6d6d6"/>
+<rect x="453.33" y="10.5" width="100.92" height="35" rx="7.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<text x="460.83" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">4:5 Portrait</text>
+<g transform="translate(532.75 21) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
 <text x="1108.34" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Preview</text>
 <rect x="1180.28" y="12" width="61.05" height="32" rx="16" fill="#ffffff"/>
 <rect x="1181.03" y="12.75" width="59.55" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>

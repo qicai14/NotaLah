@@ -354,13 +354,24 @@ add('editor_mobile', `<div class="m" style="background:var(--s2)">${sbar}
 
   const lockBanner = `<div class="banner" style="position:absolute;left:50%;top:14px;transform:translateX(-50%);width:640px;z-index:6">${av('AR', 36, true)}
     <div style="flex:1"><b>Aina Rahman is editing</b><div class="muted sm">${L(14)}</div></div><span class="b sm o">${I('bell', 14)}Notify me</span></div>`;
-  add('editor_locked', editor({ rail: '', dimRail: true, panel: false, bar: { locked: true, people: ['LQ', 'AR', 'HI'] },
+  // R30 soft lock, seen by a co-author (Publish dimmed) and by the owner (Publish opens the visibility choice)
+  const visPop = `<div class="pop" style="right:16px;top:60px;width:300px;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <b>Publish the last saved version</b><span class="muted sm" style="margin-top:-6px">Aina's unsaved changes are not included.</span>
+      <div class="fld"><label>Who can see this note</label>
+        ${[['Public', 'Anyone on PARP, guests included', true], ['Friends only', 'Mutual followers only', false]].map(([t, d, on]) => `<div class="li ${on ? 'on' : ''}" style="padding:10px"><span class="radio ${on ? 'on' : ''}"></span><div class="t"><div class="n">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
+      <div class="row" style="justify-content:flex-end;gap:8px"><span class="b sm">Cancel</span><span class="b sm p">Publish</span></div></div>`;
+  const dimTip = `<div class="pop" style="right:16px;top:60px;width:240px;padding:10px 14px;font-size:13px"><b>Only the owner can publish</b><div class="muted sm">${L(8)}</div></div>`;
+  const locked = (owner) => editor({ rail: '', dimRail: true, panel: false, bar: { locked: true, owner, people: ['LQ', 'AR', 'HI'] },
     board: lockBanner + boardAt(W, H, `<div style="position:absolute;inset:0">${slide('norm')}</div>`, { wsW: 1364, top: 72 }).html
-      + `<div class="pop" style="left:${(1364 - W) / 2 + W + 24}px;top:150px;width:240px;padding:14px;display:flex;flex-direction:column;gap:10px"><b class="sm" style="font-size:13px">On this note now</b>
-        ${[['AR', 'Aina Rahman', 'Editing'], ['LQ', 'Lim Qi Cai (you)', 'Viewing'], ['HI', 'Hafiz Ismail', 'Away']].map(([i, n, s], k) => `<div class="row" style="gap:8px">${av(i, 28, k === 0)}<div style="flex:1;font-size:13px;font-weight:600">${n}</div><span class="tag" style="${k === 0 ? 'background:var(--ink);color:#fff' : ''}">${k === 0 ? I('lock', 12) : ''}${s}</span></div>`).join('')}</div>`,
-    bottom: { left: 76, locked: true } }),
-  { t: 'Editor soft lock (read-only)', refs: 'R30, UC08', v3: 'new',
-    p: 'A co-author opens a note someone else is editing: banner "X is editing", tools dimmed, Notify me when free.' });
+      + `<div class="pop" style="left:${(1364 - W) / 2 - 24 - 260}px;top:150px;width:260px;padding:14px;display:flex;flex-direction:column;gap:10px"><b class="sm" style="font-size:13px">On this note now</b>
+        ${[['AR', 'Aina Rahman', 'Editing'], ['LQ', `Lim Qi Cai${owner ? ' (you)' : ''}`, owner ? 'Owner' : 'Away'], ['HI', `Hafiz Ismail${owner ? '' : ' (you)'}`, owner ? 'Away' : 'Viewing']].map(([i, n, s], k) => `<div class="row" style="gap:8px">${av(i, 28)}<div style="flex:1;font-size:13px;font-weight:600">${n}</div><span class="tag" style="${k === 0 ? 'background:var(--ink);color:#fff' : ''}">${s}</span></div>`).join('')}</div>`,
+    bottom: { left: 76, locked: true }, over: owner ? visPop : dimTip });
+  add('editor_locked', locked(false),
+  { t: 'Editor soft lock (co-author view)', refs: 'R30, UC08, UC07', v3: 'new',
+    p: 'A co-author opens a note someone else is editing: banner "X is editing", tools dimmed, Notify me; Publish is dimmed because only the owner publishes.' });
+  add('editor_locked_owner', locked(true),
+  { t: 'Editor soft lock (owner publishes)', refs: 'R30, UC07, FR10', v3: 'new',
+    p: 'The owner opens a note a co-author is editing; Publish stays available and asks for visibility: Public or Friends only.' });
 }
 
 add('drafts', app('Profile', `<div class="content" style="padding:0 32px">
@@ -370,8 +381,11 @@ add('drafts', app('Profile', `<div class="content" style="padding:0 32px">
     ${[['Indexing: B-tree vs hash', 'a', 'CT030-3-2', 'Edited 2h ago · 4 slides'], ['React hooks cheat sheet', 'b', 'CT076-3-2', 'Edited yesterday · 7 slides · shared'], ['Untitled note', 'blank', '', 'Edited 3 Oct · 1 slide'], ['Page replacement: LRU', 'c', 'CT050-3-2', 'Edited 28 Sep · 5 slides']].map(([t, v, c, s]) =>
     `<div><div class="tile">${v === 'blank' ? '<div class="sl"></div>' : cover(t, v, c)}<span class="ib s sm" style="position:absolute;top:8px;right:8px;background:#fff">${I('more', 16)}</span></div><div class="tcap">${t}</div><div class="tsub">${s}</div></div>`).join('')}
   </div>
-  <div class="pop" style="left:${32 + 2 * (1168 - 80) / 5 + 40 + 120}px;top:96px;width:200px">${[['pencil', 'Continue editing'], ['users', 'Share'], ['copy', 'Duplicate'], ['trash', 'Delete draft']].map(([ic, t], k) => `<div class="mi ${k === 0 ? 'on' : ''}">${I(ic, 18)}${t}</div>`).join('')}</div></div>`, { left: backT('Drafts') + '<span class="muted" style="font-size:15px;font-weight:600">4</span>' }),
-{ t: 'Drafts', refs: 'UC06, UC08', v3: 'Changed: draft menu gains Share (R30)', p: 'Private drafts grid with continue, share, duplicate and delete.' });
+  <div class="pop" style="left:${32 + 2 * (1168 - 80) / 5 + 40 + 120}px;top:96px;width:200px">${[['pencil', 'Continue editing'], ['upload', 'Publish…'], ['users', 'Share'], ['copy', 'Duplicate'], ['trash', 'Delete draft']].map(([ic, t], k) => `<div class="mi ${k === 1 ? 'on' : ''}">${I(ic, 18)}${t}${k === 1 ? `<span class="k">${I('right', 14)}</span>` : ''}</div>`).join('')}</div>
+  <div class="pop" style="left:${32 + 2 * (1168 - 80) / 5 + 40 + 120 + 208}px;top:140px;width:280px;padding:16px;display:flex;flex-direction:column;gap:12px"><b>Publish “React hooks cheat sheet”</b>
+    <div class="fld"><label>Who can see this note</label>${[['Public', 'Anyone on PARP, guests included', true], ['Friends only', 'Mutual followers only', false]].map(([t, d, on]) => `<div class="li ${on ? 'on' : ''}" style="padding:10px"><span class="radio ${on ? 'on' : ''}"></span><div class="t"><div class="n">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
+    <span class="muted sm">Module and hashtags are checked before posting.</span><div class="row" style="justify-content:flex-end;gap:8px"><span class="b sm">Cancel</span><span class="b sm p">Publish</span></div></div></div>`, { left: backT('Drafts') + '<span class="muted" style="font-size:15px;font-weight:600">4</span>' }),
+{ t: 'Drafts', refs: 'UC06, UC07, UC08', v3: 'Changed: draft menu gains Share (R30) and Publish with a Public or Friends only choice', p: 'Private drafts grid; the draft menu continues, publishes (choosing Public or Friends only), shares, duplicates or deletes.' });
 
 /* ================================================================== profiles */
 add('my_profile', app('Profile', `<div class="content" style="top:56px">${profileHead({ i: 'LQ', n: 'Lim Qi Cai', h: '@limqicai', prog: 'BSc (Hons) Software Engineering · Year 3', c: ['128', '342', '2.1K'],
@@ -385,6 +399,28 @@ add('user_profile', app('Explore', `<div class="content" style="top:56px">${prof
   <div class="tabs" style="margin:24px 48px 16px"><span class="tab on">${I('gridI', 18)}Notes</span><span class="tab">${I('heart', 18)}Liked</span></div>
   <div class="grid" style="grid-template-columns:repeat(6,1fr);gap:12px;padding:0 48px">${[COVERS[2], COVERS[0], COVERS[9], COVERS[1], COVERS[5], COVERS[10]].map((c, k) => tile(c, { priv: k === 3 })).join('')}</div></div>`),
 { t: 'Another user\'s profile (friends)', refs: 'UC04, UC17', p: 'A lecturer profile in the Friends state, showing a Friends-only note visible to friends.' });
+
+/* ---------- Sprint 4 blocking */
+{
+  const hafiz = (btns, bio, c = ['96', '210', '1.4K']) => profileHead({ i: 'HI', n: 'Hafiz Ismail', h: '@hafizi', prog: 'BSc (Hons) Computer Science · Year 2', c, btns, bio });
+  const moreMenu = `<div class="pop" style="left:440px;top:132px;width:220px">${[['Share profile', false], ['Report account', false], ['Block', true]].map(([t, on]) => `<div class="mi ${on ? 'on' : ''}">${t}</div>`).join('')}</div>`;
+  add('block_user', app('Explore', `<div class="content" style="top:56px">${hafiz(`<span class="b p">Follow</span><span class="b">Message</span><span class="ib s">${I('share', 18)}</span><span class="ib s" style="box-shadow:inset 0 0 0 2px var(--ink)">${I('more', 18)}</span>`, L(16))}
+    <div class="tabs" style="margin:24px 48px 16px"><span class="tab on">Notes</span><span class="tab">Liked</span></div>
+    <div class="grid" style="grid-template-columns:repeat(6,1fr);gap:12px;padding:0 48px">${COVERS.slice(0, 6).map((c) => tile(c)).join('')}</div>${moreMenu}</div>`,
+    { over: dlg(480, 'Block Hafiz Ismail?', `<div style="color:var(--ink2);margin-top:-6px;line-height:1.5">They are not told. While the block is on:</div>
+      <div class="col" style="gap:8px;font-size:14px">${['Neither of you can follow, message or send a message request to the other.', 'They cannot see, like or comment on your notes or profile, and you do not see theirs.', 'Follows between you are removed both ways.'].map((t) => `<div class="row" style="gap:10px;align-items:flex-start"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink2);margin-top:8px;flex:none"></span><span>${t}</span></div>`).join('')}</div>
+      <div class="help">You can unblock from their profile at any time.</div>`, '<span class="b">Cancel</span><span class="b p">Block</span>', { scrimStyle: 'place-items:end center;padding-bottom:48px' }) }),
+  { t: 'Block a user (More menu and confirm)', refs: 'Sprint 4 blocking, UC04', v3: 'new',
+    p: 'From a profile\'s More menu the user picks Block; a confirm dialog lists what blocking stops before it applies.' });
+
+  add('blocked_profile', app('Explore', `<div class="content" style="top:56px">${hafiz(`<span class="b o">Unblock</span>`, '', ['–', '–', '–'])}
+    <div style="margin:48px auto 0;width:460px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      ${xb('width:72px;height:72px;border-radius:12px')}<b style="font-size:18px">You blocked @hafizi</b>
+      <span class="muted" style="line-height:1.5">Their notes, followers and likes are hidden. They cannot follow or message you, or see your notes, until you unblock them.</span>
+      <span class="b o" style="margin-top:6px">Unblock</span></div></div>`),
+  { t: 'Blocked profile state', refs: 'Sprint 4 blocking, UC04', v3: 'new',
+    p: 'A profile you blocked shows no counts or notes, explains the block and offers Unblock.' });
+}
 
 add('edit_profile', app('Profile', `<div class="content" style="top:56px">${profileHead({ i: 'LQ', n: 'Lim Qi Cai', h: '@limqicai', prog: 'BSc (Hons) Software Engineering · Year 3', c: ['128', '342', '2.1K'], btns: '<span class="b p">Edit profile</span>', bio: '' })}</div>`,
   { over: dlg(600, 'Edit profile', `
@@ -475,12 +511,14 @@ add('notifications', `<div class="app">${nav('Notifications', { collapsed: true 
     <div class="muted sm" style="font-weight:700;padding:4px 8px 0">Today</div>
     ${nrow('LC', true, `<b>Dr Lee Chin Wei</b> Super Liked your note. “${L(5, false)}”`, '12 min ago', nthumb(2))}
     ${nrow('AR', false, `<b>Aina Rahman</b> mentioned you: <span class="at">@limqicai</span> ${L(6, false)}`, '1 h ago', nthumb(0))}
+    ${nrow('CW', false, '<b>Chloe Wong</b> asked to collaborate on “Normalisation, 1NF to 3NF”.', '2 h ago', '<span class="b sm">Review</span>')}
     ${nrow('HI', false, '<b>Hafiz Ismail</b> started following you.', '3 h ago', '<span class="b sm p">Follow back</span>')}
     <div class="muted sm" style="font-weight:700;padding:4px 8px 0">This week</div>
+    ${nrow('', false, '<b>“Sorting algorithms compared” was edited since you verified it.</b> Lecturers only.', 'Tue', '<span class="b sm">Re-confirm</span>', { icon: 'warn' })}
     ${nrow('', false, `<b>Lecturer account approved.</b> ${L(8)}`, 'Mon', '', { icon: 'shield' })}
     ${nrow('', false, `<b>Your note was hidden by an administrator.</b> ${L(7)}`, 'Sun', '<span class="b sm">Details</span>', { icon: 'flag' })}
-    ${nrow('TM', false, '<b>Tan Mei Ling</b> and 3 others liked “TCP vs UDP”.', 'Sat', nthumb(4))}`)}${feedBehind('PN')}</div>`,
-{ t: 'Notifications drawer', refs: 'UC16, UC19, UC22, UC20', p: 'Grouped notifications: Super Likes, mentions, follows, approvals and moderation, with a requests entry.' });
+`)}${feedBehind('LC')}</div>`,
+{ t: 'Notifications drawer', refs: 'UC16, UC19, UC22, UC20, R8, R30', v3: 'Changed: adds collaboration request and "edited since verification" items (R8 types)', p: 'Grouped notifications: Super Likes, mentions, collaboration requests, follows, edited since verification, approvals and moderation, with a message requests entry.' });
 
 add('collab_request_notification', `<div class="app">${nav('Notifications', { collapsed: true })}${notifDrawer(`
     <div class="muted sm" style="font-weight:700;padding:4px 8px 0">Collaboration requests</div>
@@ -509,16 +547,40 @@ const convList = (on, o = {}) => `<div style="width:360px;flex:none;display:flex
   ${[['AR', 'Aina Rahman', 'Shared a note: Normalisation, 1NF…', '2m'], ['FY', 'FYP Team, CT046', 'Arjun: lorem ipsum dolor sit', '1h'], ['LC', 'Dr Lee Chin Wei', 'You: lorem ipsum dolor', 'Mon'], ['TM', 'Tan Mei Ling', 'Lorem ipsum dolor sit amet', 'Sun'], ['AK', 'Arjun Kumar', 'Sent a note: Stack vs queue', 'Sat']].map(([i, n, s, t]) =>
     `<div class="li ${n === on ? 'on' : ''}">${av(i, 48, i === 'LC')}<div class="t"><div class="n">${n}</div><div class="s">${s}</div></div><span class="muted sm">${t}</span></div>`).join('')}</div>`;
 const shareCard = (me, k = 0) => `<div class="ncard ${me ? 'me' : ''}"><div class="th"><div style="width:120px;height:150px">${slide(k === 0 ? 'norm' : 'stack')}</div></div><div class="mt"><b>${k === 0 ? 'Normalisation, 1NF to 3NF in one page' : 'Stack vs queue, with real examples'}</b><span class="muted sm">${k === 0 ? 'Aina Rahman · CT030-3-2' : 'Arjun Kumar · CT044-3-2'}</span></div></div>`;
-const chatPane = (head, msgs, input = true) => `<div style="flex:1;display:flex;flex-direction:column;background:var(--s0);border-radius:16px 0 0 0;overflow:hidden;box-shadow:inset 1px 1px 0 var(--line)">
+const chatPane = (head, msgs, input = true, above = '') => `<div style="flex:1;display:flex;flex-direction:column;background:var(--s0);border-radius:16px 0 0 0;overflow:hidden;box-shadow:inset 1px 1px 0 var(--line)">
   <div class="row" style="padding:14px 20px;background:#fff;box-shadow:inset 0 -1px 0 var(--line)">${head}</div>
   <div style="flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:10px;overflow:hidden">${msgs}</div>
-  ${input ? `<div class="inbar" style="padding:12px 20px 18px"><span class="ib s">${I('clip', 20)}</span><div class="in" style="flex:1;border-radius:999px;background:#fff">Send a message…<span class="end">${I('smile', 18)}</span></div><span class="ib s" style="background:var(--acc);color:#fff">${I('send', 18)}</span></div>` : ''}</div>`;
+  ${above}${input ? `<div class="inbar" style="padding:12px 20px 18px"><span class="ib s">${I('clip', 20)}</span><div class="in" style="flex:1;border-radius:999px;background:#fff">Send a message…<span class="end">${I('smile', 18)}</span></div><span class="ib s" style="background:var(--acc);color:#fff">${I('send', 18)}</span></div>` : ''}</div>`;
 
 add('messages', app('Messages', `<div class="content" style="display:flex">${convList('Aina Rahman')}${chatPane(`${av('AR', 40)}<div><div style="font-weight:700">Aina Rahman</div><div class="muted sm row" style="gap:4px">${I('friends', 14)}Friends · active now</div></div><span class="ib" style="margin-left:auto">${I('info', 20)}</span>`,
   `<div class="muted sm" style="text-align:center">Today 14:02</div>${shareCard(false)}<div class="bub">${L(9)}</div>
    <div class="bub me">${L(12)}</div><div class="bub me">${L(7)}</div><div class="bub">${L(6)}</div>
    <div class="muted sm" style="text-align:right">Seen</div>`)}</div>`, { left: title('Messages'), right: `<span class="ib s">${I('users', 20)}</span>${util()}` }),
 { t: 'Post-anchored chat', refs: 'UC15, UC17, FR7, FR9', p: 'One-to-one chat that starts from a shared note card.' });
+
+/* ---------- Sprint 4 chat details: quoted reply, deleted message, Seen, typing, image message */
+const quote = (who, t, me) => `<div style="border-radius:10px;padding:6px 10px;margin-bottom:6px;font-size:13px;line-height:1.35;background:${me ? 'rgba(255,255,255,.18)' : '#fff'};box-shadow:inset 3px 0 0 ${me ? '#fff' : 'var(--ink3)'}"><b>${who}</b><div style="opacity:.85">${t}</div></div>`;
+const deleted = (me) => `<div class="bub ${me ? 'me' : ''}" style="background:#fff;color:var(--ink3);font-style:italic;box-shadow:inset 0 0 0 1.5px var(--s3)">Message deleted</div>`;
+const typing = (who) => `<div class="row" style="gap:8px"><div class="bub" style="display:flex;gap:5px;padding:14px 16px">${[0, 1, 2].map(() => '<span style="width:7px;height:7px;border-radius:50%;background:var(--ink3)"></span>').join('')}</div><span class="muted sm">${who} is typing…</span></div>`;
+const imgMsg = (w, h, me) => `<div style="align-self:${me ? 'flex-end' : 'flex-start'};display:flex;flex-direction:column;gap:4px;align-items:${me ? 'flex-end' : 'flex-start'}">${xb(`width:${w}px;height:${h}px;border-radius:14px`)}<span class="muted sm">Image</span></div>`;
+const replyBar = (who, t, pad = '10px 20px 0') => `<div class="row" style="gap:10px;padding:${pad};background:var(--s0)"><div style="flex:1;min-width:0;border-radius:10px;background:#fff;padding:8px 12px;box-shadow:inset 3px 0 0 var(--ink2),inset 0 0 0 1px var(--line);font-size:13px"><b>Replying to ${who}</b><div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t}</div></div><span class="ib sm">${I('x', 18)}</span></div>`;
+{
+  const q = L(5, false);
+  const msgs = `<div class="muted sm" style="text-align:center">Today 14:02</div>
+   <div class="bub" style="box-shadow:inset 0 0 0 2px var(--ink)">${q}.</div>
+   <div class="bub me">${quote('Aina Rahman', `${q}.`, true)}${L(9)}</div>
+   ${deleted(true)}
+   ${imgMsg(260, 160, true)}
+   <div class="muted sm" style="text-align:right;margin-top:-4px">Seen 14:09</div>
+   ${typing('Aina')}`;
+  // message menu on the selected (outlined) message; own messages also offer Delete
+  const acts = `<div class="pop" style="left:${360 + 24}px;top:164px;width:230px">${[['Reply', true], ['Copy text', false], ['Report message', false]].map(([t, on]) => `<div class="mi ${on ? 'on' : ''}">${t}</div>`).join('')}
+    <div class="muted sm" style="padding:6px 10px 2px;box-shadow:inset 0 1px 0 var(--line)">Own messages add Delete</div></div>`;
+  add('chat_details', app('Messages', `<div class="content" style="display:flex">${convList('Aina Rahman')}${chatPane(`${av('AR', 40)}<div><div style="font-weight:700">Aina Rahman</div><div class="muted sm">Friends · typing…</div></div><span class="ib" style="margin-left:auto">${I('info', 20)}</span>`,
+    msgs, true, replyBar('Aina Rahman', `${q}.`))}${acts}</div>`, { left: title('Messages'), right: `<span class="ib s">${I('users', 20)}</span>${util()}` }),
+  { t: 'Chat: reply, delete, Seen, typing, image', refs: 'UC15, FR6, FR7, Sprint 4 messaging', v3: 'new',
+    p: 'Message menu (Reply on any message, Delete on your own), a quoted reply, a "Message deleted" placeholder, an image message, the Seen receipt and the typing indicator.' });
+}
 
 add('message_request', app('Messages', `<div class="content" style="display:flex">${convList('', { reqOn: true })}
   <div style="flex:1;display:flex;background:var(--s0);border-radius:16px 0 0 0;overflow:hidden;box-shadow:inset 1px 1px 0 var(--line)">
@@ -553,10 +615,11 @@ add('group_chat', app('Messages', `<div class="content" style="display:flex">${c
 
 add('chat_mobile', mob(`<div style="height:56px;display:flex;align-items:center;gap:10px;padding:0 12px;box-shadow:inset 0 -1px 0 var(--line)">${I('left', 24)}${av('AR', 36)}<div style="flex:1"><b>Aina Rahman</b><div class="muted sm">Friends · active now</div></div>${I('info', 22)}</div>
   <div style="padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--s0);height:640px">
-    <div class="muted sm" style="text-align:center">Today 14:02</div>${shareCard(false).replace('width:300px', 'width:250px')}<div class="bub" style="max-width:80%">${L(8)}</div>
-    <div class="bub me" style="max-width:80%">${L(7)}</div><div class="bub" style="max-width:80%">${L(2)}</div></div>
-  <div style="position:absolute;left:0;right:0;bottom:0;padding:10px 12px 34px;display:flex;gap:8px;align-items:center;background:#fff;box-shadow:inset 0 1px 0 var(--line)"><span class="ib s sm">${I('clip', 18)}</span><div class="in" style="flex:1;height:40px;border-radius:999px">Message…</div><span class="ib s sm" style="background:var(--acc);color:#fff">${I('send', 16)}</span></div>`, { tab: false }),
-{ m: true, t: 'Chat (mobile)', refs: 'UC15, UC17, NFR2', p: 'Phone chat with the note card and a pinned input bar.' });
+    <div class="muted sm" style="text-align:center">Today 14:02</div>${shareCard(false).replace('width:300px', 'width:250px')}<div class="bub" style="max-width:80%">${L(6)}</div>
+    <div class="bub me" style="max-width:80%">${quote('Aina Rahman', L(4, false), true)}${L(5)}</div>${deleted(true)}
+    <div class="muted sm" style="text-align:right;margin-top:-4px">Seen</div>${typing('Aina')}</div>
+  <div style="position:absolute;left:0;right:0;bottom:0;background:#fff;box-shadow:inset 0 1px 0 var(--line)">${replyBar('Aina Rahman', L(6, false), '10px 12px 0').replace('background:var(--s0)', 'background:#fff')}<div style="padding:10px 12px 34px;display:flex;gap:8px;align-items:center"><span class="ib s sm">${I('clip', 18)}</span><div class="in" style="flex:1;height:40px;border-radius:999px">Message…</div><span class="ib s sm" style="background:var(--acc);color:#fff">${I('send', 16)}</span></div></div>`, { tab: false }),
+{ m: true, t: 'Chat (mobile)', refs: 'UC15, UC17, NFR2, Sprint 4 messaging', v3: 'Changed: adds quoted reply, Message deleted, Seen, typing and the reply bar', p: 'Phone chat with the note card, a quoted reply, a deleted message, Seen, the typing indicator and a reply bar above the input.' });
 
 /* ================================================================== admin */
 const adminApp = (on, body, o = {}) => app(on, body, { admin: true, me: 'AD', ...o });
@@ -605,3 +668,28 @@ add('admin_modules', adminApp('Modules', `<div class="content" style="padding:0 
       : `<tr><td><b>${c}</b></td><td>${n}</td><td>${k}</td><td><span class="b sm g">${I('pencil', 14)}Rename</span></td></tr>`).join('')}</table></div>`,
   { left: title('Modules', '12') }),
 { t: 'Admin: module catalogue', refs: 'UC21 (admin), R4/R5 catalogue', p: 'Add a module and rename one inline; renaming keeps every note linked.' });
+
+/* ---------- Sprint 4: academic terms (FR15) */
+{
+  const form = (n, s, e) => `<div style="background:var(--s1);border-radius:14px;padding:14px;display:flex;gap:10px;align-items:flex-end">
+    <div class="fld" style="flex:1"><label>Term name</label><div class="in fo v">${n}</div></div>
+    <div class="fld" style="width:200px"><label>Start date</label><div class="in v" style="background:#fff">${s}</div></div>
+    <div class="fld" style="width:200px"><label>End date</label><div class="in v" style="background:#fff">${e}</div></div>
+    <span class="b p" style="height:44px">Add term</span></div>`;
+  add('admin_terms', adminApp('Terms', `<div class="content" style="padding:0 32px;display:flex;flex-direction:column;gap:14px;width:1000px">
+    <div class="muted" style="font-size:15px">Terms appear as the Academic term filter in search. The end date must come after the start date.</div>${form('Semester 2, 2026/27', '1 Feb 2027', '20 Jun 2027')}
+    <table class="tbl"><tr><th>Name</th><th style="width:170px">Start</th><th style="width:170px">End</th><th style="width:130px">Notes in term</th><th style="width:190px"></th></tr>
+    ${[['Semester 1, 2026/27', '7 Sep 2026', '18 Dec 2026', 412], ['Semester 2, 2025/26', '2 Feb 2026', '19 Jun 2026', 1036], ['Semester 1, 2025/26', '8 Sep 2025', '19 Dec 2025', 655]].map(([n, s, e, k]) =>
+      `<tr><td><b>${n}</b></td><td>${s}</td><td>${e}</td><td>${k}</td><td><span class="b sm g">Edit</span><span class="b sm g">Delete</span></td></tr>`).join('')}</table></div>`,
+    { left: title('Terms', '3') }),
+  { t: 'Admin: academic terms', refs: 'FR15, UC21 (admin), Sprint 4 terms', v3: 'new',
+    p: 'Admin adds a term with a name, start date and end date, and edits or deletes the terms used by the search term filter.' });
+
+  add('admin_terms_empty', adminApp('Terms', `<div class="content" style="padding:0 32px;display:flex;flex-direction:column;gap:14px;width:1000px">${form('Semester 1, 2026/27', '7 Sep 2026', '18 Dec 2026')}
+    <div style="border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--s3);padding:48px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+      ${xb('width:64px;height:64px;border-radius:12px')}<b style="font-size:18px">No terms yet</b>
+      <span class="muted" style="max-width:520px;line-height:1.5">The Academic term filter appears in search once at least one term exists. Until then, users filter by a custom date range.</span></div></div>`,
+    { left: title('Terms', '0') }),
+  { t: 'Admin: terms, empty state', refs: 'FR15, Sprint 4 terms', v3: 'new',
+    p: 'First visit with no terms: the empty state explains that the search term filter appears once a term is added.' });
+}

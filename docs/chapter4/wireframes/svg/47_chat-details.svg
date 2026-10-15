@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<title>Chat: reply, delete, Seen, typing, image</title>
+<defs><clipPath id="clip1"><rect x="332" y="108.72" width="212" height="18.84"/></clipPath></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+<rect x="260" y="72" width="328" height="72" rx="12" fill="#f2f2f2"/>
+<rect x="272" y="84" width="48" height="48" rx="24" fill="#e6e6e6"/>
+<g transform="translate(285 97) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
+<text x="332" y="103.73" font-size="14" font-weight="600" fill="#1c1c1c">Message requests</text>
+<g clip-path="url(#clip1)">
+<text x="332" y="122.61" font-size="13" fill="#6b6b6b">occaecat cupidatat non proident sunt</text>
+</g>
+<rect x="556" y="98" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="562.83" y="112.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
+<rect x="260" y="150" width="328" height="68" rx="12" fill="#e6e6e6"/>
+<rect x="272" y="160" width="48" height="48" rx="24" fill="#f2f2f2"/>
+<path d="M279.03 167.03L312.97 200.97M312.97 167.03L279.03 200.97" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="272.75" y="160.75" width="46.5" height="46.5" rx="23.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="332" y="179.73" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
+<text x="332" y="198.61" font-size="13" fill="#6b6b6b">Shared a note: Normalisation, 1NF…</text>
+<text x="559.19" y="188.28" font-size="12" fill="#6b6b6b">2m</text>
+<rect x="272" y="234" width="48" height="48" rx="24" fill="#f2f2f2"/>
+<path d="M279.03 241.03L312.97 274.97M312.97 241.03L279.03 274.97" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="272.75" y="234.75" width="46.5" height="46.5" rx="23.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="332" y="253.73" font-size="14" font-weight="600" fill="#1c1c1c">FYP Team, CT046</text>
+<text x="332" y="272.61" font-size="13" fill="#6b6b6b">Arjun: lorem ipsum dolor sit</text>
+<text x="562.73" y="262.28" font-size="12" fill="#6b6b6b">1h</text>
+<rect x="272" y="308" width="48" height="48" rx="24" fill="#f2f2f2"/>
+<path d="M279.03 315.03L312.97 348.97M312.97 315.03L279.03 348.97" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="272.75" y="308.75" width="46.5" height="46.5" rx="23.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="332" y="327.73" font-size="14" font-weight="600" fill="#1c1c1c">Dr Lee Chin Wei</text>
+<text x="332" y="346.61" font-size="13" fill="#6b6b6b">You: lorem ipsum dolor</text>
+<text x="551.39" y="336.28" font-size="12" fill="#6b6b6b">Mon</text>
+<rect x="272" y="382" width="48" height="48" rx="24" fill="#f2f2f2"/>
+<path d="M279.03 389.03L312.97 422.97M312.97 389.03L279.03 422.97" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="272.75" y="382.75" width="46.5" height="46.5" rx="23.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="332" y="401.73" font-size="14" font-weight="600" fill="#1c1c1c">Tan Mei Ling</text>
+<text x="332" y="420.61" font-size="13" fill="#6b6b6b">Lorem ipsum dolor sit amet</text>
+<text x="556.03" y="410.28" font-size="12" fill="#6b6b6b">Sun</text>
+<rect x="272" y="456" width="48" height="48" rx="24" fill="#f2f2f2"/>
+<path d="M279.03 463.03L312.97 496.97M312.97 463.03L279.03 496.97" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="272.75" y="456.75" width="46.5" height="46.5" rx="23.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="332" y="475.73" font-size="14" font-weight="600" fill="#1c1c1c">Arjun Kumar</text>
+<text x="332" y="494.61" font-size="13" fill="#6b6b6b">Sent a note: Stack vs queue</text>
+<text x="559.45" y="484.28" font-size="12" fill="#6b6b6b">Sat</text>
+<path d="M616 72H1440V900H600V88A16 16 0 0 1 616 72Z" fill="#fafafa"/>
+<rect x="600" y="72" width="840" height="1" fill="#d6d6d6"/>
+<rect x="600" y="72" width="840" height="68" fill="#ffffff"/>
+<rect x="600" y="139" width="840" height="1" fill="#d6d6d6"/>
+<rect x="620" y="86" width="40" height="40" rx="20" fill="#f2f2f2"/>
+<path d="M625.86 91.86L654.14 120.14M654.14 91.86L625.86 120.14" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="620.75" y="86.75" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="672" y="102.47" font-size="14" font-weight="700" fill="#1c1c1c">Aina Rahman</text>
+<text x="672" y="120.43" font-size="12" fill="#6b6b6b">Friends · typing…</text>
+<text x="1386.19" y="110.28" font-size="12" font-weight="600" fill="#474747">Info</text>
+<text x="988.55" y="172.98" font-size="12" fill="#6b6b6b">Today 14:02</text>
+<rect x="624" y="187.39" width="276.5" height="39.59" rx="18" fill="#e6e6e6"/>
+<rect x="625" y="188.39" width="274.5" height="37.59" rx="17" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<text x="638" y="212.7" font-size="14" fill="#1c1c1c">nostrud exercitation ullamco laboris nisi.</text>
+<rect x="1028.98" y="236.98" width="387.02" height="92.69" rx="18" fill="#3a3a3a"/>
+<rect x="1042.98" y="246.98" width="359.02" height="47.09" rx="10" fill="#ffffff" fill-opacity="0.18"/>
+<rect x="1042.98" y="246.98" width="3" height="47.09" fill="#ffffff"/>
+<text x="1052.98" y="266.88" font-size="13" font-weight="600" fill="#ffffff">Aina Rahman</text>
+<text x="1052.98" y="284.43" font-size="13" fill="#ffffff" fill-opacity="0.85">nostrud exercitation ullamco laboris nisi.</text>
+<text x="1042.98" y="315.39" font-size="14" fill="#ffffff">Duis aute irure in reprehenderit voluptate velit esse cillum.</text>
+<rect x="1289.17" y="339.67" width="126.83" height="39.59" rx="18" fill="#ffffff"/>
+<rect x="1289.92" y="340.42" width="125.33" height="38.09" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1303.17" y="364.98" font-size="14" font-style="italic" fill="#6b6b6b">Message deleted</text>
+<rect x="1156" y="389.27" width="260" height="160" rx="14" fill="#f2f2f2"/>
+<path d="M1156 389.27L1416 549.27M1416 389.27L1156 549.27" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="1156.75" y="390.02" width="258.5" height="158.5" rx="13.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1383.02" y="566.25" font-size="12" fill="#6b6b6b">Image</text>
+<text x="1358.52" y="589.64" font-size="12" fill="#6b6b6b">Seen 14:09</text>
+<rect x="624" y="604.05" width="63" height="35" rx="17.5" fill="#e6e6e6"/>
+<rect x="640" y="618.05" width="7" height="7" rx="3.5" fill="#6b6b6b"/>
+<rect x="652" y="618.05" width="7" height="7" rx="3.5" fill="#6b6b6b"/>
+<rect x="664" y="618.05" width="7" height="7" rx="3.5" fill="#6b6b6b"/>
+<text x="695" y="625.82" font-size="12" fill="#6b6b6b">Aina is typing…</text>
+<rect x="600" y="762.31" width="840" height="63.69" fill="#fafafa"/>
+<rect x="620" y="772.31" width="758" height="53.69" rx="10" fill="#ffffff"/>
+<rect x="620" y="772.31" width="3" height="53.69" fill="#474747"/>
+<rect x="620.5" y="772.81" width="757" height="52.69" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="632" y="794.21" font-size="13" font-weight="600" fill="#1c1c1c">Replying to Aina Rahman</text>
+<text x="632" y="813.05" font-size="13" fill="#6b6b6b">nostrud exercitation ullamco laboris nisi.</text>
+<g transform="translate(1395 790.16) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<rect x="600" y="826" width="840" height="74" fill="#fafafa"/>
+<rect x="620" y="840" width="59.44" height="40" rx="20" fill="#e6e6e6"/>
+<text x="632" y="864.28" font-size="12" font-weight="600" fill="#474747">Attach</text>
+<rect x="689.44" y="838" width="680.56" height="44" rx="22" fill="#ffffff"/>
+<rect x="689.94" y="838.5" width="679.56" height="43" rx="21.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="703.44" y="865.15" font-size="14" fill="#6b6b6b">Send a message…</text>
+<text x="1325.72" y="864.28" font-size="12" font-weight="600" fill="#474747">Emoji</text>
+<rect x="1380" y="840" width="40" height="40" rx="20" fill="#3a3a3a"/>
+<g transform="translate(1391 851) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14M21 3l-6.5 18-4.5-7-7-4.5z"></path></g>
+<g id="pop-1">
+<rect x="623.25" y="235.25" width="231.5" height="152.89" rx="12.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="624" y="236" width="230" height="151.39" rx="12" fill="#ffffff"/>
+<rect x="630" y="242" width="218" height="38" rx="8" fill="#e6e6e6"/>
+<text x="640" y="266.15" font-size="14" font-weight="600" fill="#1c1c1c">Reply</text>
+<text x="640" y="304.15" font-size="14" fill="#1c1c1c">Copy text</text>
+<text x="640" y="342.15" font-size="14" fill="#1c1c1c">Report message</text>
+<rect x="630" y="356" width="218" height="1" fill="#d6d6d6"/>
+<text x="640" y="374.98" font-size="12" fill="#6b6b6b">Own messages add Delete</text>
+</g>
+<g id="top-2">
+<text x="272" y="44.18" font-size="22" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Messages</text>
+<rect x="1250" y="16" width="40" height="40" rx="20" fill="#e6e6e6"/>
+<g transform="translate(1260 26) scale(0.83)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<rect x="1302" y="20" width="66" height="32" rx="16" fill="#ffffff"/>
+<rect x="1302.75" y="20.75" width="64.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1316" y="40.47" font-size="13" font-weight="600" fill="#1c1c1c">Create</text>
+<rect x="1380" y="18" width="36" height="36" rx="18" fill="#f2f2f2"/>
+<path d="M1385.27 23.27L1410.73 48.73M1410.73 23.27L1385.27 48.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="1380.75" y="18.75" width="34.5" height="34.5" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+</g>
+<g id="nav-3">
+<rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
+<rect x="239" y="0" width="1" height="900" fill="#d6d6d6"/>
+<rect x="20" y="21" width="30" height="30" rx="9" fill="#1c1c1c"/>
+<text x="30.08" y="42.55" font-size="16" font-weight="700" fill="#ffffff">P</text>
+<text x="58" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
+<g transform="translate(193 25) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
+<rect x="12" y="70" width="216" height="40" rx="20" fill="#e6e6e6"/>
+<text x="26" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
+<g transform="translate(24 132) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
+<text x="62" y="149.35" font-size="15" fill="#474747">Feed</text>
+<g transform="translate(24 178) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<text x="62" y="195.35" font-size="15" fill="#474747">Following</text>
+<g transform="translate(24 224) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></g>
+<text x="62" y="241.35" font-size="15" fill="#474747">Explore</text>
+<rect x="23" y="269" width="26" height="26" rx="8" fill="#3a3a3a"/>
+<g transform="translate(27 273) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="62" y="287.35" font-size="15" fill="#474747">Create</text>
+<rect x="12" y="306" width="216" height="44" rx="10" fill="#e6e6e6"/>
+<g transform="translate(24 316) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"></path><path d="m10 13.5 4.5-4.5"></path></g>
+<text x="62" y="333.35" font-size="15" font-weight="700" fill="#1c1c1c">Messages</text>
+<rect x="196" y="318" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="202.83" y="332.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
+<g transform="translate(24 362) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></g>
+<text x="62" y="379.35" font-size="15" fill="#474747">Notifications</text>
+<rect x="196" y="364" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="202.83" y="378.1" font-size="11" font-weight="700" fill="#ffffff">3</text>
+<g transform="translate(24 408) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"></path></g>
+<text x="62" y="425.35" font-size="15" fill="#474747">Saved</text>
+<g transform="translate(24 454) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4.2-6.5 8-6.5s7 2.5 8 6.5"></path></g>
+<text x="62" y="471.35" font-size="15" fill="#474747">Profile</text>
+<g transform="translate(24 500) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#474747" stroke="none"></circle></g>
+<text x="62" y="517.35" font-size="15" fill="#474747">More</text>
+<text x="24" y="858.2" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy</text>
+<text x="24" y="878.59" font-size="12" fill="#6b6b6b">© 2026 PARP</text>
+</g>
+</svg>

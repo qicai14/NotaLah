@@ -198,7 +198,7 @@ export function lofiIcons() {
     const name = s.dataset.n, p = s.parentElement;
     if (DROP.has(name)) { s.remove(); continue; }
     if (p.closest('.ni,.tbi,.er')) continue; // navigation: icon plus label is the pattern
-    if (p.textContent.trim()) { if (!/^(down|up)$/.test(name)) s.remove(); continue; } // dropdown chevrons stay
+    if (p.textContent.trim()) { if (!/^(down|up|left|back)$/.test(name)) s.remove(); continue; } // dropdown chevrons and back arrows stay
     if (KEEP.has(name)) continue;
     const size = parseFloat(s.getAttribute('width')) || 20;
     const sp = document.createElement('span');
