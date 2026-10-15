@@ -59,6 +59,10 @@ describe('ranking config', () => {
     expect(() => assertWeightsSumToOne({ ...RANKING.weights, relevance: 0.2 })).toThrow(/sum to 1/);
   });
 
+  it('RANK-TC8: the search blend weights sum to 1 too', () => {
+    expect(() => assertWeightsSumToOne(RANKING.searchWeights)).not.toThrow();
+  });
+
   it('RANK-TC8: the config object is frozen', () => {
     expect(Object.isFrozen(RANKING)).toBe(true);
     expect(Object.isFrozen(RANKING.weights)).toBe(true);
