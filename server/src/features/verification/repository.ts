@@ -21,10 +21,10 @@ export async function addVerification(
   );
   if (inserted.rowCount === 0) {
     await pool.query(
-      `UPDATE "VERIFICATION_T" v SET ver_created_at = NOW()
+      `UPDATE "VERIFICATION_T" v SET ver_created_at = NOW(), ver_remark = COALESCE($3, v.ver_remark)
        FROM "POST_T" p
        WHERE v.ver_pst_id = $1 AND v.ver_usr_id = $2 AND p.pst_id = v.ver_pst_id AND v.ver_created_at < p.pst_content_edited_at`,
-      [noteId, lecturerId],
+      [noteId, lecturerId, remark],
     );
   }
   const { rows } = await pool.query<Verification>(
