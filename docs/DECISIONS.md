@@ -881,3 +881,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
   - Not changed: likes by suspended users, and their comments in E, still count.
   - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.
+- **Implementation (16 Oct, `chore/vite-plus`):** `vite-plus` 1.0.0 with `vite` aliased to `@voidzero-dev/vite-plus-core` 1.0.0
+  and `vitest` pinned to the bundled 5.0.1 through npm `overrides`; `dev`, `build` and `test` run through `vp`, and `lint`,
+  `format:check` and `check` are new scripts. CI gains a Lint step. Typecheck, 208 server tests, 21 client tests and build pass.
+  Oxlint reports 0 errors and 5 warnings. The format check is not in CI because Oxfmt would change 107 files; a dedicated
+  formatting PR comes first. Measured build and test times were not faster (build 5.94 s to 6.54 s, server tests 32.5 s to 35.8 s).
+  Details in `docs/sprints/vite_plus_migration.md`.
