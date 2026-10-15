@@ -38,6 +38,8 @@ export const RANKING = Object.freeze({
   }),
   /** ts_rank_cd normalisation flags; 1 divides by 1 + log(document length) so long notes do not win on length alone. */
   searchRankNormalization: 1,
+  /** Notes scored per search: the best this many by text rank, then newest; later matches are not returned (D48). */
+  searchCandidateLimit: 500,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {

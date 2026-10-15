@@ -1,6 +1,6 @@
 import { type KeysetPage, toPage } from '../../lib/keyset';
 import { pool } from '../../lib/pool';
-import { VALID_VERIFICATIONS, VERIFIED, VISIBLE, countsCol } from '../notes/repository';
+import { VALID_VERIFICATIONS, VISIBLE, countsCol } from '../notes/repository';
 import { approvedLecturer, countingLecturer } from '../users/repository';
 import { RANKING } from '../ranking/config';
 
@@ -35,29 +35,40 @@ const TAG_MATCH = `EXISTS (SELECT 1 FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h 
 /** Title, slide text and hashtags through the GIN-indexed search document, or the note's module (CTE `mods`) by code, name or programme. */
 const TEXT_MATCH = `(p.pst_search_doc @@ websearch_to_tsquery('english', $2) OR p.pst_mod_id = ANY (ARRAY(SELECT mod_id FROM mods)))`;
 
+/** SQL: note p has a valid Super Like (by lecturer $6 when `byLecturer`) made at or before the cutoff $11. */
+const verifiedAtCutoff = (byLecturer = false) =>
+  `EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id AND v.ver_created_at <= $11::TIMESTAMPTZ${byLecturer ? ' AND v.ver_usr_id = $6' : ''})`;
+
 /**
- * Every published note viewer $1 may see that matches `q` and the filters, with only what ordering needs (D48). Suspended
- * authors' notes never match (VISIBLE). E's inputs are the ranking counts (no self-likes, D47), so search and feed agree.
+ * The best `searchCandidateLimit` notes by text rank, then newest, that viewer $1 may see, published by `cutoff` and
+ * matching `q` and the filters, with only what ordering needs (D48). Suspended authors' notes never match (VISIBLE). Likes,
+ * comments and Super Likes count only up to the cutoff, so later pages with the same asOf keep their order; E's inputs are
+ * the ranking counts (no self-likes, D47), so search and feed agree.
  */
-export async function matchNotes(viewerId: number, q: string, f: NoteFilters): Promise<NoteMatch[]> {
+export async function matchNotes(viewerId: number, q: string, f: NoteFilters, cutoff: Date): Promise<NoteMatch[]> {
   const tag = q.startsWith('#') ? q.slice(1).toLowerCase() : null;
   const text = tag ?? q;
   const { rows } = await pool.query<NoteMatch>(
     `WITH mods AS (SELECT mod_id FROM "MODULE_T"
-                   WHERE mod_code ILIKE $3 || '%' OR mod_name ILIKE '%' || $3 || '%' OR mod_programme ILIKE '%' || $3 || '%')
-     SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt",
-            ts_rank_cd(p.pst_search_doc, websearch_to_tsquery('english', $2), $4) AS "textRank",
-            ${countsCol('NOW()')}, ${VERIFIED} AS "verified", ${countingLecturer('u')} AS "lecturerAuthor"
-     FROM "POST_T" p JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
-     WHERE p.pst_status = 'published' AND ${VISIBLE} AND ${tag === null ? TEXT_MATCH : TAG_MATCH}
-       AND ($5::BOOLEAN IS NOT TRUE OR ${countingLecturer('u')} OR ${VERIFIED})
-       AND ($6::INT IS NULL OR (p.pst_usr_id = $6 AND ${countingLecturer('u')})
-            OR EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id AND v.ver_usr_id = $6))
-       AND ($7::DATE IS NULL OR p.pst_published_at >= $7::DATE::TIMESTAMP AT TIME ZONE $9)
-       AND ($8::DATE IS NULL OR p.pst_published_at < ($8::DATE + 1)::TIMESTAMP AT TIME ZONE $9)
-       AND ($10::INT IS NULL OR p.pst_mod_id = $10)`,
+                   WHERE mod_code ILIKE $3 || '%' OR mod_name ILIKE '%' || $3 || '%' OR mod_programme ILIKE '%' || $3 || '%'),
+     candidates AS (
+       SELECT p.pst_id, ts_rank_cd(p.pst_search_doc, websearch_to_tsquery('english', $2), $4) AS "textRank"
+       FROM "POST_T" p JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
+       WHERE p.pst_status = 'published' AND p.pst_published_at <= $11::TIMESTAMPTZ AND ${VISIBLE}
+         AND ${tag === null ? TEXT_MATCH : TAG_MATCH}
+         AND ($5::BOOLEAN IS NOT TRUE OR ${countingLecturer('u')} OR ${verifiedAtCutoff()})
+         AND ($6::INT IS NULL OR (p.pst_usr_id = $6 AND ${countingLecturer('u')}) OR ${verifiedAtCutoff(true)})
+         AND ($7::DATE IS NULL OR p.pst_published_at >= $7::DATE::TIMESTAMP AT TIME ZONE $9)
+         AND ($8::DATE IS NULL OR p.pst_published_at < ($8::DATE + 1)::TIMESTAMP AT TIME ZONE $9)
+         AND ($10::INT IS NULL OR p.pst_mod_id = $10)
+       ORDER BY "textRank" DESC, p.pst_published_at DESC, p.pst_id DESC
+       LIMIT $12)
+     SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", c."textRank",
+            ${countsCol('$11::TIMESTAMPTZ')}, ${verifiedAtCutoff()} AS "verified", ${countingLecturer('u')} AS "lecturerAuthor"
+     FROM candidates c JOIN "POST_T" p ON p.pst_id = c.pst_id JOIN "USER_T" u ON u.usr_id = p.pst_usr_id`,
     [viewerId, text, literal(text), RANKING.searchRankNormalization, f.lecturer === 'any',
-     typeof f.lecturer === 'number' ? f.lecturer : null, f.from, f.to, CAMPUS_TIME_ZONE, f.moduleId],
+     typeof f.lecturer === 'number' ? f.lecturer : null, f.from, f.to, CAMPUS_TIME_ZONE, f.moduleId, cutoff,
+     RANKING.searchCandidateLimit],
   );
   return rows;
 }
@@ -81,10 +92,10 @@ async function pageByMatch<T>(sql: string, params: unknown[], { cursor, limit }:
   return { ...page, items: page.items.map(({ match: _match, ...item }) => item as T) };
 }
 
-/** `lower` holds the term lowercased and `pattern` the term as a literal LIKE pattern (placeholders from termParams). */
+/** `lower` holds the text lowercased and `pattern` the text as a literal LIKE pattern (placeholders from textParams). */
 const matchClass = (col: string, lower = '$2', pattern = '$3') =>
   `CASE WHEN LOWER(${col}) = ${lower} THEN 0 WHEN ${col} ILIKE ${pattern} || '%' THEN 1 ELSE 2 END`;
-const termParams = (term: string) => [term.toLowerCase(), literal(term)];
+const textParams = (text: string) => [text.toLowerCase(), literal(text)];
 
 export interface PersonResult {
   id: number;
@@ -95,15 +106,15 @@ export interface PersonResult {
   isVerifiedLecturer: boolean;
 }
 
-/** Active and restricted accounts whose display name contains the term; suspended and deleted ones never appear (D47). */
-export function searchPeople(term: string, page: KeysetPage): Promise<Page<PersonResult>> {
+/** Active and restricted accounts whose display name contains the text; suspended and deleted ones never appear (D47). */
+export function searchPeople(text: string, page: KeysetPage): Promise<Page<PersonResult>> {
   return pageByMatch<PersonResult>(
     `SELECT u.usr_id AS "id", u.usr_display_name AS "displayName", u.usr_role AS "role", u.usr_programme AS "programme",
             u.usr_avatar_url AS "avatarUrl", ${approvedLecturer('u')} AS "isVerifiedLecturer",
             ${matchClass('u.usr_display_name', '$1', '$2')} AS "match"
      FROM "USER_T" u
      WHERE u.usr_status IN ('active', 'restricted') AND u.usr_display_name ILIKE '%' || $2 || '%'`,
-    termParams(term), page,
+    textParams(text), page,
   );
 }
 
@@ -113,8 +124,8 @@ export interface HashtagResult {
   noteCount: number;
 }
 
-/** Hashtags containing the term that are on at least one published note the viewer can see, with that note count. */
-export function searchHashtags(viewerId: number, term: string, page: KeysetPage): Promise<Page<HashtagResult>> {
+/** Hashtags containing the text that are on at least one published note the viewer can see, with that note count. */
+export function searchHashtags(viewerId: number, text: string, page: KeysetPage): Promise<Page<HashtagResult>> {
   return pageByMatch<HashtagResult>(
     `SELECT h.hsh_id AS "id", h.hsh_name AS "name", COUNT(*)::INT AS "noteCount", ${matchClass('h.hsh_name')} AS "match"
      FROM "HASHTAG_T" h
@@ -122,7 +133,7 @@ export function searchHashtags(viewerId: number, term: string, page: KeysetPage)
      JOIN "POST_T" p ON p.pst_id = ph.phs_pst_id
      WHERE h.hsh_name ILIKE '%' || $3 || '%' AND p.pst_status = 'published' AND ${VISIBLE}
      GROUP BY h.hsh_id`,
-    [viewerId, ...termParams(term)], page,
+    [viewerId, ...textParams(text)], page,
   );
 }
 
@@ -134,14 +145,14 @@ export interface ModuleResult {
   noteCount: number;
 }
 
-/** Modules whose code, name or programme contains the term; a code match ranks first. noteCount = published notes the viewer can see. */
-export function searchModules(viewerId: number, term: string, page: KeysetPage): Promise<Page<ModuleResult>> {
+/** Modules whose code, name or programme contains the text; a code match ranks first. noteCount = published notes the viewer can see. */
+export function searchModules(viewerId: number, text: string, page: KeysetPage): Promise<Page<ModuleResult>> {
   return pageByMatch<ModuleResult>(
     `SELECT m.mod_id AS "id", m.mod_code AS "code", m.mod_name AS "name", m.mod_programme AS "programme",
             (SELECT COUNT(*)::INT FROM "POST_T" p WHERE p.pst_mod_id = m.mod_id AND p.pst_status = 'published' AND ${VISIBLE}) AS "noteCount",
             ${matchClass('m.mod_code')} AS "match"
      FROM "MODULE_T" m
      WHERE m.mod_code ILIKE '%' || $3 || '%' OR m.mod_name ILIKE '%' || $3 || '%' OR m.mod_programme ILIKE '%' || $3 || '%'`,
-    [viewerId, ...termParams(term)], page,
+    [viewerId, ...textParams(text)], page,
   );
 }

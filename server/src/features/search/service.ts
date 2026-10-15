@@ -1,5 +1,5 @@
 import type { KeysetPage } from '../../lib/keyset';
-import { getNotesByIds } from '../feed/repository';
+import { getCutoff, getNotesByIds } from '../feed/repository';
 import type { NoteWithEngagement } from '../notes/repository';
 import { RANKING } from '../ranking/config';
 import { engagement, validation } from '../ranking/service';
@@ -14,11 +14,13 @@ const compare = (a: Key, b: readonly number[]) => a[0] - b[0] || a[1] - b[1] || 
  * One page of matching notes ordered by S = wT·T + wE·E + wV·V (D48): T is ts_rank_cd relative to the best match, E and V are
  * the feed's engagement and lecturer validation. No recency or interest, so every viewer gets the same order. Every match is
  * scored on each page (as the feed scores its candidates) and the keyset cursor is the last note's (score, published, id).
+ * `asOf` freezes the candidates and their E and V like the feed's cutoff (D24), so later pages neither skip nor repeat.
  */
 export async function searchNotes(
-  viewerId: number, q: string, filters: NoteFilters, { cursor, limit }: KeysetPage,
-): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null }> {
-  const matches = await matchNotes(viewerId, q, filters);
+  viewerId: number, q: string, filters: NoteFilters, { cursor, limit }: KeysetPage, asOf: Date | null,
+): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null; asOf: Date }> {
+  const cutoff = await getCutoff(asOf);
+  const matches = await matchNotes(viewerId, q, filters, cutoff);
   const best = matches.reduce((max, m) => Math.max(max, m.textRank), 0);
   const w = RANKING.searchWeights;
   const ranked = matches
@@ -35,5 +37,6 @@ export async function searchNotes(
   return {
     items: page.flatMap(([, , id]) => notes.get(id) ?? []),
     nextCursor: start >= 0 && ranked.length > start + limit ? page[page.length - 1].join('_') : null,
+    asOf: cutoff,
   };
 }

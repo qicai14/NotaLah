@@ -62,13 +62,18 @@ describe('Search validation', () => {
 
   it('SRCH-TC3: SQL metacharacters are plain text', async () => {
     const author = await insertUser();
-    await note(author, { title: 'Normal forms' });
+    await note(author, { title: 'Normal forms', hashtags: ['sql'] });
     for (const tab of ['top', 'people', 'hashtags', 'modules']) {
       const res = await search({ q: `'; DROP TABLE "POST_T"; --`, tab });
       expect(res.status).toBe(200);
       expect(res.body.items).toEqual([]);
     }
     expect((await search({ q: '100%_\\' })).body.items).toEqual([]);
+    // LIKE wildcards are literal: rows exist that '%' or '_' would otherwise match.
+    expect((await search({ q: 'Test', tab: 'people' })).body.items).toHaveLength(1);
+    expect((await search({ q: 's', tab: 'hashtags' })).body.items).toHaveLength(1);
+    expect((await search({ q: '%', tab: 'people' })).body.items).toEqual([]);
+    expect((await search({ q: '_', tab: 'hashtags' })).body.items).toEqual([]);
     expect((await pool.query(`SELECT COUNT(*)::INT AS n FROM "POST_T"`)).rows[0].n).toBe(1);
   });
 
@@ -79,6 +84,13 @@ describe('Search validation', () => {
       [{ q: 'x', lecturer: '0' }, 'Invalid lecturer'],
       [{ q: 'x', term: 'abc' }, 'Invalid term'],
       [{ q: 'x', module: '-1' }, 'Invalid module'],
+      [{ q: 'x', module: '1e3' }, 'Invalid module'],
+      [{ q: 'x', lecturer: '1.0' }, 'Invalid lecturer'],
+      [{ q: 'x', lecturer: '+1' }, 'Invalid lecturer'],
+      [{ q: 'x', term: '2147483648' }, 'Invalid term'],
+      [{ q: 'x', asOf: 'yesterday' }, 'Invalid asOf'],
+      [{ q: 'x', tab: 'people', term: '999' }, 'Term not found'],
+      [{ q: 'x', tab: 'modules', term: '999' }, 'Term not found'],
       [{ q: 'x', from: '2026-13-01' }, 'Invalid date'],
       [{ q: 'x', term: '1', from: '2026-10-01' }, 'Choose a term or a date range, not both'],
       [{ q: 'x', term: '999' }, 'Term not found'],
@@ -215,6 +227,29 @@ describe('Search order, paging, tabs and filters', () => {
     expect([...seen].sort((a, b) => a - b)).toEqual(all);
     expect(seen.slice(0, 5).sort((a, b) => a - b)).toEqual([0, 5, 10, 15, 20].map((i) => all[i]));
     expect((await search({ q: 'paging' })).body.items).toHaveLength(20);
+  });
+
+  it('SRCH-TC17: later pages with the same asOf ignore new likes and new notes', async () => {
+    const author = await insertUser();
+    const all: number[] = [];
+    for (let i = 0; i < 25; i++) all.push(await note(author, { title: 'Snapshot' }));
+    const first = await search({ q: 'snapshot', tab: 'notes', limit: '10' });
+    const { asOf } = first.body;
+    expect(typeof asOf).toBe('string');
+    const seen = [...ids(first.body.items)];
+    // Both would move to the top if counted: a liked note from a later page and a stronger, newer match.
+    const later = all.find((id) => !seen.includes(id))!;
+    for (let i = 0; i < 5; i++) await like(await insertUser(), later);
+    const fresh = await note(author, { title: 'Snapshot snapshot', slides: ['<p>snapshot snapshot snapshot</p>'] });
+    let cursor = first.body.nextCursor;
+    while (cursor) {
+      const res = await search({ q: 'snapshot', tab: 'notes', limit: '10', cursor, asOf });
+      expect(res.body.asOf).toBe(asOf);
+      seen.push(...ids(res.body.items));
+      cursor = res.body.nextCursor;
+    }
+    expect([...seen].sort((a, b) => a - b)).toEqual(all);
+    expect(ids((await search({ q: 'snapshot', tab: 'notes', limit: '1' })).body.items)).toEqual([fresh]);
   });
 
   it('SRCH-TC14: a term filters by its dates; the module filter keeps one module', async () => {

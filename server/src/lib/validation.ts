@@ -8,7 +8,8 @@ export function issueMap(issues: z.core.$ZodIssue[]): Record<string, string> {
   return errors;
 }
 
-const invalidId = (s: string | string[]) => !/^\d+$/.test(String(s)) || Number(s) < 1 || Number(s) > 2147483647;
+/** Not digits only, or outside 1 to the INTEGER maximum. */
+export const invalidId = (s: string | string[]) => !/^\d+$/.test(String(s)) || Number(s) < 1 || Number(s) > 2147483647;
 
 /** `router.param` handler: a malformed id answers `status` with `message` once instead of in every handler. */
 export const idParam = (message: string, status = 404): RequestParamHandler => (_req, res, next, value) =>
