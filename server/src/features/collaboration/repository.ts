@@ -2,7 +2,7 @@ import type { Pool, PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { SHAREABLE } from '../notes/repository';
-import { userRef as person } from '../users/repository';
+import { blockedWith, userRef as person } from '../users/repository';
 import { COLLABORATION } from './config';
 
 export type CollabRole = 'view' | 'edit';
@@ -54,12 +54,12 @@ export async function releaseLock(q: Queryable, noteId: number, userId: number):
 
 /**
  * Adds the user as a collaborator or changes their role, keeping any credit already earned; a move to view frees their
- * lock. False when no active or restricted account has that id.
+ * lock. False when no active or restricted account has that id, or a block lies between it and `addedBy`, the owner (D49).
  */
 async function upsertCollaborator(q: Queryable, noteId: number, userId: number, role: CollabRole, addedBy: number): Promise<boolean> {
   const { rowCount } = await q.query(
     `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by)
-     SELECT $1, usr_id, $3, $4 FROM "USER_T" WHERE usr_id = $2 AND usr_status IN ('active', 'restricted')
+     SELECT $1, usr_id, $3, $4 FROM "USER_T" WHERE usr_id = $2 AND usr_status IN ('active', 'restricted') AND NOT ${blockedWith('$4', 'usr_id')}
      ON CONFLICT (clb_pst_id, clb_usr_id) DO UPDATE SET clb_role = EXCLUDED.clb_role`,
     [noteId, userId, role, addedBy],
   );

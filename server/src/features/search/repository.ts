@@ -1,7 +1,7 @@
 import { type KeysetPage, toPage } from '../../lib/keyset';
 import { pool } from '../../lib/pool';
 import { VALID_VERIFICATIONS, VISIBLE, countsCol } from '../notes/repository';
-import { approvedLecturer, countingLecturer } from '../users/repository';
+import { approvedLecturer, blockedWith, countingLecturer } from '../users/repository';
 import { RANKING } from '../ranking/config';
 
 export interface NoteFilters {
@@ -106,15 +106,15 @@ export interface PersonResult {
   isVerifiedLecturer: boolean;
 }
 
-/** Active and restricted accounts whose display name contains the text; suspended and deleted ones never appear (D47). */
-export function searchPeople(text: string, page: KeysetPage): Promise<Page<PersonResult>> {
+/** Active and restricted accounts whose display name contains the text; suspended and deleted ones (D47) and anyone in a block with the viewer (D49) never appear. */
+export function searchPeople(viewerId: number, text: string, page: KeysetPage): Promise<Page<PersonResult>> {
   return pageByMatch<PersonResult>(
     `SELECT u.usr_id AS "id", u.usr_display_name AS "displayName", u.usr_role AS "role", u.usr_programme AS "programme",
             u.usr_avatar_url AS "avatarUrl", ${approvedLecturer('u')} AS "isVerifiedLecturer",
-            ${matchClass('u.usr_display_name', '$1', '$2')} AS "match"
+            ${matchClass('u.usr_display_name')} AS "match"
      FROM "USER_T" u
-     WHERE u.usr_status IN ('active', 'restricted') AND u.usr_display_name ILIKE '%' || $2 || '%'`,
-    textParams(text), page,
+     WHERE u.usr_status IN ('active', 'restricted') AND u.usr_display_name ILIKE '%' || $3 || '%' AND NOT ${blockedWith('$1', 'u.usr_id')}`,
+    [viewerId, ...textParams(text)], page,
   );
 }
 

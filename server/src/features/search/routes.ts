@@ -43,7 +43,7 @@ searchRouter.get('/', optionalAuth, async (req, res) => {
   // People, hashtags and modules ignore a leading # or @ and the note filters.
   const text = s.q.replace(/^[#@]+/, '');
   const empty = { items: [], nextCursor: null };
-  if (s.tab === 'people') return res.json(text ? await searchPeople(text, keyset) : empty);
+  if (s.tab === 'people') return res.json(text ? await searchPeople(viewer, text, keyset) : empty);
   if (s.tab === 'hashtags') return res.json(text ? await searchHashtags(viewer, text, keyset) : empty);
   if (s.tab === 'modules') return res.json(text ? await searchModules(viewer, text, keyset) : empty);
 
@@ -57,7 +57,7 @@ searchRouter.get('/', optionalAuth, async (req, res) => {
   if (s.tab === 'notes' || keyset.cursor) return res.json(notes);
   const first = { cursor: null, limit: TOP_SECTION_SIZE };
   const [people, hashtags, modules] = text
-    ? await Promise.all([searchPeople(text, first), searchHashtags(viewer, text, first), searchModules(viewer, text, first)])
+    ? await Promise.all([searchPeople(viewer, text, first), searchHashtags(viewer, text, first), searchModules(viewer, text, first)])
     : [empty, empty, empty];
   res.json({ ...notes, people: people.items, hashtags: hashtags.items, modules: modules.items });
 });

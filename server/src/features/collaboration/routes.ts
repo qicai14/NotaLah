@@ -8,6 +8,7 @@ import { bodyOrEmpty, idParam } from '../../lib/validation';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { guestReadLimiter } from '../auth/rateLimit';
 import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
+import { isBlocked } from '../users/repository';
 import { COLLABORATION } from './config';
 import * as repo from './repository';
 
@@ -80,11 +81,13 @@ collaborationRouter.delete('/notes/:id/links/:role', requireAuth, async (req, re
   res.status(204).end();
 });
 
-/** The active link for `:token`, after answering 404 for a malformed, unknown, revoked or unreachable one. */
+/** The active link for `:token`, after answering 404 for a malformed, unknown, revoked or unreachable one, or one whose owner is in a block with the user (D49). */
 async function link(req: Request, res: Response) {
   const token = String(req.params.token);
   const found = TOKEN_FORMAT.test(token) ? await repo.findLink(hashToken(token)) : undefined;
-  if (!found) return void res.status(404).json({ error: 'This link is invalid or was revoked' });
+  if (!found || (req.user && (await isBlocked(req.user.id, found.ownerId)))) {
+    return void res.status(404).json({ error: 'This link is invalid or was revoked' });
+  }
   return found;
 }
 

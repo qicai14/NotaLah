@@ -11,9 +11,9 @@ export const engagementRouter = Router();
 
 engagementRouter.param('noteId', idParam('Note not found'));
 engagementRouter.param('commentId', idParam('Comment not found'));
-async function target(req: Request, res: Response) {
+async function target(req: Request, res: Response, ignoreBlocks = false) {
   const id = Number(req.params.noteId);
-  const t = await repo.getTarget(id, viewerId(req));
+  const t = await repo.getTarget(id, viewerId(req), ignoreBlocks);
   if (!t) return void res.status(404).json({ error: 'Note not found' });
   return { id, ...t };
 }
@@ -61,7 +61,7 @@ engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, asy
     return res.status(400).json({ error: 'Validation failed', errors: { slideNo: 'Slide number is beyond the last slide' } });
   }
   if (parentId !== null) {
-    const parent = await repo.getParent(parentId);
+    const parent = await repo.getParent(parentId, me(req).id);
     if (!parent || parent.noteId !== t.id) {
       return res.status(400).json({ error: 'Validation failed', errors: { parentId: 'Parent comment not found on this note' } });
     }
@@ -107,9 +107,9 @@ const reportSchema = z.object({
   details: z.string({ error: 'Invalid details' }).trim().max(500, 'Details must be at most 500 characters').nullish(),
 });
 
-// UC12
+// UC12; a block never stops a report, so harassment can still reach moderators (D49)
 engagementRouter.post('/notes/:noteId/report', requireAuth, requireActive, async (req, res) => {
-  const t = await target(req, res);
+  const t = await target(req, res, true);
   if (!t) return;
   const parsed = reportSchema.safeParse(req.body ?? {});
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
