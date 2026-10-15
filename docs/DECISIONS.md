@@ -726,3 +726,23 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   every redesign); a Vitest workspace or `environmentMatchGlobs` (rejected: a per-file pragma is one line and explicit).
 - **Next:** Playwright end-to-end tests run against the real app after the redesign (R26 part 2).
 - **Reversibility:** Easy (dev dependencies and test files only; no runtime code changed).
+
+## D43 - User decisions after the overnight run (15 Oct 2026, morning)
+- **Wireframes v2 accepted in direction**, with changes (plan R32): lower fidelity (main labels only, descriptive copy as
+  lorem ipsum), produced as SVG for import into a Figma project; keep every designer extra (page notes, duplicate
+  slide/draft, pinned profile notes, follower/following/like counts, curated fonts, Unsplash credit, module rename);
+  the visibility label becomes **"Friends only"**; the **"For You" tab becomes "Feed"**.
+- **Editing:** authors can edit a published note at any time (content, details, music); D21's rule that a published
+  note cannot return to draft still holds.
+- **New features to specify** (interview first): collaboration with view/edit share links, owner-managed access
+  (anyone with the link or invited users), and requests from viewers to collaborate (R30); guest browsing of the feed
+  without an account, with search, comments, messaging and other actions prompting login or registration (R31).
+- **Editor spec (R21) answers:** add a table/text-grid element; whole-box text styling agreed; `shared/` workspace;
+  500 MB per-user quota with automatic compression, GIFs stored as still WebP; assets reusable across notes; local
+  unsaved-changes backup for published notes accepted if its costs stay small (see the R21 spec update); ffmpeg via the
+  production route (system ffmpeg in the Docker image and CI, installed locally), not npm binary downloads.
+- **FR17 music switches from Deezer to Jamendo** (Creative Commons catalogue, free API key): Deezer's terms limit use
+  to private, family-scope use, which a public demo would breach. Supersedes the Deezer parts of D3's review and D31.
+- **UC17 "Chat with Friend"** and **UC18 group chats limited to friends** confirmed.
+- **AI assistant (D33):** provider Groq, model `openai/gpt-oss-120b`, configured by the user in `.env`.
+- The decisions logged without the user overnight (D30-D42) are accepted.
