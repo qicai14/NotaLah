@@ -63,7 +63,7 @@ describe('api wrapper', () => {
     expect(assign).not.toHaveBeenCalled();
   });
 
-  it('CLI-TC15: a guest answer while signed in redirects to the expired login; signed out it does not', async () => {
+  it('CLI-TC19: a guest answer while signed in redirects to the expired login; signed out it does not', async () => {
     fetchMock.mockImplementation(() => respond(200, { items: [] }, { 'X-Viewer': 'guest' }));
     await expect(api('/feed')).resolves.toEqual({ items: [] });
     expect(assign).not.toHaveBeenCalled();

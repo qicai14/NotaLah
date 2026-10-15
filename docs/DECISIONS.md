@@ -752,7 +752,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Decision:** `optionalAuth` (next to `requireAuth`) attaches the user for a valid cookie and otherwise treats the request
   as a guest, including an invalid or expired cookie, so a stale session degrades to guest reading instead of a 401. Such
   responses carry `X-Viewer: guest` (exposed through CORS); the client treats it like a 401 while it believes it is signed
-  in, so an expired session still reaches the session-expired login (CLI-TC15) instead of silently browsing as a guest. A guest
+  in, so an expired session still reaches the session-expired login (CLI-TC19) instead of silently browsing as a guest. A guest
   is viewer id 0 (`GUEST_ID`), which matches no account, so the existing `VISIBLE` rule passes only published public notes by
   active or restricted authors and every per-viewer flag (liked, saved, follows) is false; no query was duplicated. Guests
   have no interest history, so M = 0. Views are only logged by an authenticated endpoint, so guests log nothing.
@@ -767,6 +767,6 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   counted. The key is `req.ip`, so `trust proxy` must be set for the host before deploy (the D35 pre-deploy item). That
   change must use the hop count `1` (or read `Fly-Client-IP`), never `true`: with `true` a client can forge
   `X-Forwarded-For` to bypass the guest limit, and with the current `'loopback'` every guest behind Fly's proxy shares one bucket.
-- **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29 to RANK-TC31, CLI-TC15; RANK-TC10 and USR-TC5 changed
+- **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29 to RANK-TC31, CLI-TC19; RANK-TC10 and USR-TC5 changed
   because the feed and profile no longer return 401 without a cookie.
 - **Reversibility:** Easy (swap `optionalAuth` back to `requireAuth` on five routes; no schema change).
