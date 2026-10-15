@@ -1,4 +1,4 @@
-// True while the client believes a user is signed in; only then does a 401 mean the session expired.
+// True while the client believes a user is signed in; only then does a 401, or a guest-readable route answering as a guest, mean the session expired.
 let signedIn = false;
 export function setSignedIn(value: boolean): void {
   signedIn = value;
@@ -30,7 +30,8 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   });
   const data = await res.json().catch(() => ({}));
 
-  if (res.status === 401 && signedIn && path !== '/auth/login') {
+  const expired = res.status === 401 || res.headers.get('X-Viewer') === 'guest'; // D45
+  if (expired && signedIn && path !== '/auth/login') {
     signedIn = false;
     window.location.assign('/login?expired=1'); // full reload also drops in-memory auth state
   }

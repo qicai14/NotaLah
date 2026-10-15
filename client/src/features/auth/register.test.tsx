@@ -16,6 +16,7 @@ beforeEach(() => {
     vi.fn(async () => ({
       status: 200,
       ok: true,
+      headers: new Headers(),
       json: () => Promise.resolve({ items: ['Computer Science', 'Software Engineering'] }),
     })),
   );
@@ -60,7 +61,7 @@ describe('programme select', () => {
   it('CLI-TC18: shows an alert and Retry when the programme list fails to load', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({ status: 500, ok: false, json: () => Promise.resolve({}) })),
+      vi.fn(async () => ({ status: 500, ok: false, headers: new Headers(), json: () => Promise.resolve({}) })),
     );
     render(<ProgrammeSelect value="" onChange={() => {}} />);
     expect((await screen.findByRole('alert')).textContent).toContain('Could not load programmes');

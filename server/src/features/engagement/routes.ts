@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { isApprovedLecturer } from '../users/repository';
-import { requireActive, requireAuth, me } from '../auth/middleware';
+import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
 import * as repo from './repository';
 
 /** Mounted at /api; auth is applied per route so unrelated /api paths keep their own behaviour. */
@@ -13,7 +13,7 @@ engagementRouter.param('noteId', idParam('Note not found'));
 engagementRouter.param('commentId', idParam('Comment not found'));
 async function target(req: Request, res: Response) {
   const id = Number(req.params.noteId);
-  const t = await repo.getTarget(id, me(req).id);
+  const t = await repo.getTarget(id, viewerId(req));
   if (!t) return void res.status(404).json({ error: 'Note not found' });
   return { id, ...t };
 }
@@ -37,12 +37,12 @@ engagementRouter.delete('/notes/:noteId/like', requireAuth, async (req, res) => 
   res.json({ liked: false, likes: await repo.unlikeNote(Number(req.params.noteId), me(req).id) }); // no visibility check (D22)
 });
 
-engagementRouter.get('/notes/:noteId/comments', requireAuth, async (req, res) => {
+engagementRouter.get('/notes/:noteId/comments', optionalAuth, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
   const page = parseKeyset(req, res, 4);
   if (!page) return;
-  const { items, nextCursor } = await repo.listComments(t.id, me(req).id, page);
+  const { items, nextCursor } = await repo.listComments(t.id, viewerId(req), page);
   res.json({ comments: items, nextCursor });
 });
 

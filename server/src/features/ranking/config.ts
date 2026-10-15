@@ -25,6 +25,8 @@ export const RANKING = Object.freeze({
   snapshotTtlHours: 2,
   /** Snapshots kept per viewer: bounds the table when someone reloads page 1 many times within the TTL (D40). */
   snapshotsPerViewer: 4,
+  /** Guest rankings kept in memory, one per asOf shared by every guest; the oldest is dropped first (D45). */
+  guestRankingCacheSize: 50,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {

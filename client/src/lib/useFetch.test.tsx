@@ -16,7 +16,7 @@ describe('useFetch', () => {
       vi.fn((url: string) => new Promise((resolve) => (pending[url] = resolve))),
     );
     const reply = (url: string, body: unknown) =>
-      act(async () => pending[url]({ status: 200, ok: true, json: () => Promise.resolve(body) }));
+      act(async () => pending[url]({ status: 200, ok: true, headers: new Headers(), json: () => Promise.resolve(body) }));
 
     const { result, rerender } = renderHook(({ p }) => useFetch<{ n: string }>(p), { initialProps: { p: '/a' } });
     expect(result.current.loading).toBe(true);
@@ -36,7 +36,7 @@ describe('useFetch', () => {
       vi.fn((url: string) => new Promise((resolve) => (pending[url] = resolve))),
     );
     const reply = (url: string, body: unknown) =>
-      act(async () => pending[url]({ status: 200, ok: true, json: () => Promise.resolve(body) }));
+      act(async () => pending[url]({ status: 200, ok: true, headers: new Headers(), json: () => Promise.resolve(body) }));
 
     const { result, rerender } = renderHook(({ p }) => useFetch<{ n: string }>(p), { initialProps: { p: '/a' } });
     rerender({ p: '/b' });

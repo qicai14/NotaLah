@@ -5,6 +5,9 @@ export type Role = 'student' | 'lecturer' | 'admin';
 export type UserStatus = 'active' | 'restricted' | 'suspended' | 'deleted';
 export type LecturerStatus = 'pending' | 'approved' | 'rejected';
 
+/** Viewer id of a signed-out visitor (R31): matches no account, so `VISIBLE` passes only public notes and no flag is set. */
+export const GUEST_ID = 0;
+
 /** The user as the API exposes it; never carries the password hash. */
 export interface AuthUser {
   id: number;

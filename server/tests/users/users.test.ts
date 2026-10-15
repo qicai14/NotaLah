@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -57,10 +57,10 @@ describe('Profiles', () => {
     expect((await getUser(owner, owner)).body.user.draftCount).toBe(1);
   });
 
-  it('USR-TC5: unknown user is 404 and unauthenticated is 401', async () => {
+  it('USR-TC5: unknown user is 404 and unauthenticated profile edit is 401', async () => {
     const uid = await insertUser();
     expect((await getUser(uid, 99999)).status).toBe(404);
-    expect((await request(app).get(`/api/users/${uid}`)).status).toBe(401);
+    expect((await request(app).put('/api/users/me').set(CSRF).send({ displayName: 'x' })).status).toBe(401);
   });
 
   it('USR-TC6: display name over 50 and programme over 100 characters are rejected', async () => {

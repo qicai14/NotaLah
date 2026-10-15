@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, ApiError, setSignedIn } from './api';
 
-const respond = (status: number, body: unknown = {}) =>
-  Promise.resolve({ status, ok: status < 400, json: () => Promise.resolve(body) } as Response);
+const respond = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
+  Promise.resolve({ status, ok: status < 400, headers: new Headers(headers), json: () => Promise.resolve(body) } as Response);
 
 let fetchMock: ReturnType<typeof vi.fn>;
 let assign: ReturnType<typeof vi.fn>;
@@ -61,6 +61,15 @@ describe('api wrapper', () => {
     fetchMock.mockImplementation(() => respond(401, { error: 'Unauthorized' }));
     await expect(api('/auth/me')).rejects.toMatchObject({ status: 401 });
     expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('CLI-TC19: a guest answer while signed in redirects to the expired login; signed out it does not', async () => {
+    fetchMock.mockImplementation(() => respond(200, { items: [] }, { 'X-Viewer': 'guest' }));
+    await expect(api('/feed')).resolves.toEqual({ items: [] });
+    expect(assign).not.toHaveBeenCalled();
+    setSignedIn(true);
+    await api('/feed');
+    expect(assign).toHaveBeenCalledWith('/login?expired=1');
   });
 
   it('CLI-TC5: the error JSON becomes the thrown message and field errors', async () => {
