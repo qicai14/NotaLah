@@ -1,6 +1,7 @@
 import type { Request, RequestHandler } from 'express';
 import { passport } from './passport';
-import type { AuthUser, Role } from '../users/repository';
+import { guestReadLimiter } from './rateLimit';
+import { type AuthUser, GUEST_ID, type Role } from '../users/repository';
 
 export const requireAuth: RequestHandler = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
@@ -10,6 +11,19 @@ export const requireAuth: RequestHandler = (req, res, next) => {
     next();
   })(req, res, next);
 };
+
+/** For guest-readable GETs (R31, D44): a valid cookie attaches the user; a missing, invalid or expired one makes a guest, rate-limited by IP. */
+export const optionalAuth: RequestHandler = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
+    if (err) return next(err);
+    if (!user) return guestReadLimiter(req, res, next);
+    req.user = user;
+    next();
+  })(req, res, next);
+};
+
+/** Use after requireAuth or optionalAuth: the signed-in user's id, or GUEST_ID. */
+export const viewerId = (req: Request): number => req.user?.id ?? GUEST_ID;
 
 /** Use after requireAuth. Checks the role loaded from the database, not the token claim. */
 export function requireRole(...roles: Role[]): RequestHandler {

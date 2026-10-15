@@ -222,12 +222,12 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
 
   it('ADM-TC6: suspending sets the status, logs it, and the existing token then gets 401', async () => {
     const token = asUser(author);
-    expect((await request(app).get('/api/feed').set(token)).status).toBe(200);
+    expect((await request(app).get('/api/auth/me').set(token)).status).toBe(200);
     const res = await act(author, 'suspend', { reason: 'Repeated spam' });
     expect(res.status).toBe(200);
     expect(res.body.user).toMatchObject({ id: author, status: 'suspended' });
     expect(await actions()).toEqual([{ aac_usr_id: author, aac_admin_id: adminId, aac_action: 'suspend', aac_reason: 'Repeated spam' }]);
-    expect((await request(app).get('/api/feed').set(token)).status).toBe(401);
+    expect((await request(app).get('/api/auth/me').set(token)).status).toBe(401);
   });
 
   it('ADM-TC7: a restricted user can read the feed but publishing and commenting return 403', async () => {
@@ -310,7 +310,7 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     ]);
     await act(author, 'suspend', { reason: 'Plagiarism' });
     expect((await act(author, 'reinstate', { reason: 'Appeal accepted' })).body.user.status).toBe('active');
-    expect((await request(app).get('/api/feed').set(asUser(author))).status).toBe(200);
+    expect((await request(app).get('/api/auth/me').set(asUser(author))).status).toBe(200);
     expect((await act(author, 'ban', { reason: 'x' })).status).toBe(404);
     expect((await act(99999, 'suspend', { reason: 'x' })).status).toBe(404);
   });
@@ -332,7 +332,7 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     expect(res.body.user).toMatchObject({ status: 'deleted', displayName: 'Deleted user', email: `deleted-${author}@invalid` });
     expect(await noteStatus(note)).toBe('hidden');
     expect(await noteStatus(draft)).toBe('draft');
-    expect((await request(app).get('/api/feed').set(asUser(author))).status).toBe(401);
+    expect((await request(app).get('/api/auth/me').set(asUser(author))).status).toBe(401);
     expect((await act(author, 'reinstate', { reason: 'x' })).status).toBe(409);
     expect((await actions()).map((a) => a.aac_action)).toEqual(['delete', 'delete']);
   });

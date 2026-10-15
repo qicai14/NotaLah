@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireActive, requireAuth, me } from '../auth/middleware';
+import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import {
@@ -9,17 +9,16 @@ import { moduleExists } from '../modules/repository';
 import { parseNoteBody } from './service';
 
 export const notesRouter = Router();
-notesRouter.use(requireAuth);
 notesRouter.param('id', idParam('Note not found'));
 
-notesRouter.get('/drafts', async (req, res) => {
+notesRouter.get('/drafts', requireAuth, async (req, res) => {
   const page = parseKeyset(req, res, 2);
   if (!page) return;
   const { items, nextCursor } = await listDrafts(me(req).id, page);
   res.json({ notes: items, nextCursor });
 });
 
-notesRouter.post('/', requireActive, async (req, res) => {
+notesRouter.post('/', requireAuth, requireActive, async (req, res) => {
   const parsed = parseNoteBody(req.body);
   if (!parsed.ok) return res.status(400).json({ error: 'Validation failed', errors: parsed.errors });
   const n = parsed.data;
@@ -30,13 +29,13 @@ notesRouter.post('/', requireActive, async (req, res) => {
   res.status(201).json({ note: await getVisibleNote(id, me(req).id) });
 });
 
-notesRouter.get('/:id', async (req, res) => {
-  const note = await getVisibleNote(Number(req.params.id), me(req).id);
+notesRouter.get('/:id', optionalAuth, async (req, res) => {
+  const note = await getVisibleNote(Number(req.params.id), viewerId(req));
   if (!note) return res.status(404).json({ error: 'Note not found' });
   res.json({ note });
 });
 
-notesRouter.put('/:id', requireActive, async (req, res) => {
+notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
   const meta = await getNoteMeta(Number(req.params.id), me(req).id);
   if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
   if (meta.authorId !== me(req).id) return res.status(403).json({ error: 'Forbidden' });
@@ -59,7 +58,7 @@ notesRouter.put('/:id', requireActive, async (req, res) => {
   res.json({ note: await getVisibleNote(id, me(req).id) });
 });
 
-notesRouter.delete('/:id', async (req, res) => {
+notesRouter.delete('/:id', requireAuth, async (req, res) => {
   const meta = await getNoteMeta(Number(req.params.id), me(req).id);
   if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
   if (meta.authorId !== me(req).id) return res.status(403).json({ error: 'Forbidden' });

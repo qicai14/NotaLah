@@ -10,6 +10,8 @@ export const RATE_LIMITS = Object.freeze({
   authAttempts: 10,
   /** State-changing /api requests per signed-in user (or IP when signed out) per window. */
   writes: 120,
+  /** Guest-readable GETs per client IP per window (R31, D45); keyed on req.ip, so it needs `trust proxy` set for the host (D35). */
+  guestReads: 120,
 });
 
 /**
@@ -64,6 +66,17 @@ export const writeLimiter = rateLimit({
   },
   skip: testing,
   message: { error: 'Too many requests. Try again in a minute.' },
+});
+
+/** Applied by optionalAuth to signed-out requests only. */
+export const guestReadLimiter = rateLimit({
+  windowMs: RATE_LIMITS.windowMs,
+  limit: RATE_LIMITS.guestReads,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('guest:'),
+  skip: testing,
+  message: { error: 'Too many requests. Log in or try again in a minute.' },
 });
 
 export const purgeOldRateLimits = () => purgeRateLimits(RATE_LIMITS.windowMs);

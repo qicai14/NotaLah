@@ -2,6 +2,7 @@ import type { KeysetPage } from '../../lib/keyset';
 import { getCandidates, getInteractionRows } from '../ranking/repository';
 import { buildInterestVector, scoreCandidate, type Components } from '../ranking/service';
 import type { NoteWithEngagement } from '../notes/repository';
+import { GUEST_ID } from '../users/repository';
 import { getCutoff, getFollowingNotes, getNotesByIds, readSnapshot, saveSnapshot, type RankedEntry } from './repository';
 
 const PAGE_SIZE = 10;
@@ -22,16 +23,20 @@ async function rank(viewerId: number, cutoff: Date): Promise<RankedEntry[]> {
  * One page of the ranked feed (page is 1-based). `asOf` freezes the candidate set, recency and the engagement that is
  * scored (D24). The ranking is computed once per asOf and stored in "FEED_SNAPSHOT_T"; later pages with that asOf read
  * their slice from it, recomputing only when it is missing (D40). The counts shown on each item are live (D24).
+ * A guest (GUEST_ID) sees public notes only, with M = 0 since there is no interest history (R31).
  */
 export async function getFeedPage(
   viewerId: number, page: number, asOf: Date | null,
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
   const cutoff = await getCutoff(asOf);
   const from = (page - 1) * PAGE_SIZE;
-  let stored = asOf ? await readSnapshot(viewerId, cutoff, from, from + PAGE_SIZE) : undefined;
+  // shortcut: guests are re-ranked on every page because "FEED_SNAPSHOT_T" is keyed by a user id (FK); the ranking at one
+  // asOf is the same, but a note hidden between pages shifts later slices by one. Add a guest snapshot keyed by IP if UAT shows it (D45).
+  const guest = viewerId === GUEST_ID;
+  let stored = asOf && !guest ? await readSnapshot(viewerId, cutoff, from, from + PAGE_SIZE) : undefined;
   if (!stored) {
     const ranked = await rank(viewerId, cutoff);
-    await saveSnapshot(viewerId, cutoff, ranked);
+    if (!guest) await saveSnapshot(viewerId, cutoff, ranked);
     stored = { entries: ranked.slice(from, from + PAGE_SIZE), total: ranked.length };
   }
   const { entries, total } = stored;

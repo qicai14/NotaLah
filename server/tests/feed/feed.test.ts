@@ -26,8 +26,8 @@ describe('Feed', () => {
     expect(res.body.nextPage).toBeNull();
   });
 
-  it('RANK-TC10: no token gives 401 and page -1 gives 400 "Invalid page"', async () => {
-    expect((await request(app).get('/api/feed')).status).toBe(401);
+  it('RANK-TC10: page -1 gives 400 "Invalid page", signed in or not', async () => {
+    expect((await request(app).get('/api/feed?page=-1')).status).toBe(400);
     const uid = await insertUser();
     for (const p of ['-1', '0', 'abc', '1.5']) {
       const res = await get(uid, `/api/feed?page=${p}`);
