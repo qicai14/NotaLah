@@ -86,9 +86,16 @@ export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_i
 /** Display name of the earliest valid verifier of note p, or NULL (FR2 "Verified by"). */
 export const VERIFIED_BY = `(SELECT vu.usr_display_name ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id ORDER BY v.ver_created_at, v.ver_id LIMIT 1)`;
 
-/** Like and comment counts of note p (the author's own comments are not counted, D22); with `asOf` (an SQL expression), only rows created by then, for the ranking snapshot (D24). */
+/** Likes by the author or an edit collaborator of note p (alias l = LIKE_T), which never raise E (D47). */
+const OWN_LIKE = `(l.lik_usr_id = p.pst_usr_id OR EXISTS (SELECT 1 FROM "COLLABORATOR_T" c
+                  WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = l.lik_usr_id AND c.clb_role = 'edit'))`;
+
+/**
+ * Like and comment counts of note p (the author's own comments are not counted, D22). With `asOf` (an SQL expression)
+ * these are the ranking inputs (D24): only rows created by then, and no likes by the author or an edit collaborator (D47).
+ */
 export const countsCol = (asOf?: string) => `json_build_object(
-              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" WHERE lik_pst_id = p.pst_id${asOf ? ` AND lik_created_at <= ${asOf}` : ''}),
+              'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" l WHERE l.lik_pst_id = p.pst_id${asOf ? ` AND l.lik_created_at <= ${asOf} AND NOT ${OWN_LIKE}` : ''}),
               'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted
                            AND cmt_usr_id <> p.pst_usr_id${asOf ? ` AND cmt_created_at <= ${asOf}` : ''})) AS "counts"`;
 

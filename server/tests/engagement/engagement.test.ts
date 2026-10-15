@@ -92,16 +92,16 @@ describe('Engagement', () => {
     expect((await del(other, `/api/notes/${open}/bookmark`)).status).toBe(200);
   });
 
-  it('ENG-TC16: own note cannot be liked; own comments are not counted in engagement', async () => {
+  it('ENG-TC16: the author may like their own note; own comments are not counted in engagement', async () => {
     const [a, b] = [await insertUser(), await insertUser()];
     const p = await insertNote(a);
     const res = await post(a, `/api/notes/${p}/like`);
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('You cannot like your own note');
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ liked: true, likes: 1 });
     await comment(a, p, { body: 'author reply' });
     await comment(b, p, { body: 'reader comment' });
     const feed = (await get(b, '/api/feed')).body.items[0];
-    expect(feed.counts).toEqual({ likes: 0, comments: 1 });
+    expect(feed.counts).toEqual({ likes: 1, comments: 1 }); // the self-like is shown but does not raise E (RANK-TC32)
     expect((await get(b, `/api/notes/${p}/comments`)).body.comments).toHaveLength(2);
   });
 

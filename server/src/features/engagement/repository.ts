@@ -9,7 +9,7 @@ const VIEW_WINDOW_MINUTES = 30;
 export interface Target {
   authorId: number;
   slideCount: number;
-  /** The viewer is an edit collaborator, so the note counts as their own for likes and verification (D46). */
+  /** The viewer is an edit collaborator, so the note counts as their own for Super Likes (D46, D47). */
   isEditor: boolean;
 }
 
