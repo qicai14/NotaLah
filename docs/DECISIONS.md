@@ -845,3 +845,22 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** COL-TC1 to COL-TC24, OPS-TC5.
 - **Reversibility:** Medium. The migration has a down step; dropping the feature means reverting the PUT role check,
   `VALID_VERIFICATIONS` and the Following-feed clause.
+
+## D47 - User decisions, 16 Oct 2026 (early morning): likes, suspension, Vite+, Sprint 4
+- **Confirmed:** D45's shared in-process guest ranking cache; D46's co-author credit only after a first edit; an owner's
+  or co-author's title/slide edit drops V until a lecturer re-verifies the latest version.
+- **Self-likes (reverses part of D46):** an author or co-author may like their own note and the like shows in the count,
+  but the ranking engagement score E ignores likes by the author or any edit collaborator, so nobody boosts their own
+  note. Super Like by a co-author lecturer stays blocked (FR1/FR2 conflict of interest).
+- **Suspension (D26 applied to the public):** a suspended user's profile, notes and comments are hidden from everyone
+  except admins, guests and signed-in users alike (comments show as "comment unavailable", like deleted ones).
+- **Vite+ adopted:** move the workspace from Vite 8 + Vitest 5 to Vite+ (`vite-plus`, MIT), pinned to 1.0.0 (28 Sep,
+  passes the two-week rule). Justification for Chapter 2: Vite+ keeps the same Vite core (Rolldown) and Vitest, so the
+  IR's Vite choice and its rationale stand; it adds what the project lacked, linting (Oxlint) and formatting (Oxfmt),
+  behind one CLI (`vp dev/build/test/check`), which simplifies CI. Build speed is roughly unchanged because Vite 8
+  already bundles with Rolldown; the gain is fewer tools and configs, not raw speed.
+- **Sprint 4 spec:** `docs/specs/Sprint4_spec.md` (interview 16 Oct). Search blends text relevance with feed signals
+  (fallback to text-only if FR5's 3 s fails under the 10,000-note test); academic terms come from an admin-editable
+  `"TERM_T"` that starts empty, and the term filter is hidden until terms exist (FR15 delivered as written); chat
+  supports text, note cards, reply to a message, delete own message, read receipts, typing indicator, images (after
+  R22); groups up to 30, any member adds their friends; notifications in-app only, kept 30 days; users can block users.
