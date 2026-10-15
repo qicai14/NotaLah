@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { type RegisterInput, useAuth } from './AuthContext';
 import { Field } from '../../components/Field';
+import { ProgrammeSelect } from '../../components/ProgrammeSelect';
 import { ApiError } from '../../lib/api';
 
 const EMPTY: RegisterInput = {
@@ -64,7 +65,7 @@ export default function Register() {
         )}
         <Field label="Password" name="password" type="password" autoComplete="new-password" hint="At least 8 characters." value={form.password} onChange={set('password')} error={errors.password} />
         <Field label="Confirm password" name="confirmPassword" type="password" autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} />
-        <Field label="Programme" name="programme" maxLength={100} placeholder="e.g. Software Engineering" value={form.programme} onChange={set('programme')} error={errors.programme} />
+        <ProgrammeSelect value={form.programme} onChange={set('programme')} error={errors.programme} />
 
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-sm font-medium">I am a</legend>
