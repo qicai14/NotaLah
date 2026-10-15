@@ -1,8 +1,28 @@
 // Turns a laid-out wireframe DOM into a flat, editable vector SVG (runs inside the page via page.evaluate).
 // Boxes become <rect>/<path>, strokes come from borders, outlines and box-shadows, text nodes become one
-// <text> per rendered line, inline icons are copied as vector groups, and [data-x] boxes get a cross.
-// Colours are reduced to grey so the output stays greyscale whatever the CSS says.
+// <text> per rendered line, inline icons are copied as vector groups, and .xb / [data-x] boxes get a cross.
+// Colours are reduced to grey so the output stays greyscale whatever the CSS says. ::before/::after boxes are
+// first turned into real spans, and scaled subtrees (transform: scale) keep their scaled type and strokes.
 export function domToSvg() {
+  const PSEUDO = ['position', 'left', 'top', 'width', 'height', 'margin-left', 'margin-top', 'background-color', 'border-radius', 'box-shadow', 'display'];
+  const made = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el instanceof SVGElement) continue;
+    for (const p of ['::before', '::after']) {
+      const ps = getComputedStyle(el, p);
+      if (!ps.content || ps.content === 'none' || ps.content === 'normal') continue;
+      made.push([el, p, PSEUDO.map((k) => `${k}:${ps.getPropertyValue(k)}`).join(';')]);
+    }
+  }
+  if (made.length) {
+    const st = document.createElement('style');
+    st.textContent = '.np-b::before,.np-a::after{content:none!important}';
+    document.head.append(st);
+    for (const [el, p, css] of made) {
+      const sp = document.createElement('span'); sp.style.cssText = `padding:0;margin:0;border:0;${css}`;
+      if (p === '::before') { el.prepend(sp); el.classList.add('np-b'); } else { el.append(sp); el.classList.add('np-a'); }
+    }
+  }
   const root = document.querySelector('body > *');
   const R0 = root.getBoundingClientRect();
   const W = Math.round(R0.width), H = Math.round(R0.height);
@@ -20,9 +40,9 @@ export function domToSvg() {
     return { hex: `#${l}${l}${l}`, a };
   };
   const paint = (attr, c, o) => `${attr}="${c.hex}"${c.a * o < 1 ? ` ${attr}-opacity="${n(c.a * o)}"` : ''}`;
-  const radii = (cs, w, h) => ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'].map((k) => {
+  const radii = (cs, w, h, sc = 1) => ['borderTopLeftRadius', 'borderTopRightRadius', 'borderBottomRightRadius', 'borderBottomLeftRadius'].map((k) => {
     const v = cs[k].split(' ')[0];
-    const px = v.endsWith('%') ? (parseFloat(v) / 100) * Math.min(w, h) : parseFloat(v) || 0;
+    const px = v.endsWith('%') ? (parseFloat(v) / 100) * Math.min(w, h) : (parseFloat(v) || 0) * sc;
     return Math.min(px, w / 2, h / 2);
   });
   const shape = (x, y, w, h, r) => {
@@ -35,14 +55,14 @@ export function domToSvg() {
   const emit = (s, extra) => { if (s) out.push(`<${s.tag} ${s.a} ${extra}/>`); };
   const stroke = (x, y, w, h, r, c, sw, o, dash = '') => emit(shape(x, y, w, h, r), `fill="none" ${paint('stroke', c, o)} stroke-width="${n(sw)}"${dash}`);
 
-  function box(el, r, cs, o) {
+  function box(el, r, cs, o, sc) {
     const x = r.left - R0.left, y = r.top - R0.top, w = r.width, h = r.height;
     if (w < 0.5 || h < 0.5) return;
-    const rad = radii(cs, w, h);
+    const rad = radii(cs, w, h, sc);
     const bg = col(cs.backgroundColor);
     // outer shadows first (they sit under the box)
     const shadows = cs.boxShadow === 'none' ? [] : cs.boxShadow.split(/,(?![^(]*\))/).map((s) => {
-      const c = col(s); const [sx = 0, sy = 0, blur = 0, spread = 0] = (s.replace(/rgba?\([^)]*\)/, '').match(/-?[\d.]+px/g) || []).map(parseFloat);
+      const c = col(s); const [sx = 0, sy = 0, blur = 0, spread = 0] = (s.replace(/rgba?\([^)]*\)/, '').match(/-?[\d.]+px/g) || []).map((v) => parseFloat(v) * sc);
       return { c, sx, sy, blur, spread, inset: /inset/.test(s) };
     }).filter((s) => s.c);
     let elevated = false;
@@ -51,7 +71,7 @@ export function domToSvg() {
       else if (s.spread > 0) stroke(x - s.spread / 2, y - s.spread / 2, w + s.spread, h + s.spread, rad.map((v) => v + s.spread / 2), s.c, s.spread, o);
     }
     if (bg) emit(shape(x, y, w, h, rad), paint('fill', bg, o));
-    if (el.hasAttribute('data-x')) {
+    if (el.hasAttribute('data-x') || el.classList.contains('xb')) {
       const c = { hex: '#a8a8a8', a: 1 };
       out.push(`<path d="M${n(x)} ${n(y)}L${n(x + w)} ${n(y + h)}M${n(x + w)} ${n(y)}L${n(x)} ${n(y + h)}" fill="none" ${paint('stroke', c, o)} stroke-width="1"/>`);
     }
@@ -60,7 +80,7 @@ export function domToSvg() {
       else if (s.sy) emit(shape(x, s.sy > 0 ? y : y + h + s.sy, w, Math.abs(s.sy), [0, 0, 0, 0]), paint('fill', s.c, o));
       else if (s.sx) emit(shape(s.sx > 0 ? x : x + w + s.sx, y, Math.abs(s.sx), h, [0, 0, 0, 0]), paint('fill', s.c, o));
     }
-    const bw = ['Top', 'Right', 'Bottom', 'Left'].map((k) => (cs[`border${k}Style`] === 'none' ? 0 : parseFloat(cs[`border${k}Width`]) || 0));
+    const bw = ['Top', 'Right', 'Bottom', 'Left'].map((k) => (cs[`border${k}Style`] === 'none' ? 0 : (parseFloat(cs[`border${k}Width`]) || 0) * sc));
     const bc = ['Top', 'Right', 'Bottom', 'Left'].map((k) => col(cs[`border${k}Color`]));
     if (bw.every((v) => v === bw[0]) && bw[0] > 0 && bc[0]) {
       const dash = cs.borderTopStyle === 'dashed' ? ` stroke-dasharray="${bw[0] * 3} ${bw[0] * 2}"` : '';
@@ -73,7 +93,7 @@ export function domToSvg() {
       if (l && bc[3]) emit(shape(x, y, l, h, [0, 0, 0, 0]), paint('fill', bc[3], o));
     }
     if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) {
-      const ow = parseFloat(cs.outlineWidth), off = parseFloat(cs.outlineOffset) || 0, d = off + ow / 2;
+      const ow = parseFloat(cs.outlineWidth) * sc, off = (parseFloat(cs.outlineOffset) || 0) * sc, d = off + ow / 2;
       const c = col(cs.outlineColor); if (c) stroke(x - d, y - d, w + 2 * d, h + 2 * d, rad.map((v) => v + d), c, ow, o);
     }
   }
@@ -93,7 +113,7 @@ export function domToSvg() {
     out.push(`<g transform="translate(${n(r.left - R0.left)} ${n(r.top - R0.top)}) scale(${n(s)})" fill="none" stroke="${c.hex}" stroke-width="${cs.strokeWidth ? parseFloat(cs.strokeWidth) : 1.75}" stroke-linecap="round" stroke-linejoin="round"${c.a * o < 1 ? ` opacity="${n(c.a * o)}"` : ''}>${kids}</g>`);
   }
 
-  function text(node, cs, o) {
+  function text(node, cs, o, sc) {
     const s = node.textContent;
     if (!s.trim()) return;
     const c = col(cs.color); if (!c) return;
@@ -107,8 +127,8 @@ export function domToSvg() {
       if (!line) { line = { top: rc.top, h: rc.height, x: rc.left, words: [] }; lines.push(line); }
       line.x = Math.min(line.x, rc.left); line.words.push(m[0]);
     }
-    const fs = parseFloat(cs.fontSize);
-    const ls = cs.letterSpacing === 'normal' ? '' : ` letter-spacing="${n(parseFloat(cs.letterSpacing))}"`;
+    const fs = parseFloat(cs.fontSize) * sc;
+    const ls = cs.letterSpacing === 'normal' ? '' : ` letter-spacing="${n(parseFloat(cs.letterSpacing) * sc)}"`;
     const fw = cs.fontWeight !== '400' ? ` font-weight="${cs.fontWeight}"` : '';
     const fi = cs.fontStyle === 'italic' ? ' font-style="italic"' : '';
     const ff = /mono|consolas/i.test(cs.fontFamily) ? ' font-family="Consolas, monospace"' : /georgia|serif/i.test(cs.fontFamily) && !/sans/i.test(cs.fontFamily) ? ' font-family="Georgia, serif"' : '';
@@ -118,21 +138,23 @@ export function domToSvg() {
     }
   }
 
-  function walk(el, op) {
+  function walk(el, op, psc) {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden') return;
     const o = op * parseFloat(cs.opacity);
+    const tm = cs.transform && cs.transform.match(/matrix\(([^)]+)\)/);
+    const sc = tm ? psc * Math.hypot(...tm[1].split(',').slice(0, 2).map(Number)) : psc;
     if (o <= 0.01) return;
     const r = el.getBoundingClientRect();
     if (el.tagName.toLowerCase() === 'svg') { icon(el, r, cs, o); return; }
     if (el.tagName === 'STYLE') return;
     const g = GROUPS.find((k) => el.classList.contains(k));
     if (g) out.push(`<g id="${g}-${++grpN}">`);
-    box(el, r, cs, o);
+    box(el, r, cs, o, sc);
     const clip = cs.overflow !== 'visible' && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
     if (clip) {
       const id = `clip${++clipN}`;
-      const s = shape(r.left - R0.left, r.top - R0.top, r.width, r.height, radii(cs, r.width, r.height));
+      const s = shape(r.left - R0.left, r.top - R0.top, r.width, r.height, radii(cs, r.width, r.height, sc));
       defs.push(`<clipPath id="${id}"><${s.tag} ${s.a}/></clipPath>`);
       out.push(`<g clip-path="url(#${id})">`);
     }
@@ -142,13 +164,13 @@ export function domToSvg() {
       return { k, z, i };
     }).sort((a, b) => a.z - b.z || a.i - b.i);
     for (const { k } of kids) {
-      if (k.nodeType === 3) text(k, cs, o);
-      else if (k.nodeType === 1) walk(k, o);
+      if (k.nodeType === 3) text(k, cs, o, sc);
+      else if (k.nodeType === 1) walk(k, o, sc);
     }
     if (clip) out.push('</g>');
     if (g) out.push('</g>');
   }
 
-  walk(root, 1);
+  walk(root, 1, 1);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Segoe UI, Arial, sans-serif">\n<defs>${defs.join('')}</defs>\n<rect width="${W}" height="${H}" fill="#ffffff"/>\n${out.join('\n')}\n</svg>\n`;
 }
