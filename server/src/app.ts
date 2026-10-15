@@ -2,12 +2,17 @@ import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import { env } from './lib/env';
+import { reportError } from './lib/errorReporting';
+import { requestLogger } from './lib/logger';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { authRouter } from './features/auth/routes';
-import { engagementRouter, feedRouter } from './features/feed/routes';
+import { writeLimiter } from './features/auth/rateLimit';
+import { engagementRouter } from './features/engagement/routes';
+import { feedRouter } from './features/feed/routes';
 import { healthRouter } from './lib/health';
-import { modulesRouter, notesRouter } from './features/notes/routes';
+import { modulesRouter, programmesRouter } from './features/modules/routes';
+import { notesRouter } from './features/notes/routes';
 import { usersRouter } from './features/users/routes';
 import { verificationRouter } from './features/verification/routes';
 
@@ -16,8 +21,18 @@ export const app = express();
 // Behind the Vite dev proxy every request arrives from loopback; trust its X-Forwarded-For (D17).
 app.set('trust proxy', 'loopback');
 
+app.use(requestLogger);
 app.use(helmet());
-app.use(cors({ origin: env.CLIENT_ORIGIN }));
+app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true, allowedHeaders: ['Content-Type', 'X-Requested-With'] }));
+
+// CSRF (D35): a cross-site page cannot add this header without a preflight, which CORS refuses for other origins.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+app.use('/api', (req, res, next) => {
+  if (SAFE_METHODS.has(req.method) || req.get('X-Requested-With') === 'parp') return next();
+  res.status(403).json({ error: 'Forbidden' });
+});
+// Write limit per user, or per IP when signed out, counted in Postgres so it holds across instances (D40).
+app.use('/api', (req, res, next) => (SAFE_METHODS.has(req.method) ? next() : writeLimiter(req, res, next)));
 app.use(express.json({ limit: '1mb' }));
 app.use(passport.initialize());
 
@@ -25,6 +40,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/modules', modulesRouter);
+app.use('/api/programmes', programmesRouter);
 app.use('/api/feed', feedRouter);
 app.use('/api', verificationRouter);
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
@@ -35,9 +51,12 @@ app.use('/api', (_req, res) => {
 });
 
 // Express 5 forwards rejected async handlers here.
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const status = typeof err?.status === 'number' ? err.status : 500;
-  if (status >= 500) console.error(err);
+  if (status >= 500) {
+    res.err = err;
+    reportError(err, { requestId: String(req.id) });
+  }
   res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
 };
 app.use(errorHandler);

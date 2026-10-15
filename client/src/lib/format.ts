@@ -1,4 +1,3 @@
-/** "5m ago", "3h ago", "2d ago", else a date. */
 export function timeAgo(iso: string | null): string {
   if (!iso) return '';
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);

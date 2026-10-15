@@ -1,13 +1,25 @@
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
-import { BCRYPT_COST, type LoginInfo, passport, signToken } from './passport';
+import {
+  AUTH_COOKIE,
+  authCookieOptions,
+  BCRYPT_COST,
+  type LoginInfo,
+  passport,
+  signToken,
+  TOKEN_TTL_SECONDS,
+} from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
-import { issueMap } from '../../lib/validation';
+import { authLimiter } from './rateLimit';
+import { programmeExists } from '../modules/repository';
+import { isUniqueViolation } from '../../lib/pool';
+import { bodyOrEmpty, issueMap } from '../../lib/validation';
 
 export const authRouter = Router();
+
+const PROGRAMME_ERROR = 'Choose a programme from the list';
 
 const required = (label: string) =>
   z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`);
@@ -30,17 +42,8 @@ const registerSchema = z.object({
   staffId: z.string().trim().max(20, 'Staff ID must be at most 20 characters').optional(),
 });
 
-const authLimiter = rateLimit({
-  windowMs: 60_000,
-  limit: 10,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
-  message: { error: 'Too many attempts. Try again in a minute.' },
-});
-
 authRouter.post('/register', authLimiter, async (req, res) => {
-  const body: Record<string, unknown> = req.body && typeof req.body === 'object' ? req.body : {};
+  const body = bodyOrEmpty(req);
   const parsed = registerSchema.safeParse(body);
   const errors = issueMap(parsed.error?.issues ?? []);
   // Cross-field rules run on the raw body so they are reported alongside per-field errors.
@@ -49,6 +52,9 @@ authRouter.post('/register', authLimiter, async (req, res) => {
   }
   if (body.role === 'lecturer' && !errors.staffId && !(typeof body.staffId === 'string' && body.staffId.trim())) {
     errors.staffId = 'Staff ID is required for lecturers';
+  }
+  if (typeof body.programme === 'string' && !errors.programme && !(await programmeExists(body.programme.trim()))) {
+    errors.programme = PROGRAMME_ERROR;
   }
   if (!parsed.success || Object.keys(errors).length > 0) {
     return res.status(400).json({ error: 'Validation failed', errors });
@@ -69,16 +75,17 @@ authRouter.post('/register', authLimiter, async (req, res) => {
       lecturerStatus: isLecturer ? 'pending' : null,
       staffId: isLecturer ? (d.staffId ?? null) : null,
     });
+    // No cookie: the client sends new users to log in, so a cookie here would be a hidden live session.
     return res.status(201).json({ user });
   } catch (err) {
     // Two registrations racing past the check above: the UNIQUE constraint decides.
-    if ((err as { code?: string }).code === '23505') return res.status(409).json(duplicate);
+    if (isUniqueViolation(err)) return res.status(409).json(duplicate);
     throw err;
   }
 });
 
 authRouter.post('/login', authLimiter, (req, res, next) => {
-  const { email, password } = req.body ?? {};
+  const { email, password } = bodyOrEmpty(req);
   if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
@@ -87,8 +94,15 @@ authRouter.post('/login', authLimiter, (req, res, next) => {
     if (!user) {
       return res.status(info?.status ?? 401).json({ error: info?.message ?? 'Invalid email or password' });
     }
-    res.json({ token: signToken(user), user });
+    res.cookie(AUTH_COOKIE, signToken(user), { ...authCookieOptions(), maxAge: TOKEN_TTL_SECONDS * 1000 });
+    res.json({ user });
   })(req, res, next);
+});
+
+// No requireAuth: an expired or invalid token must still be able to log out.
+authRouter.post('/logout', (_req, res) => {
+  res.clearCookie(AUTH_COOKIE, authCookieOptions());
+  res.status(204).end();
 });
 
 authRouter.get('/me', requireAuth, (req, res) => {

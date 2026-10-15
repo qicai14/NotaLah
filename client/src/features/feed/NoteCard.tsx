@@ -5,7 +5,7 @@ import { NoteActions } from '../../components/NoteActions';
 import { SlideViewer } from '../../components/SlideViewer';
 import { api } from '../../lib/api';
 import { timeAgo, visibilityLabel } from '../../lib/format';
-import type { FeedItem } from '../../types';
+import type { Note } from '../../types';
 
 /** Logs one view when at least half the card has been visible for a second. */
 function useViewLogger(noteId: number) {
@@ -37,7 +37,7 @@ function useViewLogger(noteId: number) {
   return el;
 }
 
-export function NoteCard({ item: initial }: { item: FeedItem }) {
+export function NoteCard({ item: initial }: { item: Note }) {
   const [item, setItem] = useState(initial);
   const ref = useViewLogger(item.id);
   return (

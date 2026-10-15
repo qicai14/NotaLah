@@ -13,7 +13,7 @@ start
 |Sender|
 :Type message and send;
 |System|
-if (Sender and author are contacts?) then (yes)
+if (Sender and author are friends\n(follow each other)?) then (yes)
   :Find or create direct conversation;
   :Store message with note reference;
   :Push message to recipient in real time;
@@ -33,12 +33,11 @@ endif
 :Read first message and note card;
 if (Accept?) then (yes)
   |System|
-  :Add both users to CONTACT_T;
-  :Create direct conversation;
+  :Create direct conversation\n(users do not become friends);
   :Move held message into conversation;
   :Notify sender in real time;
   |Sender|
-  :Continue conversation as contacts;
+  :Continue the conversation;
   stop
 else (no)
   |System|

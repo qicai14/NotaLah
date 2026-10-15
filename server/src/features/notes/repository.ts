@@ -1,34 +1,17 @@
 import type { PoolClient } from 'pg';
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
-import { approvedLecturer, countingLecturer } from '../users/repository';
+import { approvedLecturer, countingLecturer, friends } from '../users/repository';
 import type { NoteInput } from './service';
 
-export interface ModuleRow {
-  id: number;
-  code: string;
-  name: string;
-  programme: string;
-}
+/** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
+export const MODULE_COL = `CASE WHEN m.mod_id IS NULL THEN NULL
+       ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module"`;
 
-export async function listModules(): Promise<ModuleRow[]> {
-  const { rows } = await pool.query<ModuleRow>(
-    `SELECT mod_id AS "id", mod_code AS "code", mod_name AS "name", mod_programme AS "programme"
-     FROM "MODULE_T" ORDER BY mod_code`,
-  );
-  return rows;
-}
-
-export async function moduleExists(id: number): Promise<boolean> {
-  const { rowCount } = await pool.query(`SELECT 1 FROM "MODULE_T" WHERE mod_id = $1`, [id]);
-  return rowCount === 1;
-}
-
-/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or from a contact (either direction; accepting a request inserts both rows, D9). */
+/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or, when contacts-only, by a friend of the viewer (mutual follow, D38). */
 export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND
-    (p.pst_visibility = 'public' OR EXISTS (SELECT 1 FROM "CONTACT_T" c
-       WHERE (c.con_usr_id = p.pst_usr_id AND c.con_contact_id = $1)
-          OR (c.con_usr_id = $1 AND c.con_contact_id = p.pst_usr_id))))))`;
+    (p.pst_visibility = 'public' OR ${friends('$1', 'p.pst_usr_id')}))))`;
 
 /** The note's hashtag names, alphabetical (alias p = POST_T). */
 export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
@@ -53,8 +36,7 @@ export interface Note {
 /** Note columns (contract: alias p = POST_T; use with NOTE_FROM). */
 export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "template", p.pst_status AS "status",
          p.pst_visibility AS "visibility",
-         CASE WHEN m.mod_id IS NULL THEN NULL
-              ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+         ${MODULE_COL},
          ${HASHTAGS_COL},
          COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'content', s.sld_content)
                                    ORDER BY s.sld_position)
@@ -72,7 +54,6 @@ export const NOTE_FROM = `
 /** Super Likes that count (alias v): by an approved lecturer whose account is active or restricted (D24). Ends in a WHERE clause, so callers append AND conditions. */
 export const VALID_VERIFICATIONS = `FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id WHERE ${countingLecturer('vu')}`;
 
-/** True when the note (alias p) has at least one valid Super Like. */
 export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id)`;
 
 /** Display name of the earliest valid verifier of note p, or NULL (FR2 "Verified by"). */
@@ -117,19 +98,21 @@ export interface DraftSummary {
   updatedAt: Date;
 }
 
-export async function listDrafts(authorId: number): Promise<DraftSummary[]> {
-  const { rows } = await pool.query<DraftSummary>(
+/** One page of the author's drafts, last edited first; keyset on (updated_at, id), D40. */
+export async function listDrafts(authorId: number, { cursor, limit }: KeysetPage): Promise<{ items: DraftSummary[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<DraftSummary & { cursor: string }>(
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
-            CASE WHEN m.mod_id IS NULL THEN NULL
-                 ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module",
+            ${MODULE_COL},
             ${HASHTAGS_COL},
-            p.pst_updated_at AS "updatedAt"
+            p.pst_updated_at AS "updatedAt", ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
-     ORDER BY p.pst_updated_at DESC, p.pst_id DESC`,
-    [authorId],
+       AND ($2::BIGINT IS NULL OR (p.pst_updated_at, p.pst_id) < (${fromMicros('$2')}, $3::INT))
+     ORDER BY p.pst_updated_at DESC, p.pst_id DESC
+     LIMIT $4`,
+    [authorId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
 }
 
 export interface NoteMeta {
@@ -186,7 +169,6 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   );
 }
 
-/** Inserts the post, its slides and hashtags in one transaction; returns the new id. */
 export function createNote(authorId: number, n: NoteInput): Promise<number> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ pst_id: number }>(
@@ -200,7 +182,6 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
   });
 }
 
-/** Full replace of the post's fields, slides and hashtags in one transaction. */
 export function replaceNote(id: number, n: NoteInput): Promise<boolean> {
   return inTransaction(async (c) => {
     const { rowCount } = await c.query(
@@ -233,16 +214,20 @@ export interface NoteSummary {
 export const SUMMARY_COLS = `p.pst_id AS "id", p.pst_title AS "title", m.mod_code AS "moduleCode", p.pst_published_at AS "publishedAt",
             ${HASHTAGS_COL}, ${VERIFIED_BY} AS "verifiedBy"`;
 
-/** An author's published notes that the viewer may see, newest first. */
-export async function listNotesByAuthor(authorId: number, viewerId: number): Promise<NoteSummary[]> {
-  const { rows } = await pool.query<NoteSummary>(
-    `SELECT ${SUMMARY_COLS}
+/** One page of an author's published notes that the viewer may see, newest first; keyset on (published_at, id), D40. */
+export async function listNotesByAuthor(
+  authorId: number, viewerId: number, { cursor, limit }: KeysetPage,
+): Promise<{ items: NoteSummary[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<NoteSummary & { cursor: string }>(
+    `SELECT ${SUMMARY_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE}
-     ORDER BY p.pst_published_at DESC, p.pst_id DESC`,
-    [viewerId, authorId],
+       AND ($3::BIGINT IS NULL OR (p.pst_published_at, p.pst_id) < (${fromMicros('$3')}, $4::INT))
+     ORDER BY p.pst_published_at DESC, p.pst_id DESC
+     LIMIT $5`,
+    [viewerId, authorId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return rows;
+  return toPage(rows, limit);
 }
 
 export async function countDrafts(authorId: number): Promise<number> {

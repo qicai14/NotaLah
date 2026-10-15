@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './features/auth/AuthContext';
+import { isApprovedLecturer } from './lib/roles';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import AdminLecturers from './features/moderation/AdminLecturers';
 import AdminReports from './features/moderation/AdminReports';
@@ -76,7 +78,8 @@ function TabBar() {
 function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const verified = user?.role === 'lecturer' && user.lecturerStatus === 'approved';
+  const verified = isApprovedLecturer(user);
+  const [logoutFailed, setLogoutFailed] = useState(false);
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
@@ -101,14 +104,20 @@ function Header() {
             </Link>
             <button
               type="button"
-              onClick={() => {
-                logout();
-                navigate('/login', { replace: true });
+              onClick={async () => {
+                try {
+                  await logout();
+                  setLogoutFailed(false);
+                  navigate('/login', { replace: true });
+                } catch {
+                  setLogoutFailed(true);
+                }
               }}
               className="rounded-md border border-slate-300 px-3 py-1"
             >
               Log out
             </button>
+            {logoutFailed && <span role="alert">Could not log out. Try again.</span>}
           </div>
         ) : (
           <div className="flex gap-4 text-sm">

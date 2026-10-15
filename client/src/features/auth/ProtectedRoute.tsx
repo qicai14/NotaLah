@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import type { Role } from '../../lib/api';
+import type { Role } from '../../types';
 
 /** UI guard only; the server enforces every role check itself. */
 export function ProtectedRoute({ roles, children }: { roles?: Role[]; children: ReactNode }) {

@@ -20,7 +20,7 @@
 
 	The Administrator actor is placed on the opposite side of the system boundary because its use cases concern moderation rather than content. Administrators review reported content (UC20), suspend, restrict or delete accounts (UC21), and approve lecturer registrations (UC22). The last of these was added during design and is not listed in the Investigation Report; without it, any user could select the lecturer role at registration and verify their own notes, which would undermine the lecturer validation component that carries the joint-highest weight in the ranking formula (Section 2.3.4.4). Administrators also share the Search Content (UC14) and Log Out (UC03) use cases, the former supporting moderation searches by username or hashtag as specified in Section 1.6.4.
 
-	Four relationships refine the base use cases. Assign Module and Hashtags is an included use case of Create Slide Note because hashtags are mandatory at creation; the relevance component of the ranking formula divides by the number of hashtags on a post, so a note without hashtags cannot be scored. Save Draft, Reply to Comment, Filter by Lecturer or Date Range, and Send Message Request are modelled as extensions because each occurs only under a condition: the author chooses not to publish yet, the user responds to an existing comment, the user narrows a result set, or the recipient of a post-anchored message is not yet a contact. The last extension implements FR6, which requires approval before a non-contact can deliver a message.
+	Four relationships refine the base use cases. Assign Module and Hashtags is an included use case of Create Slide Note because hashtags are mandatory at creation; the relevance component of the ranking formula divides by the number of hashtags on a post, so a note without hashtags cannot be scored. Save Draft, Reply to Comment, Filter by Lecturer or Date Range, and Send Message Request are modelled as extensions because each occurs only under a condition: the author chooses not to publish yet, the user responds to an existing comment, the user narrows a result set, or the recipient of a post-anchored message is not yet a friend (a user who follows the sender and is followed back). The last extension implements FR6, which requires approval before a non-friend can deliver a message.
 
 	Three low-priority requirements from Table 14 are not represented as use cases. Background audio on slide notes (FR17) and peer annotation (FR18) were removed from the Part II scope, and filtering by academic term (FR15) was reworked into a published-date filter. The justification for each change is recorded in the Sprint 0 review, consistent with the agreement with the supervisor that low-priority requirements are cut or reworked only with written justification.
 
@@ -81,7 +81,7 @@
 | Preconditions | The user is logged in. |
 | Postconditions | Updated profile details are stored and shown on the user's notes and profile page. |
 | Standard Process | 1. User opens their profile page. <br> 2. System displays profile details and the user's notes. <br> 3. User selects "Edit Profile". <br> 4. User edits the fields and saves. <br> 5. System validates and stores the changes. <br> 6. System displays the updated profile. |
-| Alternative Process | **Step 1a: User views another user's profile** <br> 1a.1 System displays that user's public details and only the notes the viewer is allowed to see (public, or contacts-only if the two users are contacts). <br> 1a.2 Use case ends without editing. |
+| Alternative Process | **Step 1a: User views another user's profile** <br> 1a.1 System displays that user's public details and only the notes the viewer is allowed to see (public, or contacts-only if the two users are friends, meaning they follow each other). <br> 1a.2 Use case ends without editing. |
 | Exception Flow | **Step 5a: Invalid input** <br> 5a.1 System rejects an empty display name or an image larger than 2 MB and returns to step 4. |
 
 *Table 4.5: UC05 Create Slide Note use case specification*
@@ -117,13 +117,13 @@
 | **Component** | **Description** |
 | --- | --- |
 | Use case | UC07_Publish Note |
-| Description | Allows an author to publish a completed note with a chosen visibility. Public notes enter every viewer's ranked feed; contacts-only notes are visible to the author's contacts. |
+| Description | Allows an author to publish a completed note with a chosen visibility. Public notes enter every viewer's ranked feed; contacts-only notes are visible to the author's friends (users who follow each other). |
 | Actors | Student, Lecturer |
 | Requirements | FR10, FR9; FR2 (lecturer badge on lecturer-authored notes) |
 | Preconditions | The note has a title, at least one non-empty slide, a module and at least one hashtag. |
 | Postconditions | The note is stored with status "published", a visibility value and a publication time, and becomes eligible for the feed and search. |
 | Standard Process | 1. User selects "Publish". <br> 2. System displays three visibility options of equal size: Public, Contacts only, Keep as private draft. <br> 3. User selects Public. <br> 4. System validates completeness. <br> 5. System stores the note as published and records the publication time. <br> 6. System opens the published note. |
-| Alternative Process | **Step 3a: User selects Contacts only** <br> 3a.1 System publishes the note visible only to the author's contacts. <br> **Step 3b: User selects Keep as private draft** <br> 3b.1 System performs UC06_Save Draft instead. <br> **Step 6a: Author is an approved lecturer** <br> 6a.1 System shows the lecturer checkmark badge on the author's picture in the note. |
+| Alternative Process | **Step 3a: User selects Contacts only** <br> 3a.1 System publishes the note visible only to the author's friends. <br> **Step 3b: User selects Keep as private draft** <br> 3b.1 System performs UC06_Save Draft instead. <br> **Step 6a: Author is an approved lecturer** <br> 6a.1 System shows the lecturer checkmark badge on the author's picture in the note. |
 | Exception Flow | **Step 4a: Note incomplete** <br> 4a.1 System lists the missing elements and returns to the editor. |
 
 *Table 4.8: UC08 Edit or Delete Own Note use case specification*
@@ -233,9 +233,9 @@
 | Actors | Student, Lecturer |
 | Requirements | FR7, FR6 (extension Send Message Request), Objective 4 |
 | Preconditions | The user is logged in, can see the note, and is not its author. |
-| Postconditions | A message referencing the note is delivered to the author's conversation, or held as a pending message request if the two users are not contacts. |
-| Standard Process | 1. User selects "Message author" on a note. <br> 2. System opens a chat window with the note preview card attached. <br> 3. User types a message and sends it. <br> 4. System confirms the two users are contacts. <br> 5. System stores the message with the note reference and delivers it in real time. <br> 6. Recipient sees the message and note card in the conversation. |
-| Alternative Process | **Step 4a: Users are not contacts (Send Message Request)** <br> 4a.1 System stores the message as a pending message request instead of delivering it to the conversation. <br> 4a.2 System notifies the recipient of a new request. <br> 4a.3 Sender sees "Request sent; you can message freely once accepted". |
+| Postconditions | A message referencing the note is delivered to the author's conversation, or held as a pending message request if the two users are not friends. |
+| Standard Process | 1. User selects "Message author" on a note. <br> 2. System opens a chat window with the note preview card attached. <br> 3. User types a message and sends it. <br> 4. System confirms the two users are friends (each follows the other). <br> 5. System stores the message with the note reference and delivers it in real time. <br> 6. Recipient sees the message and note card in the conversation. |
+| Alternative Process | **Step 4a: Users are not friends (Send Message Request)** <br> 4a.1 System stores the message as a pending message request instead of delivering it to the conversation. <br> 4a.2 System notifies the recipient of a new request. <br> 4a.3 Sender sees "Request sent; you can message freely once accepted". |
 | Exception Flow | **Step 4b: A pending request already exists** <br> 4b.1 System informs the sender and does not create another request. <br> **Step 4c: Recipient previously declined the sender** <br> 4c.1 System does not deliver the request and shows the same "Request sent" message, so the decline is not disclosed. |
 
 *Table 4.16: UC16 Respond to Message Request use case specification*
@@ -243,24 +243,24 @@
 | **Component** | **Description** |
 | --- | --- |
 | Use case | UC16_Respond to Message Request |
-| Description | Allows a recipient to accept or decline a message request from a non-contact. Accepting makes both users contacts and delivers the held message. |
+| Description | Allows a recipient to accept or decline a message request from a non-friend. Accepting opens a conversation and delivers the held message, without making the two users friends. |
 | Actors | Student, Lecturer |
 | Requirements | FR6 |
 | Preconditions | The user has at least one pending message request. |
-| Postconditions | The request is accepted (users become contacts and a conversation opens) or declined (no conversation is created). |
-| Standard Process | 1. User opens "Message Requests". <br> 2. System lists pending requests with sender, attached note card and first message. <br> 3. User selects "Accept". <br> 4. System records both users as contacts, creates the conversation and moves the held message into it. <br> 5. System notifies the sender in real time. |
+| Postconditions | The request is accepted (a conversation opens, but the users do not become friends) or declined (no conversation is created). |
+| Standard Process | 1. User opens "Message Requests". <br> 2. System lists pending requests with sender, attached note card and first message. <br> 3. User selects "Accept". <br> 4. System creates the direct conversation and moves the held message into it. <br> 5. System notifies the sender in real time. |
 | Alternative Process | **Step 3a: User declines** <br> 3a.1 System marks the request declined and removes it from the list. The sender is not notified. |
 | Exception Flow | **Step 4a: Sender account suspended meanwhile** <br> 4a.1 System removes the request and displays "This user is unavailable". |
 
-*Table 4.17: UC17 Chat with Contact use case specification*
+*Table 4.17: UC17 Chat with Friend use case specification*
 
 | **Component** | **Description** |
 | --- | --- |
-| Use case | UC17_Chat with Contact |
-| Description | Allows two contacts to exchange private messages in real time, with optional note cards attached. |
+| Use case | UC17_Chat with Friend |
+| Description | Allows two friends to exchange private messages in real time, with optional note cards attached. |
 | Actors | Student, Lecturer |
 | Requirements | FR9, IR deliverable "direct private messaging with established friends" |
-| Preconditions | Both users are contacts. |
+| Preconditions | Both users are friends (they follow each other). |
 | Postconditions | Messages are stored and delivered to the other participant. |
 | Standard Process | 1. User opens Messages. <br> 2. System lists conversations ordered by latest message. <br> 3. User opens a conversation. <br> 4. System loads recent messages. <br> 5. User types and sends a message. <br> 6. System stores it and pushes it to the other participant over the socket connection. |
 | Alternative Process | **Step 6a: Recipient offline** <br> 6a.1 The message is stored and appears, with an unread count, when the recipient next opens Messages. <br> **Step 5a: User attaches a note** <br> 5a.1 User selects "Attach note" and picks a note they can see; the message carries the note card. |
@@ -271,13 +271,13 @@
 | **Component** | **Description** |
 | --- | --- |
 | Use case | UC18_Manage Group Chat |
-| Description | Allows a user to create a named group chat with contacts for coursework teams, add or remove members, and leave the group. |
+| Description | Allows a user to create a named group chat with friends for coursework teams, add or remove members, and leave the group. |
 | Actors | Student, Lecturer |
 | Requirements | FR13 |
-| Preconditions | The user is logged in and has at least two contacts. |
+| Preconditions | The user is logged in and has at least two friends. |
 | Postconditions | A named group conversation exists with the selected members, who can exchange messages as in UC17. |
-| Standard Process | 1. User selects "New Group". <br> 2. System displays a name field and the user's contacts. <br> 3. User enters a group name and selects two or more contacts. <br> 4. User selects "Create". <br> 5. System creates the group with the user as owner and notifies members. |
-| Alternative Process | **Step 1a: Owner manages an existing group** <br> 1a.1 Owner renames the group, adds contacts or removes members. <br> **Step 1b: Member leaves** <br> 1b.1 Member selects "Leave group" and no longer receives its messages. |
+| Standard Process | 1. User selects "New Group". <br> 2. System displays a name field and the user's friends. <br> 3. User enters a group name and selects two or more friends. <br> 4. User selects "Create". <br> 5. System creates the group with the user as owner and notifies members. |
+| Alternative Process | **Step 1a: Owner manages an existing group** <br> 1a.1 Owner renames the group, adds friends or removes members. <br> **Step 1b: Member leaves** <br> 1b.1 Member selects "Leave group" and no longer receives its messages. |
 | Exception Flow | **Step 4a: Name empty or fewer than two members** <br> 4a.1 System disables "Create" and states the requirement. |
 
 *Table 4.19: UC19 Super Like (Verify) Note use case specification*
@@ -344,7 +344,7 @@
 
 	Figure 4.2 shows the static structure of PARP as domain classes, their attributes and operations, and the two services that hold the system's core logic. The User hierarchy mirrors the use case diagram: User is abstract and holds identity, credentials, role and account status together with the operations every account shares, namely registration, login, logout, profile update and search. Student adds the content and communication operations, Lecturer specialises Student with the Super Like operations and its staff identifier, and Administrator carries the moderation operations. Modelling Lecturer as a subclass of Student, rather than as a sibling, expresses in the type structure the same rule the server enforces at run time: a lecturer can do everything a student can, plus verification.
 
-	Post is the central content class and is composed of one or more Slide objects, drawn as composition because a slide has no existence outside its note and is deleted with it. Comment is likewise composed into Post and has a reflexive association that represents one level of replies. Post is associated with Hashtag in a many-to-many relationship, and with Like, Verification, Bookmark, Report and Interaction as association classes that record who acted on which note and when. The messaging classes are separated from content: MessageRequest holds a first message from a non-contact and creates a Conversation when accepted, Conversation is composed of Message objects, and both MessageRequest and Message carry an optional association to Post, which is the class-level expression of post-anchored messaging (FR7).
+	Post is the central content class and is composed of one or more Slide objects, drawn as composition because a slide has no existence outside its note and is deleted with it. Comment is likewise composed into Post and has a reflexive association that represents one level of replies. Post is associated with Hashtag in a many-to-many relationship, and with Like, Verification, Bookmark, Report and Interaction as association classes that record who acted on which note and when. The messaging classes are separated from content: MessageRequest holds a first message from a non-friend and creates a Conversation when accepted, Conversation is composed of Message objects, and both MessageRequest and Message carry an optional association to Post, which is the class-level expression of post-anchored messaging (FR7).
 
 	RankingService and SearchService are drawn as service classes because they own behaviour that spans many entities. RankingService exposes one operation per component of the scoring formula in Section 2.3.4, namely engagement, recency, validation and relevance, together with buildInterestVector and the composite score operation. Separating the components into individual operations allows each to be unit tested against fixed inputs, which is the verification approach committed to in Section 2.3.4.10. Every weight and constant is read from RankingConfig, a single configuration object whose initial values are those of Section 2.3.4.7, so that the re-evaluation of the weights required by NFR5 after user acceptance testing changes one file and no scoring code.
 
@@ -380,7 +380,7 @@
 
 *Figure 4.7: Activity diagram for post-anchored messaging*
 
-	Figure 4.7 shows how a user messages the author of a note (UC15 and UC16), which delivers Objective 4. The message always carries the note it was sent from, so the conversation opens with its academic context attached. The first decision applies FR6: messages between contacts are delivered immediately, while a message to a non-contact is held as a request. Duplicate requests are prevented, and the recipient's decision determines the outcome. Accepting adds both users as contacts, creates the conversation and moves the held message into it; declining closes the request without notifying the sender. This design reflects the survey finding that 75 percent of respondents wanted approval before receiving messages from non-contacts, while keeping the note-anchored first message that 78.1 percent rated useful.
+	Figure 4.7 shows how a user messages the author of a note (UC15 and UC16), which delivers Objective 4. The message always carries the note it was sent from, so the conversation opens with its academic context attached. The first decision applies FR6: messages between friends (two users who follow each other) are delivered immediately, while a message to a non-friend is held as a request. Duplicate requests are prevented, and the recipient's decision determines the outcome. Accepting creates the conversation and moves the held message into it, but does not make the two users friends; declining closes the request without notifying the sender. This design reflects the survey finding that 75 percent of respondents wanted approval before receiving messages from non-friends, while keeping the note-anchored first message that 78.1 percent rated useful.
 
 # 4.2.5 Sequence Diagrams
 
@@ -414,7 +414,7 @@
 
 *Figure 4.12: Sequence diagram for post-anchored messaging*
 
-	Figure 4.12 shows messaging over Socket.io, where the connection is authenticated with the same JSON Web Token during the handshake, so every event already carries a verified sender. MessagingService checks the contact relationship first. For contacts, the message is stored with its post reference and pushed to a room named after the recipient, so delivery reaches every device on which the recipient is connected. For non-contacts, the message is stored as a pending request, and a partial unique index in the database rejects a second pending request between the same pair, so the duplicate check cannot be bypassed by concurrent requests. Acceptance is processed in one transaction that updates the request, creates the two contact rows and the conversation, and moves the held message, so the two users never become contacts without the conversation that should accompany it.
+	Figure 4.12 shows messaging over Socket.io, where the connection is authenticated with the same JSON Web Token during the handshake, so every event already carries a verified sender. MessagingService checks friendship first, which is a mutual follow: a row in FOLLOW_T in each direction. For friends, the message is stored with its post reference and pushed to a room named after the recipient, so delivery reaches every device on which the recipient is connected. For non-friends, the message is stored as a pending request, and a partial unique index in the database rejects a second pending request between the same pair, so the duplicate check cannot be bypassed by concurrent requests. Acceptance is processed in one transaction that updates the request, creates the conversation and moves the held message, so a request is never marked accepted without the conversation that should accompany it. Acceptance does not create follow rows, because friendship is decided only by the users' own follows.
 
 # 4.3 Database Design
 
@@ -424,19 +424,21 @@
 
 *Figure 4.13: PARP entity relationship diagram (crow's foot notation)*
 
-	Figure 4.13 presents the relational data model of PARP as nineteen entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
+	Figure 4.13 presents the relational data model of PARP as twenty-one entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
-	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-contact until it is accepted (FR6); CONTACT_T, which records the resulting contact relationship; and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13). Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities; the second foreign keys to USER_T in CONTACT_T, MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
+	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
+
+	Two entities were added after the first design to meet the scale and reliability targets, and a third replaced an earlier one. FOLLOW_T replaced the original CONTACT_T, which stored a symmetric pair created by an accepted message request. A directed follow with a composite primary key and a check that a user cannot follow themselves is a single relationship from which friendship is derived at query time as a pair of follows in opposite directions, so there is no second table that could drift out of step; the migration that introduced it copied each existing contact into both directions. FEED_SNAPSHOT_T stores, for one viewer and one request time, the ranked list of post identifiers and their scores as arrays. The first page of the For You feed ranks the candidates once and writes this row, and later pages read a slice of it, so that a viewer paging through the feed sees a stable order and the ranking work is not repeated for every page; rows are short-lived and are deleted when they expire. RATE_LIMIT_T is an operational table with no foreign key to any other entity: it holds one counter per rate-limit key (a user identifier or an address) and time window, so that the request limits are enforced consistently across several server instances. It is therefore drawn in Figure 4.13 as a standalone entity.
 
 ## 4.3.2 Database Schema
 
-	Table 4.23 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Five PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
+	Table 4.23 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
 
 *Table 4.23: PARP database schema*
 
-The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_3.png`.
+The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_4.png`.
 
 | Table name | Field name | Data type | Size | Constraint | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -512,9 +514,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | int_pst_id | INTEGER | | FK → POST_T, NOT NULL | Note interacted with |
 | | int_type | VARCHAR | 10 | NOT NULL, CHECK (view, like, comment) | Interaction kind; sets its weight in the interest vector |
 | | int_created_at | TIMESTAMPTZ | | NOT NULL | Interaction time; age for the 14-day decay |
-| CONTACT_T | con_usr_id | INTEGER | | PK, FK → USER_T | User |
-| | con_contact_id | INTEGER | | PK, FK → USER_T, CHECK differs from con_usr_id | The user's contact; stored in both directions |
-| | con_created_at | TIMESTAMPTZ | | NOT NULL | Time the request was accepted |
+| FOLLOW_T | fol_follower_id | INTEGER | | PK, FK → USER_T | User who follows |
+| | fol_followee_id | INTEGER | | PK, FK → USER_T, CHECK differs from fol_follower_id; indexed | User being followed; a row in each direction makes the two users friends |
+| | fol_created_at | TIMESTAMPTZ | | NOT NULL | Time of the follow; orders follower lists |
 | MESSAGE_REQUEST_T | mrq_id | INTEGER (identity) | | PK, NOT NULL | Unique request identifier |
 | | mrq_sender_id | INTEGER | | FK → USER_T, NOT NULL | Requesting user |
 | | mrq_recipient_id | INTEGER | | FK → USER_T, NOT NULL | Recipient who must approve |
@@ -545,8 +547,25 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | aac_action | VARCHAR | 20 | NOT NULL, CHECK (restrict, suspend, reinstate, delete, approve_lecturer, reject_lecturer) | Action taken |
 | | aac_reason | VARCHAR | 300 | NOT NULL | Recorded justification |
 | | aac_created_at | TIMESTAMPTZ | | NOT NULL | Time of action |
+| FEED_SNAPSHOT_T | fsn_usr_id | INTEGER | | PK, FK → USER_T, NOT NULL, ON DELETE CASCADE | Viewer the snapshot was ranked for |
+| | fsn_as_of | TIMESTAMPTZ | | PK, NOT NULL | Request time the ranking is pinned to |
+| | fsn_pst_ids | INTEGER[] | | NOT NULL | Post identifiers in ranked order; later pages read a slice |
+| | fsn_scores | DOUBLE PRECISION[] | | NOT NULL | Score and components for each post, in the same order |
+| | fsn_created_at | TIMESTAMPTZ | | NOT NULL, default now; indexed | Time stored; used to purge expired snapshots |
+| RATE_LIMIT_T | rlt_key | VARCHAR | 200 | PK, NOT NULL | Rate-limit key built from the user identifier or client address |
+| | rlt_window_start | TIMESTAMPTZ | | NOT NULL | Start of the current fixed window |
+| | rlt_hits | INTEGER | | NOT NULL | Requests counted in the window |
 
-	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors.
+
+	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors. Migrations added after the initial schema create further indexes, each for one access path:
+
+- `comment_like_comment_idx` on COMMENT_LIKE_T (clk_cmt_id): counts the likes of each comment when comments are listed.
+- `interaction_user_post_time_idx` on INTERACTION_T (int_usr_id, int_pst_id, int_created_at DESC): finds a viewer's latest interaction with a note for the view-logging window and the interest vector.
+- `report_post_idx` on REPORT_T (rpt_pst_id): groups reports by note in the moderation queue.
+- `message_request_recipient_pending_idx` on MESSAGE_REQUEST_T (mrq_recipient_id), partial on pending requests: lists a recipient's open requests without scanning resolved ones.
+- `follow_followee_idx` on FOLLOW_T (fol_followee_id): lists a user's followers and checks the reverse direction of a follow.
+- `feed_snapshot_created_idx` on FEED_SNAPSHOT_T (fsn_created_at): deletes expired snapshots.
+- `comment_parent_idx` on COMMENT_T (cmt_parent_id), partial on replies: checks whether a deleted top-level comment still has live replies.
 
 # 4.4 Interface Design
 
@@ -732,6 +751,16 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC8 | Log in with wrong password | test1@mail.apu.edu.my / "wrong" | 401 with the same generic message as an unknown email; no token issued | | |
 | AUTH-TC9 | Log in with valid credentials | test1@mail.apu.edu.my / "Passw0rd!" | 200; signed JWT containing user ID and role; GET /api/auth/me returns the user | | |
 | AUTH-TC10 | Access protected route without, with tampered and with valid token; suspended and deleted users log in | no header; altered token; valid token; suspended account; deleted account | 401; 401; 200; suspended login returns 403 "This account is suspended"; deleted login returns 401 "Invalid email or password" | | |
+| AUTH-TC11 | Log in and register with valid details | test1@mail.apu.edu.my / "Passw0rd!"; a new student | Login 200 with Set-Cookie `parp_token` (HttpOnly, SameSite=Lax, Path=/, Max-Age=3600); register 201 with no cookie; no token in either response body | | |
+| AUTH-TC12 | Access a protected route with only an `Authorization: Bearer` header | valid JWT sent as a bearer header, no cookie | 401 "Unauthorized" | | |
+| AUTH-TC13 | Log out with a valid and with an invalid cookie | valid `parp_token`; `parp_token=garbage` | 204 both times; Set-Cookie clears `parp_token` (empty value, expired) with the same attributes | | |
+| AUTH-TC14 | Send state-changing requests without the CSRF header | POST login, POST like, DELETE note with no or a wrong `X-Requested-With` | 403 "Forbidden"; no cookie issued; GET requests are unaffected | | |
+| AUTH-TC15 | Log in with COOKIE_SECURE=true | COOKIE_SECURE = true | Set-Cookie includes the Secure flag | | |
+| AUTH-TC16 | Send several cookies whose names resemble the auth cookie | `xparp_token=garbage; other=1; parp_token=<valid>`; `xparp_token=<valid>` only | 200 (only the exact `parp_token` is read); 401 | | |
+| AUTH-TC17 | List programmes | GET /api/programmes with no login; extra module added in an existing programme | 200; `items` holds each catalogue programme once, sorted | | |
+| AUTH-TC18 | Register with a programme outside the catalogue | programme "Underwater Basket Weaving" | 400 "Choose a programme from the list"; no account created | | |
+| AUTH-TC19 | Shared rate-limit store | two store instances; key k hit twice, another key once; one decrement; window start moved back 61 s; reset; purge; a test limiter of 2 per minute on the store | Hits 1 then 2 across instances (reset time about a minute ahead); the other key counts 1; decrement leaves 1; next hit starts a new window at 1; reset deletes the row; purge removes the expired counter; the third request to the test limiter gets 429 | | |
+| AUTH-TC20 | Rate-limit key ignores invalid tokens | auth cookie from signToken for user 42; a token signed with another secret; an expired token; no cookie | tokenSubject returns "42" for the valid cookie and null for the forged, expired and missing ones | | |
 
 *Table 4.25: Note editor and publishing module test cases (NOTE)*
 
@@ -743,7 +772,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC4 | Publish with invalid or too many hashtags | ["data base!"]; six hashtags | 400 naming the invalid hashtag; 400 "Maximum 5 hashtags" | | |
 | NOTE-TC5 | Save incomplete note as draft | title "Draft 1", no module, no hashtags | 201; status draft; not returned by feed or search | | |
 | NOTE-TC6 | Publish valid public note | title, 3 slides, module CT046-3-M, ["#MVC", "design_patterns"] | 201; status published, visibility public, published time set; hashtags stored as "mvc" and "design_patterns"; 3 slides in order | | |
-| NOTE-TC7 | Publish contacts-only note | visibility contacts | Visible to the author's contacts; not visible to a non-contact in feed, search or direct GET (404) | | |
+| NOTE-TC7 | Publish contacts-only note | visibility contacts; viewers: a friend (mutual follow) and a one-way follower | Visible to the author's friends; not visible to a one-way follower or a stranger in feed, search or direct GET (404) | | |
 | NOTE-TC8 | Edit own published note | change title and reorder slides 1 and 2 | 200; new title and order stored; updated time changes | | |
 | NOTE-TC9 | Edit or delete another user's note | user B sends PUT and DELETE on user A's note | 403 for both; note unchanged | | |
 | NOTE-TC10 | Slide content containing script | slide content `<script>alert(1)</script><b>ok</b>` | Stored and returned with the script removed and formatting kept | | |
@@ -762,6 +791,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC23 | Note detail engagement state | Another user likes a published note, then GET /api/notes/:id as that user | `counts.likes` 1, `counts.comments` 0, `liked` true, `bookmarked` false, `verified` false | | |
 | NOTE-TC25 | Template choices | template "fancy"; "howto"; none | 400 "Invalid template"; stored as howto; defaults to plain | | |
 | NOTE-TC24 | Hashtag input rules (client) | Add `#Algebra, maths, Algebra`, then an invalid tag, then a sixth tag | `#` stripped, lowercased, duplicates ignored, invalid tag and a sixth tag rejected with a message | | |
+| NOTE-TC26 | Drafts keyset paging | 5 drafts with one shared edit time; GET /api/notes/drafts?limit=2, following nextCursor; limit 101 | Pages of 2, 2 and 1 list every draft once, highest id first; nextCursor null on the last page; 400 for limit 101 | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -770,7 +800,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC1 | Update profile with blank display name | displayName "  " | 400 "Display name is required" | | |
 | USR-TC2 | Update profile with a bio that is too long | bio of 301 characters | 400 "Bio must be at most 300 characters" | | |
 | USR-TC3 | Update profile with valid details | displayName "Ann Lee", programme, bio "Hello" | 200; values stored and shown on the profile | | |
-| USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, contact, owner | Stranger sees the public note only; contact also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
+| USR-TC4 | View another user's profile | owner has a public note, a contacts-only note and a draft; viewers: stranger, friend (mutual follow), owner | Stranger sees the public note only; friend also sees the contacts-only note; draft never listed; draft count returned to the owner only | | |
 | USR-TC5 | View unknown user or without token | user 99999; no Authorization header | 404; 401 | | |
 | USR-TC6 | Update profile with over-long fields | displayName 51 characters, programme 101 characters | 400 naming both limits | | |
 | USR-TC7 | Update profile with empty optional fields | programme "", bio "  " | 200; stored as NULL | | |
@@ -778,6 +808,20 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC9 | View profile with a non-numeric id | GET /api/users/abc | 404 | | |
 | USR-TC11 | Partial profile update | PUT with only displayName; then bio "" | programme and bio keep their values; empty bio becomes NULL, programme untouched | | |
 | USR-TC10 | Hidden and deleted notes on a profile | owner has published, hidden and deleted notes | Only the published note is listed | | |
+| USR-TC12 | Follow a user | user A follows user B | 201; B's follower count 1; A sees followedByMe true; B sees followsMe true | | |
+| USR-TC13 | Follow the same user twice | repeat TC12 | 200; one follow row; count unchanged | | |
+| USR-TC14 | Follow yourself | A follows A | 400 "You cannot follow yourself" | | |
+| USR-TC15 | Unfollow, and follow while restricted | DELETE follow twice; restricted user unfollows then follows | 200 both times with the count back to 0; restricted user may unfollow (200) but not follow (403) | | |
+| USR-TC16 | Follow a suspended user; follow or unfollow a deleted or unknown user | targets with status suspended, deleted; user 99999 | Suspended: 201 (the profile rule: a profile you can open can be followed). Deleted and unknown: 404 "User not found" for POST and DELETE; no row stored | | |
+| USR-TC17 | Friends are a mutual follow | A follows B; then B follows A | isFriend false after the one-way follow, true for both after the mutual follow, also in the follower list | | |
+| USR-TC18 | Contacts-only note and friendship | author has a friend, a one-way follower and a user the author follows; then the author unfollows the friend | Only the friend sees the note (others 404); after the unfollow the friend also gets 404 | | |
+| USR-TC19 | Follower and following lists | 25 followers one second apart; GET followers, then with nextCursor; cursor "abc"; list of a deleted user | 20 newest first with nextCursor, then the last 5 with nextCursor null; 400 "Invalid cursor"; 404 | | |
+| USR-TC20 | Counts exclude deleted and suspended users | target follows and is followed by an active, a suspended and a deleted user | followerCount 1 and followingCount 1; both lists show only the active user | | |
+| USR-TC21 | Deleting an account clears its follows | admin deletes a user who has a friend; another follow exists | No FOLLOW_T row names the deleted user; the unrelated follow remains | | |
+| USR-TC22 | Update profile with an unknown or valid programme | programme not in the catalogue; then "BSc (Hons) Information Technology" | 400 "Choose a programme from the list"; 200 with the programme stored | | |
+| USR-TC23 | Save a profile whose stored programme left the catalogue | user holds "Legacy Programme"; PUT with that programme and a new bio; another user sends the same programme | 200 and programme kept; 400 for the other user | | |
+| USR-TC24 | Follower paging with identical follow times | 23 followers inserted in one statement (same timestamp); GET followers, then with nextCursor | Pages 1 and 2 together list every follower exactly once, ordered by user id descending; nextCursor null after page 2 | | |
+| USR-TC25 | Profile notes paging | 52 published notes with one shared publish time; GET /api/users/:id, then GET /api/users/:id/notes?cursor=notesNextCursor; unknown user; cursor "x" | Profile embeds 50 notes and a notesNextCursor; the follow-up returns the last 2 with nextCursor null, all 52 in id order descending; 404 for the unknown user; 400 for the bad cursor | | |
 
 *Table 4.27: Ranking and feed module test cases (RANK)*
 
@@ -791,7 +835,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC6 | Relevance with empty interest vector and with hashtag padding | new viewer; viewer interest {sql: 1.0}, post tags [sql] vs [sql, a, b, c] | M = 0; M = 1.00 vs 0.25 (padding lowers relevance) | | |
 | RANK-TC7 | Composite score reproduces IR worked example | E, R, V, M values of the five posts in Table 10 (IR §2.3.4.8) | Scores 0.860, 0.590, 0.544, 0.336, 0.248 (±0.002, as the table's inputs are rounded) in that order | | |
 | RANK-TC8 | Weights read from configuration | change w3 in config to 0.40, w1 to 0.20 | Scores change accordingly without code change; weights that do not sum to 1 are rejected at start-up | | |
-| RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-contact | Only published, permitted posts returned | | |
+| RANK-TC9 | Feed excludes drafts, hidden, deleted and non-visible posts | one post of each status, one contacts-only from a non-friend | Only published, permitted posts returned | | |
 | RANK-TC10 | Feed request without token and with invalid page | no token; page = -1 | 401; 400 "Invalid page" | | |
 | RANK-TC11 | Verified student note outranks an identical unverified one | four student notes of equal age and tags; Super Liked by an approved active lecturer, by a restricted one, by a suspended one, and none | The active and restricted lecturers' notes first with V = 1.0 and a score higher by w3; the suspended lecturer's and the plain note have V = 0 | | |
 | RANK-TC12 | Interest vector weighting, decay and normalisation | viewer view, like and comment today on #viewed, #liked, #commented; comment 14 days ago on #older; comment 91 days ago on #ancient | #commented 1.0, #liked 0.6, #viewed 0.2, #older 0.5, #ancient absent; maximum weight 1.0; no history gives an empty vector | | |
@@ -799,6 +843,18 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC14 | Old verified note stays a candidate | candidate window 2; two recent notes, an older unverified note and a still older verified note | Candidates are the two recent notes and the verified note; the older unverified note is excluded | | |
 | RANK-TC15 | Ranking snapshot stable across pages | 20 notes; page 1 and page 2 fetched with the returned asOf; then 20 likes and a Super Like added to the last note of page 2; page 2 fetched again with the same asOf | Page 2 lists the same notes with the same components; the shown like count is 20 (live); a feed with a fresh asOf moves that note onto page 1 | | |
 | RANK-TC16 | Lecturer-author bonus follows account status | notes by an approved lecturer who is active, one who is restricted and one who is suspended | Active and restricted authors' notes have the lecturer-author flag (V = 0.5); the suspended author's note is not a candidate for others and, for the author, has no flag | | |
+| RANK-TC17 | Future asOf is capped at now | one 5-hour-old note; feed requested with asOf 9999-01-01 | Status 200; returned asOf is not later than the database clock; the note's recency R is above 0 | | |
+| RANK-TC18 | Stale Super Like no longer makes an old note a candidate | candidate window 1; Super Liked notes 5000 h and 4000 h old, the first Super Like backdated beyond the verified window; one recent note | Candidates are the recent note and the note with the in-window Super Like | | |
+| RANK-TC19 | Stale Super Like keeps V for a newest-window note | one 5-hour-old note whose only Super Like is older than the verified window | The candidate is flagged verified and its feed component V is 1 | | |
+| RANK-TC20 | Old interactions are purged | interactions 100 and 95 days old and one 10 days old, interest window 90 days | Purge removes the two older rows and keeps the 10-day-old one; a second purge removes nothing | | |
+| RANK-TC21 | Following feed shows only followed authors | viewer follows one author; another user follows the viewer; notes by the followed author, the other user and the viewer | GET /api/feed?tab=following lists the followed author's notes newest first, without score, with nextCursor null; unknown tab 400 "Invalid tab"; malformed cursor 400 | | |
+| RANK-TC22 | Following feed keyset paging stable with asOf | 12 notes by a followed author; page 1, then a new note, then page 2 with page 1's nextCursor and the returned asOf | Page 1 has the 10 newest notes and a nextCursor; page 2 has the 2 oldest notes, excludes the new note and has nextCursor null | | |
+| RANK-TC23 | Contacts-only notes in the Following feed | author with a friend and a one-way follower; a public and a contacts-only note | Friend sees both notes; one-way follower sees only the public note | | |
+| RANK-TC24 | Later pages read the stored ranking | 20 notes, the oldest with 30 likes; page 1, then page 2 with asOf; the likes deleted and a 12-hour-old note added; page 2 again; snapshot deleted; page 2 again | One snapshot row after pages 1 and 2; page 2 unchanged after the changes; once the snapshot is deleted page 2 is recomputed, differs and includes the new note, and one snapshot is stored again | | |
+| RANK-TC25 | Expired feed snapshots are purged | snapshots created 3 h and 1 h ago (TTL 2 h); purge; another 3-hour-old snapshot, then a feed request | Purge deletes 1; the feed request deletes the viewer's expired snapshot and stores a new one, leaving 2 | | |
+| RANK-TC26 | Snapshots per viewer are capped | another viewer loads the feed once; the viewer loads page 1 six times (cap 4) | The viewer keeps exactly the 4 newest snapshots (by asOf); the other viewer keeps its 1 | | |
+| RANK-TC27 | Hidden note never leaks through a snapshot | 20 notes; page 1, then page 2 with asOf; the first note of page 2 hidden; page 2 again with the same asOf | The hidden note is not returned; page 2 lists the other 9 notes | | |
+| RANK-TC28 | Author's own hidden note never leaks through a snapshot | 20 notes by the viewer; page 1, then page 2 with asOf; the first note of page 2 hidden by a moderator; page 2 again with the same asOf | The hidden note is not returned to its author; page 2 lists the other 9 notes | | |
 
 *Table 4.28: Engagement module test cases (ENG)*
 
@@ -821,6 +877,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC16 | Self-engagement | author likes own note; author and a reader comment | 400 "You cannot like your own note"; feed comment count 1 (author's own comment excluded) while the thread lists both | | |
 | ENG-TC17 | Author's own views and comments | author views and comments on own note; another user does too | No interaction rows for the author; one view and one comment interaction for the other user | | |
 | ENG-TC15 | Delete comment | non-author deletes; author deletes a comment with a reply and one without | 403; parent shown as "[deleted]" with its reply; the other omitted and a second delete gives 404 | | |
+| ENG-TC18 | Comments keyset paging | 5 student comments with one shared time, one liked, one deleted with no replies, one with a reply; a lecturer comment; limit 2 following nextCursor; no cursor; cursors "abc", "1_2", limits 0, 101, "x" | Pages of 2, 2, 1: lecturer, liked, then the rest by id, with the reply under its comment and the deleted one omitted; without a cursor all 5 and nextCursor null; 400 for each bad cursor or limit | | |
+| ENG-TC19 | Saved notes keyset paging | 5 bookmarks with one shared save time; GET /api/bookmarks?limit=2 following nextCursor; cursor "1" | Pages of 2, 2, 1 list every note once, highest id first; 400 for the bad cursor | | |
 
 *Table 4.29: Lecturer verification module test cases (VER)*
 
@@ -861,13 +919,13 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | MSG-TC1 | Socket connection without valid token | no token; expired token | Connection refused | | |
 | MSG-TC2 | Send blank or over-length message | body ""; body of 2,001 characters | Error acknowledgement; nothing stored | | |
 | MSG-TC3 | Message to self | toUserId = own ID | Error acknowledgement | | |
-| MSG-TC4 | Non-contact sends post-anchored message | A (not contact of B) messages B from post P | Request stored as pending with post P; B receives "request:new"; no conversation created | | |
+| MSG-TC4 | Non-friend sends post-anchored message | A (not a friend of B: no mutual follow) messages B from post P | Request stored as pending with post P; B receives "request:new"; no conversation created | | |
 | MSG-TC5 | Second request while one is pending | repeat MSG-TC4 | Rejected as already pending; one pending request exists | | |
-| MSG-TC6 | Recipient accepts request | B accepts A's request | A and B are contacts in both directions; conversation created containing the held message with note card; A notified | | |
-| MSG-TC7 | Recipient declines request | B declines | Status declined; no contact or conversation; A not notified | | |
-| MSG-TC8 | Contacts exchange messages in real time | A sends "hello" to B | Stored; B receives "message:new" within 1 s | | |
-| MSG-TC9 | Create group with invalid input | name ""; one member; a non-contact member | Rejected with a message for each case | | |
-| MSG-TC10 | Create group and leave | name "FYP Team", two contacts; one member leaves | Group created with owner and members; leaver no longer receives group messages | | |
+| MSG-TC6 | Recipient accepts request | B accepts A's request | Direct conversation created containing the held message with note card; A notified; no follow rows created, so A and B are still not friends | | |
+| MSG-TC7 | Recipient declines request | B declines | Status declined; no conversation and no follow rows created; A not notified | | |
+| MSG-TC8 | Friends exchange messages in real time | A and B follow each other; A sends "hello" to B (no request needed) | Stored; B receives "message:new" within 1 s | | |
+| MSG-TC9 | Create group with invalid input | name ""; one member; a non-friend member | Rejected with a message for each case | | |
+| MSG-TC10 | Create group and leave | name "FYP Team", two friends; one member leaves | Group created with owner and members; leaver no longer receives group messages | | |
 
 *Table 4.32: Administration module test cases (ADM)*
 
@@ -888,17 +946,55 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC13 | Create admin with missing or weak values | no ADMIN_EMAIL; password "short"; password with no uppercase | Each refused with a message naming the problem | | |
 | ADM-TC14 | Create admin for an existing email | valid values, email matching an existing account | Account promoted to admin, email normalised, can log in as admin | | |
 | ADM-TC15 | Lecturer applicants whose account is not active | pending applicants with status active, restricted, suspended, deleted; approve the non-active ones | Only the active applicant is listed (a restricted applicant waits until reinstated); approving the others returns 404 and changes nothing | | |
-| ADM-TC16 | Report queue grouping and resolve validation | 2 open reports on P (older), 1 on Q, 1 dismissed on R; outcome "archive"; remark of 301 characters | P then Q listed with counts 2 and 1 and their reasons; R not listed; 400 for the bad outcome and the long remark | | |
+| ADM-TC16 | Report queue grouping and resolve validation | 2 open reports on P (older), 1 on Q, 1 dismissed on R; outcome "archive"; remark of 301 characters | P then Q listed with counts 2 and 1 and their reasons, without slides; R not listed; 400 for the bad outcome and the long remark | | |
 | ADM-TC17 | Search users and reinstate | search "author" after one upheld report; suspend then reinstate; unknown action; unknown user | Author listed with role, status and upheld count 1; reinstated user can use the feed again; 404; 404 | | |
 | ADM-TC18 | Delete account | delete student S who has a published note and a draft; then reinstate S | S anonymised ("Deleted user", deleted-id@invalid), published note hidden, draft untouched, token 401; reinstate returns 409 | | |
 | ADM-TC19 | Reports on a deleted note | open report on note P; P's author deletes it; admin resolves P with outcome dismiss | P not in the report queue; resolve returns 404; the report stays open | | |
 | ADM-TC20 | Suspension withdraws the author's content | viewer has bookmarked author A's public note P; admin suspends A, then reinstates A | While suspended: GET P 404, P absent from feed, saved list and A's profile; the report queue still loads. After reinstatement P is visible in all four again | | |
+| ADM-TC21 | Module endpoints are admin-only | student and lecturer tokens call GET, POST and PATCH on /api/admin/modules | 403 each | | |
+| ADM-TC22 | List modules with note counts | 12 seeded modules; 2 published and 1 draft note on one module | All 12 sorted by code; that module shows noteCount 2, others 0 | | |
+| ADM-TC23 | Create a module | code "  tst-101-a ", name, programme | 201; code stored as TST-101-A; appears in the list with noteCount 0 | | |
+| ADM-TC24 | Duplicate module code | create TST101, then "tst101" again | 409 "Module code already exists" | | |
+| ADM-TC25 | Invalid module values | code "bad code!", empty name, 101-character programme; 21-character code; 151-character name; empty body | 400 with errors for code, name and programme; 400 for each of the others | | |
+| ADM-TC26 | Rename a module | PATCH name and programme; then name only | 200; code unchanged; omitted field keeps its value | | |
+| ADM-TC27 | Rename an unknown module | id 999999; id "abc" | 404; 404 | | |
+| ADM-TC28 | Code is immutable | PATCH with code only; with {}; with a blank name | 400 each; stored code unchanged | | |
+| ADM-TC29 | Report queue paging | 23 reported notes whose reports share one time; GET /api/admin/reports, then with nextCursor; cursor "abc" | 20 groups and a nextCursor, then the last 3 with nextCursor null, in note id order; 400 for the bad cursor | | |
+| ADM-TC30 | Review panel loads the full note | GET /api/admin/reports/:noteId for a reported note, a note without reports, id "abc", the note after dismissal | Full note with 3 slides, report count 1 and the spam report; 404; 400; 404 | | |
+
+*Table 4.33: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| OPS-TC1 | Health check with the database up | GET /api/health | 200 with status ok, db up | | |
+| OPS-TC2 | Health check with the database unreachable | GET /api/health while the database query fails | 503 with status degraded, db down | | |
+| OPS-TC3 | Request id reused or replaced | no X-Request-Id; "abc-123"; "bad id<script>" | Response carries a generated UUID; "abc-123" echoed; a new UUID instead of the unsafe value | | |
+| OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie parp_token header and a body with a password | Log output shows [redacted] and contains neither the parp_token value nor the password | | |
+
+*Table 4.34: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| CLI-TC1 | API calls send the cookie and CSRF header | GET, POST, PUT, PATCH and DELETE through the api wrapper | Every request has credentials include and X-Requested-With parp; bodies carry Content-Type application/json | | |
+| CLI-TC2 | API base URL prefix | VITE_API_URL set to a host; VITE_API_URL empty | Request goes to the host plus /api/notes; to /api/notes when empty | | |
+| CLI-TC3 | Expired session while signed in | 401 on an authenticated call after sign-in, twice | Browser is sent to /login?expired=1 once; both calls reject | | |
+| CLI-TC4 | 401 while signed out | 401 from /auth/me with nobody signed in | Call rejects and there is no redirect, so no loop | | |
+| CLI-TC5 | Server error text is surfaced | 400 with an error message and a field error | Thrown error carries the status, the message and the field errors | | |
+| CLI-TC6 | Auth provider waits for /auth/me | /auth/me still pending, then resolved | Loading text shown, children hidden, then the signed-in page appears | | |
+| CLI-TC7 | Signed-in state from /auth/me | /auth/me returns a student | The user is available to the page | | |
+| CLI-TC8 | Logged out on 401 | /auth/me returns 401 | The user is null and the page renders as signed out | | |
+| CLI-TC9 | Logout success | Sign in, then log out (204) | The user is cleared | | |
+| CLI-TC10 | Logout failure keeps the session | Sign in, then log out and the server returns 500 | The user stays signed in and the error message is thrown to the caller | | |
+| CLI-TC11 | Protected route, signed out | Open a protected route with no session | Redirected to /login; protected content is not shown | | |
+| CLI-TC12 | Protected route, wrong role | A student opens an admin-only route; an admin opens it | Student sees the permission alert and no content; admin sees the content | | |
+| CLI-TC13 | Approved lecturer type guard | Approved lecturer, pending lecturer, rejected lecturer, approved-status student, admin, null, undefined | True only for the approved lecturer | | |
+| CLI-TC14 | Stale fetch response ignored | useFetch path changes from /a to /b before /a answers | The /a response is dropped; data stays empty and loading until /b answers | | |
 
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.33: UAT tester details*
+*Table 4.35: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -906,7 +1002,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.34: UAT scenario tasks*
+*Table 4.36: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -915,7 +1011,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-S3 | Student | Browse the feed for five minutes; like, comment on and save at least one note | | |
 | UAT-S4 | Student | Find notes for a given module code and for a given hashtag | | |
 | UAT-S5 | Student | Message the author of a note you are not connected to; then accept a request sent to you | | |
-| UAT-S6 | Student | Create a group chat with two contacts and share a note in it | | |
+| UAT-S6 | Student | Create a group chat with two friends and share a note in it | | |
 | UAT-L1 | Lecturer | Register as a lecturer and log in after approval | | |
 | UAT-L2 | Lecturer | Review a student note and Super Like it with a remark | | |
 | UAT-L3 | Lecturer | Comment on a student note and confirm your comment is pinned | | |
@@ -925,7 +1021,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.35: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.37: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -935,7 +1031,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.36: UAT feedback and developer response*
+*Table 4.38: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -946,7 +1042,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.37: Ranking weight re-evaluation (NFR5)*
+*Table 4.39: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

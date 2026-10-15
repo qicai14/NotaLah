@@ -1,14 +1,43 @@
 import request from 'supertest';
-import { afterAll, beforeEach, expect, it } from 'vitest';
+import { afterAll, beforeEach, expect, it, vi } from 'vitest';
 import { app } from '../../src/app';
+import pino from 'pino';
+import { loggerOptions } from '../../src/lib/logger';
 import { pool } from '../../src/lib/pool';
 import { truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-it('GET /api/health reports the database is up', async () => {
+it('OPS-TC1: GET /api/health reports the database is up', async () => {
   const res = await request(app).get('/api/health');
   expect(res.status).toBe(200);
   expect(res.body).toEqual({ status: 'ok', db: 'up' });
+});
+
+it('OPS-TC2: GET /api/health answers 503 when the database is unreachable', async () => {
+  const spy = vi.spyOn(pool, 'query').mockRejectedValueOnce(new Error('connection refused') as never);
+  const res = await request(app).get('/api/health');
+  spy.mockRestore();
+  expect(res.status).toBe(503);
+  expect(res.body).toEqual({ status: 'degraded', db: 'down' });
+});
+
+it('OPS-TC3: every response carries an X-Request-Id, reusing a safe incoming one', async () => {
+  const generated = await request(app).get('/api/health');
+  expect(generated.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
+  const kept = await request(app).get('/api/health').set('X-Request-Id', 'abc-123');
+  expect(kept.headers['x-request-id']).toBe('abc-123');
+  const unsafe = await request(app).get('/api/health').set('X-Request-Id', 'bad id<script>');
+  expect(unsafe.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/);
+});
+
+it('OPS-TC4: log redaction hides the set-cookie header and password fields', () => {
+  const lines: string[] = [];
+  const log = pino({ ...loggerOptions, level: 'info' }, { write: (l: string) => void lines.push(l) });
+  log.info({ res: { headers: { 'set-cookie': ['parp_token=secret123; HttpOnly'] } }, body: { password: 'hunter2' } }, 'x');
+  const out = lines.join('');
+  expect(out).toContain('[redacted]');
+  expect(out).not.toContain('parp_token=');
+  expect(out).not.toContain('hunter2');
 });

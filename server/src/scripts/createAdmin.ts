@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { BCRYPT_COST } from '../features/auth/passport';
-import '../lib/env'; // loads the root .env into process.env
+import '../lib/env'; // loads the root .env so ADMIN_* are in process.env
 import { pool } from '../lib/pool';
 import { type AuthUser, upsertAdmin } from '../features/users/repository';
 

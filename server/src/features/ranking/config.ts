@@ -15,8 +15,16 @@ export const RANKING = Object.freeze({
   interactionWeights: Object.freeze({ view: 1, like: 3, comment: 5 }),
   /** Interactions older than this add nothing to the interest vector (0.5^(90/14) is below 1.2 %). */
   interestWindowDays: 90,
+  /** The purge keeps this many extra days, because later feed pages read the window ending at an asOf that lags NOW(). */
+  purgeGraceDays: 1,
   /** Most recent published notes scored per feed request; older notes are scored only if verified (D24). */
   candidateLimit: 500,
+  /** Only Super Likes made within this many days before asOf surface an old note as a candidate (D30). */
+  verifiedCandidateWindowDays: 180,
+  /** A ranked feed stored for one asOf is kept this long for later pages, then purged (D40). */
+  snapshotTtlHours: 2,
+  /** Snapshots kept per viewer: bounds the table when someone reloads page 1 many times within the TTL (D40). */
+  snapshotsPerViewer: 4,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {

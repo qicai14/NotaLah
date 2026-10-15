@@ -118,11 +118,11 @@ entity "INTERACTION_T" as INTR {
   * int_type : VARCHAR(10)
   * int_created_at : TIMESTAMPTZ
 }
-entity "CONTACT_T" as CON {
-  * con_usr_id : INTEGER <<PK, FK>>
-  * con_contact_id : INTEGER <<PK, FK>>
+entity "FOLLOW_T" as FOL {
+  * fol_follower_id : INTEGER <<PK, FK>>
+  * fol_followee_id : INTEGER <<PK, FK>>
   --
-  * con_created_at : TIMESTAMPTZ
+  * fol_created_at : TIMESTAMPTZ
 }
 entity "MESSAGE_REQUEST_T" as MRQ {
   * mrq_id : INTEGER <<PK>>
@@ -169,6 +169,20 @@ entity "ACCOUNT_ACTION_T" as AAC {
   * aac_reason : VARCHAR(300)
   * aac_created_at : TIMESTAMPTZ
 }
+entity "FEED_SNAPSHOT_T" as FSN {
+  * fsn_usr_id : INTEGER <<PK, FK>>
+  * fsn_as_of : TIMESTAMPTZ <<PK>>
+  --
+  * fsn_pst_ids : INTEGER[]
+  * fsn_scores : DOUBLE PRECISION[]
+  * fsn_created_at : TIMESTAMPTZ
+}
+entity "RATE_LIMIT_T" as RLT {
+  * rlt_key : VARCHAR(200) <<PK>>
+  --
+  * rlt_window_start : TIMESTAMPTZ
+  * rlt_hits : INTEGER
+}
 
 USER ||--o{ POST : authors
 MODULE |o--o{ POST : classifies
@@ -190,7 +204,8 @@ USER ||--o{ BMK
 POST ||--o{ BMK
 USER ||--o{ INTR
 POST ||--o{ INTR
-USER ||--o{ CON
+USER ||--o{ FOL : follows
+USER ||--o{ FOL : "followed by"
 USER ||--o{ MRQ : sends
 POST |o--o{ MRQ : "anchored to"
 CNV ||--|{ CMB
@@ -198,5 +213,6 @@ USER ||--o{ CMB
 CNV ||--o{ MSG
 USER ||--o{ MSG : sends
 POST |o--o{ MSG : "anchored to"
+USER ||--o{ FSN : "ranked for"
 USER ||--o{ AAC : "subject of"
 @enduml

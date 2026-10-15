@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useAuth } from '../features/auth/AuthContext';
 import { api, errorText } from '../lib/api';
+import { isApprovedLecturer } from '../lib/roles';
 import { Dialog } from './Dialog';
 
 const COMMON = [
@@ -16,7 +17,7 @@ const LECTURER = [
 
 export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): void }) {
   const { user } = useAuth();
-  const approved = user?.role === 'lecturer' && user.lecturerStatus === 'approved';
+  const approved = isApprovedLecturer(user);
   const reasons = approved ? [...COMMON, ...LECTURER] : COMMON;
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');

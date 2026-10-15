@@ -5,11 +5,12 @@ import type { Profile as ProfileData } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { LecturerBadge } from '../../components/LecturerBadge';
 
-/** /users/:id shows any user; /profile shows the signed-in user with Edit and the drafts count. */
+/** One component serves /users/:id and /profile; /profile adds Edit and the drafts count. */
 export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();
   const uid = id ?? String(user?.id);
+  // shortcut: shows the first 50 notes embedded in the profile; "load more" via /users/:id/notes?cursor=notesNextCursor comes with the redesign
   const { data, error, loading } = useFetch<{ user: ProfileData }>(`/users/${uid}`);
 
   if (loading) return <p>Loading…</p>;

@@ -2,6 +2,9 @@
   "name": "parp",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": ">=24.15"
+  },
   "workspaces": [
     "client",
     "server"

@@ -30,7 +30,8 @@ export default function NoteEditor() {
   const navigate = useNavigate();
   const { user } = useAuth();
   // After the first draft save we land here with the saved note in router state, so nothing is refetched over what was typed.
-  const seed = (useLocation().state as { note?: Note } | null)?.note;
+  const location = useLocation();
+  const seed = useRef((location.state as { note?: Note } | null)?.note).current;
   const fetched = useFetch<{ note: Note }>(id && !seed ? `/notes/${id}` : null);
   const existing = { ...fetched, data: seed ? { note: seed } : fetched.data };
   const modules = useFetch<{ modules: ModuleRef[] }>('/modules');
@@ -76,6 +77,7 @@ export default function NoteEditor() {
     const note = existing.data?.note;
     if (!note || !editor || loaded.current) return;
     loaded.current = true;
+    if (seed) navigate(location.pathname, { replace: true, state: null }); // a reload or Back must refetch, not reseed from this first save
     setTitle(note.title);
     setTemplate(note.template);
     setModuleId(note.module ? String(note.module.id) : '');
