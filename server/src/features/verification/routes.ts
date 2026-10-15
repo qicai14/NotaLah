@@ -26,7 +26,7 @@ verificationRouter.post('/notes/:id/verify', ...lecturerOnly, requireActive, asy
   if (!t) return res.status(404).json({ error: 'Note not found' });
   const parsed = remarkSchema.safeParse(req.body?.remark);
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: { remark: parsed.error.issues[0].message } });
-  if (t.authorId === me(req).id) return res.status(409).json({ error: 'Cannot verify own note' });
+  if (t.authorId === me(req).id || t.isEditor) return res.status(409).json({ error: 'Cannot verify own note' });
   const { added, verification } = await repo.addVerification(id, me(req).id, parsed.data || null);
   res.status(added ? 201 : 200).json(verification);
 });

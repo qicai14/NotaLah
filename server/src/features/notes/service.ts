@@ -44,7 +44,24 @@ export interface NoteInput {
   visibility: 'public' | 'contacts' | null;
 }
 
-type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
+const baseUpdatedAtSchema = z.iso.datetime({ offset: true, error: 'Invalid baseUpdatedAt' });
+
+/**
+ * The `updatedAt` the editor loaded, for the optimistic 409 check (R30). Required from co-authors; optional for the
+ * owner, whose existing editor does not send it yet, so a missing value skips the check (D46).
+ */
+export function parseBaseUpdatedAt(
+  body: unknown, required: boolean,
+): { ok: true; data: Date | null } | { ok: false; errors: Record<string, string> } {
+  const raw = body && typeof body === 'object' ? (body as Record<string, unknown>).baseUpdatedAt : undefined;
+  if (raw === undefined || raw === null) {
+    return required ? { ok: false, errors: { baseUpdatedAt: 'baseUpdatedAt is required' } } : { ok: true, data: null };
+  }
+  const parsed = baseUpdatedAtSchema.safeParse(raw);
+  return parsed.success ? { ok: true, data: new Date(parsed.data) } : { ok: false, errors: { baseUpdatedAt: 'Invalid baseUpdatedAt' } };
+}
+
+type Parsed ={ ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
 
 /** Validates and sanitises a create/replace body. Module existence is checked by the route. */
 export function parseNoteBody(body: unknown): Parsed {

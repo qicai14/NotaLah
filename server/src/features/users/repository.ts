@@ -165,6 +165,9 @@ export const countingLecturer = (alias: string) => `(${approvedLecturer(alias)} 
 export const isApprovedLecturer = (u: Pick<AuthUser, 'role' | 'lecturerStatus'>) =>
   u.role === 'lecturer' && u.lecturerStatus === 'approved';
 
+/** SQL: `{id, displayName}` JSON of the "USER_T" row aliased `alias`. */
+export const userRef = (alias: string) => `json_build_object('id', ${alias}.usr_id, 'displayName', ${alias}.usr_display_name)`;
+
 /** SQL: user `a` follows user `b`. Arguments are SQL constants or placeholders, never user input. */
 export const follows = (a: string, b: string) =>
   `EXISTS (SELECT 1 FROM "FOLLOW_T" WHERE fol_follower_id = ${a} AND fol_followee_id = ${b})`;

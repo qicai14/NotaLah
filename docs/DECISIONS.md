@@ -747,6 +747,27 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **AI assistant (D33):** provider Groq, model `openai/gpt-oss-120b`, configured by the user in `.env`.
 - The decisions logged without the user overnight (D30-D42) are accepted.
 
+## D44 - Collaboration (R30) and guest browsing (R31) specs (15 Oct 2026, user interview)
+**R30 collaboration**
+- Any note can be shared, draft or published. An edit never resets `pst_published_at`; engagement stays with the note;
+  a content edit after a Super Like marks the note "edited since verification" and removes V until the lecturer
+  re-confirms (lecturer notified through R8); hashtag edits change M at once; the note also appears in the Following
+  feed of each co-author's followers.
+- Owner access options: view link and edit link (random tokens, revocable and regenerable), invite specific users with
+  view or edit, and viewer requests to collaborate that the owner approves or declines from notifications. A view link
+  opens a draft or friends-only note for that token only.
+- Co-authors edit content (slides, hashtags, music) only; the owner alone publishes, deletes, changes visibility and
+  manages access. Co-authors are credited on the card.
+- One editor at a time (soft lock plus the `baseUpdatedAt` 409 check). Real-time co-editing (Yjs over Socket.io) is a
+  stretch goal for the December buffer; if unbuilt it goes to Chapter 7 as future work.
+
+**R31 guest browsing**
+- Signed-out visitors land on a short Welcome page (Browse as guest, Log in, Register).
+- Guests can read the Feed (public notes only, M = 0, snapshot keyed by IP and asOf), open a note with its comments,
+  view public profiles and search public notes. This reverses D43's "search prompts login".
+- Like, save, comment, report, follow, message and create open a Log in / Register sheet that returns the visitor to
+  the same note afterwards. Friends-only and private notes never reach guests; guest endpoints are rate-limited by IP.
+
 ## D45 - Guest browsing on the server (R31, 15 Oct 2026)
 - **Context:** D44 lets signed-out visitors read the Feed, a note with its comments, and public profiles; everything else stays signed-in.
 - **Decision:** `optionalAuth` (next to `requireAuth`) attaches the user for a valid cookie and otherwise treats the request
@@ -770,3 +791,57 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29 to RANK-TC31, CLI-TC19; RANK-TC10 and USR-TC5 changed
   because the feed and profile no longer return 401 without a cookie.
 - **Reversibility:** Easy (swap `optionalAuth` back to `requireAuth` on five routes; no schema change).
+
+## D46 - Collaboration on the server (R30, 15 Oct 2026)
+- **Context:** D44 and the R30 backend spec: collaborators, view and edit links, requests, a soft lock, and edits that
+  must not reset publication but must void stale lecturer verification. UI waits for wireframe sign-off.
+- **Schema:** one migration adds "COLLABORATOR_T", "SHARE_LINK_T", "COLLAB_REQUEST_T" and `pst_content_edited_at`,
+  `pst_lock_usr_id`, `pst_lock_expires_at` on "POST_T". Partial unique indexes enforce one active link per note and role and
+  one pending request per note and user; check constraints keep the lock pair and `crq_decided_at` consistent.
+- **Access rule:** the existing `VISIBLE` is unchanged, so likes, comments, bookmarks, search and ranking ignore
+  collaboration. A separate `SHAREABLE` rule (draft or published, author active or restricted) gates every collaborator
+  and link path, so hidden or deleted notes and suspended authors give no access. `GET /api/notes/:id` reads
+  `VISIBLE OR collaborator`; the link route reads any `SHAREABLE` note once the token resolves.
+- **Edit links join by POST:** the spec put joining on `GET /api/share/:token`. A GET that writes would skip the CSRF
+  header check and the write limiter (D35, D40) and could be triggered by a prefetch, so GET only resolves the link (an
+  edit link needs a login) and `POST /api/share/:token` (signed in, active) joins. The owner redeeming their own link
+  gets role `owner` and no row; a view collaborator redeeming an edit link is upgraded.
+- **Tokens:** 32 bytes from `crypto.randomBytes`, base64url (43 characters); only the SHA-256 hex is stored and looked
+  up by equality on a unique index, so no timing-sensitive comparison is needed. The raw token appears only in the create
+  response. Malformed tokens answer 404 without a query. `GET /share/:token` uses the guest IP limiter for signed-in users
+  too, since `optionalAuth` only limits guests.
+- **Optimistic check:** no `baseUpdatedAt` existed before R30. It is required from editors and optional for the owner, so
+  the current editor client keeps working until the frontend sends it. The check, the lock check and the update run in
+  one transaction with `SELECT ... FOR UPDATE`; timestamps compare at millisecond precision because that is what the
+  client receives. An owner's PUT is also refused with 423 while an editor holds a live lock.
+- **Publication time and V:** `replaceNote` keeps `COALESCE(pst_published_at, NOW())`, so an edit never moves it. A title
+  or slide change to an already published note stamps `pst_content_edited_at`; hashtag, template and draft edits do not
+  (publishing a draft is not a content edit). `VALID_VERIFICATIONS` now joins "POST_T" and drops Super Likes older than
+  that stamp, so V, the badge, `verifiedBy` and the ranking candidates all follow one rule. `editedSinceVerification` is
+  true when any counting Super Like predates the edit, even if another lecturer has re-confirmed. A repeat
+  `POST /notes/:id/verify` moves only a stale row's `ver_created_at` to now and still answers 200. Known limit: the rule
+  compares against the latest edit, not the feed's asOf, so an edit after page 1 changes V if the ranking were recomputed
+  for that asOf; stored snapshots (D40) and the guest cache (D45) keep pages stable, and the next page 1 picks it up.
+- **Requests:** a view collaborator may request edit access (the spec said "non-collaborator"; asking for an upgrade is
+  the obvious use). Owners get 400, editors 409. Approving upserts the collaborator with the chosen role (default edit).
+- **Smaller choices:** co-authors are `{id, displayName}` because "USER_T" has no username column; suspended or deleted
+  co-authors are left out of the credit. Music is in the spec's editable fields but no music field exists yet, so there
+  is nothing to guard. Removing a collaborator also releases their lock. The lock TTL (120 s), token size and request
+  message limit live in `collaboration/config.ts`, not the ranking config. R8 notifications will read the pending
+  requests and `editedSinceVerification`; there is no separate list endpoint for lecturers yet.
+- **Review fixes (same day):**
+  - Credit only after the first edit: `clb_edited_at` is set on an editor's first successful save. `coauthors` and the
+    Following-feed reach use only edit collaborators with that stamp, so an owner cannot put someone's name on a note or
+    push it to their followers by inviting them. Access itself is unchanged: an invited editor can read and edit at once.
+  - Edit collaborators count as authors for like (400) and Super Like (409), so a co-author cannot raise E or V of their
+    own work. View collaborators can still like.
+  - The request log replaces `/api/share/<token>` with `/api/share/[token]` (`logPath`), since a token grants access.
+  - `GET /api/notes/:id` (and the share-link GET) add `myRole` (`owner`, `edit`, `view` or null) for the editor UI; the
+    feed does not carry it.
+  - Co-authors may edit, lock or join an edit link only while the author is `active` (UC21); reading is unchanged.
+    `replaceNote` re-checks the editor's role under `FOR UPDATE`, link regeneration locks the note row so concurrent
+    requests cannot break the one-active-link index, a downgrade to view frees that user's lock, and a re-confirmation
+    updates the remark when one is sent.
+- **Tests:** COL-TC1 to COL-TC24, OPS-TC5.
+- **Reversibility:** Medium. The migration has a down step; dropping the feature means reverting the PUT role check,
+  `VALID_VERIFICATIONS` and the Following-feed clause.
