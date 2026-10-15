@@ -8,7 +8,7 @@
 <rect x="272" y="84" width="48" height="48" rx="24" fill="#ffffff"/>
 <g transform="translate(285 97) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
 <text x="332" y="103.73" font-size="14" font-weight="600" fill="#1c1c1c">Message requests</text>
-<text x="332" y="122.61" font-size="13" fill="#6b6b6b">amet consectetur adipiscing elit sed</text>
+<text x="332" y="122.61" font-size="13" fill="#6b6b6b">consequat duis aute irure in</text>
 <rect x="556" y="98" width="20" height="20" rx="10" fill="#3a3a3a"/>
 <text x="562.83" y="112.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
 <rect x="272" y="160" width="48" height="48" rx="24" fill="#f2f2f2"/>
@@ -58,7 +58,7 @@
 <path d="M630.44 212.74L661.56 243.85M661.56 212.74L630.44 243.85" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="624.75" y="207.05" width="42.5" height="42.5" rx="21.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="680" y="224.03" font-size="14" font-weight="600" fill="#1c1c1c">Chloe Wong</text>
-<text x="680" y="242.91" font-size="13" fill="#6b6b6b">labore et dolore magna aliqua</text>
+<text x="680" y="242.91" font-size="13" fill="#6b6b6b">fugiat nulla pariatur excepteur sint</text>
 <rect x="900" y="72" width="540" height="68" fill="#ffffff"/>
 <rect x="920" y="86" width="40" height="40" rx="20" fill="#f2f2f2"/>
 <path d="M925.86 91.86L954.14 120.14M954.14 91.86L925.86 120.14" fill="none" stroke="#a8a8a8" stroke-width="1"/>
@@ -68,28 +68,20 @@
 <rect x="924" y="164" width="300" height="209.69" rx="16" fill="#f2f2f2"/>
 <rect x="924.5" y="164.5" width="299" height="208.69" rx="15.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
 <rect x="924" y="164" width="300" height="150" fill="#ededed"/>
-<rect x="1014" y="164" width="120" height="150" fill="#ffffff"/>
-<text x="1022.39" y="176.38" font-size="3.6" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
-<text x="1022.39" y="189.11" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">Normalisation, 1NF to</text>
-<text x="1022.39" y="198.69" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">3NF</text>
-<rect x="1022.39" y="204.41" width="94.95" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="1022.39" y="210.86" width="80.5" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="1022.39" y="217.31" width="88.77" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="1022.39" y="223.77" width="103.22" height="68.94" rx="2.4" fill="#f2f2f2"/>
-<path d="M1022.39 223.77L1125.61 292.7M1125.61 223.77L1022.39 292.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="1023.14" y="224.52" width="101.72" height="67.44" rx="1.65" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1022.39" y="296.53" width="92.89" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="1022.39" y="302.98" width="66.05" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="924" y="164" width="300" height="150" fill="#ffffff"/>
+<rect x="924" y="164" width="300" height="150" fill="#f2f2f2"/>
+<path d="M924 164L1224 314M1224 164L924 314" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="924.75" y="164.75" width="298.5" height="148.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="936" y="339.31" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF in one page</text>
 <text x="936" y="359.28" font-size="12" fill="#6b6b6b">Aina Rahman · CT030-3-2</text>
 <rect x="924" y="383.69" width="305.03" height="78.78" rx="18" fill="#e6e6e6"/>
-<text x="938" y="409" font-size="14" fill="#1c1c1c">Quis nostrud exercitation ullamco laboris</text>
-<text x="938" y="428.59" font-size="14" fill="#1c1c1c">nisi aliquip ex ea commodo consequat duis</text>
-<text x="938" y="448.19" font-size="14" fill="#1c1c1c">aute irure in reprehenderit.</text>
+<text x="938" y="409" font-size="14" fill="#1c1c1c">Culpa lorem ipsum dolor sit amet</text>
+<text x="938" y="428.59" font-size="14" fill="#1c1c1c">consectetur adipiscing elit sed do eiusmod</text>
+<text x="938" y="448.19" font-size="14" fill="#1c1c1c">tempor incididunt ut labore.</text>
 <rect x="900" y="747.11" width="540" height="152.89" fill="#ffffff"/>
-<text x="927.03" y="780.42" font-size="14" fill="#474747">Nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa lorem</text>
-<text x="948.14" y="800.72" font-size="14" fill="#474747">ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor</text>
-<text x="1099.97" y="821.01" font-size="14" fill="#474747">incididunt ut labore et.</text>
+<text x="928.8" y="780.42" font-size="14" fill="#474747">Enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex</text>
+<text x="936.39" y="800.72" font-size="14" fill="#474747">ea commodo consequat duis aute irure in reprehenderit voluptate velit esse</text>
+<text x="1113.55" y="821.01" font-size="14" fill="#474747">cillum fugiat nulla.</text>
 <rect x="950" y="838" width="140" height="40" rx="20" fill="#e6e6e6"/>
 <text x="998.38" y="863.15" font-size="14" font-weight="600" fill="#1c1c1c">Report</text>
 <rect x="1100" y="838" width="140" height="40" rx="20" fill="#e6e6e6"/>

@@ -30,8 +30,8 @@
 <text x="152" y="224.29" font-size="14" fill="#1c1c1c">“Normalisation, 1NF to 3NF in one page”.</text>
 <text x="152" y="243.56" font-size="12" fill="#6b6b6b">8 min ago</text>
 <rect x="152" y="255.38" width="280" height="52.38" rx="8" fill="#ffffff"/>
-<text x="162" y="277.27" font-size="13" fill="#474747">“dolore magna aliqua ut enim ad minim</text>
-<text x="162" y="295.46" font-size="13" fill="#474747">veniam quis nostrud exercitation ullamco”</text>
+<text x="162" y="277.27" font-size="13" fill="#474747">“pariatur excepteur sint occaecat cupidatat</text>
+<text x="162" y="295.46" font-size="13" fill="#474747">non proident sunt culpa lorem ipsum dolor”</text>
 <rect x="152" y="317.75" width="90.86" height="32" rx="16" fill="#ffffff"/>
 <rect x="152.75" y="318.5" width="89.36" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="164" y="338.55" font-size="13" font-weight="600" fill="#474747">Can edit</text>
@@ -121,9 +121,9 @@
 <text x="728" y="744.56" font-size="16" font-weight="700" fill="#1c1c1c">Aina Rahman</text>
 <text x="834.14" y="743.17" font-size="14" fill="#6b6b6b">· 2d ago</text>
 <text x="728" y="770.83" font-size="15" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF in one page</text>
-<text x="728" y="795.42" font-size="14" fill="#474747">Commodo consequat duis aute irure in.</text>
-<text x="975.88" y="795.42" font-size="14" font-weight="600" fill="#1c1c1c">#normalisation</text>
-<text x="1075.33" y="795.42" font-size="14" font-weight="600" fill="#1c1c1c">#sql</text>
+<text x="728" y="795.42" font-size="14" fill="#474747">Sed do eiusmod tempor incididunt ut.</text>
+<text x="966.31" y="795.42" font-size="14" font-weight="600" fill="#1c1c1c">#normalisation</text>
+<text x="1065.77" y="795.42" font-size="14" font-weight="600" fill="#1c1c1c">#sql</text>
 <rect x="728" y="806" width="177.97" height="26" rx="7" fill="#e6e6e6"/>
 <text x="738" y="823.28" font-size="12" font-weight="600" fill="#1c1c1c">CT030-3-2 Database Systems</text>
 <rect x="728" y="840" width="28" height="28" rx="14" fill="#ffffff"/>

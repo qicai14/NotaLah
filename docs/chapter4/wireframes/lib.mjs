@@ -306,7 +306,9 @@ export const slide = (kind, opt = {}) => {
   // hl: three text-anchored annotation markers (numbered) on highlighted lines
   const ann = (n, w) => `<div style="display:flex;gap:1.6cqw;align-items:center"><div class="ln hl" style="width:${w}%"></div><span class="anum">${n}</span><div class="ln" style="flex:1"></div></div>`;
   const s = SLIDES[kind];
-  const body = !s ? '' : `<div class="sp"><div class="k">${s[0]}</div><h3>${s[1]}</h3>${opt.hl ? `${ann(1, 34)}${lines([88])}${ann(2, 46)}${lines([72])}${ann(3, 28)}` : lines([92, 78, 86])}${xb('flex:1;border-radius:2cqw')}${lines([90, 64])}</div>`;
+  const body = !s ? '' : opt.aspect === '16:9' && !opt.hl
+    ? `<div class="sp"><div class="k">${s[0]}</div><h3>${s[1]}</h3><div style="flex:1;display:flex;gap:4cqw"><div style="flex:1;display:flex;flex-direction:column;gap:2.4cqw">${lines([92, 78, 86, 64])}</div>${xb('flex:1;border-radius:2cqw')}</div></div>`
+    : `<div class="sp"><div class="k">${s[0]}</div><h3>${s[1]}</h3>${opt.hl ? `${ann(1, 34)}${lines([88])}${ann(2, 46)}${lines([72])}${ann(3, 28)}` : lines([92, 78, 86])}${xb('flex:1;border-radius:2cqw')}${lines([90, 64])}</div>`;
   const wide = opt.aspect === '16:9';
   return `<div class="sl ${wide ? 'w' : ''} ${opt.cls || ''}" style="width:100%;height:100%">${body}</div>`;
 };

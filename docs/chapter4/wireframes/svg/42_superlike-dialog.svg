@@ -10,14 +10,13 @@
 <rect x="492" y="291" width="456" height="257" fill="#ffffff"/>
 <text x="519.36" y="322.7" font-size="8.21" font-weight="600" fill="#6b6b6b">CT044-3-2 · Week 8</text>
 <text x="519.36" y="353.62" font-size="20.06" font-weight="700" letter-spacing="-0.5" fill="#1c1c1c">Sorting at a glance</text>
-<rect x="519.36" y="365.56" width="369.17" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="384.7" width="312.98" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="403.84" width="345.09" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="422.98" width="401.28" height="63.94" rx="9.12" fill="#f2f2f2"/>
-<path d="M519.36 422.98L920.64 486.92M920.64 422.98L519.36 486.92" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="520.11" y="423.73" width="399.78" height="62.44" rx="8.37" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="519.36" y="496.03" width="361.14" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="515.17" width="256.81" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="365.56" width="176.2" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="386.53" width="149.39" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="407.5" width="164.7" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="428.47" width="122.58" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="729.13" y="365.56" width="191.53" height="159.64" rx="9.12" fill="#f2f2f2"/>
+<path d="M729.13 365.56L920.66 525.2M920.66 365.56L729.13 525.2" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="729.88" y="366.31" width="190.03" height="158.14" rx="8.37" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <rect x="836.95" y="86" width="99.05" height="28" rx="14" fill="#e6e6e6"/>
 <text x="844.95" y="104.28" font-size="12" font-weight="600" fill="#1c1c1c">Why this note?</text>
 <rect x="645.5" y="564" width="32" height="32" rx="16" fill="#ffffff"/>
@@ -118,16 +117,9 @@
 <rect x="494" y="401.88" width="452" height="74" rx="12" fill="#f2f2f2"/>
 <rect x="503.5" y="411.38" width="97" height="55" rx="6.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <rect x="504" y="411.88" width="96" height="54" fill="#ffffff"/>
-<text x="509.75" y="418.39" font-size="1.73" font-weight="600" fill="#6b6b6b">CT044-3-2 · Week 8</text>
-<text x="509.75" y="424.83" font-size="4.22" font-weight="700" letter-spacing="-0.11" fill="#1c1c1c">Sorting at a glance</text>
-<rect x="509.75" y="427.53" width="77.73" height="2.11" rx="0.96" fill="#e6e6e6"/>
-<rect x="509.75" y="431.55" width="65.91" height="2.11" rx="0.96" fill="#e6e6e6"/>
-<rect x="509.75" y="435.56" width="72.66" height="2.11" rx="0.96" fill="#e6e6e6"/>
-<rect x="509.75" y="439.58" width="84.5" height="13.47" rx="1.92" fill="#f2f2f2"/>
-<path d="M509.75 439.58L594.25 453.05M594.25 439.58L509.75 453.05" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="510.5" y="440.33" width="83" height="11.97" rx="1.17" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="509.75" y="454.95" width="76.05" height="2.11" rx="0.96" fill="#e6e6e6"/>
-<rect x="509.75" y="458.97" width="54.08" height="2.11" rx="0.96" fill="#e6e6e6"/>
+<rect x="504" y="411.88" width="96" height="54" fill="#f2f2f2"/>
+<path d="M504 411.88L600 465.88M600 411.88L504 465.88" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="504.75" y="412.63" width="94.5" height="52.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="612" y="434.61" font-size="14" font-weight="600" fill="#1c1c1c">Sorting algorithms compared</text>
 <text x="612" y="453.49" font-size="13" fill="#6b6b6b">Hafiz Ismail · CT044-3-2 · 4 slides</text>
 <text x="494" y="507.77" font-size="13" font-weight="600" fill="#474747">Remark for the author</text>

@@ -8,7 +8,7 @@
 <rect x="272" y="84" width="48" height="48" rx="24" fill="#e6e6e6"/>
 <g transform="translate(285 97) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
 <text x="332" y="103.73" font-size="14" font-weight="600" fill="#1c1c1c">Message requests</text>
-<text x="332" y="122.61" font-size="13" fill="#6b6b6b">ad minim veniam quis nostrud</text>
+<text x="332" y="122.61" font-size="13" fill="#6b6b6b">non proident sunt culpa lorem</text>
 <rect x="556" y="98" width="20" height="20" rx="10" fill="#3a3a3a"/>
 <text x="562.83" y="112.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
 <rect x="260" y="150" width="328" height="68" rx="12" fill="#e6e6e6"/>
@@ -54,22 +54,14 @@
 <rect x="624" y="160" width="300" height="209.69" rx="16" fill="#f2f2f2"/>
 <rect x="624.5" y="160.5" width="299" height="208.69" rx="15.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
 <rect x="624" y="160" width="300" height="150" fill="#ededed"/>
-<rect x="714" y="160" width="120" height="150" fill="#ffffff"/>
-<text x="722.39" y="172.38" font-size="3.6" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
-<text x="722.39" y="185.11" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">Normalisation, 1NF to</text>
-<text x="722.39" y="194.69" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">3NF</text>
-<rect x="722.39" y="200.41" width="94.95" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="206.86" width="80.5" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="213.31" width="88.77" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="219.77" width="103.22" height="68.94" rx="2.4" fill="#f2f2f2"/>
-<path d="M722.39 219.77L825.61 288.7M825.61 219.77L722.39 288.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="723.14" y="220.52" width="101.72" height="67.44" rx="1.65" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="722.39" y="292.53" width="92.89" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="298.98" width="66.05" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="624" y="160" width="300" height="150" fill="#ffffff"/>
+<rect x="624" y="160" width="300" height="150" fill="#f2f2f2"/>
+<path d="M624 160L924 310M924 160L624 310" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="624.75" y="160.75" width="298.5" height="148.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="636" y="335.31" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF in one page</text>
 <text x="636" y="355.28" font-size="12" fill="#6b6b6b">Aina Rahman · CT030-3-2</text>
-<rect x="624" y="379.69" width="393.64" height="39.59" rx="18" fill="#e6e6e6"/>
-<text x="638" y="405" font-size="14" fill="#1c1c1c">Ex ea commodo consequat duis aute irure in reprehenderit.</text>
+<rect x="624" y="379.69" width="394.72" height="39.59" rx="18" fill="#e6e6e6"/>
+<text x="638" y="405" font-size="14" fill="#1c1c1c">Adipiscing elit sed do eiusmod tempor incididunt ut labore.</text>
 <rect x="600" y="826" width="840" height="74" fill="#fafafa"/>
 <rect x="620" y="840" width="59.44" height="40" rx="20" fill="#e6e6e6"/>
 <text x="632" y="864.28" font-size="12" font-weight="600" fill="#474747">Attach</text>
@@ -127,57 +119,56 @@
 <g id="scrim-3">
 <rect x="0" y="0" width="1440" height="900" fill="#282828" fill-opacity="0.4"/>
 <g id="dlg-4">
-<rect x="479.25" y="142.52" width="481.5" height="614.97" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
-<rect x="480" y="143.27" width="480" height="613.47" rx="20" fill="#ffffff"/>
-<text x="504" y="190.07" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">New group</text>
-<g transform="translate(914 169.27) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<text x="504" y="228.16" font-size="13" font-weight="600" fill="#474747">Group name</text>
-<rect x="504" y="239.11" width="432" height="44" rx="10" fill="#f2f2f2"/>
-<rect x="504.5" y="239.61" width="431" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<text x="518" y="266.26" font-size="14" fill="#1c1c1c">FYP Team, CT046</text>
-<text x="504" y="315" font-size="13" font-weight="600" fill="#474747">Add friends</text>
-<text x="576.17" y="315" font-size="13" fill="#6b6b6b">at least 2</text>
-<rect x="504" y="325.95" width="432" height="44" rx="10" fill="#f2f2f2"/>
-<rect x="504.5" y="326.45" width="431" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<rect x="514" y="334.95" width="92.38" height="26" rx="13" fill="#e6e6e6"/>
-<text x="524" y="352.23" font-size="12" font-weight="600" fill="#474747">Aina Rahman</text>
-<rect x="612.38" y="334.95" width="88.61" height="26" rx="13" fill="#e6e6e6"/>
-<text x="622.38" y="352.23" font-size="12" font-weight="600" fill="#474747">Arjun Kumar</text>
-<text x="706.98" y="353.11" font-size="14" fill="#6b6b6b">Search friends</text>
-<rect x="512" y="395.95" width="40" height="40" rx="20" fill="#f2f2f2"/>
-<path d="M517.86 401.81L546.14 430.1M546.14 401.81L517.86 430.1" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="512.75" y="396.7" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<text x="564" y="411.69" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
-<text x="564" y="430.57" font-size="13" fill="#6b6b6b">Friend</text>
-<rect x="908" y="405.95" width="20" height="20" rx="6" fill="#3a3a3a"/>
-<g transform="translate(911 408.95) scale(0.58)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
-<rect x="512" y="453.95" width="40" height="40" rx="20" fill="#f2f2f2"/>
-<path d="M517.86 459.81L546.14 488.1M546.14 459.81L517.86 488.1" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="512.75" y="454.7" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<text x="564" y="469.69" font-size="14" font-weight="600" fill="#1c1c1c">Arjun Kumar</text>
-<text x="564" y="488.57" font-size="13" fill="#6b6b6b">Friend</text>
-<rect x="908" y="463.95" width="20" height="20" rx="6" fill="#3a3a3a"/>
-<g transform="translate(911 466.95) scale(0.58)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
-<rect x="512" y="511.95" width="40" height="40" rx="20" fill="#f2f2f2"/>
-<path d="M517.86 517.81L546.14 546.1M546.14 517.81L517.86 546.1" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="512.75" y="512.7" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<text x="564" y="527.69" font-size="14" font-weight="600" fill="#1c1c1c">Tan Mei Ling</text>
-<text x="564" y="546.57" font-size="13" fill="#6b6b6b">Friend</text>
-<rect x="908" y="521.95" width="20" height="20" rx="6" fill="#ffffff"/>
-<rect x="909" y="522.95" width="18" height="18" rx="5" fill="none" stroke="#cdcdcd" stroke-width="2"/>
-<rect x="512" y="569.95" width="40" height="40" rx="20" fill="#f2f2f2"/>
-<path d="M517.86 575.81L546.14 604.1M546.14 575.81L517.86 604.1" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="512.75" y="570.7" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<text x="564" y="585.69" font-size="14" font-weight="600" fill="#1c1c1c">Aiman Hakim</text>
-<text x="564" y="604.57" font-size="13" fill="#6b6b6b">Friend</text>
-<rect x="908" y="579.95" width="20" height="20" rx="6" fill="#ffffff"/>
-<rect x="909" y="580.95" width="18" height="18" rx="5" fill="none" stroke="#cdcdcd" stroke-width="2"/>
-<text x="504" y="648.93" font-size="12" fill="#6b6b6b">Nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa lorem</text>
-<text x="504" y="666.32" font-size="12" fill="#6b6b6b">ipsum.</text>
-<rect x="708" y="692.73" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
-<text x="726" y="717.89" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
-<rect x="795.86" y="692.73" width="140.14" height="40" rx="20" fill="#3a3a3a"/>
-<text x="813.86" y="717.89" font-size="14" font-weight="600" fill="#ffffff">Create group (3)</text>
+<rect x="479.25" y="151.2" width="481.5" height="597.58" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="480" y="151.95" width="480" height="596.08" rx="20" fill="#ffffff"/>
+<text x="504" y="198.75" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">New group</text>
+<g transform="translate(914 177.95) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<text x="504" y="236.85" font-size="13" font-weight="600" fill="#474747">Group name</text>
+<rect x="504" y="247.8" width="432" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="504.5" y="248.3" width="431" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="518" y="274.95" font-size="14" fill="#1c1c1c">FYP Team, CT046</text>
+<text x="504" y="323.69" font-size="13" font-weight="600" fill="#474747">Add friends</text>
+<text x="576.17" y="323.69" font-size="13" fill="#6b6b6b">at least 2</text>
+<rect x="504" y="334.64" width="432" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="504.5" y="335.14" width="431" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="514" y="343.64" width="92.38" height="26" rx="13" fill="#e6e6e6"/>
+<text x="524" y="360.92" font-size="12" font-weight="600" fill="#474747">Aina Rahman</text>
+<rect x="612.38" y="343.64" width="88.61" height="26" rx="13" fill="#e6e6e6"/>
+<text x="622.38" y="360.92" font-size="12" font-weight="600" fill="#474747">Arjun Kumar</text>
+<text x="706.98" y="361.79" font-size="14" fill="#6b6b6b">Search friends</text>
+<rect x="512" y="404.64" width="40" height="40" rx="20" fill="#f2f2f2"/>
+<path d="M517.86 410.5L546.14 438.78M546.14 410.5L517.86 438.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="512.75" y="405.39" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="564" y="420.37" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
+<text x="564" y="439.25" font-size="13" fill="#6b6b6b">Friend</text>
+<rect x="908" y="414.64" width="20" height="20" rx="6" fill="#3a3a3a"/>
+<g transform="translate(911 417.64) scale(0.58)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
+<rect x="512" y="462.64" width="40" height="40" rx="20" fill="#f2f2f2"/>
+<path d="M517.86 468.5L546.14 496.78M546.14 468.5L517.86 496.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="512.75" y="463.39" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="564" y="478.37" font-size="14" font-weight="600" fill="#1c1c1c">Arjun Kumar</text>
+<text x="564" y="497.25" font-size="13" fill="#6b6b6b">Friend</text>
+<rect x="908" y="472.64" width="20" height="20" rx="6" fill="#3a3a3a"/>
+<g transform="translate(911 475.64) scale(0.58)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"></path></g>
+<rect x="512" y="520.64" width="40" height="40" rx="20" fill="#f2f2f2"/>
+<path d="M517.86 526.5L546.14 554.78M546.14 526.5L517.86 554.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="512.75" y="521.39" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="564" y="536.37" font-size="14" font-weight="600" fill="#1c1c1c">Tan Mei Ling</text>
+<text x="564" y="555.25" font-size="13" fill="#6b6b6b">Friend</text>
+<rect x="908" y="530.64" width="20" height="20" rx="6" fill="#ffffff"/>
+<rect x="909" y="531.64" width="18" height="18" rx="5" fill="none" stroke="#cdcdcd" stroke-width="2"/>
+<rect x="512" y="578.64" width="40" height="40" rx="20" fill="#f2f2f2"/>
+<path d="M517.86 584.5L546.14 612.78M546.14 584.5L517.86 612.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="512.75" y="579.39" width="38.5" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="564" y="594.37" font-size="14" font-weight="600" fill="#1c1c1c">Aiman Hakim</text>
+<text x="564" y="613.25" font-size="13" fill="#6b6b6b">Friend</text>
+<rect x="908" y="588.64" width="20" height="20" rx="6" fill="#ffffff"/>
+<rect x="909" y="589.64" width="18" height="18" rx="5" fill="none" stroke="#cdcdcd" stroke-width="2"/>
+<text x="504" y="657.62" font-size="12" fill="#6b6b6b">Enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex.</text>
+<rect x="708" y="684.03" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
+<text x="726" y="709.19" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
+<rect x="795.86" y="684.03" width="140.14" height="40" rx="20" fill="#3a3a3a"/>
+<text x="813.86" y="709.19" font-size="14" font-weight="600" fill="#ffffff">Create group (3)</text>
 </g>
 </g>
 </svg>

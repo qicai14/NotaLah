@@ -28,8 +28,9 @@
 <rect x="280" y="130" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="280.5" y="130.5" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="286" y="144.1" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="280" y="327.27" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="286" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
+<rect x="280" y="327.27" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(286 330.95) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="304" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
 </g>
 <text x="272" y="375.55" font-size="13" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF</text>
 <text x="272" y="392.53" font-size="12" fill="#6b6b6b">Aina Rahman · saved 1d ago</text>
@@ -40,8 +41,9 @@
 <rect x="465" y="123" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M465 123L639 355.66M639 123L465 355.66" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="465.75" y="123.75" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="472" y="327.27" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="478" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
+<rect x="472" y="327.27" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(478 330.95) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="496" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
 </g>
 <text x="464" y="375.55" font-size="13" font-weight="600" fill="#1c1c1c">SQL joins in one page</text>
 <text x="464" y="392.53" font-size="12" fill="#6b6b6b">Chloe Wong · saved 2d ago</text>
@@ -55,8 +57,9 @@
 <rect x="664" y="130" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="664.5" y="130.5" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="670" y="144.1" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="664" y="327.27" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="670" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
+<rect x="664" y="327.27" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(670 330.95) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="688" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
 </g>
 <text x="656" y="375.55" font-size="13" font-weight="600" fill="#1c1c1c">O(n log n)</text>
 <text x="656" y="392.53" font-size="12" fill="#6b6b6b">Dr Lee Chin Wei · saved 3d ago</text>
@@ -67,8 +70,9 @@
 <rect x="849" y="123" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M849 123L1023 355.66M1023 123L849 355.66" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="849.75" y="123.75" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="856" y="327.27" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="862" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">415</text>
+<rect x="856" y="327.27" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(862 330.95) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="880" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">415</text>
 </g>
 <g clip-path="url(#clip1)">
 <text x="848" y="375.55" font-size="13" font-weight="600" fill="#1c1c1c">Use case diagrams: include vs extend</text>
@@ -84,8 +88,9 @@
 <rect x="1048" y="130" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="1048.5" y="130.5" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="1054" y="144.1" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="1048" y="327.27" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1054" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">1.1K</text>
+<rect x="1048" y="327.27" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1054 330.95) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1072" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">1.1K</text>
 </g>
 <text x="1040" y="375.55" font-size="13" font-weight="600" fill="#1c1c1c">TCP vs UDP</text>
 <text x="1040" y="392.53" font-size="12" fill="#6b6b6b">Arjun Kumar · saved 5d ago</text>
@@ -96,8 +101,9 @@
 <rect x="1233" y="123" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M1233 123L1407 355.66M1407 123L1233 355.66" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1233.75" y="123.75" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1240" y="327.27" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1246" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
+<rect x="1240" y="327.27" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1246 330.95) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1264" y="342.25" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
 </g>
 <text x="1232" y="375.55" font-size="13" font-weight="600" fill="#1c1c1c">Recursion, traced</text>
 <text x="1232" y="392.53" font-size="12" fill="#6b6b6b">Tan Mei Ling · saved 6d ago</text>
@@ -108,8 +114,9 @@
 <rect x="273" y="413.94" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M273 413.94L447 646.59M447 413.94L273 646.59" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="273.75" y="414.69" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="280" y="618.2" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="286" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">292</text>
+<rect x="280" y="618.2" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(286 621.89) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="304" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">292</text>
 </g>
 <text x="272" y="666.49" font-size="13" font-weight="600" fill="#1c1c1c">Scrum ceremonies</text>
 <text x="272" y="683.46" font-size="12" fill="#6b6b6b">Aina Rahman · saved 7d ago</text>
@@ -123,8 +130,9 @@
 <rect x="472" y="420.94" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="472.5" y="421.44" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="478" y="435.03" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="472" y="618.2" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="478" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">957</text>
+<rect x="472" y="618.2" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(478 621.89) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="496" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">957</text>
 </g>
 <text x="464" y="666.49" font-size="13" font-weight="600" fill="#1c1c1c">Stack vs queue</text>
 <text x="464" y="683.46" font-size="12" fill="#6b6b6b">Chloe Wong · saved 8d ago</text>
@@ -135,8 +143,9 @@
 <rect x="657" y="413.94" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M657 413.94L831 646.59M831 413.94L657 646.59" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="657.75" y="414.69" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="664" y="618.2" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="670" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">640</text>
+<rect x="664" y="618.2" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(670 621.89) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="688" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">640</text>
 </g>
 <text x="656" y="666.49" font-size="13" font-weight="600" fill="#1c1c1c">Deadlock: four conditions</text>
 <text x="656" y="683.46" font-size="12" fill="#6b6b6b">Dr Lee Chin Wei · saved 9d ago</text>
@@ -147,8 +156,9 @@
 <rect x="849" y="413.94" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M849 413.94L1023 646.59M1023 413.94L849 646.59" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="849.75" y="414.69" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="856" y="618.2" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="862" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
+<rect x="856" y="618.2" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(862 621.89) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="880" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
 </g>
 <text x="848" y="666.49" font-size="13" font-weight="600" fill="#1c1c1c">Crow's foot notation</text>
 <text x="848" y="683.46" font-size="12" fill="#6b6b6b">Lim Qi Cai · saved 10d ago</text>
@@ -159,8 +169,9 @@
 <rect x="1041" y="413.94" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M1041 413.94L1215 646.59M1215 413.94L1041 646.59" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1041.75" y="414.69" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1048" y="618.2" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1054" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">733</text>
+<rect x="1048" y="618.2" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1054 621.89) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1072" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">733</text>
 </g>
 <text x="1040" y="666.49" font-size="13" font-weight="600" fill="#1c1c1c">Merge sort step by step</text>
 <text x="1040" y="683.46" font-size="12" fill="#6b6b6b">Arjun Kumar · saved 11d ago</text>
@@ -171,8 +182,9 @@
 <rect x="1233" y="413.94" width="174" height="232.66" fill="#f2f2f2"/>
 <path d="M1233 413.94L1407 646.59M1407 413.94L1233 646.59" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1233.75" y="414.69" width="172.5" height="231.16" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1240" y="618.2" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1246" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">188</text>
+<rect x="1240" y="618.2" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1246 621.89) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1264" y="633.18" font-size="12" font-weight="700" fill="#1c1c1c">188</text>
 </g>
 <text x="1232" y="666.49" font-size="13" font-weight="600" fill="#1c1c1c">REST in five rules</text>
 <text x="1232" y="683.46" font-size="12" fill="#6b6b6b">Tan Mei Ling · saved 12d ago</text>

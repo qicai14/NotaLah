@@ -37,8 +37,9 @@
 <rect x="8" y="430.66" width="47.97" height="20" rx="5" fill="#ffffff"/>
 <rect x="8.5" y="431.16" width="46.97" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="14" y="444.75" font-size="11" font-weight="700" fill="#1c1c1c">Pinned</text>
-<rect x="8" y="564.8" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="14" y="579.78" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
+<rect x="8" y="564.8" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(14 568.48) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="32" y="579.78" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
 </g>
 <g id="tile-2">
 <rect x="130.66" y="422.66" width="128.67" height="171.56" rx="10" fill="#ededed"/>
@@ -47,8 +48,9 @@
 <rect x="131.66" y="423.66" width="126.67" height="169.56" fill="#f2f2f2"/>
 <path d="M131.66 423.66L258.33 593.22M258.33 423.66L131.66 593.22" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="132.41" y="424.41" width="125.17" height="168.06" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="138.66" y="564.83" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="144.66" y="579.81" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
+<rect x="138.66" y="564.83" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(144.66 568.52) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="162.66" y="579.81" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
 </g>
 <g id="tile-3">
 <rect x="261.33" y="422.66" width="128.67" height="171.56" rx="10" fill="#ededed"/>
@@ -60,8 +62,9 @@
 <rect x="269.33" y="430.66" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="269.83" y="431.16" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="275.33" y="444.75" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="269.33" y="564.83" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="275.33" y="579.81" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
+<rect x="269.33" y="564.83" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(275.33 568.52) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="293.33" y="579.81" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
 </g>
 <g id="tile-4">
 <rect x="0" y="596.22" width="128.66" height="171.53" rx="10" fill="#ededed"/>
@@ -70,8 +73,9 @@
 <rect x="1" y="597.22" width="126.66" height="169.53" fill="#f2f2f2"/>
 <path d="M1 597.22L127.66 766.75M127.66 597.22L1 766.75" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1.75" y="597.97" width="125.16" height="168.03" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="8" y="738.36" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="14" y="753.34" font-size="12" font-weight="700" fill="#1c1c1c">415</text>
+<rect x="8" y="738.36" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(14 742.05) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="32" y="753.34" font-size="12" font-weight="700" fill="#1c1c1c">415</text>
 </g>
 <g id="tile-5">
 <rect x="130.66" y="596.22" width="128.67" height="171.56" rx="10" fill="#ededed"/>
@@ -83,8 +87,9 @@
 <rect x="138.66" y="604.22" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="139.16" y="604.72" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="144.66" y="618.31" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="138.66" y="738.39" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="144.66" y="753.37" font-size="12" font-weight="700" fill="#1c1c1c">1.1K</text>
+<rect x="138.66" y="738.39" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(144.66 742.08) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="162.66" y="753.37" font-size="12" font-weight="700" fill="#1c1c1c">1.1K</text>
 </g>
 <g id="tile-6">
 <rect x="261.33" y="596.22" width="128.67" height="171.56" rx="10" fill="#ededed"/>
@@ -93,10 +98,11 @@
 <rect x="262.33" y="597.22" width="126.67" height="169.56" fill="#f2f2f2"/>
 <path d="M262.33 597.22L389 766.78M389 597.22L262.33 766.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="263.08" y="597.97" width="125.17" height="168.06" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="269.33" y="738.39" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="275.33" y="753.37" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
+<rect x="269.33" y="738.39" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(275.33 742.08) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="293.33" y="753.37" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
 </g>
-<text x="34.73" y="74.28" font-size="12" font-weight="600" fill="#474747">Add</text>
+<g transform="translate(21 59) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"></circle><path d="M2.5 21c1-4 4-6.5 7.5-6.5 1.5 0 2.8.4 4 1.1M19 14v6M16 17h6"></path></g>
 <text x="154.59" y="76.73" font-size="17" font-weight="700" fill="#1c1c1c">Lim Qi Cai</text>
 <g transform="translate(346.98 59) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"></path></g>
 <text x="30" y="27.35" font-size="15" font-weight="600" fill="#1c1c1c">9:41</text>

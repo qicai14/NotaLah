@@ -23,10 +23,10 @@ const welcome = (o = {}) => `<div class="full" style="background:var(--s0)">
       <div>${L(8)}</div>
       <div class="row" style="gap:10px">${I('book', 20)}${L(8)}</div>
       <div class="row" style="gap:10px">${I('chat', 20)}${L(8)}</div></div></div>
-  <div style="position:absolute;right:160px;top:120px;width:330px;height:714px;display:flex;flex-direction:column;align-items:center;gap:12px">${xb('width:330px;height:680px;border-radius:40px')}<span class="muted sm" style="font-weight:600">Phone preview of the Feed</span></div>
+  <div style="position:absolute;right:160px;top:120px;width:330px;height:714px;display:flex;flex-direction:column;align-items:center;gap:12px">${xb('width:330px;height:680px;border-radius:12px')}<span class="muted sm" style="font-weight:600">Phone preview of the Feed</span></div>
   <div style="position:absolute;left:96px;bottom:28px;font-size:12px;color:var(--ink3)">About · Help · Terms · Privacy · © 2026 PARP</div>${o.over || ''}</div>`;
 
-add('welcome', welcome(), { t: 'Welcome page', refs: 'R31, UC01, UC02', v3: 'Changed: v2 landing merged into the R31 Welcome page (Browse as guest added)',
+add('welcome', welcome(), { t: 'Welcome page', refs: 'R31, UC01, UC02', v3: 'Changed: v2 landing merged into the R31 Welcome page (Browse as guest added); phone mock-up replaced by a crossed box',
   p: 'First screen for signed-out visitors: Browse as guest, Log in or Register.' });
 
 add('register', welcome({ over: dlg(500, 'Create your PARP account', `
@@ -45,7 +45,7 @@ add('login', welcome({ over: dlg(440, 'Log in to PARP', `
     <span class="err" role="alert">${I('info', 16)}Email or password is incorrect.</span></div>
   <span class="b p lg w">Log in</span>
   <div class="muted" style="text-align:center">Don't have an account? <b style="color:var(--ink)">Register</b></div>`, '') }),
-{ t: 'Log in dialog (error state)', refs: 'UC02', p: 'Log in over the Welcome page, shown with the generic credentials error.' });
+{ t: 'Log in dialog (error state)', refs: 'UC02', v3: 'Changed: password field now the same width and height as the email field', p: 'Log in over the Welcome page, shown with the generic credentials error.' });
 
 /* ================================================================== guest browsing (R31) */
 add('guest_feed', app('Feed', feedBody(feedCard({ verified: 'Dr Lee', idx: 1 }), rail()), { guest: true, center: ftabs('Feed', ['Feed']) }),
@@ -153,9 +153,9 @@ add('feed_mobile', mobileFeed(), { m: true, t: 'Ranked feed (mobile)', refs: 'UC
     <div class="row">${av('AR', 44, true)}<div><div style="font-weight:700;font-size:16px">Aina Rahman</div><div class="muted sm">BSc (Hons) Software Engineering · 2d ago</div></div><span class="b sm p" style="margin-left:auto">Follow</span><span class="ib s sm">${I('more', 18)}</span></div>
     <div style="position:relative;width:560px;height:700px;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm', { hl: true })}
       <div class="sarr" style="left:10px;top:334px">${I('left', 18)}</div><div class="sarr" style="right:10px;top:334px">${I('right', 18)}</div>
-      <div class="pop" style="left:150px;top:256px;padding:4px;display:flex;gap:2px"><span class="tb2 on">${I('pencil', 16)}Annotate</span><span class="tb2">${I('copy', 16)}Copy</span></div>
+      <div class="pop" style="left:60px;top:206px;padding:4px;display:flex;gap:2px"><span class="tb2 on">${I('pencil', 16)}Annotate</span><span class="tb2">${I('copy', 16)}Copy</span></div>
       ${dots(6, 1)}</div></div>
-  <div style="position:absolute;left:628px;top:56px;display:flex;flex-direction:column;gap:12px">${[['heartF', '1.2K', true], ['comment', '44'], ['pencil', '6'], ['bookmark', '318'], ['share', 'Share']].map(([ic, c, on]) => `<div class="rb ${on ? 'on' : ''}"><span class="c">${I(ic, 22)}</span>${c}</div>`).join('')}</div>
+  <div style="position:absolute;left:628px;top:56px;display:flex;flex-direction:column;gap:12px">${[['heartF', '1.2K', true], ['comment', '44'], ['pencil', '6 notes'], ['bookmark', '318'], ['share', 'Share']].map(([ic, c, on]) => `<div class="rb ${on ? 'on' : ''}"><span class="c">${I(ic, 22)}</span>${c}</div>`).join('')}</div>
   <div class="side" style="width:500px;top:0">
     <div style="padding:20px 24px 0;display:flex;flex-direction:column;gap:6px"><div style="font-size:18px;font-weight:700;letter-spacing:-.01em">Normalisation, 1NF to 3NF in one page</div>
       <div class="row" style="gap:8px;flex-wrap:wrap"><span class="tag">${I('book', 13)}CT030-3-2 Database Systems</span><span class="tag">#normalisation</span><span class="tag">#sql</span><span class="tag" style="background:var(--ink);color:#fff">${I('check', 13)}Verified by Dr Lee</span></div></div>
@@ -169,12 +169,12 @@ add('feed_mobile', mobileFeed(), { m: true, t: 'Ranked feed (mobile)', refs: 'UC
 
 /* ================================================================== collaboration on notes (R30) */
 add('coauthor_note', app('Following', feedBody(feedCard({ verified: 'Dr Lee', idx: 0, author: 'Melvin Chen', authorI: 'MC', coauthors: [['LQ', 'Lim Qi Cai'], ['BW', 'Brosnan Wong']], title: 'MVC in five minutes', kind: 'mvc', mod: MODS.se, desc: `${L(6)} <b>#mvc</b> <b>#aict004</b>` }), rail({ coav: ['MC', 'LQ', 'BW'], likes: '640', comments: '31', saves: '152' })), { center: ftabs('Following') }),
-  { t: 'Co-authored note card', refs: 'R30, UC09', v3: 'new',
+  { t: 'Co-authored note card', refs: 'R30, UC09', v3: 'new (owner Melvin Chen, co-authors Lim Qi Cai and Brosnan Wong)',
     p: 'A note credits its owner and co-authors on the card and rail; it reaches each co-author\'s followers in Following.' });
 
 add('request_collab', app('Feed', feedBody(feedCard({ verified: 'Dr Lee', idx: 1 }), rail({ moreOn: true }), {
   pop: `<div class="pop" style="left:${CW + 80}px;bottom:0;width:240px">${[['users', 'Request to collaborate'], ['link', 'Copy link'], ['flag', 'Report']].map(([ic, t], k) => `<div class="mi ${k === 0 ? 'on' : ''}">${I(ic, 18)}${t}</div>`).join('')}</div>` }),
-{ center: ftabs(), me: 'CW', over: dlg(480, 'Request to collaborate', `<div class="li" style="background:var(--s1);padding:10px"><div style="width:48px;height:60px;border-radius:6px;overflow:hidden;flex:none;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}</div><div class="t"><div class="n">Normalisation, 1NF to 3NF in one page</div><div class="s">Aina Rahman · CT030-3-2 · 6 slides</div></div></div>
+{ center: ftabs(), me: 'CW', over: dlg(480, 'Request to collaborate', `<div class="li" style="background:var(--s1);padding:10px"><div style="width:48px;height:60px;border-radius:6px;overflow:hidden;flex:none;position:relative">${cover()}</div><div class="t"><div class="n">Normalisation, 1NF to 3NF in one page</div><div class="s">Aina Rahman · CT030-3-2 · 6 slides</div></div></div>
     <div class="muted" style="margin-top:-4px">${L(18)}</div>
     <div class="fld"><label>Message to the owner <span class="muted" style="font-weight:400">optional</span></label><div class="in v ta">${L(14)}</div><span class="help" style="text-align:right">72 / 300</span></div>`,
   `<span class="b">Cancel</span><span class="b p">${I('send', 16)}Send request</span>`) }),
@@ -302,7 +302,7 @@ add('edited_since_verification', app('Feed', feedBody(feedCard({ edited: true, i
 }
 
 add('editor_mobile', `<div class="m" style="background:var(--s2)">${sbar}
-  <div style="height:52px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#fff"><span class="ib sm">${I('left', 22)}</span><b style="font-size:15px;flex:1;white-space:nowrap;overflow:hidden">Normalisation, 1NF to 3NF</b><span class="ib sm">${I('undo', 20)}</span><span class="ib sm">${I('users', 20)}</span><span class="b sm p">Publish</span></div>
+  <div style="height:52px;display:flex;align-items:center;gap:6px;padding:0 10px;background:#fff"><span class="ib sm">${I('left', 22)}</span><b style="font-size:15px;flex:1;white-space:nowrap;overflow:hidden">Normalisation</b><span class="ib sm">${I('undo', 20)}</span><span class="ib sm">${I('users', 20)}</span><span class="b sm p">Publish</span></div>
   <div style="position:absolute;top:116px;left:20px;width:350px;height:438px;background:#fff;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}</div>
   ${selBox(20 + 24, 116 + 50, 302, 58)}
   <div style="position:absolute;top:574px;left:0;right:0;display:flex;justify-content:center;gap:8px">${[0, 1, 2, 3].map((k) => `<div class="thm ${k === 1 ? 'on' : ''}" style="width:40px;height:50px">${k === 1 ? slide('norm') : k === 0 ? cover('Normalisation', 'b') : ''}</div>`).join('')}<div class="addp" style="width:40px;height:50px">${I('plus', 18)}</div></div>
@@ -318,7 +318,7 @@ add('editor_mobile', `<div class="m" style="background:var(--s2)">${sbar}
   const body = `<div style="display:flex;gap:20px">
     <div style="width:180px;flex:none;display:flex;flex-direction:column;gap:8px"><div style="width:180px;height:225px;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}</div><span class="muted sm">6 slides · 4:5 Portrait</span></div>
     <div style="flex:1;display:flex;flex-direction:column;gap:16px">
-      <div class="fld"><label>Who can see this note</label><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">${vis.map(([ic, n], k) => `<div style="border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;background:${k === 0 ? '#fff' : 'var(--s1)'};box-shadow:inset 0 0 0 ${k === 0 ? '2px var(--ink)' : '1px var(--line)'}"><div class="row" style="justify-content:space-between">${I(ic, 22)}<span class="radio ${k === 0 ? 'on' : ''}"></span></div><b>${n}</b><span class="muted sm" style="line-height:1.4">${L(7)}</span></div>`).join('')}</div></div>
+      <div class="fld"><label>Who can see this note</label><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">${vis.map(([ic, n], k) => `<div style="border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;background:${k === 0 ? '#fff' : 'var(--s1)'};box-shadow:inset 0 0 0 ${k === 0 ? '2px var(--ink)' : '1px var(--line)'}"><div class="row" style="justify-content:space-between"><b>${n}</b><span class="radio ${k === 0 ? 'on' : ''}"></span></div><span class="muted sm" style="line-height:1.4">${L(7)}</span></div>`).join('')}</div></div>
       <div class="fld"><label>Module</label><div class="in v">${I('book', 18)}CT030-3-2 Database Systems<span class="end">${I('down', 16)}</span></div></div>
       <div class="fld"><label>Hashtags <span class="muted" style="font-weight:400">3 of 5</span></label><div class="in fo v" style="flex-wrap:wrap;gap:6px;padding:8px 10px"><span class="tag">#normalisation ${I('x', 12)}</span><span class="tag">#sql ${I('x', 12)}</span><span class="tag">#ct030 ${I('x', 12)}</span><span>#erd</span><span style="width:1.5px;height:18px;background:var(--ink)"></span></div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -364,7 +364,7 @@ add('editor_mobile', `<div class="m" style="background:var(--s2)">${sbar}
   const locked = (owner) => editor({ rail: '', dimRail: true, panel: false, bar: { locked: true, owner, people: ['LQ', 'AR', 'HI'] },
     board: lockBanner + boardAt(W, H, `<div style="position:absolute;inset:0">${slide('norm')}</div>`, { wsW: 1364, top: 72 }).html
       + `<div class="pop" style="left:${(1364 - W) / 2 - 24 - 260}px;top:150px;width:260px;padding:14px;display:flex;flex-direction:column;gap:10px"><b class="sm" style="font-size:13px">On this note now</b>
-        ${[['AR', 'Aina Rahman', 'Editing'], ['LQ', `Lim Qi Cai${owner ? ' (you)' : ''}`, owner ? 'Owner' : 'Away'], ['HI', `Hafiz Ismail${owner ? '' : ' (you)'}`, owner ? 'Away' : 'Viewing']].map(([i, n, s], k) => `<div class="row" style="gap:8px">${av(i, 28)}<div style="flex:1;font-size:13px;font-weight:600">${n}</div><span class="tag" style="${k === 0 ? 'background:var(--ink);color:#fff' : ''}">${s}</span></div>`).join('')}</div>`,
+        ${[['AR', 'Aina Rahman', 'Editing'], ['LQ', `Lim Qi Cai${owner ? ' (you)' : ''}`, owner ? 'Owner' : 'Owner, away'], ['HI', `Hafiz Ismail${owner ? '' : ' (you)'}`, owner ? 'Away' : 'Viewing']].map(([i, n, s], k) => `<div class="row" style="gap:8px">${av(i, 28)}<div style="flex:1;font-size:13px;font-weight:600">${n}</div><span class="tag" style="${k === 0 ? 'background:var(--ink);color:#fff' : ''}">${s}</span></div>`).join('')}</div>`,
     bottom: { left: 76, locked: true }, over: owner ? visPop : dimTip });
   add('editor_locked', locked(false),
   { t: 'Editor soft lock (co-author view)', refs: 'R30, UC08, UC07', v3: 'new',
@@ -447,7 +447,7 @@ add('search', app('Explore', `<div class="content" style="padding:0 32px;display
   <div class="tabs">${['Top', 'Notes', 'People', 'Hashtags', 'Modules'].map((t, k) => `<span class="tab ${k === 0 ? 'on' : ''}">${t}</span>`).join('')}</div>
   ${filterBar()}
   <div class="row" style="justify-content:space-between"><b style="font-size:16px">People</b><span class="muted sm" style="font-weight:600">See all</span></div>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:12px">${person('LC', 'Dr Lee Chin Wei', 'Lecturer · 1.8K followers', 'Friends', true, true)}${person('TM', 'Tan Mei Ling', 'Computer Science · 210 followers', 'Following')}${person('AH', 'Aiman Hakim', 'Information Technology · 96', 'Follow back')}</div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:12px">${person('LC', 'Dr Lee Chin Wei', 'Lecturer · 1.8K followers', 'Friends', true, true)}${person('TM', 'Tan Mei Ling', 'CS · 210 followers', 'Following')}${person('AH', 'Aiman Hakim', 'Information Technology · 96', 'Follow back')}</div>
   <div class="row" style="gap:8px"><b style="font-size:16px;margin-right:8px">Hashtags</b><span class="chip">#normalisation · 214 notes</span><span class="chip">#normalform · 18</span><span class="chip">#bcnf · 9</span><span class="chip">${I('book', 14)}CT030-3-2 Database Systems</span></div>
   <div class="row" style="justify-content:space-between"><b style="font-size:16px">Notes</b><span class="muted sm" style="font-weight:600">See all</span></div>
   <div class="grid" style="grid-template-columns:repeat(6,1fr);gap:14px">${[COVERS[0], COVERS[9], COVERS[1], COVERS[0], COVERS[9], COVERS[1]].map((c, k) => tile([k === 3 ? 'Normal forms with ENROL_T' : k === 4 ? 'Functional dependency basics' : k === 5 ? 'Denormalising for reports' : c[0], c[1], c[2], c[3], k !== 2 && k !== 5], { cap: true, sub: ['Aina Rahman', 'Dr Lee Chin Wei', 'Chloe Wong', 'Lim Qi Cai', 'Dr Siti Aminah', 'Hafiz Ismail'][k] })).join('')}</div></div>`,
@@ -478,7 +478,7 @@ add('search', app('Explore', `<div class="content" style="padding:0 32px;display
 
 add('search_mobile', mob(`<div style="display:flex;gap:10px;align-items:center;padding:6px 16px 10px">${I('left', 24)}<div class="in v" style="flex:1;height:40px;border-radius:999px">${I('search', 18)}#dsa</div><b class="sm" style="font-size:14px">Search</b></div>
   <div class="tabs" style="padding:0 16px;gap:22px">${['Top', 'Notes', 'People', 'Hashtags', 'Modules'].map((t, k) => `<span class="tab ${k === 1 ? 'on' : ''}" style="font-size:14px">${t}</span>`).join('')}</div>
-  <div class="row" style="gap:6px;padding:12px 16px;overflow:hidden"><span class="chip on">${I('filter', 14)}2</span><span class="chip on">Lecturer content</span><span class="chip o">Semester 1 ${I('down', 12)}</span><span class="chip o">Module</span></div>
+  <div class="row" style="gap:6px;padding:12px 16px;overflow:hidden"><span class="chip on">Filters 2</span><span class="chip on">Lecturer content</span><span class="chip o">Semester 1 ${I('down', 12)}</span><span class="chip o">Module</span></div>
   <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;padding:0 16px">${[COVERS[7], COVERS[2], COVERS[10], COVERS[5]].map((c, k) => tile(c, { cap: true, sub: ['Arjun Kumar', 'Dr Lee Chin Wei', 'Hafiz Ismail', 'Tan Mei Ling'][k] })).join('')}</div>`, { tab: 'Discover' }),
 { m: true, t: 'Search (mobile)', refs: 'UC14, NFR2', p: 'Phone search with result tabs, filter chips and a two-column grid.' });
 
@@ -498,7 +498,7 @@ add('report_dialog', app('Feed', feedBody(feedCard({ verified: 'Dr Lee', idx: 1 
 
 add('superlike_dialog', app('Feed', feedBody(feedCard({ aspect: '16:9', kind: 'sort', author: 'Hafiz Ismail', title: 'Sorting algorithms compared', desc: `${L(6)} <b>#dsa</b>`, mod: MODS.ads, idx: 0, count: 4, music: false }), rail({ superlike: true, av: 'HI', likes: '386', comments: '12', saves: '97' })), { collapsed: true, center: ftabs(), me: 'LC',
   over: dlg(500, 'Super Like this note?', `<div style="color:var(--ink2);margin-top:-8px;line-height:1.5">${L(26)}</div>
-    <div class="li" style="background:var(--s1);padding:10px"><div style="width:96px;height:54px;border-radius:6px;overflow:hidden;flex:none;box-shadow:0 0 0 1px var(--s3)">${slide('sort', { aspect: '16:9' })}</div><div class="t"><div class="n">Sorting algorithms compared</div><div class="s">Hafiz Ismail · CT044-3-2 · 4 slides</div></div></div>
+    <div class="li" style="background:var(--s1);padding:10px"><div style="width:96px;height:54px;border-radius:6px;overflow:hidden;flex:none;box-shadow:0 0 0 1px var(--s3)">${cover()}</div><div class="t"><div class="n">Sorting algorithms compared</div><div class="s">Hafiz Ismail · CT044-3-2 · 4 slides</div></div></div>
     <div class="fld"><label>Remark for the author <span class="muted" style="font-weight:400">optional</span></label><div class="in v ta" style="min-height:72px">${L(10)}</div></div>
     <div class="help">${L(9)}</div>`,
   `<span class="b">Cancel</span><span class="b p">${I('starF', 16)}Super Like</span>`, { icon: `<span style="width:52px;height:52px;border-radius:50%;background:var(--s2);display:grid;place-items:center">${I('star', 28)}</span>` }) }),
@@ -514,9 +514,9 @@ add('notifications', `<div class="app">${nav('Notifications', { collapsed: true 
     ${nrow('CW', false, '<b>Chloe Wong</b> asked to collaborate on “Normalisation, 1NF to 3NF”.', '2 h ago', '<span class="b sm">Review</span>')}
     ${nrow('HI', false, '<b>Hafiz Ismail</b> started following you.', '3 h ago', '<span class="b sm p">Follow back</span>')}
     <div class="muted sm" style="font-weight:700;padding:4px 8px 0">This week</div>
-    ${nrow('', false, '<b>“Sorting algorithms compared” was edited since you verified it.</b> Lecturers only.', 'Tue', '<span class="b sm">Re-confirm</span>', { icon: 'warn' })}
-    ${nrow('', false, `<b>Lecturer account approved.</b> ${L(8)}`, 'Mon', '', { icon: 'shield' })}
-    ${nrow('', false, `<b>Your note was hidden by an administrator.</b> ${L(7)}`, 'Sun', '<span class="b sm">Details</span>', { icon: 'flag' })}
+    ${nrow('', false, '<b>“Sorting algorithms compared” was edited since you verified it.</b>', 'Tue', '<span class="b sm">Re-confirm</span>', { icon: 'warn' })}
+    ${nrow('', false, '<b>Your lecturer account was approved.</b>', 'Mon', '', { icon: 'shield' })}
+    ${nrow('', false, '<b>Your note was hidden by an administrator.</b>', 'Sun', '<span class="b sm">Details</span>', { icon: 'flag' })}
 `)}${feedBehind('LC')}</div>`,
 { t: 'Notifications drawer', refs: 'UC16, UC19, UC22, UC20, R8, R30', v3: 'Changed: adds collaboration request and "edited since verification" items (R8 types)', p: 'Grouped notifications: Super Likes, mentions, collaboration requests, follows, edited since verification, approvals and moderation, with a message requests entry.' });
 
@@ -546,7 +546,7 @@ const convList = (on, o = {}) => `<div style="width:360px;flex:none;display:flex
   <div class="li ${o.reqOn ? 'on' : ''}" style="padding:12px;${o.reqOn ? '' : 'background:var(--s1)'}"><div style="width:48px;height:48px;border-radius:50%;background:${o.reqOn ? '#fff' : 'var(--s2)'};display:grid;place-items:center">${I('inbox', 22)}</div><div class="t"><div class="n">Message requests</div><div class="s">${L(5, false)}</div></div><span class="cnt" style="margin-left:0">2</span></div>
   ${[['AR', 'Aina Rahman', 'Shared a note: Normalisation, 1NF…', '2m'], ['FY', 'FYP Team, CT046', 'Arjun: lorem ipsum dolor sit', '1h'], ['LC', 'Dr Lee Chin Wei', 'You: lorem ipsum dolor', 'Mon'], ['TM', 'Tan Mei Ling', 'Lorem ipsum dolor sit amet', 'Sun'], ['AK', 'Arjun Kumar', 'Sent a note: Stack vs queue', 'Sat']].map(([i, n, s, t]) =>
     `<div class="li ${n === on ? 'on' : ''}">${av(i, 48, i === 'LC')}<div class="t"><div class="n">${n}</div><div class="s">${s}</div></div><span class="muted sm">${t}</span></div>`).join('')}</div>`;
-const shareCard = (me, k = 0) => `<div class="ncard ${me ? 'me' : ''}"><div class="th"><div style="width:120px;height:150px">${slide(k === 0 ? 'norm' : 'stack')}</div></div><div class="mt"><b>${k === 0 ? 'Normalisation, 1NF to 3NF in one page' : 'Stack vs queue, with real examples'}</b><span class="muted sm">${k === 0 ? 'Aina Rahman · CT030-3-2' : 'Arjun Kumar · CT044-3-2'}</span></div></div>`;
+const shareCard = (me, k = 0) => `<div class="ncard ${me ? 'me' : ''}"><div class="th" style="position:relative;display:block">${cover()}</div><div class="mt"><b>${k === 0 ? 'Normalisation, 1NF to 3NF in one page' : 'Stack vs queue, with real examples'}</b><span class="muted sm">${k === 0 ? 'Aina Rahman · CT030-3-2' : 'Arjun Kumar · CT044-3-2'}</span></div></div>`;
 const chatPane = (head, msgs, input = true, above = '') => `<div style="flex:1;display:flex;flex-direction:column;background:var(--s0);border-radius:16px 0 0 0;overflow:hidden;box-shadow:inset 1px 1px 0 var(--line)">
   <div class="row" style="padding:14px 20px;background:#fff;box-shadow:inset 0 -1px 0 var(--line)">${head}</div>
   <div style="flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:10px;overflow:hidden">${msgs}</div>

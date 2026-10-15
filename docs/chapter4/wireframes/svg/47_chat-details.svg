@@ -9,7 +9,7 @@
 <g transform="translate(285 97) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
 <text x="332" y="103.73" font-size="14" font-weight="600" fill="#1c1c1c">Message requests</text>
 <g clip-path="url(#clip1)">
-<text x="332" y="122.61" font-size="13" fill="#6b6b6b">occaecat cupidatat non proident sunt</text>
+<text x="332" y="122.61" font-size="13" fill="#6b6b6b">quis nostrud exercitation ullamco laboris</text>
 </g>
 <rect x="556" y="98" width="20" height="20" rx="10" fill="#3a3a3a"/>
 <text x="562.83" y="112.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
@@ -55,15 +55,15 @@
 <text x="672" y="120.43" font-size="12" fill="#6b6b6b">Friends · typing…</text>
 <text x="1386.19" y="110.28" font-size="12" font-weight="600" fill="#474747">Info</text>
 <text x="988.55" y="172.98" font-size="12" fill="#6b6b6b">Today 14:02</text>
-<rect x="624" y="187.39" width="276.5" height="39.59" rx="18" fill="#e6e6e6"/>
-<rect x="625" y="188.39" width="274.5" height="37.59" rx="17" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<text x="638" y="212.7" font-size="14" fill="#1c1c1c">nostrud exercitation ullamco laboris nisi.</text>
-<rect x="1028.98" y="236.98" width="387.02" height="92.69" rx="18" fill="#3a3a3a"/>
-<rect x="1042.98" y="246.98" width="359.02" height="47.09" rx="10" fill="#ffffff" fill-opacity="0.18"/>
-<rect x="1042.98" y="246.98" width="3" height="47.09" fill="#ffffff"/>
-<text x="1052.98" y="266.88" font-size="13" font-weight="600" fill="#ffffff">Aina Rahman</text>
-<text x="1052.98" y="284.43" font-size="13" fill="#ffffff" fill-opacity="0.85">nostrud exercitation ullamco laboris nisi.</text>
-<text x="1042.98" y="315.39" font-size="14" fill="#ffffff">Duis aute irure in reprehenderit voluptate velit esse cillum.</text>
+<rect x="624" y="187.39" width="198" height="39.59" rx="18" fill="#e6e6e6"/>
+<rect x="625" y="188.39" width="196" height="37.59" rx="17" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<text x="638" y="212.7" font-size="14" fill="#1c1c1c">lorem ipsum dolor sit amet.</text>
+<rect x="1010.61" y="236.98" width="405.39" height="92.69" rx="18" fill="#3a3a3a"/>
+<rect x="1024.61" y="246.98" width="377.39" height="47.09" rx="10" fill="#ffffff" fill-opacity="0.18"/>
+<rect x="1024.61" y="246.98" width="3" height="47.09" fill="#ffffff"/>
+<text x="1034.61" y="266.88" font-size="13" font-weight="600" fill="#ffffff">Aina Rahman</text>
+<text x="1034.61" y="284.43" font-size="13" fill="#ffffff" fill-opacity="0.85">lorem ipsum dolor sit amet.</text>
+<text x="1024.61" y="315.39" font-size="14" fill="#ffffff">Eiusmod tempor incididunt ut labore et dolore magna aliqua.</text>
 <rect x="1289.17" y="339.67" width="126.83" height="39.59" rx="18" fill="#ffffff"/>
 <rect x="1289.92" y="340.42" width="125.33" height="38.09" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1303.17" y="364.98" font-size="14" font-style="italic" fill="#6b6b6b">Message deleted</text>
@@ -82,7 +82,7 @@
 <rect x="620" y="772.31" width="3" height="53.69" fill="#474747"/>
 <rect x="620.5" y="772.81" width="757" height="52.69" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
 <text x="632" y="794.21" font-size="13" font-weight="600" fill="#1c1c1c">Replying to Aina Rahman</text>
-<text x="632" y="813.05" font-size="13" fill="#6b6b6b">nostrud exercitation ullamco laboris nisi.</text>
+<text x="632" y="813.05" font-size="13" fill="#6b6b6b">lorem ipsum dolor sit amet.</text>
 <g transform="translate(1395 790.16) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
 <rect x="600" y="826" width="840" height="74" fill="#fafafa"/>
 <rect x="620" y="840" width="59.44" height="40" rx="20" fill="#e6e6e6"/>

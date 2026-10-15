@@ -30,9 +30,9 @@
 <text x="96" y="561.46" font-size="15" fill="#474747">Nostrud exercitation ullamco laboris nisi aliquip ex ea.</text>
 <text x="96" y="593.21" font-size="15" fill="#474747">In reprehenderit voluptate velit esse cillum fugiat nulla.</text>
 <text x="96" y="624.96" font-size="15" fill="#474747">Non proident sunt culpa lorem ipsum dolor sit.</text>
-<rect x="950" y="120" width="330" height="680" rx="40" fill="#f2f2f2"/>
+<rect x="950" y="120" width="330" height="680" rx="12" fill="#f2f2f2"/>
 <path d="M950 120L1280 800M1280 120L950 800" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="950.75" y="120.75" width="328.5" height="678.5" rx="39.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="950.75" y="120.75" width="328.5" height="678.5" rx="11.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1042.41" y="824.98" font-size="12" font-weight="600" fill="#6b6b6b">Phone preview of the Feed</text>
 <text x="96" y="867.59" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy · © 2026 PARP</text>
 <g id="scrim-1">

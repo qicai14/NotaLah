@@ -140,19 +140,10 @@
 <text x="504" y="273.88" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Request to collaborate</text>
 <g transform="translate(914 253.08) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
 <rect x="504" y="298.08" width="432" height="80" rx="12" fill="#f2f2f2"/>
-<rect x="513.5" y="307.58" width="49" height="61" rx="6.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <rect x="514" y="308.08" width="48" height="60" fill="#ffffff"/>
-<text x="517.36" y="313.04" font-size="1.44" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
-<text x="517.36" y="318.02" font-size="3.55" font-weight="700" letter-spacing="-0.09" fill="#1c1c1c">Normalisation, 1NF to</text>
-<text x="517.36" y="321.85" font-size="3.55" font-weight="700" letter-spacing="-0.09" fill="#1c1c1c">3NF</text>
-<rect x="517.36" y="324.23" width="37.97" height="1.05" rx="0.48" fill="#e6e6e6"/>
-<rect x="517.36" y="326.81" width="32.19" height="1.05" rx="0.48" fill="#e6e6e6"/>
-<rect x="517.36" y="329.39" width="35.5" height="1.05" rx="0.48" fill="#e6e6e6"/>
-<rect x="517.36" y="331.97" width="41.28" height="27.59" rx="0.96" fill="#f2f2f2"/>
-<path d="M517.36 331.97L558.64 359.56M558.64 331.97L517.36 359.56" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="518.11" y="332.72" width="39.78" height="26.09" rx="0.21" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="517.36" y="361.09" width="37.14" height="1.05" rx="0.48" fill="#e6e6e6"/>
-<rect x="517.36" y="363.67" width="26.41" height="1.05" rx="0.48" fill="#e6e6e6"/>
+<rect x="514" y="308.08" width="48" height="60" fill="#f2f2f2"/>
+<path d="M514 308.08L562 368.08M562 308.08L514 368.08" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="514.75" y="308.83" width="46.5" height="58.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="574" y="333.81" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF in one page</text>
 <text x="574" y="352.69" font-size="13" fill="#6b6b6b">Aina Rahman · CT030-3-2 · 6 slides</text>
 <text x="504" y="407.39" font-size="14" fill="#6b6b6b">Laboris nisi aliquip ex ea commodo consequat duis aute irure in</text>

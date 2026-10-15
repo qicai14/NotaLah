@@ -85,12 +85,13 @@
 <text x="1066" y="165.19" font-size="13" font-weight="600" fill="#474747">Dr Lee Chin Wei</text>
 <rect x="1166.19" y="150.39" width="56.45" height="20" rx="6" fill="#e6e6e6"/>
 <text x="1173.19" y="164.75" font-size="11" font-weight="700" fill="#474747">Lecturer</text>
-<text x="1066" y="188.7" font-size="14" fill="#1c1c1c">Cupidatat non proident sunt culpa lorem ipsum dolor</text>
-<text x="1066" y="208.29" font-size="14" fill="#1c1c1c">sit amet consectetur adipiscing elit sed do eiusmod</text>
-<text x="1066" y="227.89" font-size="14" fill="#1c1c1c">tempor incididunt ut labore.</text>
+<text x="1066" y="188.7" font-size="14" fill="#1c1c1c">Cupidatat non proident sunt culpa lorem ipsum</text>
+<text x="1066" y="208.29" font-size="14" fill="#1c1c1c">dolor sit amet consectetur adipiscing elit sed do</text>
+<text x="1066" y="227.89" font-size="14" fill="#1c1c1c">eiusmod tempor incididunt ut labore.</text>
 <text x="1066" y="250.15" font-size="12" fill="#6b6b6b">2d</text>
 <text x="1093.55" y="250.15" font-size="12" font-weight="600" fill="#6b6b6b">Reply</text>
-<text x="1407.06" y="160.98" font-size="12" fill="#6b6b6b">86</text>
+<g transform="translate(1402 148) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1404.53" y="180.98" font-size="12" fill="#6b6b6b">86</text>
 <rect x="1020" y="277.97" width="36" height="36" rx="18" fill="#f2f2f2"/>
 <path d="M1025.27 283.24L1050.73 308.7M1050.73 283.24L1025.27 308.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1020.75" y="278.72" width="34.5" height="34.5" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
@@ -99,7 +100,8 @@
 <text x="1066" y="334.06" font-size="14" fill="#1c1c1c">ullamco.</text>
 <text x="1066" y="356.32" font-size="12" fill="#6b6b6b">1d</text>
 <text x="1093.55" y="356.32" font-size="12" font-weight="600" fill="#6b6b6b">Reply</text>
-<text x="1407.06" y="306.95" font-size="12" fill="#6b6b6b">12</text>
+<g transform="translate(1402 293.97) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1404.53" y="326.95" font-size="12" fill="#6b6b6b">12</text>
 <rect x="1066" y="384.14" width="28" height="28" rx="14" fill="#f2f2f2"/>
 <path d="M1070.1 388.24L1089.9 408.04M1089.9 388.24L1070.1 408.04" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1066.75" y="384.89" width="26.5" height="26.5" rx="13.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
@@ -108,11 +110,12 @@
 <text x="1176.89" y="398.5" font-size="11" font-weight="700" fill="#474747">Author</text>
 <rect x="1104" y="407.14" width="94.33" height="19" rx="4" fill="#e6e6e6"/>
 <text x="1107" y="422.45" font-size="14" font-weight="600" fill="#1c1c1c">@ainarahman</text>
-<text x="1202.16" y="422.45" font-size="14" fill="#1c1c1c">commodo consequat duis aute</text>
-<text x="1104" y="442.04" font-size="14" fill="#1c1c1c">irure in reprehenderit voluptate velit.</text>
+<text x="1202.16" y="422.45" font-size="14" fill="#1c1c1c">commodo consequat duis</text>
+<text x="1104" y="442.04" font-size="14" fill="#1c1c1c">aute irure in reprehenderit voluptate velit.</text>
 <text x="1104" y="464.31" font-size="12" fill="#6b6b6b">20h</text>
 <text x="1137.73" y="464.31" font-size="12" font-weight="600" fill="#6b6b6b">Reply</text>
-<text x="1413.53" y="413.12" font-size="12" fill="#6b6b6b">5</text>
+<g transform="translate(1402 400.14) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1407.77" y="433.12" font-size="12" fill="#6b6b6b">5</text>
 <text x="1066" y="489.1" font-size="12" font-weight="600" fill="#6b6b6b">View 1 more reply</text>
 <g transform="translate(1166.7 477.81) scale(0.58)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
 <rect x="1020" y="509.52" width="36" height="36" rx="18" fill="#f2f2f2"/>
@@ -122,7 +125,8 @@
 <text x="1066" y="546.01" font-size="14" fill="#1c1c1c">Excepteur sint occaecat cupidatat non proident sunt.</text>
 <text x="1066" y="568.28" font-size="12" fill="#6b6b6b">5h</text>
 <text x="1093.27" y="568.28" font-size="12" font-weight="600" fill="#6b6b6b">Reply</text>
-<text x="1413.53" y="538.5" font-size="12" fill="#6b6b6b">4</text>
+<g transform="translate(1402 525.52) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1407.77" y="558.5" font-size="12" fill="#6b6b6b">4</text>
 <rect x="1020" y="596.09" width="36" height="36" rx="18" fill="#f2f2f2"/>
 <path d="M1025.27 601.37L1050.73 626.82M1050.73 601.37L1025.27 626.82" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1020.75" y="596.84" width="34.5" height="34.5" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
@@ -131,7 +135,8 @@
 <text x="1066" y="652.19" font-size="14" fill="#1c1c1c">tempor incididunt.</text>
 <text x="1066" y="674.45" font-size="12" fill="#6b6b6b">3h</text>
 <text x="1093.27" y="674.45" font-size="12" font-weight="600" fill="#6b6b6b">Reply</text>
-<text x="1413.53" y="625.07" font-size="12" fill="#6b6b6b">2</text>
+<g transform="translate(1402 612.09) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1407.77" y="645.07" font-size="12" fill="#6b6b6b">2</text>
 <rect x="1000" y="828" width="440" height="72" fill="#fafafa"/>
 <rect x="1000" y="828" width="440" height="1" fill="#d6d6d6"/>
 <rect x="1020" y="840" width="336.77" height="44" rx="22" fill="#ffffff"/>

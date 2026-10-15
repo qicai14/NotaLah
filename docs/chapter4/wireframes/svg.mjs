@@ -184,7 +184,7 @@ export function domToSvg() {
 // becomes a crossed circle placeholder. Status-bar glyphs are removed.
 export function lofiIcons() {
   const KEEP = new Set(['home', 'users', 'compass', 'search', 'plus', 'msg', 'bell', 'bookmark', 'user', 'more', 'heart', 'heartF',
-    'comment', 'share', 'star', 'starF', 'left', 'right', 'up', 'down', 'back', 'x', 'menu', 'sidebar', 'inbox', 'send', 'check',
+    'comment', 'share', 'star', 'starF', 'userPlus', 'left', 'right', 'up', 'down', 'back', 'x', 'menu', 'sidebar', 'inbox', 'send', 'check',
     'flag', 'shield', 'book', 'play', 'pause', 'square', 'circle', 'tri', 'line', 'arrowR', 'minus']);
   const DROP = new Set(['wifi', 'battery']);
   const LABEL = { pencil: 'Edit', trash: 'Delete', copy: 'Copy', lock: 'Lock', info: 'Info', userPlus: 'Add', clip: 'Attach', smile: 'Emoji',
@@ -197,7 +197,7 @@ export function lofiIcons() {
   for (const s of [...document.querySelectorAll('svg.i')]) {
     const name = s.dataset.n, p = s.parentElement;
     if (DROP.has(name)) { s.remove(); continue; }
-    if (p.closest('.ni,.tbi,.er')) continue; // navigation: icon plus label is the pattern
+    if (p.closest('.ni,.tbi,.er,.lk,.st')) continue; // nav items and like counts keep their icon // navigation: icon plus label is the pattern
     if (p.textContent.trim()) { if (!/^(down|up|left|back)$/.test(name)) s.remove(); continue; } // dropdown chevrons and back arrows stay
     if (KEEP.has(name)) continue;
     const size = parseFloat(s.getAttribute('width')) || 20;

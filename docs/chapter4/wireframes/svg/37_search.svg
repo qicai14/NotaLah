@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
 <title>Search results (Top)</title>
-<defs><clipPath id="clip1"><rect x="732.66" y="261.66" width="181.17" height="18.84"/></clipPath></defs>
+<defs></defs>
 <rect width="1440" height="900" fill="#ffffff"/>
 <rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
 <rect x="272" y="116.75" width="1136" height="1" fill="#d6d6d6"/>
@@ -48,9 +48,7 @@
 <path d="M676.27 242.55L713.04 279.32M713.04 242.55L676.27 279.32" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="669.41" y="235.69" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="732.66" y="256.67" font-size="14" font-weight="600" fill="#1c1c1c">Tan Mei Ling</text>
-<g clip-path="url(#clip1)">
-<text x="732.66" y="275.55" font-size="13" fill="#6b6b6b">Computer Science · 210 followers</text>
-</g>
+<text x="732.66" y="275.55" font-size="13" fill="#6b6b6b">CS · 210 followers</text>
 <rect x="925.83" y="244.94" width="85.5" height="32" rx="16" fill="#e6e6e6"/>
 <text x="939.83" y="265.41" font-size="13" font-weight="600" fill="#1c1c1c">Following</text>
 <rect x="1037.33" y="220.94" width="370.66" height="80" rx="12" fill="#f2f2f2"/>
@@ -82,8 +80,9 @@
 <rect x="280" y="412.13" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="280.5" y="412.63" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="286" y="426.22" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="280" y="611.61" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="286" y="626.59" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
+<rect x="280" y="611.61" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(286 615.3) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="304" y="626.59" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
 </g>
 <text x="272" y="659.9" font-size="13" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF</text>
 <text x="272" y="676.87" font-size="12" fill="#6b6b6b">Aina Rahman</text>
@@ -97,8 +96,9 @@
 <rect x="471.66" y="412.13" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="472.16" y="412.63" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="477.66" y="426.22" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="471.66" y="611.63" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="477.66" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
+<rect x="471.66" y="611.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(477.66 615.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="495.66" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
 </g>
 <text x="463.66" y="659.91" font-size="13" font-weight="600" fill="#1c1c1c">Crow's foot notation</text>
 <text x="463.66" y="676.89" font-size="12" fill="#6b6b6b">Dr Lee Chin Wei</text>
@@ -109,8 +109,9 @@
 <rect x="656.33" y="405.13" width="175.67" height="234.89" fill="#f2f2f2"/>
 <path d="M656.33 405.13L832 640.02M832 405.13L656.33 640.02" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="657.08" y="405.88" width="174.17" height="233.39" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="663.33" y="611.63" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="669.33" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
+<rect x="663.33" y="611.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(669.33 615.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="687.33" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
 </g>
 <text x="655.33" y="659.91" font-size="13" font-weight="600" fill="#1c1c1c">SQL joins in one page</text>
 <text x="655.33" y="676.89" font-size="12" fill="#6b6b6b">Chloe Wong</text>
@@ -124,8 +125,9 @@
 <rect x="855" y="412.13" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="855.5" y="412.63" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="861" y="426.22" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="855" y="611.61" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="861" y="626.59" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
+<rect x="855" y="611.61" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(861 615.3) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="879" y="626.59" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
 </g>
 <text x="847" y="659.9" font-size="13" font-weight="600" fill="#1c1c1c">Normal forms with ENROL_T</text>
 <text x="847" y="676.87" font-size="12" fill="#6b6b6b">Lim Qi Cai</text>
@@ -139,8 +141,9 @@
 <rect x="1046.66" y="412.13" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="1047.16" y="412.63" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="1052.66" y="426.22" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="1046.66" y="611.63" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1052.66" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
+<rect x="1046.66" y="611.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1052.66 615.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1070.66" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
 </g>
 <text x="1038.66" y="659.91" font-size="13" font-weight="600" fill="#1c1c1c">Functional dependency basics</text>
 <text x="1038.66" y="676.89" font-size="12" fill="#6b6b6b">Dr Siti Aminah</text>
@@ -151,8 +154,9 @@
 <rect x="1231.33" y="405.13" width="175.67" height="234.89" fill="#f2f2f2"/>
 <path d="M1231.33 405.13L1407 640.02M1407 405.13L1231.33 640.02" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1232.08" y="405.88" width="174.17" height="233.39" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1238.33" y="611.63" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1244.33" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
+<rect x="1238.33" y="611.63" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1244.33 615.31) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1262.33" y="626.61" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
 </g>
 <text x="1230.33" y="659.91" font-size="13" font-weight="600" fill="#1c1c1c">Denormalising for reports</text>
 <text x="1230.33" y="676.89" font-size="12" fill="#6b6b6b">Hafiz Ismail</text>

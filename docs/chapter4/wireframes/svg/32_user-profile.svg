@@ -43,8 +43,9 @@
 <rect x="296" y="366.34" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="296.5" y="366.84" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="302" y="380.44" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="296" y="560.95" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="302" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
+<rect x="296" y="560.95" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(302 564.64) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="320" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">2.4K</text>
 </g>
 <g id="tile-2">
 <rect x="474" y="358.34" width="174" height="232" rx="10" fill="#ededed"/>
@@ -56,8 +57,9 @@
 <rect x="482" y="366.34" width="52.23" height="20" rx="5" fill="#ffffff"/>
 <rect x="482.5" y="366.84" width="51.23" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="488" y="380.44" font-size="11" font-weight="700" fill="#1c1c1c">Verified</text>
-<rect x="482" y="560.95" width="36.84" height="21.39" rx="6" fill="#ffffff"/>
-<text x="488" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
+<rect x="482" y="560.95" width="54.84" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(488 564.64) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="506" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">1.2K</text>
 </g>
 <g id="tile-3">
 <rect x="660" y="358.34" width="174" height="232" rx="10" fill="#ededed"/>
@@ -66,8 +68,9 @@
 <rect x="661" y="359.34" width="172" height="230" fill="#f2f2f2"/>
 <path d="M661 359.34L833 589.34M833 359.34L661 589.34" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="661.75" y="360.09" width="170.5" height="228.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="668" y="560.95" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="674" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
+<rect x="668" y="560.95" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(674 564.64) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="692" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">511</text>
 </g>
 <g id="tile-4">
 <rect x="846" y="358.34" width="174" height="232" rx="10" fill="#ededed"/>
@@ -79,8 +82,9 @@
 <rect x="854" y="366.34" width="74.98" height="20" rx="5" fill="#ffffff"/>
 <rect x="854.5" y="366.84" width="73.98" height="19" rx="4.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
 <text x="860" y="380.44" font-size="11" font-weight="700" fill="#1c1c1c">Friends only</text>
-<rect x="854" y="560.95" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="860" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
+<rect x="854" y="560.95" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(860 564.64) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="878" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">864</text>
 </g>
 <g id="tile-5">
 <rect x="1032" y="358.34" width="174" height="232" rx="10" fill="#ededed"/>
@@ -89,8 +93,9 @@
 <rect x="1033" y="359.34" width="172" height="230" fill="#f2f2f2"/>
 <path d="M1033 359.34L1205 589.34M1205 359.34L1033 589.34" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1033.75" y="360.09" width="170.5" height="228.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1040" y="560.95" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1046" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
+<rect x="1040" y="560.95" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1046 564.64) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1064" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">378</text>
 </g>
 <g id="tile-6">
 <rect x="1218" y="358.34" width="174" height="232" rx="10" fill="#ededed"/>
@@ -99,8 +104,9 @@
 <rect x="1219" y="359.34" width="172" height="230" fill="#f2f2f2"/>
 <path d="M1219 359.34L1391 589.34M1391 359.34L1219 589.34" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="1219.75" y="360.09" width="170.5" height="228.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1226" y="560.95" width="32.72" height="21.39" rx="6" fill="#ffffff"/>
-<text x="1232" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">733</text>
+<rect x="1226" y="560.95" width="50.72" height="21.39" rx="6" fill="#ffffff"/>
+<g transform="translate(1232 564.64) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.4C1.6 7.2 3.8 4 7.2 4c2 0 3.6 1.1 4.8 2.8C13.2 5.1 14.8 4 16.8 4c3.4 0 5.6 3.2 4.4 6.6C19.5 15.4 12 20 12 20z"></path></g>
+<text x="1250" y="575.93" font-size="12" font-weight="700" fill="#1c1c1c">733</text>
 </g>
 <g id="top-7">
 <rect x="1302" y="20" width="66" height="32" rx="16" fill="#ffffff"/>

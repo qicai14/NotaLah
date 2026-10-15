@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
 <title>Post-anchored chat</title>
-<defs></defs>
+<defs><clipPath id="clip1"><rect x="332" y="108.72" width="212" height="18.84"/></clipPath></defs>
 <rect width="1440" height="900" fill="#ffffff"/>
 <rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
 <rect x="260" y="72" width="328" height="72" rx="12" fill="#f2f2f2"/>
 <rect x="272" y="84" width="48" height="48" rx="24" fill="#e6e6e6"/>
 <g transform="translate(285 97) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
 <text x="332" y="103.73" font-size="14" font-weight="600" fill="#1c1c1c">Message requests</text>
-<text x="332" y="122.61" font-size="13" fill="#6b6b6b">dolore magna aliqua ut enim</text>
+<g clip-path="url(#clip1)">
+<text x="332" y="122.61" font-size="13" fill="#6b6b6b">pariatur excepteur sint occaecat cupidatat</text>
+</g>
 <rect x="556" y="98" width="20" height="20" rx="10" fill="#3a3a3a"/>
 <text x="562.83" y="112.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
 <rect x="260" y="150" width="328" height="68" rx="12" fill="#e6e6e6"/>
@@ -56,29 +58,21 @@
 <rect x="624" y="187.39" width="300" height="209.69" rx="16" fill="#f2f2f2"/>
 <rect x="624.5" y="187.89" width="299" height="208.69" rx="15.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
 <rect x="624" y="187.39" width="300" height="150" fill="#ededed"/>
-<rect x="714" y="187.39" width="120" height="150" fill="#ffffff"/>
-<text x="722.39" y="199.78" font-size="3.6" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
-<text x="722.39" y="212.5" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">Normalisation, 1NF to</text>
-<text x="722.39" y="222.08" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">3NF</text>
-<rect x="722.39" y="227.8" width="94.95" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="234.25" width="80.5" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="240.7" width="88.77" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="247.16" width="103.22" height="68.94" rx="2.4" fill="#f2f2f2"/>
-<path d="M722.39 247.16L825.61 316.09M825.61 247.16L722.39 316.09" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="723.14" y="247.91" width="101.72" height="67.44" rx="1.65" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="722.39" y="319.92" width="92.89" height="2.63" rx="1.2" fill="#e6e6e6"/>
-<rect x="722.39" y="326.38" width="66.05" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="624" y="187.39" width="300" height="150" fill="#ffffff"/>
+<rect x="624" y="187.39" width="300" height="150" fill="#f2f2f2"/>
+<path d="M624 187.39L924 337.39M924 187.39L624 337.39" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="624.75" y="188.14" width="298.5" height="148.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="636" y="362.7" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF in one page</text>
 <text x="636" y="382.67" font-size="12" fill="#6b6b6b">Aina Rahman · CT030-3-2</text>
-<rect x="624" y="407.08" width="440.95" height="39.59" rx="18" fill="#e6e6e6"/>
-<text x="638" y="432.39" font-size="14" fill="#1c1c1c">Exercitation ullamco laboris nisi aliquip ex ea commodo consequat.</text>
+<rect x="624" y="407.08" width="368.89" height="39.59" rx="18" fill="#e6e6e6"/>
+<text x="638" y="432.39" font-size="14" fill="#1c1c1c">Ipsum dolor sit amet consectetur adipiscing elit sed do.</text>
 <rect x="924.97" y="456.67" width="491.03" height="59.19" rx="18" fill="#3a3a3a"/>
-<text x="938.97" y="481.98" font-size="14" fill="#ffffff">Voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat</text>
-<text x="938.97" y="501.58" font-size="14" fill="#ffffff">cupidatat non.</text>
-<rect x="1107.53" y="525.86" width="308.47" height="39.59" rx="18" fill="#3a3a3a"/>
-<text x="1121.53" y="551.17" font-size="14" fill="#ffffff">Dolor sit amet consectetur adipiscing elit sed.</text>
-<rect x="624" y="575.45" width="237.19" height="39.59" rx="18" fill="#e6e6e6"/>
-<text x="638" y="600.76" font-size="14" fill="#1c1c1c">Labore et dolore magna aliqua ut.</text>
+<text x="938.97" y="481.98" font-size="14" fill="#ffffff">Et dolore magna aliqua ut enim ad minim veniam quis nostrud</text>
+<text x="938.97" y="501.58" font-size="14" fill="#ffffff">exercitation.</text>
+<rect x="1128.13" y="525.86" width="287.88" height="39.59" rx="18" fill="#3a3a3a"/>
+<text x="1142.13" y="551.17" font-size="14" fill="#ffffff">Ea commodo consequat duis aute irure in.</text>
+<rect x="624" y="575.45" width="303.03" height="39.59" rx="18" fill="#e6e6e6"/>
+<text x="638" y="600.76" font-size="14" fill="#1c1c1c">Fugiat nulla pariatur excepteur sint occaecat.</text>
 <text x="1390.28" y="638.03" font-size="12" fill="#6b6b6b">Seen</text>
 <rect x="600" y="826" width="840" height="74" fill="#fafafa"/>
 <rect x="620" y="840" width="59.44" height="40" rx="20" fill="#e6e6e6"/>

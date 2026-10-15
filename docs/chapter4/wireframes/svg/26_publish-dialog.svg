@@ -131,88 +131,79 @@
 <g id="scrim-6">
 <rect x="0" y="0" width="1440" height="900" fill="#282828" fill-opacity="0.4"/>
 <g id="dlg-7">
-<rect x="309.25" y="174.11" width="821.5" height="551.77" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
-<rect x="310" y="174.86" width="820" height="550.27" rx="20" fill="#ffffff"/>
-<text x="334" y="221.66" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Publish note</text>
-<g transform="translate(1084 200.86) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<rect x="333.5" y="245.36" width="181" height="226" rx="12.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
-<rect x="334" y="245.86" width="180" height="225" fill="#ffffff"/>
-<text x="346.59" y="264.19" font-size="5.4" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
-<text x="346.59" y="284.06" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">Normalisation, 1NF to</text>
-<text x="346.59" y="298.43" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">3NF</text>
-<rect x="346.59" y="306.53" width="142.42" height="3.95" rx="1.8" fill="#e6e6e6"/>
-<rect x="346.59" y="316.23" width="120.75" height="3.95" rx="1.8" fill="#e6e6e6"/>
-<rect x="346.59" y="325.94" width="133.13" height="3.95" rx="1.8" fill="#e6e6e6"/>
-<rect x="346.59" y="335.64" width="154.81" height="103.22" rx="3.6" fill="#f2f2f2"/>
-<path d="M346.59 335.64L501.41 438.86M501.41 335.64L346.59 438.86" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="347.34" y="336.39" width="153.31" height="101.72" rx="2.85" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="346.59" y="444.61" width="139.33" height="3.95" rx="1.8" fill="#e6e6e6"/>
-<rect x="346.59" y="454.31" width="99.08" height="3.95" rx="1.8" fill="#e6e6e6"/>
-<text x="334" y="491.84" font-size="12" fill="#6b6b6b">6 slides · 4:5 Portrait</text>
-<text x="534" y="259.75" font-size="13" font-weight="600" fill="#474747">Who can see this note</text>
-<rect x="534" y="270.7" width="184" height="113.89" rx="12" fill="#ffffff"/>
-<rect x="535" y="271.7" width="182" height="111.89" rx="11" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<rect x="548" y="285.2" width="19" height="19" rx="9.5" fill="#f2f2f2"/>
-<path d="M550.78 287.99L564.22 301.42M564.22 287.99L550.78 301.42" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="548.75" y="285.95" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="684" y="284.7" width="20" height="20" rx="10" fill="#ffffff"/>
-<rect x="687" y="287.7" width="14" height="14" rx="7" fill="none" stroke="#3a3a3a" stroke-width="6"/>
-<text x="548" y="326.01" font-size="14" font-weight="600" fill="#1c1c1c">Public</text>
-<text x="548" y="349.98" font-size="12" fill="#6b6b6b">Nostrud exercitation ullamco</text>
-<text x="548" y="366.78" font-size="12" fill="#6b6b6b">laboris nisi aliquip ex.</text>
-<rect x="728" y="270.7" width="184" height="113.89" rx="12" fill="#f2f2f2"/>
-<rect x="728.5" y="271.2" width="183" height="112.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<rect x="742" y="285.2" width="19" height="19" rx="9.5" fill="#f2f2f2"/>
-<path d="M744.78 287.99L758.22 301.42M758.22 287.99L744.78 301.42" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="742.75" y="285.95" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="878" y="284.7" width="20" height="20" rx="10" fill="#ffffff"/>
-<rect x="879" y="285.7" width="18" height="18" rx="9" fill="none" stroke="#cdcdcd" stroke-width="2"/>
-<text x="742" y="326.01" font-size="14" font-weight="600" fill="#1c1c1c">Friends only</text>
-<text x="742" y="349.98" font-size="12" fill="#6b6b6b">Irure in reprehenderit</text>
-<text x="742" y="366.78" font-size="12" fill="#6b6b6b">voluptate velit esse cillum.</text>
-<rect x="922" y="270.7" width="184" height="113.89" rx="12" fill="#f2f2f2"/>
-<rect x="922.5" y="271.2" width="183" height="112.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<rect x="936" y="285.2" width="19" height="19" rx="9.5" fill="#f2f2f2"/>
-<path d="M938.78 287.99L952.22 301.42M952.22 287.99L938.78 301.42" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="936.75" y="285.95" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="1072" y="284.7" width="20" height="20" rx="10" fill="#ffffff"/>
-<rect x="1073" y="285.7" width="18" height="18" rx="9" fill="none" stroke="#cdcdcd" stroke-width="2"/>
-<text x="936" y="326.01" font-size="14" font-weight="600" fill="#1c1c1c">Private draft</text>
-<text x="936" y="349.98" font-size="12" fill="#6b6b6b">Occaecat cupidatat non</text>
-<text x="936" y="366.78" font-size="12" fill="#6b6b6b">proident sunt culpa lorem.</text>
-<text x="534" y="414.49" font-size="13" font-weight="600" fill="#474747">Module</text>
-<rect x="534" y="425.44" width="572" height="44" rx="10" fill="#f2f2f2"/>
-<rect x="534.5" y="425.94" width="571" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<text x="548" y="452.59" font-size="14" fill="#1c1c1c">CT030-3-2 Database Systems</text>
-<g transform="translate(1076 439.44) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
-<text x="534" y="499.33" font-size="13" font-weight="600" fill="#474747">Hashtags</text>
-<text x="592.02" y="499.33" font-size="13" fill="#6b6b6b">3 of 5</text>
-<rect x="534" y="510.28" width="572" height="44" rx="10" fill="#ffffff"/>
-<rect x="535" y="511.28" width="570" height="42" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<rect x="544" y="519.28" width="101.95" height="26" rx="13" fill="#e6e6e6"/>
-<text x="554" y="536.56" font-size="12" font-weight="600" fill="#474747">#normalisation</text>
-<rect x="651.95" y="519.28" width="42.64" height="26" rx="13" fill="#e6e6e6"/>
-<text x="661.95" y="536.56" font-size="12" font-weight="600" fill="#474747">#sql</text>
-<rect x="700.59" y="519.28" width="57.06" height="26" rx="13" fill="#e6e6e6"/>
-<text x="710.59" y="536.56" font-size="12" font-weight="600" fill="#474747">#ct030</text>
-<text x="763.66" y="537.44" font-size="14" fill="#1c1c1c">#erd</text>
-<rect x="798.38" y="523.28" width="1.5" height="18" fill="#1c1c1c"/>
-<text x="534" y="584.18" font-size="13" font-weight="600" fill="#474747">Slide size</text>
-<rect x="534" y="595.13" width="280" height="38" rx="19" fill="#e6e6e6"/>
-<rect x="537" y="598.13" width="45.84" height="32" rx="16" fill="#ffffff"/>
-<rect x="537.5" y="598.63" width="44.84" height="31" rx="15.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
-<text x="551" y="618.6" font-size="13" font-weight="600" fill="#1c1c1c">4:5</text>
-<text x="598.84" y="618.6" font-size="13" font-weight="600" fill="#474747">9:16</text>
-<text x="651.73" y="618.6" font-size="13" font-weight="600" fill="#474747">16:9</text>
-<text x="826" y="584.18" font-size="13" font-weight="600" fill="#474747">Background music</text>
-<rect x="826" y="595.13" width="280" height="44" rx="10" fill="#f2f2f2"/>
-<rect x="826.5" y="595.63" width="279" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<text x="840" y="622.28" font-size="14" fill="#1c1c1c">Track title</text>
-<g transform="translate(1078 610.13) scale(0.58)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<rect x="935.84" y="661.13" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
-<text x="953.84" y="686.28" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
-<rect x="1023.7" y="661.13" width="82.3" height="40" rx="20" fill="#3a3a3a"/>
-<text x="1041.7" y="686.28" font-size="14" font-weight="600" fill="#ffffff">Publish</text>
+<rect x="309.25" y="187.11" width="821.5" height="525.77" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="310" y="187.86" width="820" height="524.27" rx="20" fill="#ffffff"/>
+<text x="334" y="234.66" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Publish note</text>
+<g transform="translate(1084 213.86) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<rect x="333.5" y="258.36" width="181" height="226" rx="12.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="334" y="258.86" width="180" height="225" fill="#ffffff"/>
+<text x="346.59" y="277.19" font-size="5.4" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
+<text x="346.59" y="297.06" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">Normalisation, 1NF to</text>
+<text x="346.59" y="311.43" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">3NF</text>
+<rect x="346.59" y="319.53" width="142.42" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="329.23" width="120.75" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="338.94" width="133.13" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="348.64" width="154.81" height="103.22" rx="3.6" fill="#f2f2f2"/>
+<path d="M346.59 348.64L501.41 451.86M501.41 348.64L346.59 451.86" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="347.34" y="349.39" width="153.31" height="101.72" rx="2.85" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="346.59" y="457.61" width="139.33" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="467.31" width="99.08" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<text x="334" y="504.84" font-size="12" fill="#6b6b6b">6 slides · 4:5 Portrait</text>
+<text x="534" y="272.75" font-size="13" font-weight="600" fill="#474747">Who can see this note</text>
+<rect x="534" y="283.7" width="184" height="87.89" rx="12" fill="#ffffff"/>
+<rect x="535" y="284.7" width="182" height="85.89" rx="11" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<text x="548" y="313.01" font-size="14" font-weight="600" fill="#1c1c1c">Public</text>
+<rect x="684" y="297.84" width="20" height="20" rx="10" fill="#ffffff"/>
+<rect x="687" y="300.84" width="14" height="14" rx="7" fill="none" stroke="#3a3a3a" stroke-width="6"/>
+<text x="548" y="336.98" font-size="12" fill="#6b6b6b">Nostrud exercitation ullamco</text>
+<text x="548" y="353.78" font-size="12" fill="#6b6b6b">laboris nisi aliquip ex.</text>
+<rect x="728" y="283.7" width="184" height="87.89" rx="12" fill="#f2f2f2"/>
+<rect x="728.5" y="284.2" width="183" height="86.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="742" y="313.01" font-size="14" font-weight="600" fill="#1c1c1c">Friends only</text>
+<rect x="878" y="297.84" width="20" height="20" rx="10" fill="#ffffff"/>
+<rect x="879" y="298.84" width="18" height="18" rx="9" fill="none" stroke="#cdcdcd" stroke-width="2"/>
+<text x="742" y="336.98" font-size="12" fill="#6b6b6b">Irure in reprehenderit</text>
+<text x="742" y="353.78" font-size="12" fill="#6b6b6b">voluptate velit esse cillum.</text>
+<rect x="922" y="283.7" width="184" height="87.89" rx="12" fill="#f2f2f2"/>
+<rect x="922.5" y="284.2" width="183" height="86.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="936" y="313.01" font-size="14" font-weight="600" fill="#1c1c1c">Private draft</text>
+<rect x="1072" y="297.84" width="20" height="20" rx="10" fill="#ffffff"/>
+<rect x="1073" y="298.84" width="18" height="18" rx="9" fill="none" stroke="#cdcdcd" stroke-width="2"/>
+<text x="936" y="336.98" font-size="12" fill="#6b6b6b">Occaecat cupidatat non</text>
+<text x="936" y="353.78" font-size="12" fill="#6b6b6b">proident sunt culpa lorem.</text>
+<text x="534" y="401.49" font-size="13" font-weight="600" fill="#474747">Module</text>
+<rect x="534" y="412.44" width="572" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="534.5" y="412.94" width="571" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="548" y="439.59" font-size="14" fill="#1c1c1c">CT030-3-2 Database Systems</text>
+<g transform="translate(1076 426.44) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<text x="534" y="486.33" font-size="13" font-weight="600" fill="#474747">Hashtags</text>
+<text x="592.02" y="486.33" font-size="13" fill="#6b6b6b">3 of 5</text>
+<rect x="534" y="497.28" width="572" height="44" rx="10" fill="#ffffff"/>
+<rect x="535" y="498.28" width="570" height="42" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<rect x="544" y="506.28" width="101.95" height="26" rx="13" fill="#e6e6e6"/>
+<text x="554" y="523.56" font-size="12" font-weight="600" fill="#474747">#normalisation</text>
+<rect x="651.95" y="506.28" width="42.64" height="26" rx="13" fill="#e6e6e6"/>
+<text x="661.95" y="523.56" font-size="12" font-weight="600" fill="#474747">#sql</text>
+<rect x="700.59" y="506.28" width="57.06" height="26" rx="13" fill="#e6e6e6"/>
+<text x="710.59" y="523.56" font-size="12" font-weight="600" fill="#474747">#ct030</text>
+<text x="763.66" y="524.43" font-size="14" fill="#1c1c1c">#erd</text>
+<rect x="798.38" y="510.28" width="1.5" height="18" fill="#1c1c1c"/>
+<text x="534" y="571.18" font-size="13" font-weight="600" fill="#474747">Slide size</text>
+<rect x="534" y="582.13" width="280" height="38" rx="19" fill="#e6e6e6"/>
+<rect x="537" y="585.13" width="45.84" height="32" rx="16" fill="#ffffff"/>
+<rect x="537.5" y="585.63" width="44.84" height="31" rx="15.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<text x="551" y="605.6" font-size="13" font-weight="600" fill="#1c1c1c">4:5</text>
+<text x="598.84" y="605.6" font-size="13" font-weight="600" fill="#474747">9:16</text>
+<text x="651.73" y="605.6" font-size="13" font-weight="600" fill="#474747">16:9</text>
+<text x="826" y="571.18" font-size="13" font-weight="600" fill="#474747">Background music</text>
+<rect x="826" y="582.13" width="280" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="826.5" y="582.63" width="279" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="840" y="609.28" font-size="14" fill="#1c1c1c">Track title</text>
+<g transform="translate(1078 597.13) scale(0.58)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<rect x="935.84" y="648.13" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
+<text x="953.84" y="673.28" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
+<rect x="1023.7" y="648.13" width="82.3" height="40" rx="20" fill="#3a3a3a"/>
+<text x="1041.7" y="673.28" font-size="14" font-weight="600" fill="#ffffff">Publish</text>
 </g>
 </g>
 </svg>

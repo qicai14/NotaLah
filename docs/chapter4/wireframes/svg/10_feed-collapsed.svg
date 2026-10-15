@@ -10,14 +10,13 @@
 <rect x="492" y="291" width="456" height="257" fill="#ffffff"/>
 <text x="519.36" y="322.7" font-size="8.21" font-weight="600" fill="#6b6b6b">CT044-3-2 · Week 8</text>
 <text x="519.36" y="353.62" font-size="20.06" font-weight="700" letter-spacing="-0.5" fill="#1c1c1c">Sorting at a glance</text>
-<rect x="519.36" y="365.56" width="369.17" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="384.7" width="312.98" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="403.84" width="345.09" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="422.98" width="401.28" height="63.94" rx="9.12" fill="#f2f2f2"/>
-<path d="M519.36 422.98L920.64 486.92M920.64 422.98L519.36 486.92" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="520.11" y="423.73" width="399.78" height="62.44" rx="8.37" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<rect x="519.36" y="496.03" width="361.14" height="10.03" rx="4.56" fill="#e6e6e6"/>
-<rect x="519.36" y="515.17" width="256.81" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="365.56" width="176.2" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="386.53" width="149.39" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="407.5" width="164.7" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="519.36" y="428.47" width="122.58" height="10.03" rx="4.56" fill="#e6e6e6"/>
+<rect x="729.13" y="365.56" width="191.53" height="159.64" rx="9.12" fill="#f2f2f2"/>
+<path d="M729.13 365.56L920.66 525.2M920.66 365.56L729.13 525.2" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="729.88" y="366.31" width="190.03" height="158.14" rx="8.37" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <rect x="836.95" y="86" width="99.05" height="28" rx="14" fill="#e6e6e6"/>
 <text x="844.95" y="104.28" font-size="12" font-weight="600" fill="#1c1c1c">Why this note?</text>
 <rect x="645.5" y="564" width="32" height="32" rx="16" fill="#ffffff"/>

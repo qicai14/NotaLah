@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" font-family="Segoe UI, Arial, sans-serif">
 <title>Slide editor (mobile)</title>
-<defs><clipPath id="clip1"><rect x="48" y="59.13" width="157.17" height="21.75"/></clipPath></defs>
+<defs></defs>
 <rect width="390" height="844" fill="#ffffff"/>
 <rect x="0" y="0" width="390" height="844" fill="#e6e6e6"/>
 <rect x="0" y="44" width="390" height="52" fill="#ffffff"/>
 <g transform="translate(15 59) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></g>
-<g clip-path="url(#clip1)">
-<text x="48" y="75.35" font-size="15" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF</text>
-</g>
+<text x="48" y="75.35" font-size="15" font-weight="600" fill="#1c1c1c">Normalisation</text>
 <text x="223.17" y="74.28" font-size="12" font-weight="600" fill="#474747">Undo</text>
 <g transform="translate(277.02 60) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
 <rect x="309.02" y="54" width="70.98" height="32" rx="16" fill="#3a3a3a"/>

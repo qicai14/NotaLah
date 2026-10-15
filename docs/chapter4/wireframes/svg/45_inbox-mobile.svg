@@ -5,9 +5,7 @@
 <rect width="390" height="844" fill="#ffffff"/>
 <rect x="0" y="0" width="390" height="844" fill="#ffffff"/>
 <rect x="20" y="106" width="52" height="52" rx="26" fill="#e6e6e6"/>
-<rect x="36" y="122" width="20" height="20" rx="10" fill="#f2f2f2"/>
-<path d="M38.93 124.93L53.07 139.07M53.07 124.93L38.93 139.07" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="36.75" y="122.75" width="18.5" height="18.5" rx="9.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<g transform="translate(34 120) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"></circle><path d="M2.5 21c1-4 4-6.5 7.5-6.5 1.5 0 2.8.4 4 1.1M19 14v6M16 17h6"></path></g>
 <text x="84" y="127.73" font-size="14" font-weight="600" fill="#1c1c1c">New followers</text>
 <text x="84" y="146.61" font-size="13" fill="#6b6b6b">Hafiz Ismail started following you</text>
 <rect x="350" y="122" width="20" height="20" rx="10" fill="#3a3a3a"/>
@@ -33,7 +31,7 @@
 <rect x="20" y="394" width="52" height="52" rx="26" fill="#e6e6e6"/>
 <g transform="translate(34 408) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v6c0 4.6 3.2 7.8 7.5 9 4.3-1.2 7.5-4.4 7.5-9V6z"></path></g>
 <text x="84" y="415.73" font-size="14" font-weight="600" fill="#1c1c1c">System notifications</text>
-<text x="84" y="434.61" font-size="13" fill="#6b6b6b">fugiat nulla pariatur excepteur sint</text>
+<text x="84" y="434.61" font-size="13" fill="#6b6b6b">ut enim ad minim veniam</text>
 <text x="20" y="478.98" font-size="12" font-weight="700" fill="#6b6b6b">Messages</text>
 <rect x="20" y="495.39" width="52" height="52" rx="26" fill="#f2f2f2"/>
 <path d="M27.62 503.01L64.38 539.78M64.38 503.01L27.62 539.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
@@ -45,13 +43,13 @@
 <path d="M27.62 575.01L64.38 611.78M64.38 575.01L27.62 611.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="20.75" y="568.14" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="84" y="589.12" font-size="14" font-weight="600" fill="#1c1c1c">FYP Team, CT046</text>
-<text x="84" y="608" font-size="13" fill="#6b6b6b">Arjun: culpa lorem ipsum dolor</text>
+<text x="84" y="608" font-size="13" fill="#6b6b6b">Arjun: nisi aliquip ex ea</text>
 <text x="356.73" y="597.67" font-size="12" fill="#6b6b6b">1h</text>
 <rect x="20" y="639.39" width="52" height="52" rx="26" fill="#f2f2f2"/>
 <path d="M27.62 647.01L64.38 683.78M64.38 647.01L27.62 683.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="20.75" y="640.14" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="84" y="661.12" font-size="14" font-weight="600" fill="#1c1c1c">Dr Lee Chin Wei</text>
-<text x="84" y="680" font-size="13" fill="#6b6b6b">You: sed do eiusmod</text>
+<text x="84" y="680" font-size="13" fill="#6b6b6b">You: in reprehenderit voluptate</text>
 <text x="345.39" y="669.67" font-size="12" fill="#6b6b6b">Mon</text>
 <text x="172.17" y="76.73" font-size="17" font-weight="700" fill="#1c1c1c">Inbox</text>
 <g transform="translate(347 59) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
