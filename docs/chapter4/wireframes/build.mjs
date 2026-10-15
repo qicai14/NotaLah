@@ -5,7 +5,8 @@
 // centred vertical note card with an action rail), TikTok mobile (snap feed, bottom tab bar) and a
 // Canva-style editor. Greyscale only; the one accent is a dark neutral grey used for primary actions.
 import { chromium } from 'playwright';
-import { mkdirSync, readdirSync, unlinkSync } from 'node:fs';
+import { mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { domToSvg } from './svg.mjs';
 import { fileURLToPath } from 'node:url';
 
 /* ------------------------------------------------------------------ tokens + base styles */
@@ -1042,15 +1043,24 @@ add('40_admin_modules', adminApp('Modules', `<div class="content" style="padding
   { left: title('Modules', '12') }));
 
 /* ------------------------------------------------------------------ render */
-const out = new URL('./png/', import.meta.url);
-mkdirSync(out, { recursive: true });
-const keep = new Set(screens.map(([id]) => `${id}.png`));
-for (const f of readdirSync(out)) if (f.endsWith('.png') && !keep.has(f)) unlinkSync(new URL(f, out));
+// Each screen is laid out as HTML, serialised to a vector SVG (svg/), then the SVG itself is
+// rasterised to png/ so the PNG in the report is exactly what Figma imports.
+const outSvg = new URL('./svg/', import.meta.url), outPng = new URL('./png/', import.meta.url);
+for (const d of [outSvg, outPng]) {
+  mkdirSync(d, { recursive: true });
+  for (const f of readdirSync(d)) if (/\.(png|svg)$/.test(f)) unlinkSync(new URL(f, d));
+}
+const only = process.argv[2];
 const browser = await chromium.launch();
 for (const [id, html, mobile] of screens) {
-  const page = await browser.newPage({ viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+  if (only && !id.startsWith(only)) continue;
+  const viewport = mobile ? { width: 390, height: 844 } : { width: 1440, height: 900 };
+  const page = await browser.newPage({ viewport, deviceScaleFactor: 2 });
   await page.setContent(`<!doctype html><html lang="en"><head><meta charset="utf-8"><style>${css}</style></head><body>${html}</body></html>`);
-  await page.screenshot({ path: fileURLToPath(new URL(`${id}.png`, out)) });
+  const svg = await page.evaluate(domToSvg);
+  writeFileSync(fileURLToPath(new URL(`${id}.svg`, outSvg)), svg);
+  await page.setContent(`<!doctype html><html><head><style>body{margin:0}svg{display:block}</style></head><body>${svg.replace(/^<\?xml[^>]*>/, '')}</body></html>`);
+  await page.screenshot({ path: fileURLToPath(new URL(`${id}.png`, outPng)) });
   await page.close();
 }
 await browser.close();

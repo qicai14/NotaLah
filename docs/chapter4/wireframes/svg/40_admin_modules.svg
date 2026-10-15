@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<defs></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+<rect x="272" y="72" width="936" height="96.84" rx="14" fill="#f4f4f4"/>
+<text x="286" y="99.9" font-size="13" font-weight="650" fill="#4b4b4b">Code</text>
+<rect x="286" y="110.84" width="180" height="44" rx="10" fill="#ffffff"/>
+<rect x="286.5" y="111.34" width="179" height="43" rx="9.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<text x="300" y="138" font-size="14" fill="#181818">CT095-3-3</text>
+<text x="476" y="99.9" font-size="13" font-weight="650" fill="#4b4b4b">Name</text>
+<rect x="474" y="108.84" width="570.88" height="48" rx="12" fill="none" stroke="#000000" stroke-opacity="0.07" stroke-width="4"/>
+<rect x="476" y="110.84" width="566.88" height="44" rx="10" fill="#ffffff"/>
+<rect x="477" y="111.84" width="564.88" height="42" rx="9" fill="none" stroke="#181818" stroke-width="2"/>
+<text x="490" y="138" font-size="14" fill="#181818">Cloud Infrastructure</text>
+<rect x="1052.88" y="110.84" width="141.13" height="44" rx="22" fill="#3c3c3c"/>
+<g transform="translate(1070.88 124.84) scale(0.67)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="1094.88" y="138" font-size="14" font-weight="650" fill="#ffffff">Add module</text>
+<rect x="272" y="182.84" width="320" height="44" rx="22" fill="#f4f4f4"/>
+<rect x="272.5" y="183.34" width="319" height="43" rx="21.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<g transform="translate(286 195.84) scale(0.75)" fill="none" stroke="#777777" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
+<text x="312" y="210" font-size="14" fill="#777777">Search code or name</text>
+<text x="925.59" y="209.12" font-size="12" fill="#777777">Codes are unique. Renaming keeps every note linked.</text>
+<path d="M282 240.84H422V278.23H282A10 10 0 0 1 272 268.23V250.84A10 10 0 0 1 282 240.84Z" fill="#f4f4f4"/>
+<text x="284" y="263.82" font-size="12" font-weight="650" fill="#777777">Code</text>
+<rect x="422" y="240.84" width="506" height="37.39" fill="#f4f4f4"/>
+<text x="434" y="263.82" font-size="12" font-weight="650" fill="#777777">Name</text>
+<rect x="928" y="240.84" width="110" height="37.39" fill="#f4f4f4"/>
+<text x="940" y="263.82" font-size="12" font-weight="650" fill="#777777">Notes</text>
+<path d="M1038 240.84H1198A10 10 0 0 1 1208 250.84V268.23A10 10 0 0 1 1198 278.23H1038V240.84Z" fill="#f4f4f4"/>
+<rect x="272" y="337.23" width="150" height="1" fill="#e2e2e2"/>
+<text x="284" y="313.39" font-size="14" font-weight="650" fill="#181818">CT030-3-2</text>
+<rect x="422" y="337.23" width="506" height="1" fill="#e2e2e2"/>
+<text x="434" y="313.39" font-size="14" fill="#181818">Database Systems</text>
+<rect x="928" y="337.23" width="110" height="1" fill="#e2e2e2"/>
+<text x="940" y="313.39" font-size="14" fill="#181818">214</text>
+<rect x="1038" y="337.23" width="170" height="1" fill="#e2e2e2"/>
+<g transform="translate(1064 301.23) scale(0.58)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="1086" y="312.71" font-size="13" font-weight="650" fill="#181818">Rename</text>
+<rect x="272" y="397.23" width="150" height="1" fill="#e2e2e2"/>
+<text x="284" y="373.39" font-size="14" font-weight="650" fill="#181818">CT044-3-2</text>
+<rect x="422" y="397.23" width="506" height="1" fill="#e2e2e2"/>
+<text x="434" y="373.39" font-size="14" fill="#181818">Algorithms and Data Structures</text>
+<rect x="928" y="397.23" width="110" height="1" fill="#e2e2e2"/>
+<text x="940" y="373.39" font-size="14" fill="#181818">187</text>
+<rect x="1038" y="397.23" width="170" height="1" fill="#e2e2e2"/>
+<g transform="translate(1064 361.23) scale(0.58)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="1086" y="372.71" font-size="13" font-weight="650" fill="#181818">Rename</text>
+<rect x="272" y="461.23" width="150" height="1" fill="#e2e2e2"/>
+<text x="284" y="435.39" font-size="14" font-weight="650" fill="#181818">CT046-3-M</text>
+<rect x="422" y="461.23" width="506" height="1" fill="#e2e2e2"/>
+<rect x="432" y="410.23" width="345.67" height="40" rx="12" fill="none" stroke="#000000" stroke-opacity="0.07" stroke-width="4"/>
+<rect x="434" y="412.23" width="341.67" height="36" rx="10" fill="#ffffff"/>
+<rect x="435" y="413.23" width="339.67" height="34" rx="9" fill="none" stroke="#181818" stroke-width="2"/>
+<text x="448" y="435.39" font-size="14" fill="#181818">Software Engineering Practice and Process</text>
+<rect x="783.67" y="414.23" width="56.38" height="32" rx="16" fill="#3c3c3c"/>
+<text x="797.67" y="434.71" font-size="13" font-weight="650" fill="#ffffff">Save</text>
+<rect x="848.05" y="414.23" width="67.95" height="32" rx="16" fill="#e9e9e9"/>
+<text x="862.05" y="434.71" font-size="13" font-weight="650" fill="#181818">Cancel</text>
+<rect x="928" y="461.23" width="110" height="1" fill="#e2e2e2"/>
+<text x="940" y="435.39" font-size="14" fill="#181818">96</text>
+<rect x="1038" y="461.23" width="170" height="1" fill="#e2e2e2"/>
+<rect x="272" y="521.23" width="150" height="1" fill="#e2e2e2"/>
+<text x="284" y="497.39" font-size="14" font-weight="650" fill="#181818">CT050-3-2</text>
+<rect x="422" y="521.23" width="506" height="1" fill="#e2e2e2"/>
+<text x="434" y="497.39" font-size="14" fill="#181818">Operating Systems</text>
+<rect x="928" y="521.23" width="110" height="1" fill="#e2e2e2"/>
+<text x="940" y="497.39" font-size="14" fill="#181818">72</text>
+<rect x="1038" y="521.23" width="170" height="1" fill="#e2e2e2"/>
+<g transform="translate(1064 485.23) scale(0.58)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="1086" y="496.71" font-size="13" font-weight="650" fill="#181818">Rename</text>
+<rect x="272" y="581.23" width="150" height="1" fill="#e2e2e2"/>
+<text x="284" y="557.39" font-size="14" font-weight="650" fill="#181818">CT060-3-2</text>
+<rect x="422" y="581.23" width="506" height="1" fill="#e2e2e2"/>
+<text x="434" y="557.39" font-size="14" fill="#181818">Computer Networks</text>
+<rect x="928" y="581.23" width="110" height="1" fill="#e2e2e2"/>
+<text x="940" y="557.39" font-size="14" fill="#181818">65</text>
+<rect x="1038" y="581.23" width="170" height="1" fill="#e2e2e2"/>
+<g transform="translate(1064 545.23) scale(0.58)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="1086" y="556.71" font-size="13" font-weight="650" fill="#181818">Rename</text>
+<rect x="272" y="641.23" width="150" height="1" fill="#e2e2e2"/>
+<text x="284" y="617.39" font-size="14" font-weight="650" fill="#181818">CT076-3-2</text>
+<rect x="422" y="641.23" width="506" height="1" fill="#e2e2e2"/>
+<text x="434" y="617.39" font-size="14" fill="#181818">Web Application Development</text>
+<rect x="928" y="641.23" width="110" height="1" fill="#e2e2e2"/>
+<text x="940" y="617.39" font-size="14" fill="#181818">58</text>
+<rect x="1038" y="641.23" width="170" height="1" fill="#e2e2e2"/>
+<g transform="translate(1064 605.23) scale(0.58)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="1086" y="616.71" font-size="13" font-weight="650" fill="#181818">Rename</text>
+<g id="top-1">
+<text x="272" y="44.18" font-size="22" font-weight="750" letter-spacing="-0.44" fill="#181818">Modules</text>
+<text x="370.2" y="41.33" font-size="15" font-weight="600" fill="#777777">12</text>
+<rect x="1276.59" y="20" width="91.41" height="32" rx="16" fill="#ffffff"/>
+<rect x="1277.34" y="20.75" width="89.91" height="30.5" rx="15.25" fill="none" stroke="#dadada" stroke-width="1.5"/>
+<g transform="translate(1290.59 28) scale(0.67)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="1314.59" y="40.47" font-size="13" font-weight="650" fill="#181818">Create</text>
+<rect x="1380" y="18" width="36" height="36" rx="18" fill="#dadada"/>
+<text x="1388.77" y="40.47" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#4b4b4b">AD</text>
+</g>
+<g id="nav-2">
+<rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
+<rect x="20" y="21" width="30" height="30" rx="9" fill="#181818"/>
+<text x="30.08" y="42.55" font-size="16" font-weight="800" fill="#ffffff">P</text>
+<text x="58" y="44.5" font-size="21" font-weight="750" letter-spacing="-0.63" fill="#181818">PARP</text>
+<g transform="translate(193 25) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
+<rect x="12" y="70" width="216" height="40" rx="20" fill="#e9e9e9"/>
+<g transform="translate(26 81) scale(0.75)" fill="none" stroke="#777777" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
+<text x="54" y="95.15" font-size="14" fill="#777777">Search</text>
+<g transform="translate(24 132) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
+<text x="62" y="149.35" font-size="15" font-weight="500" fill="#4b4b4b">For You</text>
+<g transform="translate(24 178) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<text x="62" y="195.35" font-size="15" font-weight="500" fill="#4b4b4b">Following</text>
+<g transform="translate(24 224) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></g>
+<text x="62" y="241.35" font-size="15" font-weight="500" fill="#4b4b4b">Explore</text>
+<rect x="23" y="269" width="26" height="26" rx="8" fill="#3c3c3c"/>
+<g transform="translate(27 273) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="62" y="287.35" font-size="15" font-weight="500" fill="#4b4b4b">Create</text>
+<g transform="translate(24 316) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"></path><path d="m10 13.5 4.5-4.5"></path></g>
+<text x="62" y="333.35" font-size="15" font-weight="500" fill="#4b4b4b">Messages</text>
+<rect x="196" y="318" width="20" height="20" rx="10" fill="#3c3c3c"/>
+<text x="202.83" y="332.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
+<g transform="translate(24 362) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></g>
+<text x="62" y="379.35" font-size="15" font-weight="500" fill="#4b4b4b">Notifications</text>
+<rect x="196" y="364" width="20" height="20" rx="10" fill="#3c3c3c"/>
+<text x="202.83" y="378.1" font-size="11" font-weight="700" fill="#ffffff">3</text>
+<g transform="translate(24 408) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"></path></g>
+<text x="62" y="425.35" font-size="15" font-weight="500" fill="#4b4b4b">Saved</text>
+<g transform="translate(24 454) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4.2-6.5 8-6.5s7 2.5 8 6.5"></path></g>
+<text x="62" y="471.35" font-size="15" font-weight="500" fill="#4b4b4b">Profile</text>
+<text x="24" y="516.98" font-size="12" font-weight="650" fill="#777777">Admin</text>
+<g transform="translate(24 537.39) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"></path></g>
+<text x="62" y="554.74" font-size="15" font-weight="500" fill="#4b4b4b">Reports</text>
+<rect x="196" y="539.39" width="20" height="20" rx="10" fill="#3c3c3c"/>
+<text x="202.83" y="553.49" font-size="11" font-weight="700" fill="#ffffff">5</text>
+<g transform="translate(24 583.39) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<text x="62" y="600.74" font-size="15" font-weight="500" fill="#4b4b4b">Users</text>
+<g transform="translate(24 629.39) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v6c0 4.6 3.2 7.8 7.5 9 4.3-1.2 7.5-4.4 7.5-9V6z"></path></g>
+<text x="62" y="646.74" font-size="15" font-weight="500" fill="#4b4b4b">Lecturer applications</text>
+<rect x="12" y="665.39" width="216" height="44" rx="10" fill="#e9e9e9"/>
+<g transform="translate(24 675.39) scale(1)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14"></path></g>
+<text x="62" y="692.74" font-size="15" font-weight="700" fill="#181818">Modules</text>
+<text x="24" y="858.2" font-size="12" fill="#777777">About · Help · Terms · Privacy</text>
+<text x="24" y="878.59" font-size="12" fill="#777777">© 2026 PARP</text>
+</g>
+</svg>

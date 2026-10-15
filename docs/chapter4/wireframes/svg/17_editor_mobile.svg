@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" font-family="Segoe UI, Arial, sans-serif">
+<defs><clipPath id="clip1"><rect x="48" y="59.13" width="177.14" height="21.75"/></clipPath></defs>
+<rect width="390" height="844" fill="#ffffff"/>
+<rect x="0" y="0" width="390" height="844" fill="#e9e9e9"/>
+<rect x="0" y="44" width="390" height="52" fill="#ffffff"/>
+<g transform="translate(15 59) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></g>
+<g clip-path="url(#clip1)">
+<text x="48" y="75.35" font-size="15" font-weight="650" fill="#181818">Normalisation, 1NF to 3NF</text>
+</g>
+<g transform="translate(237.14 60) scale(0.83)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></g>
+<g transform="translate(275.14 60) scale(0.83)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"></path></g>
+<rect x="307.14" y="54" width="72.86" height="32" rx="16" fill="#3c3c3c"/>
+<text x="321.14" y="74.47" font-size="13" font-weight="650" fill="#ffffff">Publish</text>
+<rect x="19.5" y="115.5" width="351" height="439" rx="0.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="20" y="116" width="350" height="438" fill="#ffffff"/>
+<rect x="20" y="116" width="350" height="438" fill="#ffffff"/>
+<text x="44.5" y="151.86" font-size="10.5" font-weight="650" fill="#777777">CT030-3-2 · Week 6</text>
+<text x="44.5" y="191.15" font-size="25.9" font-weight="750" letter-spacing="-0.65" fill="#181818">Normalisation, 1NF to</text>
+<text x="44.5" y="219.12" font-size="25.9" font-weight="750" letter-spacing="-0.65" fill="#181818">3NF</text>
+<rect x="44.5" y="234.03" width="301" height="58" rx="8.4" fill="#f4f4f4"/>
+<text x="56.39" y="261.42" font-size="15.4" font-weight="650" fill="#181818">1NF</text>
+<text x="101.89" y="261.26" font-size="12.6" fill="#4b4b4b">Atomic values. No repeating groups in a</text>
+<text x="101.89" y="278.26" font-size="12.6" fill="#4b4b4b">row.</text>
+<rect x="44.5" y="303.22" width="301" height="58" rx="8.4" fill="#f4f4f4"/>
+<text x="56.39" y="330.61" font-size="15.4" font-weight="650" fill="#181818">2NF</text>
+<text x="101.89" y="330.45" font-size="12.6" fill="#4b4b4b">No partial dependency on part of a</text>
+<text x="101.89" y="347.45" font-size="12.6" fill="#4b4b4b">composite key.</text>
+<rect x="44.5" y="372.41" width="301" height="58" rx="8.4" fill="#f4f4f4"/>
+<text x="56.39" y="399.8" font-size="15.4" font-weight="650" fill="#181818">3NF</text>
+<text x="101.89" y="399.64" font-size="12.6" fill="#4b4b4b">No transitive dependency between non-key</text>
+<text x="124.28" y="416.64" font-size="12.6" fill="#4b4b4b">columns.</text>
+<rect x="44.5" y="441.59" width="301" height="53.31" rx="8.4" fill="#e9e9e9"/>
+<text x="56.39" y="464.39" font-size="11.55" fill="#4b4b4b">Example: customer_name depends on customer_id,</text>
+<text x="56.39" y="480.54" font-size="11.55" fill="#4b4b4b">not on order_id, so it moves to CUSTOMER_T.</text>
+<rect x="78.5" y="573.5" width="41" height="51" rx="8.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<rect x="79" y="574" width="40" height="50" rx="8" fill="#ffffff"/>
+<rect x="79" y="574" width="40" height="50" fill="#393939"/>
+<text x="81.8" y="612.69" font-size="4.4" font-weight="750" letter-spacing="-0.11" fill="#ffffff">Normalisation</text>
+<rect x="125.75" y="572.75" width="42.5" height="52.5" rx="9.25" fill="none" stroke="#181818" stroke-width="2.5"/>
+<rect x="127" y="574" width="40" height="50" rx="8" fill="#ffffff"/>
+<rect x="127" y="574" width="40" height="50" fill="#ffffff"/>
+<text x="129.8" y="577.79" font-size="1.2" font-weight="650" fill="#777777">CT030-3-2 · Week 6</text>
+<text x="129.8" y="582.03" font-size="2.96" font-weight="750" letter-spacing="-0.07" fill="#181818">Normalisation, 1NF to</text>
+<text x="129.8" y="585.21" font-size="2.96" font-weight="750" letter-spacing="-0.07" fill="#181818">3NF</text>
+<rect x="129.8" y="587.44" width="34.41" height="7.25" rx="0.96" fill="#f4f4f4"/>
+<text x="131.16" y="590.36" font-size="1.76" font-weight="650" fill="#181818">1NF</text>
+<text x="136.34" y="590.22" font-size="1.44" fill="#4b4b4b">Atomic values. No repeating groups in a row.</text>
+<rect x="129.8" y="595.95" width="34.41" height="7.25" rx="0.96" fill="#f4f4f4"/>
+<text x="131.16" y="598.87" font-size="1.76" font-weight="650" fill="#181818">2NF</text>
+<text x="136.34" y="598.74" font-size="1.44" fill="#4b4b4b">No partial dependency on part of a composite key.</text>
+<rect x="129.8" y="604.47" width="34.41" height="7.25" rx="0.96" fill="#f4f4f4"/>
+<text x="131.16" y="607.39" font-size="1.76" font-weight="650" fill="#181818">3NF</text>
+<text x="136.34" y="607.25" font-size="1.44" fill="#4b4b4b">No transitive dependency between non-key columns.</text>
+<rect x="129.8" y="612.98" width="34.41" height="6.03" rx="0.96" fill="#e9e9e9"/>
+<text x="131.16" y="615.22" font-size="1.32" fill="#4b4b4b">Example: customer_name depends on customer_id, not on order_id, so it moves to CUSTOMER_T.</text>
+<rect x="174.5" y="573.5" width="41" height="51" rx="8.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<rect x="175" y="574" width="40" height="50" rx="8" fill="#ffffff"/>
+<rect x="222.5" y="573.5" width="41" height="51" rx="8.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<rect x="223" y="574" width="40" height="50" rx="8" fill="#ffffff"/>
+<rect x="271" y="574" width="40" height="50" rx="8" fill="#f4f4f4"/>
+<g transform="translate(282 590) scale(0.75)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<path d="M16 693.5H374A16.5 16.5 0 0 1 390.5 710V844A0.5 0.5 0 0 1 390 844.5H0A0.5 0.5 0 0 1 -0.5 844V710A16.5 16.5 0 0 1 16 693.5Z" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<path d="M16 694H374A16 16 0 0 1 390 710V844H0V710A16 16 0 0 1 16 694Z" fill="#ffffff"/>
+<rect x="0" y="747" width="390" height="1" fill="#e2e2e2"/>
+<rect x="10.5" y="704.5" width="114.69" height="35" rx="7.5" fill="none" stroke="#dadada" stroke-width="1"/>
+<text x="18" y="726.47" font-size="13" font-weight="600" fill="#181818">Source Sans 3</text>
+<g transform="translate(105.69 716) scale(0.5)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<rect x="130.19" y="704.5" width="35" height="35" rx="7.5" fill="none" stroke="#dadada" stroke-width="1"/>
+<text x="140.47" y="726.47" font-size="13" font-weight="600" fill="#181818">32</text>
+<text x="182.41" y="727.35" font-size="15" font-weight="650" fill="#181818">A</text>
+<rect x="209.69" y="704" width="36" height="36" rx="8" fill="#e9e9e9"/>
+<g transform="translate(218.69 713) scale(0.75)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"></path></g>
+<g transform="translate(258.69 713) scale(0.75)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5h8M6 19h8M14 5l-4 14"></path></g>
+<g transform="translate(298.69 713) scale(0.75)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"></path></g>
+<g transform="translate(338.69 713) scale(0.75)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#181818" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#181818" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#181818" stroke="none"></circle></g>
+<g transform="translate(20.28 765.75) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M3 9h18M9 9v12"></path></g>
+<text x="13.81" y="802.9" font-size="10" font-weight="600" fill="#4b4b4b">Layouts</text>
+<g transform="translate(74.84 765.75) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="4"></circle><rect x="13" y="13" width="8" height="8" rx="1.5"></rect><path d="M17 3l4 7h-8z"></path></g>
+<text x="65.33" y="802.9" font-size="10" font-weight="600" fill="#4b4b4b">Elements</text>
+<rect x="115.41" y="758" width="50" height="56" rx="12" fill="#e9e9e9"/>
+<g transform="translate(129.41 765.75) scale(0.92)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7V5h14v2M12 5v14M9 19h6"></path></g>
+<text x="130.55" y="802.9" font-size="10" font-weight="700" fill="#181818">Text</text>
+<g transform="translate(183.97 765.75) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7 9l5-5 5 5"></path><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"></path></g>
+<text x="176.59" y="802.9" font-size="10" font-weight="600" fill="#4b4b4b">Uploads</text>
+<g transform="translate(238.53 765.75) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8.5" cy="8.5" r="1.6"></circle><path d="m21 15-5-5L5 21"></path></g>
+<text x="233.75" y="802.9" font-size="10" font-weight="600" fill="#4b4b4b">Photos</text>
+<g transform="translate(293.09 765.75) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5.5l11-2V16"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>
+<text x="290.73" y="802.9" font-size="10" font-weight="600" fill="#4b4b4b">Music</text>
+<g transform="translate(347.66 765.75) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.3-1-1.5-1-2.6 0-.9.7-1.7 1.7-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z"></path><circle cx="7.5" cy="11.5" r="1.2" fill="#4b4b4b" stroke="none"></circle><circle cx="10" cy="7.5" r="1.2" fill="#4b4b4b" stroke="none"></circle><circle cx="15" cy="7.5" r="1.2" fill="#4b4b4b" stroke="none"></circle></g>
+<text x="346.98" y="802.9" font-size="10" font-weight="600" fill="#4b4b4b">Bkgd</text>
+<rect x="41" y="163" width="308" height="64" rx="3" fill="none" stroke="#181818" stroke-width="2"/>
+<rect x="35.25" y="157.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#181818" stroke-width="1.5"/>
+<rect x="35.5" y="157.5" width="13" height="13" rx="6.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="36" y="158" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="341.25" y="157.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#181818" stroke-width="1.5"/>
+<rect x="341.5" y="157.5" width="13" height="13" rx="6.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="342" y="158" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="35.25" y="219.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#181818" stroke-width="1.5"/>
+<rect x="35.5" y="219.5" width="13" height="13" rx="6.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="36" y="220" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="341.25" y="219.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#181818" stroke-width="1.5"/>
+<rect x="341.5" y="219.5" width="13" height="13" rx="6.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="342" y="220" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="37.25" y="185.25" width="9.5" height="19.5" rx="4.75" fill="none" stroke="#181818" stroke-width="1.5"/>
+<rect x="37.5" y="185.5" width="9" height="19" rx="4.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="38" y="186" width="8" height="18" rx="4" fill="#ffffff"/>
+<rect x="343.25" y="185.25" width="9.5" height="19.5" rx="4.75" fill="none" stroke="#181818" stroke-width="1.5"/>
+<rect x="343.5" y="185.5" width="9" height="19" rx="4.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="344" y="186" width="8" height="18" rx="4" fill="#ffffff"/>
+<rect x="181.5" y="237.5" width="27" height="27" rx="13.5" fill="none" stroke="#bdbdbd" stroke-width="1"/>
+<rect x="182" y="238" width="26" height="26" rx="13" fill="#ffffff"/>
+<g transform="translate(188 244) scale(0.58)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 4v7h-7"></path></g>
+<text x="30" y="27.35" font-size="15" font-weight="650" fill="#181818">9:41</text>
+<g transform="translate(317 13.5) scale(0.71)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"></path><circle cx="12" cy="19.5" r="1.3" fill="#181818" stroke="none"></circle></g>
+<g transform="translate(340 10) scale(1)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="18" height="10" rx="3"></rect><rect x="4" y="9" width="12" height="6" rx="1.5" fill="#181818" stroke="none"></rect><path d="M22 10.5v3"></path></g>
+<rect x="128" y="831" width="134" height="5" rx="2.5" fill="#181818"/>
+</svg>

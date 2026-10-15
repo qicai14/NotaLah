@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<defs><clipPath id="clip1"><rect x="332" y="108.72" width="212" height="18.84"/></clipPath></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+<rect x="260" y="72" width="328" height="72" rx="12" fill="#f4f4f4"/>
+<rect x="272" y="84" width="48" height="48" rx="24" fill="#e9e9e9"/>
+<g transform="translate(285 97) scale(0.92)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
+<text x="332" y="103.73" font-size="14" font-weight="650" fill="#181818">Message requests</text>
+<g clip-path="url(#clip1)">
+<text x="332" y="122.61" font-size="13" fill="#777777">From people who are not your friends</text>
+</g>
+<rect x="556" y="98" width="20" height="20" rx="10" fill="#3c3c3c"/>
+<text x="562.83" y="112.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
+<rect x="272" y="160" width="48" height="48" rx="24" fill="#dadada"/>
+<text x="284.64" y="190.73" font-size="17" font-weight="700" letter-spacing="-0.17" fill="#4b4b4b">AR</text>
+<text x="332" y="179.73" font-size="14" font-weight="650" fill="#181818">Aina Rahman</text>
+<text x="332" y="198.61" font-size="13" fill="#777777">Shared a note: Normalisation, 1NF…</text>
+<text x="559.19" y="188.28" font-size="12" fill="#777777">2m</text>
+<rect x="260" y="224" width="328" height="68" rx="12" fill="#e9e9e9"/>
+<rect x="272" y="234" width="48" height="48" rx="24" fill="#dadada"/>
+<text x="286.58" y="264.73" font-size="17" font-weight="700" letter-spacing="-0.17" fill="#4b4b4b">FY</text>
+<text x="332" y="253.73" font-size="14" font-weight="650" fill="#181818">FYP Team, CT046</text>
+<text x="332" y="272.61" font-size="13" fill="#777777">Arjun: I will do the sequence diagrams</text>
+<text x="562.73" y="262.28" font-size="12" fill="#777777">1h</text>
+<rect x="272" y="308" width="48" height="48" rx="24" fill="#4b4b4b"/>
+<text x="286.8" y="338.73" font-size="17" font-weight="700" letter-spacing="-0.17" fill="#ffffff">LC</text>
+<text x="332" y="327.73" font-size="14" font-weight="650" fill="#181818">Dr Lee Chin Wei</text>
+<text x="332" y="346.61" font-size="13" fill="#777777">You: Thank you, Dr Lee</text>
+<text x="551.39" y="336.28" font-size="12" fill="#777777">Mon</text>
+<rect x="272" y="382" width="48" height="48" rx="24" fill="#dadada"/>
+<text x="283.05" y="412.73" font-size="17" font-weight="700" letter-spacing="-0.17" fill="#4b4b4b">TM</text>
+<text x="332" y="401.73" font-size="14" font-weight="650" fill="#181818">Tan Mei Ling</text>
+<text x="332" y="420.61" font-size="13" fill="#777777">See you at the library at 3</text>
+<text x="556.03" y="410.28" font-size="12" fill="#777777">Sun</text>
+<rect x="272" y="456" width="48" height="48" rx="24" fill="#dadada"/>
+<text x="284.67" y="486.73" font-size="17" font-weight="700" letter-spacing="-0.17" fill="#4b4b4b">AK</text>
+<text x="332" y="475.73" font-size="14" font-weight="650" fill="#181818">Arjun Kumar</text>
+<text x="332" y="494.61" font-size="13" fill="#777777">Sent a note: Stack vs queue</text>
+<text x="559.45" y="484.28" font-size="12" fill="#777777">Sat</text>
+<path d="M616 72H1140V900H600V88A16 16 0 0 1 616 72Z" fill="#fafafa"/>
+<rect x="600" y="72" width="540" height="68" fill="#ffffff"/>
+<rect x="620" y="90" width="32" height="32" rx="16" fill="#dadada"/>
+<text x="627.97" y="110.28" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#4b4b4b">AR</text>
+<rect x="642" y="90" width="32" height="32" rx="16" fill="#dadada"/>
+<text x="650" y="110.28" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#4b4b4b">AK</text>
+<text x="686" y="102.47" font-size="14" font-weight="700" fill="#181818">FYP Team, CT046</text>
+<text x="686" y="120.43" font-size="12" fill="#777777">3 members</text>
+<rect x="1080" y="86" width="40" height="40" rx="20" fill="#e9e9e9"/>
+<g transform="translate(1090 96) scale(0.83)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.6v.01"></path></g>
+<rect x="624" y="363.08" width="28" height="28" rx="14" fill="#dadada"/>
+<text x="631.31" y="380.98" font-size="10" font-weight="700" letter-spacing="-0.1" fill="#4b4b4b">AR</text>
+<text x="660" y="172.98" font-size="12" fill="#777777">Aina</text>
+<rect x="660" y="181.39" width="300" height="209.69" rx="16" fill="#f4f4f4"/>
+<rect x="660.5" y="181.89" width="299" height="208.69" rx="15.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<rect x="660" y="181.39" width="300" height="150" fill="#2b2b2b"/>
+<rect x="750" y="181.39" width="120" height="150" fill="#ffffff"/>
+<text x="758.39" y="193.78" font-size="3.6" font-weight="650" fill="#777777">CT030-3-2 · Week 6</text>
+<text x="758.39" y="206.5" font-size="8.88" font-weight="750" letter-spacing="-0.22" fill="#181818">Normalisation, 1NF to</text>
+<text x="758.39" y="216.08" font-size="8.88" font-weight="750" letter-spacing="-0.22" fill="#181818">3NF</text>
+<rect x="758.39" y="221.8" width="103.22" height="20.81" rx="2.88" fill="#f4f4f4"/>
+<text x="762.47" y="231.08" font-size="5.28" font-weight="650" fill="#181818">1NF</text>
+<text x="778.06" y="231.18" font-size="4.32" fill="#4b4b4b">Atomic values. No repeating groups in a</text>
+<text x="778.06" y="237" font-size="4.32" fill="#4b4b4b">row.</text>
+<rect x="758.39" y="246.44" width="103.22" height="20.81" rx="2.88" fill="#f4f4f4"/>
+<text x="762.47" y="255.72" font-size="5.28" font-weight="650" fill="#181818">2NF</text>
+<text x="778.06" y="255.82" font-size="4.32" fill="#4b4b4b">No partial dependency on part of a</text>
+<text x="778.06" y="261.64" font-size="4.32" fill="#4b4b4b">composite key.</text>
+<rect x="758.39" y="271.08" width="103.22" height="20.81" rx="2.88" fill="#f4f4f4"/>
+<text x="762.47" y="280.36" font-size="5.28" font-weight="650" fill="#181818">3NF</text>
+<text x="778.06" y="280.46" font-size="4.32" fill="#4b4b4b">No transitive dependency between non-key</text>
+<text x="785.73" y="286.28" font-size="4.32" fill="#4b4b4b">columns.</text>
+<rect x="758.39" y="295.72" width="103.22" height="18.25" rx="2.88" fill="#e9e9e9"/>
+<text x="762.47" y="303.46" font-size="3.96" fill="#4b4b4b">Example: customer_name depends on customer_id,</text>
+<text x="762.47" y="308.99" font-size="3.96" fill="#4b4b4b">not on order_id, so it moves to CUSTOMER_T.</text>
+<text x="672" y="356.7" font-size="14" font-weight="650" fill="#181818">Normalisation, 1NF to 3NF in one page</text>
+<text x="672" y="376.67" font-size="12" fill="#777777">Aina Rahman · CT030-3-2</text>
+<rect x="624" y="406.88" width="28" height="28" rx="14" fill="#dadada"/>
+<text x="631.33" y="424.78" font-size="10" font-weight="700" letter-spacing="-0.1" fill="#4b4b4b">AK</text>
+<rect x="660" y="401.08" width="338.63" height="39.59" rx="18" fill="#e9e9e9"/>
+<text x="674" y="426.39" font-size="14" fill="#181818">I will do the sequence diagrams for UC15 to UC18.</text>
+<rect x="889.31" y="450.67" width="226.69" height="39.59" rx="18" fill="#3c3c3c"/>
+<text x="903.31" y="475.98" font-size="14" fill="#ffffff">Great, I'll take the class diagram.</text>
+<rect x="816" y="500.27" width="300" height="209.69" rx="16" fill="#f4f4f4"/>
+<rect x="816.5" y="500.77" width="299" height="208.69" rx="15.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<rect x="816" y="500.27" width="300" height="150" fill="#2b2b2b"/>
+<rect x="906" y="500.27" width="120" height="150" fill="#ffffff"/>
+<text x="914.39" y="512.65" font-size="3.6" font-weight="650" fill="#777777">CT044-3-2 · #dsa</text>
+<text x="914.39" y="526.34" font-size="8.88" font-weight="750" letter-spacing="-0.22" fill="#181818">Stack vs queue</text>
+<rect x="914.39" y="533.03" width="36" height="12" rx="1.92" fill="#4b4b4b"/>
+<text x="921.2" y="540.27" font-size="4.08" font-weight="700" fill="#ffffff">push(4) top</text>
+<rect x="914.39" y="546.94" width="36" height="12" rx="1.92" fill="#e9e9e9"/>
+<text x="931.2" y="554.18" font-size="4.08" font-weight="700" fill="#181818">3</text>
+<rect x="914.39" y="560.84" width="36" height="12" rx="1.92" fill="#e9e9e9"/>
+<text x="931.2" y="568.08" font-size="4.08" font-weight="700" fill="#181818">2</text>
+<rect x="914.39" y="574.75" width="36" height="12" rx="1.92" fill="#e9e9e9"/>
+<text x="931.2" y="581.99" font-size="4.08" font-weight="700" fill="#181818">1</text>
+<text x="916.5" y="593.45" font-size="4.32" font-weight="650" fill="#4b4b4b">LIFO</text>
+<text x="925.61" y="593.45" font-size="4.32" fill="#4b4b4b">: last in, first</text>
+<text x="929.16" y="599.48" font-size="4.32" fill="#4b4b4b">out</text>
+<rect x="957.58" y="565.84" width="13.22" height="14.39" rx="1.92" fill="#4b4b4b"/>
+<text x="963" y="574.27" font-size="4.08" font-weight="700" fill="#ffffff">1</text>
+<rect x="973.19" y="565.84" width="13.22" height="14.39" rx="1.92" fill="#e9e9e9"/>
+<text x="978.61" y="574.27" font-size="4.08" font-weight="700" fill="#181818">2</text>
+<rect x="988.8" y="565.84" width="13.22" height="14.39" rx="1.92" fill="#e9e9e9"/>
+<text x="994.22" y="574.27" font-size="4.08" font-weight="700" fill="#181818">3</text>
+<rect x="1004.41" y="565.84" width="13.22" height="14.39" rx="1.92" fill="#e9e9e9"/>
+<text x="1009.83" y="574.27" font-size="4.08" font-weight="700" fill="#181818">4</text>
+<text x="957.58" y="587.42" font-size="4.32" font-weight="650" fill="#4b4b4b">FIFO</text>
+<text x="966.72" y="587.42" font-size="4.32" fill="#4b4b4b">: dequeue() takes 1 from</text>
+<text x="957.58" y="593.45" font-size="4.32" fill="#4b4b4b">the front, enqueue() adds to</text>
+<text x="957.58" y="599.48" font-size="4.32" fill="#4b4b4b">the back.</text>
+<rect x="914.39" y="605.52" width="103.22" height="12.72" rx="2.88" fill="#e9e9e9"/>
+<text x="918.47" y="613.25" font-size="3.96" fill="#4b4b4b">Undo history is a stack. A print queue is a queue.</text>
+<text x="828" y="675.58" font-size="14" font-weight="650" fill="#181818">Stack vs queue, with real examples</text>
+<text x="828" y="695.54" font-size="12" fill="#777777">Arjun Kumar · CT044-3-2</text>
+<rect x="600" y="826" width="540" height="74" fill="#fafafa"/>
+<rect x="620" y="840" width="40" height="40" rx="20" fill="#e9e9e9"/>
+<g transform="translate(630 850) scale(0.83)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17a1.7 1.7 0 0 1-2.4-2.4L15 7"></path></g>
+<rect x="670" y="838" width="400" height="44" rx="22" fill="#ffffff"/>
+<rect x="670.5" y="838.5" width="399" height="43" rx="21.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<text x="684" y="865.15" font-size="14" fill="#777777">Send a message…</text>
+<g transform="translate(1038 851) scale(0.75)" fill="none" stroke="#777777" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8.5 14.5c1.8 2 5.2 2 7 0"></path><circle cx="9" cy="10" r="1.1" fill="#777777" stroke="none"></circle><circle cx="15" cy="10" r="1.1" fill="#777777" stroke="none"></circle></g>
+<rect x="1080" y="840" width="40" height="40" rx="20" fill="#3c3c3c"/>
+<g transform="translate(1091 851) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14M21 3l-6.5 18-4.5-7-7-4.5z"></path></g>
+<rect x="1140" y="72" width="300" height="828" fill="#ffffff"/>
+<text x="1160" y="110.14" font-size="16" font-weight="650" fill="#181818">Group details</text>
+<text x="1160" y="143.08" font-size="13" font-weight="650" fill="#4b4b4b">Name</text>
+<rect x="1160" y="154.03" width="260" height="44" rx="10" fill="#f4f4f4"/>
+<rect x="1160.5" y="154.53" width="259" height="43" rx="9.5" fill="none" stroke="#e2e2e2" stroke-width="1"/>
+<text x="1174" y="181.19" font-size="14" fill="#181818">FYP Team, CT046</text>
+<g transform="translate(1390 168.03) scale(0.67)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
+<text x="1160" y="225.93" font-size="13" font-weight="650" fill="#4b4b4b">Members 3</text>
+<rect x="1160" y="245.72" width="36" height="36" rx="18" fill="#dadada"/>
+<text x="1169.88" y="268.19" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#4b4b4b">LQ</text>
+<text x="1206" y="260.19" font-size="14" font-weight="650" fill="#181818">Lim Qi Cai</text>
+<text x="1206" y="278.15" font-size="12" fill="#777777">You · owner</text>
+<rect x="1160" y="297.41" width="36" height="36" rx="18" fill="#dadada"/>
+<text x="1169.31" y="319.88" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#4b4b4b">AR</text>
+<text x="1206" y="311.87" font-size="14" font-weight="650" fill="#181818">Aina Rahman</text>
+<text x="1206" y="329.84" font-size="12" fill="#777777">Friend</text>
+<g transform="translate(1396 307.41) scale(0.67)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle></g>
+<rect x="1160" y="349.09" width="36" height="36" rx="18" fill="#dadada"/>
+<text x="1169.33" y="371.57" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#4b4b4b">AK</text>
+<text x="1206" y="363.56" font-size="14" font-weight="650" fill="#181818">Arjun Kumar</text>
+<text x="1206" y="381.53" font-size="12" fill="#777777">Friend</text>
+<g transform="translate(1396 359.09) scale(0.67)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle></g>
+<rect x="1160" y="399.94" width="260" height="40" rx="20" fill="#e9e9e9"/>
+<g transform="translate(1234.95 411.94) scale(0.67)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"></circle><path d="M2.5 21c1-4 4-6.5 7.5-6.5 1.5 0 2.8.4 4 1.1M19 14v6M16 17h6"></path></g>
+<text x="1258.95" y="425.09" font-size="14" font-weight="650" fill="#181818">Add member</text>
+<g transform="translate(1237.38 852) scale(0.67)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"></path></g>
+<text x="1261.38" y="865.15" font-size="14" font-weight="650" fill="#181818">Leave group</text>
+<g id="top-1">
+<text x="272" y="44.18" font-size="22" font-weight="750" letter-spacing="-0.44" fill="#181818">Messages</text>
+<rect x="1276.59" y="20" width="91.41" height="32" rx="16" fill="#ffffff"/>
+<rect x="1277.34" y="20.75" width="89.91" height="30.5" rx="15.25" fill="none" stroke="#dadada" stroke-width="1.5"/>
+<g transform="translate(1290.59 28) scale(0.67)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="1314.59" y="40.47" font-size="13" font-weight="650" fill="#181818">Create</text>
+<rect x="1380" y="18" width="36" height="36" rx="18" fill="#dadada"/>
+<text x="1389.88" y="40.47" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#4b4b4b">LQ</text>
+</g>
+<g id="nav-2">
+<rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
+<rect x="20" y="21" width="30" height="30" rx="9" fill="#181818"/>
+<text x="30.08" y="42.55" font-size="16" font-weight="800" fill="#ffffff">P</text>
+<text x="58" y="44.5" font-size="21" font-weight="750" letter-spacing="-0.63" fill="#181818">PARP</text>
+<g transform="translate(193 25) scale(0.92)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
+<rect x="12" y="70" width="216" height="40" rx="20" fill="#e9e9e9"/>
+<g transform="translate(26 81) scale(0.75)" fill="none" stroke="#777777" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
+<text x="54" y="95.15" font-size="14" fill="#777777">Search</text>
+<g transform="translate(24 132) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
+<text x="62" y="149.35" font-size="15" font-weight="500" fill="#4b4b4b">For You</text>
+<g transform="translate(24 178) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
+<text x="62" y="195.35" font-size="15" font-weight="500" fill="#4b4b4b">Following</text>
+<g transform="translate(24 224) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="m15.5 8.5-2 5-5 2 2-5z"></path></g>
+<text x="62" y="241.35" font-size="15" font-weight="500" fill="#4b4b4b">Explore</text>
+<rect x="23" y="269" width="26" height="26" rx="8" fill="#3c3c3c"/>
+<g transform="translate(27 273) scale(0.75)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<text x="62" y="287.35" font-size="15" font-weight="500" fill="#4b4b4b">Create</text>
+<rect x="12" y="306" width="216" height="44" rx="10" fill="#e9e9e9"/>
+<g transform="translate(24 316) scale(1)" fill="none" stroke="#181818" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4 3 11l7 2.5L12.5 21z"></path><path d="m10 13.5 4.5-4.5"></path></g>
+<text x="62" y="333.35" font-size="15" font-weight="700" fill="#181818">Messages</text>
+<rect x="196" y="318" width="20" height="20" rx="10" fill="#3c3c3c"/>
+<text x="202.83" y="332.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
+<g transform="translate(24 362) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></g>
+<text x="62" y="379.35" font-size="15" font-weight="500" fill="#4b4b4b">Notifications</text>
+<rect x="196" y="364" width="20" height="20" rx="10" fill="#3c3c3c"/>
+<text x="202.83" y="378.1" font-size="11" font-weight="700" fill="#ffffff">3</text>
+<g transform="translate(24 408) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"></path></g>
+<text x="62" y="425.35" font-size="15" font-weight="500" fill="#4b4b4b">Saved</text>
+<g transform="translate(24 454) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1-4 4.2-6.5 8-6.5s7 2.5 8 6.5"></path></g>
+<text x="62" y="471.35" font-size="15" font-weight="500" fill="#4b4b4b">Profile</text>
+<g transform="translate(24 500) scale(1)" fill="none" stroke="#4b4b4b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#4b4b4b" stroke="none"></circle></g>
+<text x="62" y="517.35" font-size="15" font-weight="500" fill="#4b4b4b">More</text>
+<text x="24" y="858.2" font-size="12" fill="#777777">About · Help · Terms · Privacy</text>
+<text x="24" y="878.59" font-size="12" fill="#777777">© 2026 PARP</text>
+</g>
+</svg>
