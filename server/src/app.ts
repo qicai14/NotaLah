@@ -7,6 +7,7 @@ import { requestLogger } from './lib/logger';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { authRouter } from './features/auth/routes';
+import { collaborationRouter } from './features/collaboration/routes';
 import { writeLimiter } from './features/auth/rateLimit';
 import { engagementRouter } from './features/engagement/routes';
 import { feedRouter } from './features/feed/routes';
@@ -43,6 +44,7 @@ app.use('/api/modules', modulesRouter);
 app.use('/api/programmes', programmesRouter);
 app.use('/api/feed', feedRouter);
 app.use('/api', verificationRouter);
+app.use('/api', collaborationRouter); // before notesRouter so /notes/shared is not read as a note id
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
 app.use('/api/notes', notesRouter);
 app.use('/api/users', usersRouter);
