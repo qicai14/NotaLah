@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, expect, it, vi } from 'vitest';
 import { app } from '../../src/app';
 import pino from 'pino';
-import { loggerOptions } from '../../src/lib/logger';
+import { loggerOptions, logPath } from '../../src/lib/logger';
 import { pool } from '../../src/lib/pool';
 import { truncateAll } from '../helpers';
 
@@ -40,4 +40,10 @@ it('OPS-TC4: log redaction hides the set-cookie header and password fields', () 
   expect(out).toContain('[redacted]');
   expect(out).not.toContain('parp_token=');
   expect(out).not.toContain('hunter2');
+});
+
+it('OPS-TC5: logged paths hide share-link tokens and query strings', () => {
+  expect(logPath('/api/share/AbC_-123?x=1')).toBe('/api/share/[token]');
+  expect(logPath('/api/notes/5?cursor=abc')).toBe('/api/notes/5');
+  expect(logPath(undefined)).toBeUndefined();
 });
