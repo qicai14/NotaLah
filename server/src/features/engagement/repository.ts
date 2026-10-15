@@ -1,10 +1,11 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
-import { approvedLecturer, viewerIsAdmin } from '../users/repository';
-import { VISIBLE, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
+import { approvedLecturer, blockedWith, viewerIsAdmin } from '../users/repository';
+import { VISIBLE, VISIBLE_IGNORING_BLOCKS, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
 
-/** SQL: comment c (author alias u) shows as unavailable: deleted, or by a suspended author and the viewer $1 is not an admin (D47). */
-const GONE = (c: string, u: string) => `(${c}.cmt_is_deleted OR (${u}.usr_status = 'suspended' AND NOT ${viewerIsAdmin('$1')}))`;
+/** SQL: comment c (author alias u) shows as unavailable: deleted, by a suspended author and the viewer $1 is not an admin (D47), or by someone in a block with the viewer (D49). */
+const GONE = (c: string, u: string) =>
+  `(${c}.cmt_is_deleted OR (${u}.usr_status = 'suspended' AND NOT ${viewerIsAdmin('$1')}) OR ${blockedWith('$1', `${u}.usr_id`)})`;
 
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
 const VIEW_WINDOW_MINUTES = 30;
@@ -16,13 +17,13 @@ export interface Target {
   isEditor: boolean;
 }
 
-/** Engagement needs a published note the viewer may see; undefined otherwise (callers answer 404). */
-export async function getTarget(noteId: number, viewerId: number): Promise<Target | undefined> {
+/** Engagement needs a published note the viewer may see; undefined otherwise (callers answer 404). Reporting passes `ignoreBlocks` (D49). */
+export async function getTarget(noteId: number, viewerId: number, ignoreBlocks = false): Promise<Target | undefined> {
   const { rows } = await pool.query<Target>(
     `SELECT p.pst_usr_id AS "authorId",
             (SELECT COUNT(*)::INT FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id) AS "slideCount",
             EXISTS (SELECT 1 FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND c.clb_role = 'edit') AS "isEditor"
-     FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status = 'published' AND ${VISIBLE}`,
+     FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status = 'published' AND ${ignoreBlocks ? VISIBLE_IGNORING_BLOCKS : VISIBLE}`,
     [viewerId, noteId],
   );
   return rows[0];
@@ -132,11 +133,12 @@ export async function listComments(
   };
 }
 
-export async function getParent(id: number): Promise<{ noteId: number; parentId: number | null } | undefined> {
+/** A live comment the viewer may reply to: not deleted, its author not suspended and in no block with the viewer (D49). */
+export async function getParent(id: number, viewerId: number): Promise<{ noteId: number; parentId: number | null } | undefined> {
   const { rows } = await pool.query<{ noteId: number; parentId: number | null }>(
     `SELECT c.cmt_pst_id AS "noteId", c.cmt_parent_id AS "parentId" FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
-     WHERE c.cmt_id = $1 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended'`,
-    [id],
+     WHERE c.cmt_id = $1 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended' AND NOT ${blockedWith('$2', 'u.usr_id')}`,
+    [id, viewerId],
   );
   return rows[0];
 }
@@ -164,12 +166,13 @@ export interface CommentMeta {
   noteId: number;
 }
 
-/** A live comment by an author who is not suspended, on a published note the viewer may see; undefined otherwise. */
+/** A live comment by an author who is not suspended or in a block with the viewer, on a published note the viewer may see; undefined otherwise. */
 export async function getVisibleComment(id: number, viewerId: number): Promise<CommentMeta | undefined> {
   const { rows } = await pool.query<CommentMeta>(
     `SELECT c.cmt_usr_id AS "authorId", c.cmt_pst_id AS "noteId"
      FROM "COMMENT_T" c JOIN "POST_T" p ON p.pst_id = c.cmt_pst_id JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
-     WHERE c.cmt_id = $2 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended' AND p.pst_status = 'published' AND ${VISIBLE}`,
+     WHERE c.cmt_id = $2 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended' AND NOT ${blockedWith('$1', 'u.usr_id')}
+       AND p.pst_status = 'published' AND ${VISIBLE}`,
     [viewerId, id],
   );
   return rows[0];

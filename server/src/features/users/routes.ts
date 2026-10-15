@@ -5,11 +5,17 @@ import { countDrafts, listNotesByAuthor } from '../notes/repository';
 import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { programmeExists } from '../modules/repository';
-import { findProfile, follow, getFollowState, listFollows, unfollow, updateProfile } from './repository';
+import { block, findProfile, follow, getFollowState, listBlocks, listFollows, unblock, unfollow, updateProfile } from './repository';
 
 export const usersRouter = Router();
 const PROFILE_NOTES = 50;
 usersRouter.param('id', idParam('User not found'));
+
+/** The profile when the viewer may open it fully: not hidden from them and not blocked by them (D49). */
+const openProfile = async (id: number, viewer: number) => {
+  const p = await findProfile(id, viewer);
+  return p && !p.blockedByMe ? p : undefined;
+};
 
 const profileSchema = z.object({
   displayName: z
@@ -37,6 +43,29 @@ usersRouter.put('/me', requireAuth, async (req, res) => {
   res.json({ user });
 });
 
+usersRouter.get('/me/blocks', requireAuth, async (req, res) => {
+  const page = parseKeyset(req, res, 2, 20);
+  if (!page) return;
+  const { items, nextCursor } = await listBlocks(me(req).id, page);
+  res.json({ users: items, nextCursor });
+});
+
+// no requireActive: a restricted user may still protect themself (D49)
+usersRouter.post('/:id/block', requireAuth, async (req, res) => {
+  const target = Number(req.params.id);
+  if (target === me(req).id) return res.status(400).json({ error: 'You cannot block yourself' });
+  const out = await block(me(req).id, target);
+  if (out === 'not_found') return res.status(404).json({ error: 'User not found' });
+  if (out === 'admin') return res.status(403).json({ error: 'Administrators cannot be blocked' }); // D49: moderators stay reachable
+  res.status(out === 'created' ? 201 : 200).json({ blockedByMe: true });
+});
+
+// no requireActive: lifting a block is always allowed, like unfollowing
+usersRouter.delete('/:id/block', requireAuth, async (req, res) => {
+  await unblock(me(req).id, Number(req.params.id));
+  res.json({ blockedByMe: false });
+});
+
 usersRouter.post('/:id/follow', requireAuth, requireActive, async (req, res) => {
   const target = Number(req.params.id);
   if (target === me(req).id) return res.status(400).json({ error: 'You cannot follow yourself' });
@@ -59,7 +88,7 @@ for (const side of ['followers', 'following'] as const) {
     const page = parseKeyset(req, res, 2, 20);
     if (!page) return;
     const user = Number(req.params.id);
-    if (!(await findProfile(user, me(req).id))) return res.status(404).json({ error: 'User not found' });
+    if (!(await openProfile(user, me(req).id))) return res.status(404).json({ error: 'User not found' });
     res.json(await listFollows(user, me(req).id, side, page));
   });
 }
@@ -68,7 +97,7 @@ usersRouter.get('/:id/notes', optionalAuth, async (req, res) => {
   const page = parseKeyset(req, res, 2);
   if (!page) return;
   const user = Number(req.params.id);
-  if (!(await findProfile(user, viewerId(req)))) return res.status(404).json({ error: 'User not found' });
+  if (!(await openProfile(user, viewerId(req)))) return res.status(404).json({ error: 'User not found' });
   const { items, nextCursor } = await listNotesByAuthor(user, viewerId(req), page);
   res.json({ notes: items, nextCursor });
 });
@@ -76,6 +105,8 @@ usersRouter.get('/:id/notes', optionalAuth, async (req, res) => {
 usersRouter.get('/:id', optionalAuth, async (req, res) => {
   const profile = await findProfile(Number(req.params.id), viewerId(req));
   if (!profile) return res.status(404).json({ error: 'User not found' });
+  // wireframe 34: someone the viewer blocked shows only enough to offer Unblock (D49)
+  if (profile.blockedByMe) return res.json({ user: { id: profile.id, displayName: profile.displayName, blockedByMe: true } });
   const own = profile.id === viewerId(req);
   const [notes, draftCount] = await Promise.all([
     listNotesByAuthor(profile.id, viewerId(req), { cursor: null, limit: PROFILE_NOTES }),

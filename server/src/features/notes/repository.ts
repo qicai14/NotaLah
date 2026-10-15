@@ -1,24 +1,28 @@
 import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
-import { approvedLecturer, countingLecturer, friends, userRef, viewerIsAdmin } from '../users/repository';
+import { approvedLecturer, blockedWith, countingLecturer, friends, userRef, viewerIsAdmin } from '../users/repository';
 import type { NoteInput } from './service';
 
 /** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
 export const MODULE_COL = `CASE WHEN m.mod_id IS NULL THEN NULL
        ELSE json_build_object('id', m.mod_id, 'code', m.mod_code, 'name', m.mod_name) END AS "module"`;
 
-/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or, when contacts-only, by a friend of the viewer (mutual follow, D38). */
-export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
+/** VISIBLE before blocks: what reporting needs, as a user may still report a note by someone in a block with them (D49). */
+export const VISIBLE_IGNORING_BLOCKS = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.pst_status = 'published'
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND
     (p.pst_visibility = 'public' OR ${friends('$1', 'p.pst_usr_id')}))))`;
+
+/** Exported SQL fragment (contract: alias p = POST_T, $1 = viewer id). Who may see a post ($1 = viewer id): the author, or a published post by an active or restricted account (a suspension withdraws the content until reinstated, D26) that is public or, when contacts-only, by a friend of the viewer (mutual follow, D38), and whose author is in no block with the viewer (D49). */
+export const VISIBLE = `(${VISIBLE_IGNORING_BLOCKS} AND NOT ${blockedWith('$1', 'p.pst_usr_id')})`;
 
 /** Post p can be reached through collaboration or a share link: a draft or published note by an active or restricted author, never hidden or deleted (R30, D46). */
 export const SHAREABLE = `(p.pst_status IN ('draft', 'published')
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')))`;
 
-/** SQL: the collaborator role ('view' | 'edit') of user $1 on post p, or NULL when there is none or p is not SHAREABLE. */
-export const COLLAB_ROLE = `(SELECT c.clb_role FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND ${SHAREABLE})`;
+/** SQL: the collaborator role ('view' | 'edit') of user $1 on post p, or NULL when there is none, p is not SHAREABLE or a block lies between $1 and the owner (kept, so an unblock restores it, D49). */
+export const COLLAB_ROLE = `(SELECT c.clb_role FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND ${SHAREABLE}
+    AND NOT ${blockedWith('$1', 'p.pst_usr_id')})`;
 
 /** SQL (alias c = COLLABORATOR_T): an edit collaborator who has saved the note at least once, so an invitation alone never credits anyone or reaches their followers (D46). */
 export const CREDITED_EDITOR = `(c.clb_role = 'edit' AND c.clb_edited_at IS NOT NULL)`;

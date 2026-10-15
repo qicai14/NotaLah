@@ -926,3 +926,44 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** SRCH-TC1 to SRCH-TC17 (TC3, TC8, TC9 and TC13 rows updated for `lecturer=any|<id>` and campus days), ADM-TC31 to
   ADM-TC34, RANK-TC8 (search weights sum to 1).
 - **Reversibility:** Easy. Weights are config; text-only order is `searchWeights` {1, 0, 0}.
+
+## D49 - User blocking on the server (Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47), "Blocking". Backend only; the UI follows wireframe 34.
+- **Schema:** `"BLOCK_T"` (blk_blocker_id, blk_blocked_id, blk_created_at), primary key on the pair, `block_blocked_idx`
+  on the blocked side, and a check that nobody blocks themself.
+- **Endpoints:** `POST /api/users/:id/block` (201, or 200 when already blocked) and `DELETE /api/users/:id/block` (idempotent)
+  need only a login: a restricted user may still block, since blocking protects them and adds no content (review fix), `GET /api/users/me/blocks` (keyset, 20 per page, newest first, D40).
+  Blocking deletes follows in both directions, pending collaboration requests either user made on the other's notes, and
+  edit locks either holds on the other's notes, in one transaction that first locks both USER_T rows in id order. Follow
+  share-locks its target in a separate statement before checking, so a follow racing a block is either refused or
+  deleted by it (review fix).
+- **One rule:** `blockedWith(v, other)` in `users/repository.ts` is the only SQL for "a block in either direction". It is
+  written as `other IN (v's blocked list UNION ALL v's blockers)`, so with the viewer as `v` Postgres hashes the list once
+  per query instead of probing per row. It is joined into `VISIBLE` (feed, following feed, ranking candidates, search,
+  hashtag and module counts, bookmarks, profile notes, note detail, engagement targets), `COLLAB_ROLE`, the comment `GONE`
+  rule, people search and follow. `isBlocked(a, b)` is its TypeScript form, exported for messaging. A guest (id 0) has
+  no blocks, so guests are unaffected.
+- **What a block stops, both ways:** seeing the other's notes (404 on detail), profile (404 for the blocked side; the
+  blocker gets `{id, displayName, blockedByMe: true}` so the UI can offer Unblock, also when the block is mutual), profile notes and follow lists (404
+  both ways), following, likes, comments, comment lists, replies, comment likes, Super Likes, bookmarks, appearing in
+  people search, collaboration invites, share-link opening and joining, collaboration requests and approvals (`decideRequest` answers 404 when the requester
+  cannot be added), and the shared-notes list. The other's comments
+  on a third user's note follow the suspended-author path: hidden, or "[comment unavailable]" with no author while they
+  have visible replies.
+- **Choices made (safe option, logged for review):**
+  - Reporting ignores blocks (`VISIBLE_IGNORING_BLOCKS`), so a user can still report someone they blocked.
+  - Admins cannot be blocked (403): a moderator must stay able to see and act on content. An admin may block a user;
+    admin routes never read `"BLOCK_T"`, and note detail keeps the admin path (D47), so moderation is unaffected.
+  - Existing collaborator rows are kept but give no access while a block stands (`COLLAB_ROLE`), so an unblock restores
+    them and no co-author credit is lost. The collaborator can still leave (self-removal skips the access check), and the
+    owner can still remove them, but the owner cannot change their role until the block is lifted.
+  - The admin bootstrap (`upsertAdmin`) deletes blocks against the account it promotes, so no admin is ever blocked.
+  - Shown like and comment counts are not adjusted per viewer, so a count can include the other side's comment.
+  - A block does not hide either user from third parties' follower lists; only the pair's own follows are removed.
+  - On a third user's note, the other side's name can still appear as "Verified by" (`VERIFIED_BY`) or as a co-author.
+- **Performance:** SRCH-TC10 now seeds 1,000 blocks plus 20 on the measured user. EXPLAIN ANALYZE on that dataset (10,000
+  notes) showed the block check as one hashed subplan per query (loops=1) using the primary key and `block_blocked_idx`;
+  ranking candidates took 83 ms and the 50-query search median was 152 ms (max 1,053 ms), against 134 ms before (D48).
+  No further index was needed.
+- **Tests:** BLK-TC1 to BLK-TC14.
+- **Reversibility:** Easy; dropping the fragment from `VISIBLE` and the routes restores the old behaviour.

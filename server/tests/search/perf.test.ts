@@ -67,6 +67,14 @@ async function seed(): Promise<void> {
      SELECT DISTINCT a, b FROM (SELECT 1 + floor(random() * 300)::INT a, 1 + floor(random() * 300)::INT b
                                 FROM generate_series(1, 3000)) f WHERE a <> b`,
   );
+  // Blocks everywhere, and 20 on the measured user 25 in both directions, so every query pays the D49 block check.
+  await pool.query(
+    `INSERT INTO "BLOCK_T" (blk_blocker_id, blk_blocked_id)
+     SELECT DISTINCT a, b FROM (SELECT 1 + floor(random() * 300)::INT a, 1 + floor(random() * 300)::INT b
+                                FROM generate_series(1, 1000)) f WHERE a <> b
+     UNION SELECT 25, g FROM generate_series(26, 35) g
+     UNION SELECT g, 25 FROM generate_series(36, 45) g`,
+  );
   // The same search document notes/repository.ts builds on save (D20).
   await pool.query(
     `UPDATE "POST_T" p

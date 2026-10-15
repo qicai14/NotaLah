@@ -2,7 +2,7 @@ import type { Pool, PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { SHAREABLE } from '../notes/repository';
-import { userRef as person } from '../users/repository';
+import { blockedWith, userRef as person } from '../users/repository';
 import { COLLABORATION } from './config';
 
 export type CollabRole = 'view' | 'edit';
@@ -54,12 +54,12 @@ export async function releaseLock(q: Queryable, noteId: number, userId: number):
 
 /**
  * Adds the user as a collaborator or changes their role, keeping any credit already earned; a move to view frees their
- * lock. False when no active or restricted account has that id.
+ * lock. False when no active or restricted account has that id, or a block lies between it and `addedBy`, the owner (D49).
  */
 async function upsertCollaborator(q: Queryable, noteId: number, userId: number, role: CollabRole, addedBy: number): Promise<boolean> {
   const { rowCount } = await q.query(
     `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by)
-     SELECT $1, usr_id, $3, $4 FROM "USER_T" WHERE usr_id = $2 AND usr_status IN ('active', 'restricted')
+     SELECT $1, usr_id, $3, $4 FROM "USER_T" WHERE usr_id = $2 AND usr_status IN ('active', 'restricted') AND NOT ${blockedWith('$4', 'usr_id')}
      ON CONFLICT (clb_pst_id, clb_usr_id) DO UPDATE SET clb_role = EXCLUDED.clb_role`,
     [noteId, userId, role, addedBy],
   );
@@ -127,7 +127,8 @@ export async function createRequest(noteId: number, userId: number, message: str
 
 /**
  * Approves (adding the requester with `role`) or declines a pending request on the note in one transaction. 'not_found'
- * when the request is not on this note, 'decided' when it is no longer pending.
+ * when the request is not on this note or the requester cannot be added (inactive, or in a block with the owner, D49),
+ * 'decided' when it is no longer pending.
  */
 export function decideRequest(
   noteId: number, requestId: number, approve: boolean, role: CollabRole, ownerId: number,
@@ -140,11 +141,11 @@ export function decideRequest(
     );
     if (!rows[0]) return 'not_found';
     if (rows[0].status !== 'pending') return 'decided';
+    if (approve && !(await upsertCollaborator(c, noteId, rows[0].userId, role, ownerId))) return 'not_found';
     await c.query(
       `UPDATE "COLLAB_REQUEST_T" SET crq_status = $2, crq_decided_at = NOW() WHERE crq_id = $1`,
       [requestId, approve ? 'approved' : 'declined'],
     );
-    if (approve) await upsertCollaborator(c, noteId, rows[0].userId, role, ownerId);
     return 'ok';
   });
 }
@@ -158,7 +159,7 @@ export interface SharedNote {
   updatedAt: Date;
 }
 
-/** One page of the SHAREABLE notes the user collaborates on, last edited first; keyset on (updated_at, id), D40. */
+/** One page of the SHAREABLE notes the user collaborates on, owned by nobody in a block with them (D49), last edited first; keyset on (updated_at, id), D40. */
 export async function listShared(userId: number, { cursor, limit }: KeysetPage): Promise<{ items: SharedNote[]; nextCursor: string | null }> {
   const { rows } = await pool.query<SharedNote & { cursor: string }>(
     `SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_status AS "status", c.clb_role AS "role", ${person('u')} AS "owner",
@@ -166,7 +167,7 @@ export async function listShared(userId: number, { cursor, limit }: KeysetPage):
      FROM "COLLABORATOR_T" c
      JOIN "POST_T" p ON p.pst_id = c.clb_pst_id
      JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
-     WHERE c.clb_usr_id = $1 AND ${SHAREABLE}
+     WHERE c.clb_usr_id = $1 AND ${SHAREABLE} AND NOT ${blockedWith('$1', 'p.pst_usr_id')}
        AND ($2::BIGINT IS NULL OR (p.pst_updated_at, p.pst_id) < (${fromMicros('$2')}, $3::INT))
      ORDER BY p.pst_updated_at DESC, p.pst_id DESC
      LIMIT $4`,
