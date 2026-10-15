@@ -27,6 +27,19 @@ export const RANKING = Object.freeze({
   snapshotsPerViewer: 4,
   /** Guest rankings kept in memory, one per asOf shared by every guest; the oldest is dropped first (D45). */
   guestRankingCacheSize: 50,
+  /**
+   * Search note order (FR4, D48): S = textRank·T + engagement·E + lecturerValidation·V, with E and V as in the feed and
+   * T = the note's ts_rank_cd divided by the best one among the matches. No R or M, so every viewer gets the same order.
+   */
+  searchWeights: Object.freeze({
+    textRank: 0.5,
+    engagement: 0.25,
+    lecturerValidation: 0.25,
+  }),
+  /** ts_rank_cd normalisation flags; 1 divides by 1 + log(document length) so long notes do not win on length alone. */
+  searchRankNormalization: 1,
+  /** Notes scored per search: the best this many by text rank, then newest; later matches are not returned (D48). */
+  searchCandidateLimit: 500,
 });
 
 export function assertWeightsSumToOne(weights: Record<string, number> = RANKING.weights): void {
