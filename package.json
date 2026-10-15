@@ -17,8 +17,7 @@
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "vp lint",
-    "format:check": "vp fmt --check",
-    "check": "vp check --no-fmt && npm run typecheck"
+    "format:check": "vp fmt --check"
   },
   "devDependencies": {
     "concurrently": "10.0.5",

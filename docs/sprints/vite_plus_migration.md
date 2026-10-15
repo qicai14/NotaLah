@@ -44,6 +44,6 @@ Typecheck clean, server 208/208, client 21/21, build passes.
 | Client tests (`npm test -w client`) | 3.02 s, 3.03 s, 2.95 s (mean 3.00 s) | 3.21 s, 3.15 s, 3.53 s (mean 3.30 s) |
 | Server tests (`npm test -w server`) | 32.63 s, 32.28 s, 32.69 s (mean 32.53 s) | 36.45 s, 34.69 s, 36.15 s (mean 35.76 s) |
 
-No speed gain: the `vp` wrapper adds a few hundred milliseconds of start-up and the toolchain underneath is the same Vite 8 / Rolldown / Vitest 5.
-The server test run is dominated by database work, and its 10 percent slowdown is within the load variation of a machine running other agents;
-the after runs were taken once, after the before runs, so they are indicative only. D47 already states that the gain is fewer tools, not speed.
+All three tasks were about 10 percent slower after the change, in every run. The cause was not measured; the runs were
+not interleaved, so machine load from other agents may account for part of it. D47 accepts this: the gain is fewer
+tools (one CLI, linting added), not speed.
