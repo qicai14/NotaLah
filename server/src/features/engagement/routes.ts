@@ -28,7 +28,6 @@ engagementRouter.post('/notes/:noteId/view', requireAuth, async (req, res) => {
 engagementRouter.post('/notes/:noteId/like', requireAuth, requireActive, async (req, res) => {
   const t = await target(req, res);
   if (!t) return;
-  if (t.authorId === me(req).id || t.isEditor) return res.status(400).json({ error: 'You cannot like your own note' });
   const { added, likes } = await repo.likeNote(t.id, me(req).id);
   res.status(added ? 201 : 200).json({ liked: true, likes });
 });

@@ -1,7 +1,10 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
-import { approvedLecturer } from '../users/repository';
+import { approvedLecturer, viewerIsAdmin } from '../users/repository';
 import { VISIBLE, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
+
+/** SQL: comment c (author alias u) shows as unavailable: deleted, or by a suspended author and the viewer $1 is not an admin (D47). */
+const GONE = (c: string, u: string) => `(${c}.cmt_is_deleted OR (${u}.usr_status = 'suspended' AND NOT ${viewerIsAdmin('$1')}))`;
 
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
 const VIEW_WINDOW_MINUTES = 30;
@@ -9,7 +12,7 @@ const VIEW_WINDOW_MINUTES = 30;
 export interface Target {
   authorId: number;
   slideCount: number;
-  /** The viewer is an edit collaborator, so the note counts as their own for likes and verification (D46). */
+  /** The viewer is an edit collaborator, so the note counts as their own for Super Likes (D46, D47). */
   isEditor: boolean;
 }
 
@@ -40,14 +43,17 @@ export async function logView(noteId: number, viewerId: number): Promise<void> {
 const noteLikes = async (noteId: number): Promise<number> =>
   (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "LIKE_T" WHERE lik_pst_id = $1`, [noteId])).rows[0].n;
 
-/** Idempotent: the interaction is logged only when the like row is new. */
+/** Idempotent: the interaction is logged only when the like row is new, and never for the author or an edit co-author (D47). */
 export async function likeNote(noteId: number, userId: number): Promise<{ added: boolean; likes: number }> {
-  const { rowCount } = await pool.query(
-    `WITH ins AS (INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING 1)
-     INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) SELECT $1, $2, 'like' FROM ins`,
+  const { rows } = await pool.query<{ added: boolean }>(
+    `WITH ins AS (INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING 1),
+          i AS (INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) SELECT $1, $2, 'like' FROM ins
+                WHERE $1 <> (SELECT pst_usr_id FROM "POST_T" WHERE pst_id = $2)
+                  AND NOT EXISTS (SELECT 1 FROM "COLLABORATOR_T" WHERE clb_pst_id = $2 AND clb_usr_id = $1 AND clb_role = 'edit'))
+     SELECT EXISTS (SELECT 1 FROM ins) AS "added"`,
     [userId, noteId],
   );
-  return { added: rowCount === 1, likes: await noteLikes(noteId) };
+  return { added: rows[0].added, likes: await noteLikes(noteId) };
 }
 
 export async function unlikeNote(noteId: number, userId: number): Promise<number> {
@@ -77,7 +83,8 @@ export interface Comment extends Reply {
 /**
  * One page of top-level comments with their live replies: approved-lecturer comments first, then most liked, then oldest
  * (ENG-TC7). Keyset on (pinned, likes, created_at, id), D40; likes are live, so a comment liked between page requests can
- * cross the page boundary. A deleted comment shows as [deleted] only while it has live replies; deleted replies are omitted.
+ * cross the page boundary. A GONE comment shows as [deleted] or [comment unavailable] only while it has replies that are
+ * not GONE; GONE replies are omitted.
  */
 // shortcut: replies are not paged; page them too if one thread ever grows to thousands of replies.
 export async function listComments(
@@ -86,29 +93,29 @@ export async function listComments(
   const { rows } = await pool.query<CommentRow & { cursor: string | null }>(
     `WITH top AS (
        SELECT c.cmt_id AS id, c.cmt_created_at AS at,
-              CASE WHEN NOT c.cmt_is_deleted AND ${approvedLecturer('u')} THEN 0 ELSE 1 END AS unpinned,
+              CASE WHEN NOT ${GONE('c', 'u')} AND ${approvedLecturer('u')} THEN 0 ELSE 1 END AS unpinned,
               (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS likes
        FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
             -- LATERAL keeps the probe per deleted comment on comment_parent_idx; an OR-ed EXISTS is planned as a hash of every reply
-            LEFT JOIN LATERAL (SELECT 1 AS live FROM "COMMENT_T" r
-                               WHERE c.cmt_is_deleted AND r.cmt_parent_id = c.cmt_id AND NOT r.cmt_is_deleted LIMIT 1) lr ON TRUE
-       WHERE c.cmt_pst_id = $2 AND c.cmt_parent_id IS NULL AND (NOT c.cmt_is_deleted OR lr.live IS NOT NULL)),
+            LEFT JOIN LATERAL (SELECT 1 AS live FROM "COMMENT_T" r JOIN "USER_T" ru ON ru.usr_id = r.cmt_usr_id
+                               WHERE ${GONE('c', 'u')} AND r.cmt_parent_id = c.cmt_id AND NOT ${GONE('r', 'ru')} LIMIT 1) lr ON TRUE
+       WHERE c.cmt_pst_id = $2 AND c.cmt_parent_id IS NULL AND (NOT ${GONE('c', 'u')} OR lr.live IS NOT NULL)),
      pg AS (
        SELECT * FROM top
        WHERE $3::BIGINT IS NULL OR (unpinned, -likes, at, id) > ($3::BIGINT, -$4::BIGINT, ${fromMicros('$5')}, $6::INT)
        ORDER BY unpinned, likes DESC, at, id
        LIMIT $7)
      SELECT c.cmt_id AS "id", c.cmt_parent_id AS "parentId", c.cmt_slide_no AS "slideNo",
-            CASE WHEN c.cmt_is_deleted THEN '[deleted]' ELSE c.cmt_body END AS "body",
+            CASE WHEN c.cmt_is_deleted THEN '[deleted]' WHEN ${GONE('c', 'u')} THEN '[comment unavailable]' ELSE c.cmt_body END AS "body",
             c.cmt_is_deleted AS "deleted", c.cmt_created_at AS "createdAt",
-            CASE WHEN c.cmt_is_deleted THEN NULL
+            CASE WHEN ${GONE('c', 'u')} THEN NULL
                  ELSE json_build_object('id', u.usr_id, 'displayName', u.usr_display_name,
                         'isVerifiedLecturer', ${approvedLecturer('u')}) END AS "author",
             (SELECT COUNT(*)::INT FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id) AS "likes",
             EXISTS (SELECT 1 FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = c.cmt_id AND clk_usr_id = $1) AS "likedByMe",
             pg.unpinned || '_' || pg.likes || '_' || ${micros('pg.at')} || '_' || pg.id AS "cursor"
      FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id LEFT JOIN pg ON pg.id = c.cmt_id
-     WHERE c.cmt_pst_id = $2 AND (pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT c.cmt_is_deleted))
+     WHERE c.cmt_pst_id = $2 AND (pg.id IS NOT NULL OR (c.cmt_parent_id IN (SELECT id FROM pg) AND NOT ${GONE('c', 'u')}))
      ORDER BY pg.unpinned, pg.likes DESC, c.cmt_created_at, c.cmt_id`,
     [viewerId, noteId, ...(cursor ?? [null, null, null, null]), limit + 1],
   );
@@ -127,7 +134,8 @@ export async function listComments(
 
 export async function getParent(id: number): Promise<{ noteId: number; parentId: number | null } | undefined> {
   const { rows } = await pool.query<{ noteId: number; parentId: number | null }>(
-    `SELECT cmt_pst_id AS "noteId", cmt_parent_id AS "parentId" FROM "COMMENT_T" WHERE cmt_id = $1 AND NOT cmt_is_deleted`,
+    `SELECT c.cmt_pst_id AS "noteId", c.cmt_parent_id AS "parentId" FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
+     WHERE c.cmt_id = $1 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended'`,
     [id],
   );
   return rows[0];
@@ -156,12 +164,12 @@ export interface CommentMeta {
   noteId: number;
 }
 
-/** A live comment on a published note the viewer may see; undefined otherwise. */
+/** A live comment by an author who is not suspended, on a published note the viewer may see; undefined otherwise. */
 export async function getVisibleComment(id: number, viewerId: number): Promise<CommentMeta | undefined> {
   const { rows } = await pool.query<CommentMeta>(
     `SELECT c.cmt_usr_id AS "authorId", c.cmt_pst_id AS "noteId"
-     FROM "COMMENT_T" c JOIN "POST_T" p ON p.pst_id = c.cmt_pst_id
-     WHERE c.cmt_id = $2 AND NOT c.cmt_is_deleted AND p.pst_status = 'published' AND ${VISIBLE}`,
+     FROM "COMMENT_T" c JOIN "POST_T" p ON p.pst_id = c.cmt_pst_id JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
+     WHERE c.cmt_id = $2 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended' AND p.pst_status = 'published' AND ${VISIBLE}`,
     [viewerId, id],
   );
   return rows[0];

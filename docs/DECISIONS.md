@@ -864,3 +864,20 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `"TERM_T"` that starts empty, and the term filter is hidden until terms exist (FR15 delivered as written); chat
   supports text, note cards, reply to a message, delete own message, read receipts, typing indicator, images (after
   R22); groups up to 30, any member adds their friends; notifications in-app only, kept 30 days; users can block users.
+- **Implementation (16 Oct, `fix/d47-likes-suspension`):**
+  - Self-likes: the like route no longer answers 400. E is computed only from `countsCol(asOf)` (ranking candidates), which
+    now skips likes by the author or any edit collaborator (credited or not); the feed snapshot stores that E, so "Why
+    this note" follows. The displayed count (`countsCol()` without asOf) still includes them. Super Like keeps its 409.
+  - Suspension: `SHOWN_USER` (users repository) hides a suspended account from non-admins in the profile, its notes
+    list, its follow lists and follow/unfollow (404, as for a deleted account); the admin check reads the viewer's role
+    from the database. Comments use the deleted-comment path: a suspended author's comment shows as
+    `[comment unavailable]` with no author or pin only while it has visible replies, and their replies are omitted.
+    Co-author credit and `verifiedBy` already dropped suspended users. An admin also sees the published notes on the
+    profile and in the note detail (`VISIBLE_OR_ADMIN`); the shared `VISIBLE` is unchanged, so the feed still withdraws
+    them for everyone (D26). Unfollowing a user who became hidden answers 204. The shown comment count leaves out
+    suspended authors' comments, and replying to or liking such a comment is refused as for a deleted one. The client
+    shows an author-less comment as its body text alone.
+  - Review fixes: a self-like or co-author like logs no `INTERACTION_T` row, so M is not skewed. `OWN_LIKE` reads the
+    current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
+  - Not changed: likes by suspended users, and their comments in E, still count.
+  - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.

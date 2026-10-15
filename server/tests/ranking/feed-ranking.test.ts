@@ -4,7 +4,7 @@ import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { RANKING } from '../../src/features/ranking/config';
 import { getCandidates, getInteractionRows, purgeOldInteractions } from '../../src/features/ranking/repository';
-import { buildInterestVector } from '../../src/features/ranking/service';
+import { buildInterestVector, engagement } from '../../src/features/ranking/service';
 import { purgeFeedSnapshots } from '../../src/features/feed/repository';
 import { asUser, insertUser, truncateAll, type TestUserInput } from '../helpers';
 
@@ -289,5 +289,21 @@ describe('Ranked feed', () => {
     expect(seen.get(byRestricted)).toBe(true);
     expect(seen.has(bySuspended)).toBe(false); // a suspended author's notes are not visible to others (ADM-TC20)
     expect((await flags(suspended)).get(bySuspended)).toBe(false); // the author still sees it, without the lecturer bonus
+  });
+
+  it('RANK-TC32: likes by the author and edit collaborators are shown but do not raise E', async () => {
+    const [author, editor, viewOnly, stranger, viewer] = [await insertUser(), await insertUser(), await insertUser(), await insertUser(), await insertUser()];
+    const note = await insertNote(author, ['sql']);
+    await pool.query(
+      `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by) VALUES ($1, $2, 'edit', $4), ($1, $3, 'view', $4)`,
+      [note, editor, viewOnly, author],
+    );
+    for (const uid of [author, editor, viewOnly, stranger]) {
+      expect((await request(app).post(`/api/notes/${note}/like`).set(asUser(uid))).status).toBe(201);
+    }
+    expect((await getCandidates(viewer, new Date()))[0].counts.likes).toBe(2);
+    const item = (await feed(viewer)).body.items[0];
+    expect(item.counts.likes).toBe(4);
+    expect(item.components.E).toBeCloseTo(engagement(2, 0), 6);
   });
 });

@@ -96,19 +96,13 @@ function CommentRow({ c, pinned, canReply, replying, onReply, onChanged, onError
   }
   return (
     <div className={pinned ? 'rounded-md bg-indigo-50 p-2' : ''}>
-      <p className="text-sm text-slate-600">
-        {deleted ? (
-          <span className="italic">deleted</span>
-        ) : (
-          <>
-            <span className="font-medium text-slate-900">{c.author!.displayName}</span>
-            {c.author!.isVerifiedLecturer && <LecturerBadge />}
-          </>
-        )}{' '}
+      {!deleted && <p className="text-sm text-slate-600">
+        <span className="font-medium text-slate-900">{c.author!.displayName}</span>
+        {c.author!.isVerifiedLecturer && <LecturerBadge />}{' '}
         · {timeAgo(c.createdAt)}
         {pinned && <span className="ml-2 rounded bg-indigo-600 px-1.5 text-xs text-white">Pinned lecturer comment</span>}
         {c.slideNo && <span className="ml-2 rounded bg-slate-200 px-1.5 text-xs">Slide {c.slideNo}</span>}
-      </p>
+      </p>}
       <p className={`whitespace-pre-wrap ${deleted ? 'italic text-slate-500' : ''}`}>{c.body}</p>
       {!deleted && (
         <div className="mt-1 flex flex-wrap items-center gap-2">

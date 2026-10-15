@@ -12,7 +12,8 @@ interface CandidateRow extends Candidate {
  * Published notes the viewer may see, published at or before asOf: the newest `limit` united with every note holding a
  * valid Super Like made within verifiedCandidateWindowDays before asOf, with only what scoring needs; the page's full notes are loaded afterwards (D24).
  * Likes, comments and Super Likes count only up to asOf, so one asOf always gives the same ranking (pages cannot skip
- * or repeat a note when engagement lands between page requests).
+ * or repeat a note when engagement lands between page requests). OWN_LIKE reads the current collaborators, so re-ranking
+ * the same asOf after a collaborator change can shift E slightly.
  */
 // shortcut: an unverified note older than the newest `limit` is never ranked, however popular; widen if UAT shows misses.
 export async function getCandidates(viewerId: number, asOf: Date, limit: number = RANKING.candidateLimit): Promise<CandidateRow[]> {

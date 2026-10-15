@@ -353,11 +353,11 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
       (await request(app).get(`/api/notes/${note}`).set(viewer)).status,
       (await request(app).get('/api/feed').set(viewer)).body.items.length,
       (await request(app).get('/api/bookmarks').set(viewer)).body.notes.length,
-      (await request(app).get(`/api/users/${author}`).set(viewer)).body.user.notes.length,
+      (await request(app).get(`/api/users/${author}`).set(viewer)).body.user?.notes.length ?? 'no profile',
     ];
     expect(await seen()).toEqual([200, 1, 1, 1]);
     await act(author, 'suspend', { reason: 'Spam' });
-    expect(await seen()).toEqual([404, 0, 0, 0]);
+    expect(await seen()).toEqual([404, 0, 0, 'no profile']); // the profile itself is hidden too (USR-TC27)
     expect((await request(app).get('/api/admin/reports').set(admin)).status).toBe(200);
     await act(author, 'reinstate', { reason: 'Appeal accepted' });
     expect(await seen()).toEqual([200, 1, 1, 1]);

@@ -371,14 +371,13 @@ describe('Collaboration (R30)', () => {
     expect((await detail(null)).coauthors).toEqual([]);
   });
 
-  it('COL-TC19: an edit collaborator cannot like or Super Like the note they co-author', async () => {
+  it('COL-TC19: an edit collaborator may like but not Super Like the note they co-author', async () => {
     const owner = await insertUser();
     const lectEditor = await lecturer();
     const note = await insertNote(owner);
     await addCollaborator(note, lectEditor, 'edit', owner);
     const like = await api.post(lectEditor, `/api/notes/${note}/like`);
-    expect(like.status).toBe(400);
-    expect(like.body.error).toBe('You cannot like your own note');
+    expect(like.status).toBe(201);
     const verify = await api.post(lectEditor, `/api/notes/${note}/verify`);
     expect(verify.status).toBe(409);
     expect(verify.body.error).toBe('Cannot verify own note');
