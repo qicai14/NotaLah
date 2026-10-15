@@ -881,3 +881,36 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
   - Not changed: likes by suspended users, and their comments in E, still count.
   - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.
+
+## D48 - Search and academic terms on the server (Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47): FR4, FR5/NFR1, FR12, FR15 and R7; SRCH-TC1 to SRCH-TC16. UI waits for wireframe sign-off.
+- **Endpoint:** `GET /api/search?q=&tab=top|notes|people|hashtags|modules&lecturer=any|<id>&term=<id>&from=&to=&module=<id>&cursor=&limit=`
+  with `optionalAuth` (guests search public notes, IP limit, D44/D45). zod gives 400 for a blank query, one over 100
+  characters, from after to, a term together with from/to, an unknown term, or a malformed filter or cursor.
+- **Tabs:** Top returns the notes page plus, on page 1 only, up to 3 people, hashtags and modules; the other tabs page one
+  kind. People, hashtags and modules ignore a leading `#` or `@` and ignore the note filters.
+- **Matching:** a note matches through `pst_search_doc` (`websearch_to_tsquery`, so quoted phrases work) or through its
+  module's code (prefix), name or programme (contains); `#tag` matches that exact hashtag only. People match by display
+  name, hashtags by name, modules by code, name or programme (`ILIKE` with the user's text escaped). Visibility is the
+  shared `VISIBLE` rule plus `published`, so suspended authors' notes never appear; suspended and deleted accounts never
+  appear in people, even for admins; a hashtag appears only while a note the viewer can see carries it.
+- **Note order:** S = 0.5·T + 0.25·E + 0.25·V (`RANKING.searchWeights`, NFR5), ties by newest then id. T is
+  `ts_rank_cd` (normalisation 1, length-damped) divided by the best T among the matches, because raw ranks are tiny
+  (about 0.04 to 0.25) and would be swamped by E and V. E and V are the feed's `engagement()` and `validation()` on the
+  ranking counts (self-likes excluded, D47). No R and no M, so there is no personalisation; the only viewer difference is
+  that a friend's contacts-only notes take part in the "best T". Every match is scored per request (as the feed scores its
+  candidates); the keyset cursor is the last note's (score scaled to an integer, published time, id).
+- **Other tabs order** by text match (exact, then prefix, then contains), then id, keyset on (match, id).
+- **Filters:** `lecturer=any` keeps notes by a counting lecturer (approved, active or restricted) or with a valid Super
+  Like (D24, D46); `lecturer=<id>` keeps that lecturer's own notes and the ones they validly Super Liked, and is empty for
+  a non-lecturer. `term` resolves to its dates. Dates are inclusive Malaysian calendar days (`Asia/Kuala_Lumpur`), since
+  every user is at APU and the database clock is UTC.
+- **Terms:** `"TERM_T"` (name unique, start before end, overlaps allowed because intakes differ per programme), empty until
+  an admin adds terms; public `GET /api/terms`; admin `GET/POST /api/admin/terms`, `PUT/DELETE /api/admin/terms/:id` (PUT
+  replaces all three fields so start before end is checked in one place). Lives in the modules (catalogue) feature.
+- **Performance (SRCH-TC10):** 10,000 notes, 50 mixed queries: median 124 ms, maximum 789 ms
+  (`docs/sprints/search_performance.md`), so the blend stays and the text-only fallback was not used. EXPLAIN showed no
+  need for new indexes; trigram indexes for people and hashtags are deferred until the user table is large.
+- **Tests:** SRCH-TC1 to SRCH-TC16 (TC8 and TC9 rows updated for `lecturer=any|<id>` and campus days), ADM-TC31 to
+  ADM-TC34, RANK-TC8 (search weights sum to 1).
+- **Reversibility:** Easy. Weights are config; text-only order is `searchWeights` {1, 0, 0}.

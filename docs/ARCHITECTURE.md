@@ -30,12 +30,13 @@ server/src/features/moderation/   admin-only routes: lecturer approval (UC22), r
                                   restrict/suspend/reinstate/delete (UC21)
 server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
 server/src/features/verification/ lecturer Super Like of notes and its withdrawal, "VERIFICATION_T" (UC19)
-server/src/features/modules/      module and programme catalogue: GET /api/modules (signed in), GET /api/programmes (public, D37)
+server/src/features/modules/      module, programme and academic term catalogue: GET /api/modules (signed in), GET /api/programmes and
+                                  GET /api/terms (public, D37, D48); admin CRUD routes live in moderation
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
 server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup,
                                   per-asOf ranking snapshot "FEED_SNAPSHOT_T", D40)
 server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
-server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
+server/src/features/search/       GET /api/search: notes (text rank blended with E and V), people, hashtags, modules; filters (D48)
 server/src/features/messaging/    post-anchored messages, message requests from non-friends, groups, Socket.io (Sprint 4)
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
