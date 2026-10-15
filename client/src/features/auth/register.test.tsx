@@ -29,20 +29,20 @@ afterEach(() => {
 });
 
 describe('programme select', () => {
-  it('CLI-TC20: lists the catalogue programmes after a placeholder', async () => {
+  it('CLI-TC15: lists the catalogue programmes after a placeholder', async () => {
     render(<ProgrammeSelect value="" onChange={() => {}} />);
     await screen.findByRole('option', { name: 'Software Engineering' });
     const names = screen.getAllByRole('option').map((o) => o.textContent);
     expect(names).toEqual(['Choose a programme', 'Computer Science', 'Software Engineering']);
   });
 
-  it('CLI-TC21: keeps a stored programme that is no longer in the catalogue', async () => {
+  it('CLI-TC16: keeps a stored programme that is no longer in the catalogue', async () => {
     render(<ProgrammeSelect value="Old Programme" onChange={() => {}} />);
     await screen.findByRole('option', { name: 'Computer Science' });
     expect((screen.getByLabelText('Programme') as HTMLSelectElement).value).toBe('Old Programme');
   });
 
-  it('CLI-TC22: register submits the chosen programme', async () => {
+  it('CLI-TC17: register submits the chosen programme', async () => {
     register.mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(
@@ -55,5 +55,15 @@ describe('programme select', () => {
     await user.click(screen.getByRole('button', { name: 'Register' }));
     await waitFor(() => expect(register).toHaveBeenCalled());
     expect(register.mock.calls[0][0].programme).toBe('Software Engineering');
+  });
+
+  it('CLI-TC18: shows an alert and Retry when the programme list fails to load', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ status: 500, ok: false, json: () => Promise.resolve({}) })),
+    );
+    render(<ProgrammeSelect value="" onChange={() => {}} />);
+    expect((await screen.findByRole('alert')).textContent).toContain('Could not load programmes');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
   });
 });

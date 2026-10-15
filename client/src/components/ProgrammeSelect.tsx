@@ -9,7 +9,7 @@ interface Props {
 
 /** Programme picker fed by the public catalogue; a stored value missing from it stays selectable so it is not silently changed. */
 export function ProgrammeSelect({ value, onChange, error }: Props) {
-  const { data } = useFetch<{ items: string[] }>('/programmes');
+  const { data, error: loadError, reload } = useFetch<{ items: string[] }>('/programmes');
   const items = data?.items ?? [];
   const options = value && !items.includes(value) ? [value, ...items] : items;
   return (
@@ -32,6 +32,14 @@ export function ProgrammeSelect({ value, onChange, error }: Props) {
           </option>
         ))}
       </select>
+      {loadError && (
+        <>
+          <p role="alert">Could not load programmes. {loadError}</p>
+          <button type="button" onClick={reload}>
+            Retry
+          </button>
+        </>
+      )}
       {error && (
         <p id="field-programme-error" role="alert" className="text-sm text-red-600">
           {error}
