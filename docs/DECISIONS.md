@@ -750,17 +750,23 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 ## D45 - Guest browsing on the server (R31, 15 Oct 2026)
 - **Context:** D44 lets signed-out visitors read the Feed, a note with its comments, and public profiles; everything else stays signed-in.
 - **Decision:** `optionalAuth` (next to `requireAuth`) attaches the user for a valid cookie and otherwise treats the request
-  as a guest, including an invalid or expired cookie, so a stale session degrades to guest reading instead of a 401. A guest
+  as a guest, including an invalid or expired cookie, so a stale session degrades to guest reading instead of a 401. Such
+  responses carry `X-Viewer: guest` (exposed through CORS); the client treats it like a 401 while it believes it is signed
+  in, so an expired session still reaches the session-expired login (CLI-TC15) instead of silently browsing as a guest. A guest
   is viewer id 0 (`GUEST_ID`), which matches no account, so the existing `VISIBLE` rule passes only published public notes by
   active or restricted authors and every per-viewer flag (liked, saved, follows) is false; no query was duplicated. Guests
   have no interest history, so M = 0. Views are only logged by an authenticated endpoint, so guests log nothing.
-- **Snapshot:** guests are re-ranked on every page instead of using "FEED_SNAPSHOT_T". D44 asked for a snapshot keyed by IP
-  and asOf, but `fsn_usr_id` is a foreign key to "USER_T"; keying by IP needs a new table or a nullable key, which is not
-  worth it before guest load is measured. The ranking at one asOf is deterministic (D24), so pages stay consistent except
-  that a note hidden between two page requests shifts later slices by one. Marked as a `shortcut:` in `feed/service.ts`.
+- **Snapshot:** every guest gets the same ranking for one asOf, so no IP key is needed (D44 suggested one). Guest rankings
+  are not stored in "FEED_SNAPSHOT_T" (`fsn_usr_id` is a foreign key to "USER_T"); page 1 keeps the ranking in an
+  in-process Map keyed by the cutoff, capped at `RANKING.guestRankingCacheSize` (50) with the oldest dropped, and later
+  guest pages with that asOf read their slice from it. Re-ranking per page was rejected: an unlike deletes the like row,
+  which changes E even at an old asOf, so pages could skip or repeat a note (RANK-TC31). The cache is per process and is
+  not shared across Fly machines (R27); marked as a `shortcut:` in `feed/service.ts`.
 - **Rate limit:** guest reads are limited to 120 per IP per minute (`RATE_LIMITS.guestReads`) on the shared Postgres store
   (D40); a scrolling reader uses about 20, so several guests behind one campus NAT still fit. Signed-in reads are not
-  counted. The key is `req.ip`, so `trust proxy` must be set for the host before deploy (the D35 pre-deploy item).
-- **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29, RANK-TC30; RANK-TC10 and USR-TC5 changed
+  counted. The key is `req.ip`, so `trust proxy` must be set for the host before deploy (the D35 pre-deploy item). That
+  change must use the hop count `1` (or read `Fly-Client-IP`), never `true`: with `true` a client can forge
+  `X-Forwarded-For` to bypass the guest limit, and with the current `'loopback'` every guest behind Fly's proxy shares one bucket.
+- **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29 to RANK-TC31, CLI-TC15; RANK-TC10 and USR-TC5 changed
   because the feed and profile no longer return 401 without a cookie.
 - **Reversibility:** Easy (swap `optionalAuth` back to `requireAuth` on five routes; no schema change).

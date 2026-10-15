@@ -1,7 +1,9 @@
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { RATE_LIMITS } from '../../src/features/auth/rateLimit';
+import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
@@ -50,6 +52,25 @@ describe('Guest browsing (R31)', () => {
     expect((await pool.query(`SELECT 1 FROM "FEED_SNAPSHOT_T"`)).rowCount).toBe(1);
   });
 
+  it('RANK-TC31: later guest pages read the shared ranking for their asOf', async () => {
+    const author = await insertUser();
+    const fan = await insertUser();
+    const notes: number[] = [];
+    for (let i = 0; i < 12; i++) notes.push(await insertNote(author));
+    await pool.query(`UPDATE "POST_T" SET pst_published_at = NOW() - INTERVAL '5 days' WHERE pst_id = $1`, [notes[0]]);
+    for (let i = 0; i < 30; i++) {
+      const u = i === 0 ? fan : await insertUser();
+      await pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [u, notes[0]]);
+    }
+    const p1 = await guest('/api/feed');
+    expect(ids(p1.body.items)).toContain(notes[0]);
+    await pool.query(`DELETE FROM "LIKE_T"`); // unlikes lower E even at the old asOf
+    const p2 = await guest(`/api/feed?page=2&asOf=${encodeURIComponent(p1.body.asOf)}`);
+    const seen = [...ids(p1.body.items), ...ids(p2.body.items)];
+    expect(seen.sort((a, b) => a - b)).toEqual(notes);
+    expect((await pool.query(`SELECT 1 FROM "FEED_SNAPSHOT_T"`)).rowCount).toBe(0);
+  });
+
   it('RANK-TC30: guest gets 401 on the Following feed', async () => {
     const res = await guest('/api/feed?tab=following');
     expect(res.status).toBe(401);
@@ -66,7 +87,17 @@ describe('Guest browsing (R31)', () => {
     const bad = await request(app).get(`/api/notes/${w.pub}`).set('Cookie', 'parp_token=garbage');
     expect(bad.status).toBe(200);
     expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', 'parp_token=garbage')).status).toBe(404);
-    expect((await request(app).get(`/api/notes/${w.contacts}`).set(asUser(w.friend))).status).toBe(200);
+    expect(bad.headers['x-viewer']).toBe('guest');
+    const friendView = await request(app).get(`/api/notes/${w.contacts}`).set(asUser(w.friend));
+    expect(friendView.status).toBe(200);
+    expect(friendView.headers['x-viewer']).toBeUndefined();
+    // A validly signed but expired token is a guest too.
+    const expired = jwt.sign({ role: 'student' }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(w.friend), expiresIn: -1 });
+    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', `parp_token=${expired}`)).status).toBe(404);
+    // A suspended author's still-valid cookie no longer opens their own draft.
+    const banned = await insertUser({ status: 'suspended' });
+    const ownDraft = await insertNote(banned, { status: 'draft' });
+    expect((await request(app).get(`/api/notes/${ownDraft}`).set(asUser(banned))).status).toBe(404);
   });
 
   it('ENG-TC20: guest reads comments and replies of a public note only, and no view is logged', async () => {
