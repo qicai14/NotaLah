@@ -56,10 +56,10 @@ collaborationRouter.put('/notes/:id/collaborators/:userId', requireAuth, require
   res.json({ userId, role: role.data });
 });
 
-// Owner removes anyone; a collaborator may remove only themself (leave). Leaving needs no active account.
+// Owner removes anyone; a collaborator may remove only themself (leave). Leaving needs no active account and no access,
+// so a collaborator in a block with the owner can still leave (D49).
 collaborationRouter.delete('/notes/:id/collaborators/:userId', requireAuth, async (req, res) => {
-  const self = Number(req.params.userId) === me(req).id;
-  if (!(await access(req, res, ...(self ? (['owner', 'edit', 'view'] as const) : (['owner'] as const))))) return;
+  if (Number(req.params.userId) !== me(req).id && !(await access(req, res, 'owner'))) return;
   await repo.removeCollaborator(Number(req.params.id), Number(req.params.userId));
   res.status(204).end();
 });

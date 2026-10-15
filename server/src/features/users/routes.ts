@@ -50,7 +50,8 @@ usersRouter.get('/me/blocks', requireAuth, async (req, res) => {
   res.json({ users: items, nextCursor });
 });
 
-usersRouter.post('/:id/block', requireAuth, requireActive, async (req, res) => {
+// no requireActive: a restricted user may still protect themself (D49)
+usersRouter.post('/:id/block', requireAuth, async (req, res) => {
   const target = Number(req.params.id);
   if (target === me(req).id) return res.status(400).json({ error: 'You cannot block yourself' });
   const out = await block(me(req).id, target);

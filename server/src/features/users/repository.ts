@@ -1,4 +1,5 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
+import type { Pool, PoolClient } from 'pg';
 import { inTransaction, pool } from '../../lib/pool';
 
 export type Role = 'student' | 'lecturer' | 'admin';
@@ -93,6 +94,7 @@ export async function upsertAdmin(email: string, passwordHash: string, displayNa
      RETURNING ${USER_COLUMNS}`,
     [email, passwordHash, displayName],
   );
+  await pool.query(`DELETE FROM "BLOCK_T" WHERE blk_blocked_id = $1`, [rows[0].usr_id]); // admins cannot be blocked (D49)
   return toAuthUser(rows[0]);
 }
 
@@ -187,9 +189,9 @@ export const blockedWith = (v: string, other: string) =>
   `(${other} IN (SELECT blk_blocked_id FROM "BLOCK_T" WHERE blk_blocker_id = ${v}
                  UNION ALL SELECT blk_blocker_id FROM "BLOCK_T" WHERE blk_blocked_id = ${v}))`;
 
-/** True when either user blocked the other (D49); messaging reuses it to refuse blocked pairs. */
-export async function isBlocked(a: number, b: number): Promise<boolean> {
-  return (await pool.query<{ blocked: boolean }>(`SELECT ${blockedWith('$1::INT', '$2::INT')} AS "blocked"`, [a, b])).rows[0].blocked;
+/** True when either user blocked the other (D49); messaging reuses it to refuse blocked pairs, inside its own transaction via `q`. */
+export async function isBlocked(a: number, b: number, q: Pool | PoolClient = pool): Promise<boolean> {
+  return (await q.query<{ blocked: boolean }>(`SELECT ${blockedWith('$1::INT', '$2::INT')} AS "blocked"`, [a, b])).rows[0].blocked;
 }
 
 /** SQL: account u may be shown to viewer $1: not deleted, and not suspended unless the viewer is an admin (D26, D47). */
@@ -215,7 +217,7 @@ const FOLLOW_STATE_COLS = `
             ${follows('$1', 'u.usr_id')} AS "followedByMe", ${follows('u.usr_id', '$1')} AS "followsMe",
             ${friends('$1', 'u.usr_id')} AS "isFriend"`;
 
-/** Public profile fields plus the viewer's follow and block state; undefined for unknown accounts, those not SHOWN_USER and those who blocked the viewer (D49). */
+/** Public profile fields plus the viewer's follow and block state; undefined for unknown accounts, those not SHOWN_USER and those who blocked the viewer, unless the viewer blocked them too (D49). */
 export async function findProfile(id: number, viewerId: number): Promise<(Profile & FollowState & { blockedByMe: boolean }) | undefined> {
   const { rows } = await pool.query<Profile & FollowState & { blockedByMe: boolean }>(
     `SELECT usr_id AS "id", usr_display_name AS "displayName", usr_role AS "role", usr_programme AS "programme",
@@ -223,7 +225,8 @@ export async function findProfile(id: number, viewerId: number): Promise<(Profil
             ${approvedLecturer('u')} AS "isVerifiedLecturer", ${FOLLOW_STATE_COLS},
             EXISTS (SELECT 1 FROM "BLOCK_T" WHERE blk_blocker_id = $1 AND blk_blocked_id = u.usr_id) AS "blockedByMe"
      FROM "USER_T" u WHERE usr_id = $2 AND ${SHOWN_USER}
-       AND NOT EXISTS (SELECT 1 FROM "BLOCK_T" WHERE blk_blocker_id = u.usr_id AND blk_blocked_id = $1)`,
+       AND (EXISTS (SELECT 1 FROM "BLOCK_T" WHERE blk_blocker_id = $1 AND blk_blocked_id = u.usr_id)
+            OR NOT EXISTS (SELECT 1 FROM "BLOCK_T" WHERE blk_blocker_id = u.usr_id AND blk_blocked_id = $1))`,
     [viewerId, id],
   );
   return rows[0];
@@ -238,16 +241,23 @@ export async function getFollowState(viewerId: number, targetId: number): Promis
   return rows[0];
 }
 
-/** Follows a SHOWN_USER outside any block (D38, D49); 'exists' when already following. */
-export async function follow(followerId: number, followeeId: number): Promise<'created' | 'exists' | 'not_found'> {
-  const { rows } = await pool.query<{ found: boolean; created: boolean }>(
-    `WITH t AS (SELECT u.usr_id FROM "USER_T" u WHERE u.usr_id = $2 AND ${SHOWN_USER} AND NOT ${blockedWith('$1', 'u.usr_id')}),
-          ins AS (INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) SELECT $1, usr_id FROM t
-                  ON CONFLICT DO NOTHING RETURNING 1)
-     SELECT EXISTS (SELECT 1 FROM t) AS "found", EXISTS (SELECT 1 FROM ins) AS "created"`,
-    [followerId, followeeId],
-  );
-  return !rows[0].found ? 'not_found' : rows[0].created ? 'created' : 'exists';
+/**
+ * Follows a SHOWN_USER outside any block (D38, D49); 'exists' when already following. The target is share-locked in its
+ * own statement first, so the check below takes a fresh snapshot: a concurrent block (which locks both users) is either
+ * committed and seen, or waits and then deletes this follow.
+ */
+export function follow(followerId: number, followeeId: number): Promise<'created' | 'exists' | 'not_found'> {
+  return inTransaction(async (c) => {
+    await c.query(`SELECT 1 FROM "USER_T" WHERE usr_id = $1 FOR SHARE`, [followeeId]);
+    const { rows } = await c.query<{ found: boolean; created: boolean }>(
+      `WITH t AS (SELECT u.usr_id FROM "USER_T" u WHERE u.usr_id = $2 AND ${SHOWN_USER} AND NOT ${blockedWith('$1', 'u.usr_id')}),
+            ins AS (INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) SELECT $1, usr_id FROM t
+                    ON CONFLICT DO NOTHING RETURNING 1)
+       SELECT EXISTS (SELECT 1 FROM t) AS "found", EXISTS (SELECT 1 FROM ins) AS "created"`,
+      [followerId, followeeId],
+    );
+    return !rows[0].found ? 'not_found' : rows[0].created ? 'created' : 'exists';
+  });
 }
 
 /** True when a follow row was removed. */
@@ -306,16 +316,20 @@ export async function updateProfile(
 }
 
 /**
- * Blocks a user who is not deleted and not an admin (D49), and in the same transaction removes follows both ways and pending
- * collaboration requests either user made on the other's notes. 'exists' when already blocked.
+ * Blocks a user who is not deleted and not an admin (D49), and in the same transaction removes follows both ways, pending
+ * collaboration requests either user made on the other's notes, and edit locks either holds on the other's notes.
+ * 'exists' when already blocked. Both users are locked in id order, which serialises it against follow().
  */
 export function block(blockerId: number, blockedId: number): Promise<'created' | 'exists' | 'not_found' | 'admin'> {
   return inTransaction(async (c) => {
-    const { rows } = await c.query<{ role: Role }>(
-      `SELECT usr_role AS "role" FROM "USER_T" WHERE usr_id = $1 AND usr_status <> 'deleted'`, [blockedId],
+    const { rows } = await c.query<{ id: number; role: Role; status: UserStatus }>(
+      `SELECT usr_id AS "id", usr_role AS "role", usr_status AS "status" FROM "USER_T"
+       WHERE usr_id IN ($1, $2) ORDER BY usr_id FOR UPDATE`,
+      [blockerId, blockedId],
     );
-    if (!rows[0]) return 'not_found';
-    if (rows[0].role === 'admin') return 'admin';
+    const target = rows.find((r) => r.id === blockedId);
+    if (!target || target.status === 'deleted') return 'not_found';
+    if (target.role === 'admin') return 'admin';
     const { rowCount } = await c.query(
       `INSERT INTO "BLOCK_T" (blk_blocker_id, blk_blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [blockerId, blockedId],
     );
@@ -327,6 +341,11 @@ export function block(blockerId: number, blockedId: number): Promise<'created' |
       `DELETE FROM "COLLAB_REQUEST_T" r USING "POST_T" p
        WHERE p.pst_id = r.crq_pst_id AND r.crq_status = 'pending'
          AND ((r.crq_usr_id = $1 AND p.pst_usr_id = $2) OR (r.crq_usr_id = $2 AND p.pst_usr_id = $1))`,
+      [blockerId, blockedId],
+    );
+    await c.query(
+      `UPDATE "POST_T" SET pst_lock_usr_id = NULL, pst_lock_expires_at = NULL
+       WHERE (pst_usr_id = $1 AND pst_lock_usr_id = $2) OR (pst_usr_id = $2 AND pst_lock_usr_id = $1)`,
       [blockerId, blockedId],
     );
     return rowCount === 1 ? 'created' : 'exists';

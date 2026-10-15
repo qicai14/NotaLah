@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
-import { isBlocked } from '../../src/features/users/repository';
+import { isBlocked, upsertAdmin } from '../../src/features/users/repository';
 import { pool } from '../../src/lib/pool';
 import { asUser, CSRF, follow, insertNote, insertUser, truncateAll, walkPages } from '../helpers';
 
@@ -63,12 +63,16 @@ describe('Blocking', () => {
     expect(res.status).toBe(403);
     expect(res.body.error).toBe('Administrators cannot be blocked');
     expect((await pool.query(`SELECT 1 FROM "BLOCK_T"`)).rowCount).toBe(0);
+    // promoting a blocked user through the admin bootstrap lifts blocks against them
+    const promoted = await insertUser({ email: 'promoted@mail.apu.edu.my' });
+    expect((await block(a, promoted)).status).toBe(201);
+    await upsertAdmin('promoted@mail.apu.edu.my', 'x'.repeat(60), 'Admin');
+    expect((await pool.query(`SELECT 1 FROM "BLOCK_T"`)).rowCount).toBe(0);
   });
 
-  it('BLK-TC3: a restricted user cannot block but can unblock; unblock is idempotent and restores visibility', async () => {
+  it('BLK-TC3: a restricted user can block and unblock; unblock is idempotent and restores visibility', async () => {
     const [r, b] = [await insertUser({ status: 'restricted' }), await insertUser()];
-    expect((await block(r, b)).status).toBe(403);
-    await pool.query(`INSERT INTO "BLOCK_T" (blk_blocker_id, blk_blocked_id) VALUES ($1, $2)`, [r, b]);
+    expect((await block(r, b)).status).toBe(201);
     const note = await insertNote(b);
     expect((await api.get(r, `/api/notes/${note}`)).status).toBe(404);
     for (let i = 0; i < 2; i++) {
@@ -104,6 +108,10 @@ describe('Blocking', () => {
       }
     }
     expect((await api.get(b, `/api/users/${a}`)).status).toBe(404);
+    // mutual block: each side gets the minimal payload so either can unblock
+    expect((await block(b, a)).status).toBe(201);
+    expect((await api.get(a, `/api/users/${b}`)).body).toEqual({ user: { id: b, displayName: 'Kernel Bob', blockedByMe: true } });
+    expect((await api.get(b, `/api/users/${a}`)).body).toEqual({ user: { id: a, displayName: 'Kernel Alice', blockedByMe: true } });
   });
 
   it('BLK-TC6: neither side can follow the other', async () => {
@@ -115,9 +123,19 @@ describe('Blocking', () => {
     expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(0);
   });
 
-  it('BLK-TC7: notes disappear both ways from the feed, following feed, search, profile list and detail', async () => {
+  it('BLK-TC7: notes disappear both ways from the feed, following feed, search, counts, bookmarks, profile list and detail', async () => {
     const { a, b, pairs } = await blockedPair();
     const notes = { [a]: await kernelNote(a), [b]: await kernelNote(b) };
+    // each side bookmarked the other's note before the block; both notes carry #kernel and the same module
+    await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2), ($3, $4)`, [a, notes[b], b, notes[a]]);
+    await pool.query(`INSERT INTO "HASHTAG_T" (hsh_name) VALUES ('kernel')`);
+    await pool.query(`INSERT INTO "POST_HASHTAG_T" (phs_pst_id, phs_hsh_id) SELECT unnest($1::INT[]), hsh_id FROM "HASHTAG_T"`, [[notes[a], notes[b]]]);
+    const moduleCode = (await pool.query(`SELECT mod_code FROM "MODULE_T" ORDER BY mod_id LIMIT 1`)).rows[0].mod_code;
+    const counts = async (who: Who) => [
+      (await api.get(who, '/api/search?q=kernel&tab=hashtags')).body.items[0].noteCount,
+      (await api.get(who, `/api/search?q=${moduleCode}&tab=modules`)).body.items[0].noteCount,
+    ];
+    expect(await counts(null)).toEqual([2, 2]);
     // b's note reaches a third user's following feed through a credited co-author the viewer follows (D46)
     const c = await insertUser();
     await pool.query(
@@ -129,6 +147,8 @@ describe('Blocking', () => {
       expect((await api.get(viewer, `/api/notes/${notes[other]}`)).status).toBe(404);
       expect(ids((await api.get(viewer, '/api/feed')).body.items)).toEqual([notes[viewer]]);
       expect(ids((await api.get(viewer, '/api/search?q=kernel&tab=notes')).body.items)).toEqual([notes[viewer]]);
+      expect((await api.get(viewer, '/api/bookmarks')).body.notes).toEqual([]);
+      expect(await counts(viewer)).toEqual([1, 1]);
     }
     expect((await api.get(a, '/api/feed?tab=following')).body.items).toEqual([]);
     expect(ids((await api.get(c, `/api/users/${b}/notes`)).body.notes)).toEqual([notes[b]]); // outside the block
@@ -182,25 +202,40 @@ describe('Blocking', () => {
   });
 
   it('BLK-TC11: invites, share links and requests between the pair are refused; existing access pauses until unblock', async () => {
-    const [owner, other] = [await insertUser(), await insertUser()];
-    const note = await insertNote(owner);
-    const link = (await api.post(owner, `/api/notes/${note}/links`, { role: 'edit' })).body.token;
-    await api.post(other, `/api/notes/${note}/requests`, { message: 'let me in' });
-    const viewNote = await insertNote(owner);
-    await api.put(owner, `/api/notes/${viewNote}/collaborators/${other}`, { role: 'view' });
-    expect((await block(other, owner)).status).toBe(201);
+    for (const blockerIsOwner of [false, true]) {
+      await truncateAll();
+      const [owner, other] = [await insertUser(), await insertUser()];
+      const note = await insertNote(owner);
+      const link = (await api.post(owner, `/api/notes/${note}/links`, { role: 'edit' })).body.token;
+      await api.post(other, `/api/notes/${note}/requests`, { message: 'let me in' });
+      const viewNote = await insertNote(owner);
+      await api.put(owner, `/api/notes/${viewNote}/collaborators/${other}`, { role: 'view' });
+      const editNote = await insertNote(owner);
+      await api.put(owner, `/api/notes/${editNote}/collaborators/${other}`, { role: 'edit' });
+      expect((await api.post(other, `/api/notes/${editNote}/lock`)).status).toBe(200);
+      const [x, y] = blockerIsOwner ? [owner, other] : [other, owner];
+      expect((await block(x, y)).status).toBe(201);
 
-    expect((await pool.query(`SELECT 1 FROM "COLLAB_REQUEST_T"`)).rowCount).toBe(0);
-    expect((await api.put(owner, `/api/notes/${note}/collaborators/${other}`, { role: 'edit' })).status).toBe(404);
-    expect((await api.get(other, `/api/share/${link}`)).status).toBe(404);
-    expect((await api.post(other, `/api/share/${link}`)).status).toBe(404);
-    expect((await api.post(other, `/api/notes/${note}/requests`)).status).toBe(404);
-    expect((await api.get(other, `/api/notes/${viewNote}`)).status).toBe(404);
-    expect((await api.get(null, `/api/share/${link}`)).status).toBe(401); // edit link: guests are asked to log in, as before
+      expect((await pool.query(`SELECT 1 FROM "COLLAB_REQUEST_T"`)).rowCount).toBe(0);
+      expect((await pool.query(`SELECT pst_lock_usr_id FROM "POST_T" WHERE pst_id = $1`, [editNote])).rows[0].pst_lock_usr_id).toBeNull();
+      expect((await api.put(owner, `/api/notes/${note}/collaborators/${other}`, { role: 'edit' })).status).toBe(404);
+      expect((await api.get(other, `/api/share/${link}`)).status).toBe(404);
+      expect((await api.post(other, `/api/share/${link}`)).status).toBe(404);
+      expect((await api.post(other, `/api/notes/${note}/requests`)).status).toBe(404);
+      const stale = (await pool.query(`INSERT INTO "COLLAB_REQUEST_T" (crq_pst_id, crq_usr_id) VALUES ($1, $2) RETURNING crq_id`, [note, other])).rows[0].crq_id;
+      expect((await api.post(owner, `/api/notes/${note}/requests/${stale}`, { decision: 'approve' })).status).toBe(404);
+      await pool.query(`DELETE FROM "COLLAB_REQUEST_T"`);
+      expect((await api.get(other, `/api/notes/${viewNote}`)).status).toBe(404);
+      expect((await api.get(other, '/api/notes/shared')).body.notes).toEqual([]);
+      expect((await api.get(null, `/api/share/${link}`)).status).toBe(401); // edit link: guests are asked to log in, as before
+      // a collaborator in a block with the owner can still leave
+      expect((await api.del(other, `/api/notes/${editNote}/collaborators/${other}`)).status).toBe(204);
 
-    await api.del(other, `/api/users/${owner}/block`);
-    expect((await api.get(other, `/api/notes/${viewNote}`)).body.note.myRole).toBe('view');
-    expect((await api.post(other, `/api/share/${link}`)).status).toBe(200);
+      await api.del(x, `/api/users/${y}/block`);
+      expect((await api.get(other, `/api/notes/${viewNote}`)).body.note.myRole).toBe('view');
+      expect(ids((await api.get(other, '/api/notes/shared')).body.notes)).toEqual([viewNote]);
+      expect((await api.post(other, `/api/share/${link}`)).status).toBe(200);
+    }
   });
 
   it('BLK-TC12: guests are unaffected by blocks', async () => {
