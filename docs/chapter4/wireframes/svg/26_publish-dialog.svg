@@ -13,18 +13,14 @@
 <text x="565.36" y="203.94" font-size="13.44" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
 <text x="565.36" y="253.93" font-size="33.15" font-weight="700" letter-spacing="-0.83" fill="#1c1c1c">Normalisation, 1NF to</text>
 <text x="565.36" y="289.73" font-size="33.15" font-weight="700" letter-spacing="-0.83" fill="#1c1c1c">3NF</text>
-<rect x="565.36" y="309.09" width="385.28" height="55.45" rx="10.75" fill="#f2f2f2"/>
-<text x="580.58" y="344.71" font-size="19.71" font-weight="600" fill="#1c1c1c">1NF</text>
-<text x="638.81" y="344.72" font-size="16.13" fill="#474747">Lorem ipsum dolor sit amet elit.</text>
-<rect x="565.36" y="378.88" width="385.28" height="55.45" rx="10.75" fill="#f2f2f2"/>
-<text x="580.58" y="414.49" font-size="19.71" font-weight="600" fill="#1c1c1c">2NF</text>
-<text x="638.81" y="414.51" font-size="16.13" fill="#474747">Consectetur adipiscing elit sed do.</text>
-<rect x="565.36" y="448.66" width="385.28" height="55.45" rx="10.75" fill="#f2f2f2"/>
-<text x="580.58" y="484.27" font-size="19.71" font-weight="600" fill="#1c1c1c">3NF</text>
-<text x="638.81" y="484.29" font-size="16.13" fill="#474747">Eiusmod tempor incididunt ut labore.</text>
-<rect x="565.36" y="518.44" width="385.28" height="68.25" rx="10.75" fill="#e6e6e6"/>
-<text x="580.58" y="548.01" font-size="14.78" fill="#474747">Ut enim ad minim veniam, quis nostrud exercitation</text>
-<text x="580.58" y="568.7" font-size="14.78" fill="#474747">ullamco.</text>
+<rect x="565.36" y="309.09" width="354.45" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="565.36" y="333.27" width="300.52" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="565.36" y="357.44" width="331.33" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="565.36" y="381.61" width="385.28" height="256.69" rx="8.96" fill="#f2f2f2"/>
+<path d="M565.36 381.61L950.64 638.3M950.64 381.61L565.36 638.3" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="566.11" y="382.36" width="383.78" height="255.19" rx="8.21" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="565.36" y="652.63" width="346.75" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="565.36" y="676.8" width="246.58" height="9.84" rx="4.48" fill="#e6e6e6"/>
 </g>
 </g>
 <g id="ebot-3">
@@ -32,13 +28,10 @@
 <rect x="76" y="756" width="1364" height="1" fill="#d6d6d6"/>
 <rect x="95.5" y="771.5" width="59" height="73" rx="8.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
 <rect x="96" y="772" width="58" height="72" rx="8" fill="#ffffff"/>
+<rect x="96" y="772" width="58" height="72" fill="#ffffff"/>
 <rect x="96" y="772" width="58" height="72" fill="#f2f2f2"/>
-<rect x="100.05" y="776.05" width="49.91" height="36.52" rx="1.74" fill="#f2f2f2"/>
-<path d="M100.05 776.05L149.95 812.56M149.95 776.05L100.05 812.56" fill="none" stroke="#a8a8a8" stroke-width="1"/>
-<rect x="100.8" y="776.8" width="48.41" height="35.02" rx="0.99" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<text x="100.05" y="816.13" font-size="1.74" font-weight="600" fill="#6b6b6b">CT030-3-2</text>
-<text x="100.05" y="823.66" font-size="5.8" font-weight="700" letter-spacing="-0.14" fill="#1c1c1c">Normalisation,</text>
-<text x="100.05" y="829.91" font-size="5.8" font-weight="700" letter-spacing="-0.14" fill="#1c1c1c">1NF to 3NF</text>
+<path d="M96 772L154 844M154 772L96 844" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="96.75" y="772.75" width="56.5" height="70.5" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <rect x="100" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
 <text x="104" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">1</text>
 <rect x="162.75" y="770.75" width="60.5" height="74.5" rx="9.25" fill="none" stroke="#1c1c1c" stroke-width="2.5"/>
@@ -47,18 +40,14 @@
 <text x="168.05" y="777.77" font-size="1.74" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
 <text x="168.05" y="784.17" font-size="4.29" font-weight="700" letter-spacing="-0.11" fill="#1c1c1c">Normalisation, 1NF to</text>
 <text x="168.05" y="788.81" font-size="4.29" font-weight="700" letter-spacing="-0.11" fill="#1c1c1c">3NF</text>
-<rect x="168.05" y="791.52" width="49.91" height="7.28" rx="1.39" fill="#f2f2f2"/>
-<text x="170.02" y="795.31" font-size="2.55" font-weight="600" fill="#1c1c1c">1NF</text>
-<text x="177.55" y="795.62" font-size="2.09" fill="#474747">Lorem ipsum dolor sit amet elit.</text>
-<rect x="168.05" y="800.64" width="49.91" height="7.28" rx="1.39" fill="#f2f2f2"/>
-<text x="170.02" y="804.43" font-size="2.55" font-weight="600" fill="#1c1c1c">2NF</text>
-<text x="177.55" y="804.74" font-size="2.09" fill="#474747">Consectetur adipiscing elit sed do.</text>
-<rect x="168.05" y="809.77" width="49.91" height="7.28" rx="1.39" fill="#f2f2f2"/>
-<text x="170.02" y="813.56" font-size="2.55" font-weight="600" fill="#1c1c1c">3NF</text>
-<text x="177.55" y="813.87" font-size="2.09" fill="#474747">Eiusmod tempor incididunt ut labore.</text>
-<rect x="168.05" y="818.89" width="49.91" height="8.78" rx="1.39" fill="#e6e6e6"/>
-<text x="170.02" y="822.42" font-size="1.91" fill="#474747">Ut enim ad minim veniam, quis nostrud exercitation</text>
-<text x="170.02" y="825.08" font-size="1.91" fill="#474747">ullamco.</text>
+<rect x="168.05" y="791.52" width="45.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="168.05" y="794.63" width="38.92" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="168.05" y="797.73" width="42.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="168.05" y="800.84" width="49.91" height="32.89" rx="1.16" fill="#f2f2f2"/>
+<path d="M168.05 800.84L217.95 833.73M217.95 800.84L168.05 833.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="168.8" y="801.59" width="48.41" height="31.39" rx="0.41" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="168.05" y="835.58" width="44.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="168.05" y="838.69" width="31.94" height="1.27" rx="0.58" fill="#e6e6e6"/>
 <rect x="168" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
 <text x="172" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">2</text>
 <rect x="231.5" y="771.5" width="59" height="73" rx="8.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
@@ -84,18 +73,17 @@
 <rect x="504" y="772" width="52" height="72" rx="8" fill="#f2f2f2"/>
 <g transform="translate(519 797) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
 <rect x="566" y="772" width="52" height="72" rx="8" fill="#f2f2f2"/>
-<g transform="translate(582 798) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path></g>
-<g transform="translate(106 870) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></g>
-<text x="130" y="882.47" font-size="13" font-weight="600" fill="#1c1c1c">Notes</text>
-<text x="190.88" y="882.47" font-size="13" font-weight="600" fill="#6b6b6b">Drag thumbnails to reorder</text>
-<text x="1079.48" y="882.47" font-size="13" font-weight="600" fill="#474747">Slide 2 of 6</text>
-<rect x="1161.33" y="866" width="1" height="24" fill="#d6d6d6"/>
-<rect x="1178.33" y="876" width="120" height="4" rx="2" fill="#cdcdcd"/>
-<rect x="1230.38" y="869.25" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#474747" stroke-width="1.5"/>
-<rect x="1231.13" y="870" width="16" height="16" rx="8" fill="#ffffff"/>
-<text x="1310.33" y="882.47" font-size="13" font-weight="600" fill="#474747">64%</text>
-<g transform="translate(1355 869) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></g>
-<g transform="translate(1399 869) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></g>
+<text x="578.02" y="812.28" font-size="12" font-weight="600" fill="#474747">Copy</text>
+<text x="106" y="882.47" font-size="13" font-weight="600" fill="#1c1c1c">Notes</text>
+<text x="166.88" y="882.47" font-size="13" font-weight="600" fill="#6b6b6b">Drag thumbnails to reorder</text>
+<text x="1058.8" y="882.47" font-size="13" font-weight="600" fill="#474747">Slide 2 of 6</text>
+<rect x="1140.64" y="866" width="1" height="24" fill="#d6d6d6"/>
+<rect x="1157.64" y="876" width="120" height="4" rx="2" fill="#cdcdcd"/>
+<rect x="1209.69" y="869.25" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#474747" stroke-width="1.5"/>
+<rect x="1210.44" y="870" width="16" height="16" rx="8" fill="#ffffff"/>
+<text x="1289.64" y="882.47" font-size="13" font-weight="600" fill="#474747">64%</text>
+<text x="1339.31" y="882.28" font-size="12" font-weight="600" fill="#474747">Grid</text>
+<text x="1398.5" y="882.28" font-size="12" font-weight="600" fill="#474747">Fit</text>
 </g>
 <g id="erail-4">
 <rect x="0" y="56" width="76" height="844" fill="#ffffff"/>
@@ -119,122 +107,111 @@
 <g id="ebar-5">
 <rect x="0" y="0" width="1440" height="56" fill="#ffffff"/>
 <rect x="0" y="55" width="1440" height="1" fill="#d6d6d6"/>
-<g transform="translate(26 19) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></g>
-<text x="52" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Home</text>
-<rect x="109.75" y="16" width="1" height="24" fill="#d6d6d6"/>
-<text x="130.75" y="33.15" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF</text>
-<g transform="translate(303.86 21) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"></path></g>
-<g transform="translate(339.86 19) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 0 1-.5-9A6 6 0 0 1 18 8.5 4.5 4.5 0 0 1 17.5 18z"></path><path d="m9.5 13 2 2 3.5-3.5"></path></g>
-<text x="363.86" y="32.28" font-size="12" fill="#6b6b6b">Saved 14:32</text>
-<rect x="439.2" y="16" width="1" height="24" fill="#d6d6d6"/>
-<g transform="translate(458.2 18) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path></g>
-<g transform="translate(498.2 18) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"></path></g>
-<rect x="536.2" y="16" width="1" height="24" fill="#d6d6d6"/>
-<rect x="549.7" y="10.5" width="122.92" height="35" rx="7.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
-<g transform="translate(557.2 20) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></g>
-<text x="579.2" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">4:5 Portrait</text>
-<g transform="translate(651.13 21) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
-<g transform="translate(1036.34 20) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l11-6.5z"></path></g>
-<text x="1060.34" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Preview</text>
-<rect x="1132.28" y="12" width="85.05" height="32" rx="16" fill="#ffffff"/>
-<rect x="1133.03" y="12.75" width="83.55" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<g transform="translate(1146.28 20) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
-<text x="1170.28" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Share</text>
-<rect x="1229.33" y="12" width="87.69" height="32" rx="16" fill="#e6e6e6"/>
-<text x="1243.33" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Save draft</text>
-<rect x="1329.02" y="12" width="94.98" height="32" rx="16" fill="#3a3a3a"/>
-<g transform="translate(1343.02 20) scale(0.67)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7 9l5-5 5 5"></path><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"></path></g>
+<text x="26" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Home</text>
+<rect x="83.75" y="16" width="1" height="24" fill="#d6d6d6"/>
+<text x="104.75" y="33.15" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF</text>
+<text x="293.86" y="32.28" font-size="12" fill="#6b6b6b">Saved 14:32</text>
+<rect x="369.2" y="16" width="1" height="24" fill="#d6d6d6"/>
+<text x="394.2" y="32.28" font-size="12" font-weight="600" fill="#474747">Undo</text>
+<text x="456.05" y="32.28" font-size="12" font-weight="600" fill="#474747" fill-opacity="0.45">Redo</text>
+<rect x="507.98" y="16" width="1" height="24" fill="#d6d6d6"/>
+<rect x="521.48" y="10.5" width="100.92" height="35" rx="7.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<text x="528.98" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">4:5 Portrait</text>
+<g transform="translate(600.91 21) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<text x="1108.34" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Preview</text>
+<rect x="1180.28" y="12" width="61.05" height="32" rx="16" fill="#ffffff"/>
+<rect x="1181.03" y="12.75" width="59.55" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1194.28" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Share</text>
+<rect x="1253.33" y="12" width="87.69" height="32" rx="16" fill="#e6e6e6"/>
+<text x="1267.33" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Save draft</text>
+<rect x="1353.02" y="12" width="70.98" height="32" rx="16" fill="#3a3a3a"/>
 <text x="1367.02" y="32.47" font-size="13" font-weight="600" fill="#ffffff">Publish</text>
 </g>
 <g id="scrim-6">
 <rect x="0" y="0" width="1440" height="900" fill="#282828" fill-opacity="0.4"/>
 <g id="dlg-7">
-<rect x="309.25" y="173.11" width="821.5" height="553.77" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
-<rect x="310" y="173.86" width="820" height="552.27" rx="20" fill="#ffffff"/>
-<text x="334" y="220.66" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Publish note</text>
-<g transform="translate(1084 199.86) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<rect x="333.5" y="244.36" width="181" height="226" rx="12.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
-<rect x="334" y="244.86" width="180" height="225" fill="#ffffff"/>
-<text x="346.59" y="263.19" font-size="5.4" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
-<text x="346.59" y="283.06" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">Normalisation, 1NF to</text>
-<text x="346.59" y="297.43" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">3NF</text>
-<rect x="346.59" y="305.53" width="154.81" height="22.53" rx="4.32" fill="#f2f2f2"/>
-<text x="352.7" y="319.71" font-size="7.92" font-weight="600" fill="#1c1c1c">1NF</text>
-<text x="376.09" y="320.11" font-size="6.48" fill="#474747">Lorem ipsum dolor sit amet elit.</text>
-<rect x="346.59" y="333.81" width="154.81" height="22.53" rx="4.32" fill="#f2f2f2"/>
-<text x="352.7" y="347.99" font-size="7.92" font-weight="600" fill="#1c1c1c">2NF</text>
-<text x="376.09" y="348.39" font-size="6.48" fill="#474747">Consectetur adipiscing elit sed do.</text>
-<rect x="346.59" y="362.09" width="154.81" height="22.53" rx="4.32" fill="#f2f2f2"/>
-<text x="352.7" y="376.27" font-size="7.92" font-weight="600" fill="#1c1c1c">3NF</text>
-<text x="376.09" y="376.67" font-size="6.48" fill="#474747">Eiusmod tempor incididunt ut labore.</text>
-<rect x="346.59" y="390.38" width="154.81" height="27.41" rx="4.32" fill="#e6e6e6"/>
-<text x="352.7" y="401.73" font-size="5.94" fill="#474747">Ut enim ad minim veniam, quis nostrud exercitation</text>
-<text x="352.7" y="410.04" font-size="5.94" fill="#474747">ullamco.</text>
-<text x="334" y="490.84" font-size="12" fill="#6b6b6b">6 slides · 4:5 Portrait</text>
-<text x="534" y="258.75" font-size="13" font-weight="600" fill="#474747">Who can see this note</text>
-<rect x="534" y="269.7" width="184" height="115.89" rx="12" fill="#ffffff"/>
-<rect x="535" y="270.7" width="182" height="113.89" rx="11" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<g transform="translate(548 283.7) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"></path></g>
+<rect x="309.25" y="174.11" width="821.5" height="551.77" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="310" y="174.86" width="820" height="550.27" rx="20" fill="#ffffff"/>
+<text x="334" y="221.66" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Publish note</text>
+<g transform="translate(1084 200.86) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<rect x="333.5" y="245.36" width="181" height="226" rx="12.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="334" y="245.86" width="180" height="225" fill="#ffffff"/>
+<text x="346.59" y="264.19" font-size="5.4" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
+<text x="346.59" y="284.06" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">Normalisation, 1NF to</text>
+<text x="346.59" y="298.43" font-size="13.32" font-weight="700" letter-spacing="-0.33" fill="#1c1c1c">3NF</text>
+<rect x="346.59" y="306.53" width="142.42" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="316.23" width="120.75" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="325.94" width="133.13" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="335.64" width="154.81" height="103.22" rx="3.6" fill="#f2f2f2"/>
+<path d="M346.59 335.64L501.41 438.86M501.41 335.64L346.59 438.86" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="347.34" y="336.39" width="153.31" height="101.72" rx="2.85" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="346.59" y="444.61" width="139.33" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<rect x="346.59" y="454.31" width="99.08" height="3.95" rx="1.8" fill="#e6e6e6"/>
+<text x="334" y="491.84" font-size="12" fill="#6b6b6b">6 slides · 4:5 Portrait</text>
+<text x="534" y="259.75" font-size="13" font-weight="600" fill="#474747">Who can see this note</text>
+<rect x="534" y="270.7" width="184" height="113.89" rx="12" fill="#ffffff"/>
+<rect x="535" y="271.7" width="182" height="111.89" rx="11" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<rect x="548" y="285.2" width="19" height="19" rx="9.5" fill="#f2f2f2"/>
+<path d="M550.78 287.99L564.22 301.42M564.22 287.99L550.78 301.42" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="548.75" y="285.95" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <rect x="684" y="284.7" width="20" height="20" rx="10" fill="#ffffff"/>
 <rect x="687" y="287.7" width="14" height="14" rx="7" fill="none" stroke="#3a3a3a" stroke-width="6"/>
-<text x="548" y="327.01" font-size="14" font-weight="600" fill="#1c1c1c">Public</text>
-<text x="548" y="350.98" font-size="12" fill="#6b6b6b">Nostrud exercitation ullamco</text>
-<text x="548" y="367.78" font-size="12" fill="#6b6b6b">laboris nisi aliquip ex.</text>
-<rect x="728" y="269.7" width="184" height="115.89" rx="12" fill="#f2f2f2"/>
-<rect x="728.5" y="270.2" width="183" height="114.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<g transform="translate(742 283.7) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3.3"></circle><circle cx="16" cy="8" r="3.3"></circle><path d="M2.5 20c.6-3.3 3-5.3 6-5.3s5.4 2 6 5.3M15 14.8c3 .1 5.8 1.9 6.5 5.2"></path></g>
+<text x="548" y="326.01" font-size="14" font-weight="600" fill="#1c1c1c">Public</text>
+<text x="548" y="349.98" font-size="12" fill="#6b6b6b">Nostrud exercitation ullamco</text>
+<text x="548" y="366.78" font-size="12" fill="#6b6b6b">laboris nisi aliquip ex.</text>
+<rect x="728" y="270.7" width="184" height="113.89" rx="12" fill="#f2f2f2"/>
+<rect x="728.5" y="271.2" width="183" height="112.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="742" y="285.2" width="19" height="19" rx="9.5" fill="#f2f2f2"/>
+<path d="M744.78 287.99L758.22 301.42M758.22 287.99L744.78 301.42" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="742.75" y="285.95" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <rect x="878" y="284.7" width="20" height="20" rx="10" fill="#ffffff"/>
 <rect x="879" y="285.7" width="18" height="18" rx="9" fill="none" stroke="#cdcdcd" stroke-width="2"/>
-<text x="742" y="327.01" font-size="14" font-weight="600" fill="#1c1c1c">Friends only</text>
-<text x="742" y="350.98" font-size="12" fill="#6b6b6b">Irure in reprehenderit</text>
-<text x="742" y="367.78" font-size="12" fill="#6b6b6b">voluptate velit esse cillum.</text>
-<rect x="922" y="269.7" width="184" height="115.89" rx="12" fill="#f2f2f2"/>
-<rect x="922.5" y="270.2" width="183" height="114.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<g transform="translate(936 283.7) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></g>
+<text x="742" y="326.01" font-size="14" font-weight="600" fill="#1c1c1c">Friends only</text>
+<text x="742" y="349.98" font-size="12" fill="#6b6b6b">Irure in reprehenderit</text>
+<text x="742" y="366.78" font-size="12" fill="#6b6b6b">voluptate velit esse cillum.</text>
+<rect x="922" y="270.7" width="184" height="113.89" rx="12" fill="#f2f2f2"/>
+<rect x="922.5" y="271.2" width="183" height="112.89" rx="11.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="936" y="285.2" width="19" height="19" rx="9.5" fill="#f2f2f2"/>
+<path d="M938.78 287.99L952.22 301.42M952.22 287.99L938.78 301.42" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="936.75" y="285.95" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <rect x="1072" y="284.7" width="20" height="20" rx="10" fill="#ffffff"/>
 <rect x="1073" y="285.7" width="18" height="18" rx="9" fill="none" stroke="#cdcdcd" stroke-width="2"/>
-<text x="936" y="327.01" font-size="14" font-weight="600" fill="#1c1c1c">Private draft</text>
-<text x="936" y="350.98" font-size="12" fill="#6b6b6b">Occaecat cupidatat non</text>
-<text x="936" y="367.78" font-size="12" fill="#6b6b6b">proident sunt culpa lorem.</text>
-<text x="534" y="415.49" font-size="13" font-weight="600" fill="#474747">Module</text>
-<rect x="534" y="426.44" width="572" height="44" rx="10" fill="#f2f2f2"/>
-<rect x="534.5" y="426.94" width="571" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<g transform="translate(548 439.44) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14"></path></g>
-<text x="574" y="453.59" font-size="14" fill="#1c1c1c">CT030-3-2 Database Systems</text>
-<g transform="translate(1076 440.44) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
-<text x="534" y="500.33" font-size="13" font-weight="600" fill="#474747">Hashtags</text>
-<text x="592.02" y="500.33" font-size="13" fill="#6b6b6b">3 of 5</text>
-<rect x="534" y="511.28" width="572" height="44" rx="10" fill="#ffffff"/>
-<rect x="535" y="512.28" width="570" height="42" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<rect x="544" y="520.28" width="117.95" height="26" rx="13" fill="#e6e6e6"/>
-<text x="554" y="537.56" font-size="12" font-weight="600" fill="#474747">#normalisation</text>
-<g transform="translate(639.95 527.28) scale(0.5)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<rect x="667.95" y="520.28" width="58.64" height="26" rx="13" fill="#e6e6e6"/>
-<text x="677.95" y="537.56" font-size="12" font-weight="600" fill="#474747">#sql</text>
-<g transform="translate(704.59 527.28) scale(0.5)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<rect x="732.59" y="520.28" width="73.06" height="26" rx="13" fill="#e6e6e6"/>
-<text x="742.59" y="537.56" font-size="12" font-weight="600" fill="#474747">#ct030</text>
-<g transform="translate(783.66 527.28) scale(0.5)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<text x="811.66" y="538.44" font-size="14" fill="#1c1c1c">#erd</text>
-<rect x="846.38" y="524.28" width="1.5" height="18" fill="#1c1c1c"/>
-<text x="534" y="585.18" font-size="13" font-weight="600" fill="#474747">Slide size</text>
-<rect x="534" y="596.13" width="280" height="38" rx="19" fill="#e6e6e6"/>
-<rect x="537" y="599.13" width="45.84" height="32" rx="16" fill="#ffffff"/>
-<rect x="537.5" y="599.63" width="44.84" height="31" rx="15.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
-<text x="551" y="619.6" font-size="13" font-weight="600" fill="#1c1c1c">4:5</text>
-<text x="598.84" y="619.6" font-size="13" font-weight="600" fill="#474747">9:16</text>
-<text x="651.73" y="619.6" font-size="13" font-weight="600" fill="#474747">16:9</text>
-<text x="826" y="585.18" font-size="13" font-weight="600" fill="#474747">Background music</text>
-<rect x="826" y="596.13" width="280" height="44" rx="10" fill="#f2f2f2"/>
-<rect x="826.5" y="596.63" width="279" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<g transform="translate(840 610.13) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5.5l11-2V16"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>
-<text x="864" y="623.28" font-size="14" fill="#1c1c1c">Track title</text>
-<g transform="translate(1078 611.13) scale(0.58)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<rect x="911.84" y="662.13" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
-<text x="929.84" y="687.28" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
-<rect x="999.7" y="662.13" width="106.3" height="40" rx="20" fill="#3a3a3a"/>
-<g transform="translate(1017.7 674.13) scale(0.67)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7 9l5-5 5 5"></path><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"></path></g>
-<text x="1041.7" y="687.28" font-size="14" font-weight="600" fill="#ffffff">Publish</text>
+<text x="936" y="326.01" font-size="14" font-weight="600" fill="#1c1c1c">Private draft</text>
+<text x="936" y="349.98" font-size="12" fill="#6b6b6b">Occaecat cupidatat non</text>
+<text x="936" y="366.78" font-size="12" fill="#6b6b6b">proident sunt culpa lorem.</text>
+<text x="534" y="414.49" font-size="13" font-weight="600" fill="#474747">Module</text>
+<rect x="534" y="425.44" width="572" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="534.5" y="425.94" width="571" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="548" y="452.59" font-size="14" fill="#1c1c1c">CT030-3-2 Database Systems</text>
+<g transform="translate(1076 439.44) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<text x="534" y="499.33" font-size="13" font-weight="600" fill="#474747">Hashtags</text>
+<text x="592.02" y="499.33" font-size="13" fill="#6b6b6b">3 of 5</text>
+<rect x="534" y="510.28" width="572" height="44" rx="10" fill="#ffffff"/>
+<rect x="535" y="511.28" width="570" height="42" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<rect x="544" y="519.28" width="101.95" height="26" rx="13" fill="#e6e6e6"/>
+<text x="554" y="536.56" font-size="12" font-weight="600" fill="#474747">#normalisation</text>
+<rect x="651.95" y="519.28" width="42.64" height="26" rx="13" fill="#e6e6e6"/>
+<text x="661.95" y="536.56" font-size="12" font-weight="600" fill="#474747">#sql</text>
+<rect x="700.59" y="519.28" width="57.06" height="26" rx="13" fill="#e6e6e6"/>
+<text x="710.59" y="536.56" font-size="12" font-weight="600" fill="#474747">#ct030</text>
+<text x="763.66" y="537.44" font-size="14" fill="#1c1c1c">#erd</text>
+<rect x="798.38" y="523.28" width="1.5" height="18" fill="#1c1c1c"/>
+<text x="534" y="584.18" font-size="13" font-weight="600" fill="#474747">Slide size</text>
+<rect x="534" y="595.13" width="280" height="38" rx="19" fill="#e6e6e6"/>
+<rect x="537" y="598.13" width="45.84" height="32" rx="16" fill="#ffffff"/>
+<rect x="537.5" y="598.63" width="44.84" height="31" rx="15.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<text x="551" y="618.6" font-size="13" font-weight="600" fill="#1c1c1c">4:5</text>
+<text x="598.84" y="618.6" font-size="13" font-weight="600" fill="#474747">9:16</text>
+<text x="651.73" y="618.6" font-size="13" font-weight="600" fill="#474747">16:9</text>
+<text x="826" y="584.18" font-size="13" font-weight="600" fill="#474747">Background music</text>
+<rect x="826" y="595.13" width="280" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="826.5" y="595.63" width="279" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="840" y="622.28" font-size="14" fill="#1c1c1c">Track title</text>
+<g transform="translate(1078 610.13) scale(0.58)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<rect x="935.84" y="661.13" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
+<text x="953.84" y="686.28" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
+<rect x="1023.7" y="661.13" width="82.3" height="40" rx="20" fill="#3a3a3a"/>
+<text x="1041.7" y="686.28" font-size="14" font-weight="600" fill="#ffffff">Publish</text>
 </g>
 </g>
 </svg>

@@ -75,6 +75,10 @@ export function domToSvg() {
       const c = { hex: '#a8a8a8', a: 1 };
       out.push(`<path d="M${n(x)} ${n(y)}L${n(x + w)} ${n(y + h)}M${n(x + w)} ${n(y)}L${n(x)} ${n(y + h)}" fill="none" ${paint('stroke', c, o)} stroke-width="1"/>`);
     }
+    if (el.classList.contains('xc')) { // crossed circle (avatars, icon placeholders): the cross stays inside the circle
+      const c = { hex: '#a8a8a8', a: 1 }, cx = x + w / 2, cy = y + h / 2, d = (Math.min(w, h) / 2) * 0.7071;
+      out.push(`<path d="M${n(cx - d)} ${n(cy - d)}L${n(cx + d)} ${n(cy + d)}M${n(cx + d)} ${n(cy - d)}L${n(cx - d)} ${n(cy + d)}" fill="none" ${paint('stroke', c, o)} stroke-width="1"/>`);
+    }
     for (const s of shadows.filter((s) => s.inset && s.blur === 0)) {
       if (s.spread > 0 && !s.sx && !s.sy) stroke(x + s.spread / 2, y + s.spread / 2, w - s.spread, h - s.spread, rad.map((v) => Math.max(0, v - s.spread / 2)), s.c, s.spread, o);
       else if (s.sy) emit(shape(x, s.sy > 0 ? y : y + h + s.sy, w, Math.abs(s.sy), [0, 0, 0, 0]), paint('fill', s.c, o));
@@ -173,4 +177,37 @@ export function domToSvg() {
 
   walk(root, 1, 1);
   return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Segoe UI, Arial, sans-serif">\n<defs>${defs.join('')}</defs>\n<rect width="${W}" height="${H}" fill="#ffffff"/>\n${out.join('\n')}\n</svg>\n`;
+}
+
+// Lo-fi pass (runs in the page before domToSvg). Navigation icons stay; every other icon is dropped when its
+// element already has a text label, becomes a short text label inside an icon-only button, and otherwise
+// becomes a crossed circle placeholder. Status-bar glyphs are removed.
+export function lofiIcons() {
+  const KEEP = new Set(['home', 'users', 'compass', 'search', 'plus', 'msg', 'bell', 'bookmark', 'user', 'more', 'heart', 'heartF',
+    'comment', 'share', 'star', 'starF', 'left', 'right', 'up', 'down', 'back', 'x', 'menu', 'sidebar', 'inbox', 'send', 'check',
+    'flag', 'shield', 'book', 'play', 'pause', 'square', 'circle', 'tri', 'line', 'arrowR', 'minus']);
+  const DROP = new Set(['wifi', 'battery']);
+  const LABEL = { pencil: 'Edit', trash: 'Delete', copy: 'Copy', lock: 'Lock', info: 'Info', userPlus: 'Add', clip: 'Attach', smile: 'Emoji',
+    at: '@', undo: 'Undo', redo: 'Redo', gridI: 'Grid', resize: 'Fit', sliders: 'Settings', filter: 'Filter', layers: 'Position',
+    drop: 'Opacity', crop: 'Crop', flip: 'Flip', rotate: 'Rotate', link: 'Link', eye: 'Show', logout: 'Leave', alignL: 'Align',
+    list: 'List', spacing: 'Spacing', bold: 'B', italic: 'I', under: 'U', strike: 'S', present: 'Preview', upload: 'Upload',
+    image: 'Image', type: 'Text', code: 'Code', table: 'Table', cal: 'Date', notes: 'Notes', music: 'Music', vol: 'Volume',
+    warn: '!', sparkle: 'Effects', border: 'Border', fill: 'Fill', friends: 'Friends', globe: 'Public', layout: 'Layout' };
+  const LABELLED = '.ib,.tb2,.tab,.sarr,.end,.addp';
+  for (const s of [...document.querySelectorAll('svg.i')]) {
+    const name = s.dataset.n, p = s.parentElement;
+    if (DROP.has(name)) { s.remove(); continue; }
+    if (p.closest('.ni,.tbi,.er')) continue; // navigation: icon plus label is the pattern
+    if (p.textContent.trim()) { if (!/^(down|up)$/.test(name)) s.remove(); continue; } // dropdown chevrons stay
+    if (KEEP.has(name)) continue;
+    const size = parseFloat(s.getAttribute('width')) || 20;
+    const sp = document.createElement('span');
+    if (p.matches(LABELLED) && LABEL[name]) {
+      sp.className = 'ilab'; sp.textContent = LABEL[name];
+      if (p.matches('.ib')) { p.style.width = 'auto'; p.style.padding = '0 12px'; p.style.borderRadius = '999px'; }
+    } else {
+      sp.className = 'iph xc'; sp.style.width = sp.style.height = `${Math.round(size * 0.85)}px`;
+    }
+    s.replaceWith(sp);
+  }
 }

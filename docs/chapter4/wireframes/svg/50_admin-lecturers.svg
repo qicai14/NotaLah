@@ -4,57 +4,58 @@
 <defs></defs>
 <rect width="1440" height="900" fill="#ffffff"/>
 <rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
-<text x="272" y="88.23" font-size="15" fill="#6b6b6b">Reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa lorem ipsum dolor</text>
-<text x="272" y="109.98" font-size="15" fill="#6b6b6b">sit.</text>
-<rect x="272" y="131.5" width="916" height="94.08" rx="16" fill="#f2f2f2"/>
-<rect x="290" y="152.53" width="52" height="52" rx="26" fill="#cdcdcd"/>
-<text x="302.84" y="185.64" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#474747">PN</text>
-<text x="356" y="167.64" font-size="16" font-weight="600" fill="#1c1c1c">Priya Nair</text>
-<text x="356" y="185.78" font-size="12" fill="#6b6b6b">priya.nair@apu.edu.my · applied 1 day</text>
-<text x="356" y="203.17" font-size="12" fill="#6b6b6b">ago</text>
-<text x="584" y="171.17" font-size="12" fill="#6b6b6b">Staff ID</text>
-<text x="584" y="193.72" font-size="16" font-weight="600" fill="#1c1c1c">S10233</text>
-<text x="720" y="172.67" font-size="12" fill="#6b6b6b">School</text>
-<text x="720" y="192.39" font-size="14" font-weight="600" fill="#1c1c1c">School of Computing</text>
-<rect x="936" y="158.53" width="110" height="40" rx="20" fill="#e6e6e6"/>
-<text x="971.73" y="183.69" font-size="14" font-weight="600" fill="#1c1c1c">Reject</text>
-<rect x="1060" y="158.53" width="110" height="40" rx="20" fill="#3a3a3a"/>
-<text x="1087.94" y="183.69" font-size="14" font-weight="600" fill="#ffffff">Approve</text>
-<rect x="272" y="237.58" width="916" height="282.31" rx="16" fill="#f2f2f2"/>
-<rect x="290" y="258.61" width="52" height="52" rx="26" fill="#cdcdcd"/>
-<text x="304.17" y="291.71" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#474747">SA</text>
-<text x="356" y="273.72" font-size="16" font-weight="600" fill="#1c1c1c">Dr Siti Aminah</text>
-<text x="356" y="291.85" font-size="12" fill="#6b6b6b">siti.aminah@apu.edu.my · applied 3</text>
-<text x="356" y="309.25" font-size="12" fill="#6b6b6b">days ago</text>
-<text x="584" y="277.25" font-size="12" fill="#6b6b6b">Staff ID</text>
-<text x="584" y="299.8" font-size="16" font-weight="600" fill="#1c1c1c">S09871</text>
-<text x="720" y="278.75" font-size="12" fill="#6b6b6b">School</text>
-<text x="720" y="298.47" font-size="14" font-weight="600" fill="#1c1c1c">School of Technology</text>
-<rect x="936" y="264.61" width="110" height="40" rx="20" fill="#e6e6e6"/>
-<rect x="937" y="265.61" width="108" height="38" rx="19" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<text x="971.73" y="289.76" font-size="14" font-weight="600" fill="#1c1c1c">Reject</text>
-<rect x="1060" y="264.61" width="110" height="40" rx="20" fill="#f2f2f2"/>
-<text x="1087.94" y="289.76" font-size="14" font-weight="600" fill="#6b6b6b">Approve</text>
-<rect x="290" y="327.66" width="880" height="174.23" rx="12" fill="#ffffff"/>
-<text x="304" y="355.55" font-size="13" font-weight="600" fill="#474747">Reason for rejecting</text>
-<text x="425.72" y="355.55" font-size="13" fill="#6b6b6b">sent to the applicant</text>
-<rect x="304" y="366.5" width="852" height="44" rx="10" fill="#ffffff"/>
-<rect x="305" y="367.5" width="850" height="42" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<text x="318" y="393.65" font-size="14" fill="#1c1c1c">Do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim.</text>
-<rect x="919.14" y="420.5" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
-<text x="937.14" y="445.65" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
-<rect x="1007" y="420.5" width="149" height="40" rx="20" fill="#3a3a3a"/>
-<text x="1025" y="445.65" font-size="14" font-weight="600" fill="#ffffff">Reject application</text>
-<text x="304" y="483.48" font-size="12" fill="#6b6b6b">Laboris nisi aliquip ex ea commodo consequat duis aute.</text>
+<text x="272" y="88.23" font-size="15" fill="#6b6b6b">Laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur.</text>
+<rect x="272" y="109.75" width="916" height="94.08" rx="16" fill="#f2f2f2"/>
+<rect x="290" y="130.78" width="52" height="52" rx="26" fill="#f2f2f2"/>
+<path d="M297.62 138.4L334.38 175.17M334.38 138.4L297.62 175.17" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="290.75" y="131.53" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="356" y="145.89" font-size="16" font-weight="600" fill="#1c1c1c">Priya Nair</text>
+<text x="356" y="164.03" font-size="12" fill="#6b6b6b">priya.nair@apu.edu.my · applied 1 day</text>
+<text x="356" y="181.42" font-size="12" fill="#6b6b6b">ago</text>
+<text x="584" y="149.42" font-size="12" fill="#6b6b6b">Staff ID</text>
+<text x="584" y="171.97" font-size="16" font-weight="600" fill="#1c1c1c">S10233</text>
+<text x="720" y="150.92" font-size="12" fill="#6b6b6b">School</text>
+<text x="720" y="170.64" font-size="14" font-weight="600" fill="#1c1c1c">School of Computing</text>
+<rect x="936" y="136.78" width="110" height="40" rx="20" fill="#e6e6e6"/>
+<text x="971.73" y="161.94" font-size="14" font-weight="600" fill="#1c1c1c">Reject</text>
+<rect x="1060" y="136.78" width="110" height="40" rx="20" fill="#3a3a3a"/>
+<text x="1087.94" y="161.94" font-size="14" font-weight="600" fill="#ffffff">Approve</text>
+<rect x="272" y="215.83" width="916" height="282.31" rx="16" fill="#f2f2f2"/>
+<rect x="290" y="236.86" width="52" height="52" rx="26" fill="#f2f2f2"/>
+<path d="M297.62 244.47L334.38 281.24M334.38 244.47L297.62 281.24" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="290.75" y="237.61" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="356" y="251.97" font-size="16" font-weight="600" fill="#1c1c1c">Dr Siti Aminah</text>
+<text x="356" y="270.1" font-size="12" fill="#6b6b6b">siti.aminah@apu.edu.my · applied 3</text>
+<text x="356" y="287.5" font-size="12" fill="#6b6b6b">days ago</text>
+<text x="584" y="255.5" font-size="12" fill="#6b6b6b">Staff ID</text>
+<text x="584" y="278.05" font-size="16" font-weight="600" fill="#1c1c1c">S09871</text>
+<text x="720" y="257" font-size="12" fill="#6b6b6b">School</text>
+<text x="720" y="276.72" font-size="14" font-weight="600" fill="#1c1c1c">School of Technology</text>
+<rect x="936" y="242.86" width="110" height="40" rx="20" fill="#e6e6e6"/>
+<rect x="937" y="243.86" width="108" height="38" rx="19" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<text x="971.73" y="268.01" font-size="14" font-weight="600" fill="#1c1c1c">Reject</text>
+<rect x="1060" y="242.86" width="110" height="40" rx="20" fill="#f2f2f2"/>
+<text x="1087.94" y="268.01" font-size="14" font-weight="600" fill="#6b6b6b">Approve</text>
+<rect x="290" y="305.91" width="880" height="174.23" rx="12" fill="#ffffff"/>
+<text x="304" y="333.8" font-size="13" font-weight="600" fill="#474747">Reason for rejecting</text>
+<text x="425.72" y="333.8" font-size="13" fill="#6b6b6b">sent to the applicant</text>
+<rect x="304" y="344.75" width="852" height="44" rx="10" fill="#ffffff"/>
+<rect x="305" y="345.75" width="850" height="42" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<text x="318" y="371.9" font-size="14" fill="#1c1c1c">Sunt culpa lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor.</text>
+<rect x="919.14" y="398.75" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
+<text x="937.14" y="423.9" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
+<rect x="1007" y="398.75" width="149" height="40" rx="20" fill="#3a3a3a"/>
+<text x="1025" y="423.9" font-size="14" font-weight="600" fill="#ffffff">Reject application</text>
+<text x="304" y="461.73" font-size="12" fill="#6b6b6b">Magna aliqua ut enim ad minim veniam quis nostrud.</text>
 <g id="top-1">
 <text x="272" y="44.18" font-size="22" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Lecturer applications</text>
 <text x="491.02" y="41.33" font-size="15" font-weight="600" fill="#6b6b6b">2 pending</text>
-<rect x="1278" y="20" width="90" height="32" rx="16" fill="#ffffff"/>
-<rect x="1278.75" y="20.75" width="88.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<g transform="translate(1292 28) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<rect x="1302" y="20" width="66" height="32" rx="16" fill="#ffffff"/>
+<rect x="1302.75" y="20.75" width="64.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1316" y="40.47" font-size="13" font-weight="600" fill="#1c1c1c">Create</text>
-<rect x="1380" y="18" width="36" height="36" rx="18" fill="#cdcdcd"/>
-<text x="1388.77" y="40.47" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#474747">AD</text>
+<rect x="1380" y="18" width="36" height="36" rx="18" fill="#f2f2f2"/>
+<path d="M1385.27 23.27L1410.73 48.73M1410.73 23.27L1385.27 48.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="1380.75" y="18.75" width="34.5" height="34.5" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 </g>
 <g id="nav-2">
 <rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
@@ -64,8 +65,7 @@
 <text x="58" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
 <g transform="translate(193 25) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
 <rect x="12" y="70" width="216" height="40" rx="20" fill="#e6e6e6"/>
-<g transform="translate(26 81) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
-<text x="54" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
+<text x="26" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
 <g transform="translate(24 132) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
 <text x="62" y="149.35" font-size="15" fill="#474747">Feed</text>
 <g transform="translate(24 178) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
@@ -99,6 +99,8 @@
 <text x="62" y="646.74" font-size="15" font-weight="700" fill="#1c1c1c">Lecturer applications</text>
 <g transform="translate(24 675.39) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14"></path></g>
 <text x="62" y="692.74" font-size="15" fill="#474747">Modules</text>
+<g transform="translate(24 721.39) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></g>
+<text x="62" y="738.74" font-size="15" fill="#474747">Terms</text>
 <text x="24" y="858.2" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy</text>
 <text x="24" y="878.59" font-size="12" fill="#6b6b6b">© 2026 PARP</text>
 </g>

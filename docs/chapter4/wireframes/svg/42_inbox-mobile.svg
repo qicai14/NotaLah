@@ -5,59 +5,57 @@
 <rect width="390" height="844" fill="#ffffff"/>
 <rect x="0" y="0" width="390" height="844" fill="#ffffff"/>
 <rect x="20" y="106" width="52" height="52" rx="26" fill="#e6e6e6"/>
-<g transform="translate(34 120) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="4"></circle><path d="M2.5 21c1-4 4-6.5 7.5-6.5 1.5 0 2.8.4 4 1.1M19 14v6M16 17h6"></path></g>
+<rect x="36" y="122" width="20" height="20" rx="10" fill="#f2f2f2"/>
+<path d="M38.93 124.93L53.07 139.07M53.07 124.93L38.93 139.07" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="36.75" y="122.75" width="18.5" height="18.5" rx="9.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="84" y="127.73" font-size="14" font-weight="600" fill="#1c1c1c">New followers</text>
 <text x="84" y="146.61" font-size="13" fill="#6b6b6b">Hafiz Ismail started following you</text>
-<rect x="320" y="122" width="20" height="20" rx="10" fill="#3a3a3a"/>
-<text x="326.83" y="136.1" font-size="11" font-weight="700" fill="#ffffff">1</text>
-<g transform="translate(352 123) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></g>
+<rect x="350" y="122" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="356.83" y="136.1" font-size="11" font-weight="700" fill="#ffffff">1</text>
 <rect x="20" y="178" width="52" height="52" rx="26" fill="#e6e6e6"/>
 <g transform="translate(34 192) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"></path><path d="M10 20.5a2 2 0 0 0 4 0"></path></g>
 <text x="84" y="199.73" font-size="14" font-weight="600" fill="#1c1c1c">Activity</text>
 <text x="84" y="218.61" font-size="13" fill="#6b6b6b">Dr Lee Super Liked your note</text>
-<rect x="320" y="194" width="20" height="20" rx="10" fill="#3a3a3a"/>
-<text x="326.83" y="208.1" font-size="11" font-weight="700" fill="#ffffff">3</text>
-<g transform="translate(352 195) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></g>
+<rect x="350" y="194" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="356.83" y="208.1" font-size="11" font-weight="700" fill="#ffffff">3</text>
 <rect x="20" y="250" width="52" height="52" rx="26" fill="#e6e6e6"/>
 <g transform="translate(34 264) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
 <text x="84" y="271.73" font-size="14" font-weight="600" fill="#1c1c1c">Collaboration requests</text>
 <text x="84" y="290.61" font-size="13" fill="#6b6b6b">Chloe Wong asked to collaborate</text>
-<rect x="320" y="266" width="20" height="20" rx="10" fill="#3a3a3a"/>
-<text x="326.83" y="280.1" font-size="11" font-weight="700" fill="#ffffff">1</text>
-<g transform="translate(352 267) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></g>
+<rect x="350" y="266" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="356.83" y="280.1" font-size="11" font-weight="700" fill="#ffffff">1</text>
 <rect x="20" y="322" width="52" height="52" rx="26" fill="#e6e6e6"/>
 <g transform="translate(34 336) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5l1.5-3h5"></path><path d="M5.5 5h13l2.5 8v6H3v-6z"></path></g>
 <text x="84" y="343.73" font-size="14" font-weight="600" fill="#1c1c1c">Message requests</text>
 <text x="84" y="362.61" font-size="13" fill="#6b6b6b">Chloe Wong wants to message you</text>
-<rect x="320" y="338" width="20" height="20" rx="10" fill="#3a3a3a"/>
-<text x="326.83" y="352.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
-<g transform="translate(352 339) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></g>
+<rect x="350" y="338" width="20" height="20" rx="10" fill="#3a3a3a"/>
+<text x="356.83" y="352.1" font-size="11" font-weight="700" fill="#ffffff">2</text>
 <rect x="20" y="394" width="52" height="52" rx="26" fill="#e6e6e6"/>
 <g transform="translate(34 408) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v6c0 4.6 3.2 7.8 7.5 9 4.3-1.2 7.5-4.4 7.5-9V6z"></path></g>
 <text x="84" y="415.73" font-size="14" font-weight="600" fill="#1c1c1c">System notifications</text>
-<text x="84" y="434.61" font-size="13" fill="#6b6b6b">ad minim veniam quis nostrud</text>
-<g transform="translate(352 411) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></g>
+<text x="84" y="434.61" font-size="13" fill="#6b6b6b">eiusmod tempor incididunt ut labore</text>
 <text x="20" y="478.98" font-size="12" font-weight="700" fill="#6b6b6b">Messages</text>
-<rect x="20" y="495.39" width="52" height="52" rx="26" fill="#cdcdcd"/>
-<text x="33.3" y="528.49" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#474747">AR</text>
+<rect x="20" y="495.39" width="52" height="52" rx="26" fill="#f2f2f2"/>
+<path d="M27.62 503.01L64.38 539.78M64.38 503.01L27.62 539.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="20.75" y="496.14" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="84" y="517.12" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
 <text x="84" y="536" font-size="13" fill="#6b6b6b">Shared a note: Normalisation, 1NF…</text>
 <text x="353.19" y="525.67" font-size="12" fill="#6b6b6b">2m</text>
-<rect x="20" y="567.39" width="52" height="52" rx="26" fill="#cdcdcd"/>
-<text x="35.47" y="600.49" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#474747">FY</text>
+<rect x="20" y="567.39" width="52" height="52" rx="26" fill="#f2f2f2"/>
+<path d="M27.62 575.01L64.38 611.78M64.38 575.01L27.62 611.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="20.75" y="568.14" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="84" y="589.12" font-size="14" font-weight="600" fill="#1c1c1c">FYP Team, CT046</text>
-<text x="84" y="608" font-size="13" fill="#6b6b6b">Arjun: ex ea commodo consequat</text>
+<text x="84" y="608" font-size="13" fill="#6b6b6b">Arjun: enim ad minim veniam</text>
 <text x="356.73" y="597.67" font-size="12" fill="#6b6b6b">1h</text>
-<rect x="20" y="639.39" width="52" height="52" rx="26" fill="#474747"/>
-<text x="35.64" y="672.49" font-size="19" font-weight="700" letter-spacing="-0.19" fill="#ffffff">LC</text>
+<rect x="20" y="639.39" width="52" height="52" rx="26" fill="#f2f2f2"/>
+<path d="M27.62 647.01L64.38 683.78M64.38 647.01L27.62 683.78" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="20.75" y="640.14" width="50.5" height="50.5" rx="25.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="84" y="661.12" font-size="14" font-weight="600" fill="#1c1c1c">Dr Lee Chin Wei</text>
-<text x="84" y="680" font-size="13" fill="#6b6b6b">You: voluptate velit esse</text>
+<text x="84" y="680" font-size="13" fill="#6b6b6b">You: nisi aliquip ex</text>
 <text x="345.39" y="669.67" font-size="12" fill="#6b6b6b">Mon</text>
 <text x="172.17" y="76.73" font-size="17" font-weight="700" fill="#1c1c1c">Inbox</text>
 <g transform="translate(347 59) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
 <text x="30" y="27.35" font-size="15" font-weight="600" fill="#1c1c1c">9:41</text>
-<g transform="translate(317 13.5) scale(0.71)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"></path><circle cx="12" cy="19.5" r="1.3" fill="#1c1c1c" stroke="none"></circle></g>
-<g transform="translate(340 10) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="18" height="10" rx="3"></rect><rect x="4" y="9" width="12" height="6" rx="1.5" fill="#1c1c1c" stroke="none"></rect><path d="M22 10.5v3"></path></g>
 <g id="tbar-1">
 <rect x="0" y="760" width="390" height="84" fill="#ffffff"/>
 <rect x="0" y="760" width="390" height="1" fill="#d6d6d6"/>

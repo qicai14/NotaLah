@@ -5,12 +5,11 @@
 <rect width="390" height="844" fill="#ffffff"/>
 <rect x="0" y="0" width="390" height="844" fill="#ffffff"/>
 <rect x="0" y="99" width="390" height="1" fill="#d6d6d6"/>
-<g transform="translate(12 60) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></g>
-<rect x="46" y="54" width="36" height="36" rx="18" fill="#cdcdcd"/>
-<text x="55.31" y="76.47" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#474747">AR</text>
-<text x="92" y="68.47" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
-<text x="92" y="86.43" font-size="12" fill="#6b6b6b">Friends · active now</text>
-<g transform="translate(356 61) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.6v.01"></path></g>
+<rect x="12" y="54" width="36" height="36" rx="18" fill="#f2f2f2"/>
+<path d="M17.27 59.27L42.73 84.73M42.73 59.27L17.27 84.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="12.75" y="54.75" width="34.5" height="34.5" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="58" y="68.47" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
+<text x="58" y="86.43" font-size="12" fill="#6b6b6b">Friends · active now</text>
 <rect x="0" y="100" width="390" height="640" fill="#fafafa"/>
 <text x="163.55" y="126.98" font-size="12" fill="#6b6b6b">Today 14:02</text>
 <rect x="14" y="139.39" width="300" height="209.69" rx="16" fill="#f2f2f2"/>
@@ -20,39 +19,33 @@
 <text x="112.39" y="151.78" font-size="3.6" font-weight="600" fill="#6b6b6b">CT030-3-2 · Week 6</text>
 <text x="112.39" y="164.5" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">Normalisation, 1NF to</text>
 <text x="112.39" y="174.08" font-size="8.88" font-weight="700" letter-spacing="-0.22" fill="#1c1c1c">3NF</text>
-<rect x="112.39" y="179.8" width="103.22" height="15" rx="2.88" fill="#f2f2f2"/>
-<text x="116.47" y="189.08" font-size="5.28" font-weight="600" fill="#1c1c1c">1NF</text>
-<text x="132.06" y="189.18" font-size="4.32" fill="#474747">Lorem ipsum dolor sit amet elit.</text>
-<rect x="112.39" y="198.63" width="103.22" height="15" rx="2.88" fill="#f2f2f2"/>
-<text x="116.47" y="207.91" font-size="5.28" font-weight="600" fill="#1c1c1c">2NF</text>
-<text x="132.06" y="208.01" font-size="4.32" fill="#474747">Consectetur adipiscing elit sed do.</text>
-<rect x="112.39" y="217.45" width="103.22" height="15" rx="2.88" fill="#f2f2f2"/>
-<text x="116.47" y="226.74" font-size="5.28" font-weight="600" fill="#1c1c1c">3NF</text>
-<text x="132.06" y="226.84" font-size="4.32" fill="#474747">Eiusmod tempor incididunt ut labore.</text>
-<rect x="112.39" y="236.28" width="103.22" height="18.25" rx="2.88" fill="#e6e6e6"/>
-<text x="116.47" y="244.02" font-size="3.96" fill="#474747">Ut enim ad minim veniam, quis nostrud exercitation</text>
-<text x="116.47" y="249.55" font-size="3.96" fill="#474747">ullamco.</text>
+<rect x="112.39" y="179.8" width="94.95" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="112.39" y="186.25" width="80.5" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="112.39" y="192.7" width="88.77" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="112.39" y="199.16" width="103.22" height="68.94" rx="2.4" fill="#f2f2f2"/>
+<path d="M112.39 199.16L215.61 268.09M215.61 199.16L112.39 268.09" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="113.14" y="199.91" width="101.72" height="67.44" rx="1.65" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="112.39" y="271.92" width="92.89" height="2.63" rx="1.2" fill="#e6e6e6"/>
+<rect x="112.39" y="278.38" width="66.05" height="2.63" rx="1.2" fill="#e6e6e6"/>
 <text x="26" y="314.7" font-size="14" font-weight="600" fill="#1c1c1c">Normalisation, 1NF to 3NF in one page</text>
 <text x="26" y="334.67" font-size="12" fill="#6b6b6b">Aina Rahman · CT030-3-2</text>
 <rect x="14" y="357.08" width="289.59" height="59.19" rx="18" fill="#e6e6e6"/>
-<text x="28" y="382.39" font-size="14" fill="#1c1c1c">Velit esse cillum fugiat nulla pariatur</text>
-<text x="28" y="401.98" font-size="14" fill="#1c1c1c">excepteur sint.</text>
+<text x="28" y="382.39" font-size="14" fill="#1c1c1c">Aliquip ex ea commodo consequat duis</text>
+<text x="28" y="401.98" font-size="14" fill="#1c1c1c">aute irure.</text>
 <rect x="86.41" y="424.27" width="289.59" height="59.19" rx="18" fill="#3a3a3a"/>
-<text x="100.41" y="449.58" font-size="14" fill="#ffffff">Culpa lorem ipsum dolor sit amet</text>
-<text x="100.41" y="469.17" font-size="14" fill="#ffffff">consectetur.</text>
-<rect x="14" y="491.45" width="143.17" height="39.59" rx="18" fill="#e6e6e6"/>
-<text x="28" y="516.76" font-size="14" fill="#1c1c1c">Tempor incididunt.</text>
+<text x="100.41" y="449.58" font-size="14" fill="#ffffff">Cillum fugiat nulla pariatur excepteur sint</text>
+<text x="100.41" y="469.17" font-size="14" fill="#ffffff">occaecat.</text>
+<rect x="14" y="491.45" width="111.45" height="39.59" rx="18" fill="#e6e6e6"/>
+<text x="28" y="516.76" font-size="14" fill="#1c1c1c">Lorem ipsum.</text>
 <rect x="0" y="756" width="390" height="88" fill="#ffffff"/>
 <rect x="0" y="756" width="390" height="1" fill="#d6d6d6"/>
-<rect x="12" y="772" width="32" height="32" rx="16" fill="#e6e6e6"/>
-<g transform="translate(19 779) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17a1.7 1.7 0 0 1-2.4-2.4L15 7"></path></g>
-<rect x="52" y="766" width="286" height="44" rx="22" fill="#f2f2f2"/>
-<rect x="52.5" y="766.5" width="285" height="43" rx="21.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<text x="66" y="793.15" font-size="14" fill="#6b6b6b">Message…</text>
+<rect x="12" y="772" width="59.44" height="32" rx="16" fill="#e6e6e6"/>
+<text x="24" y="792.28" font-size="12" font-weight="600" fill="#474747">Attach</text>
+<rect x="79.44" y="766" width="258.56" height="44" rx="22" fill="#f2f2f2"/>
+<rect x="79.94" y="766.5" width="257.56" height="43" rx="21.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="93.44" y="793.15" font-size="14" fill="#6b6b6b">Message…</text>
 <rect x="346" y="772" width="32" height="32" rx="16" fill="#3a3a3a"/>
 <g transform="translate(354 780) scale(0.67)" fill="none" stroke="#ffffff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10 14M21 3l-6.5 18-4.5-7-7-4.5z"></path></g>
 <text x="30" y="27.35" font-size="15" font-weight="600" fill="#1c1c1c">9:41</text>
-<g transform="translate(317 13.5) scale(0.71)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"></path><circle cx="12" cy="19.5" r="1.3" fill="#1c1c1c" stroke="none"></circle></g>
-<g transform="translate(340 10) scale(1)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="18" height="10" rx="3"></rect><rect x="4" y="9" width="12" height="6" rx="1.5" fill="#1c1c1c" stroke="none"></rect><path d="M22 10.5v3"></path></g>
 <rect x="128" y="831" width="134" height="5" rx="2.5" fill="#1c1c1c"/>
 </svg>

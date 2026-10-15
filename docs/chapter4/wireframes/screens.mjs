@@ -2,7 +2,7 @@
 // renders PNG + SVG, and writes INDEX.md from the metadata passed to add().
 import {
   I, VB, av, stack, LECT, xb, L, MODS, MUSIC, slide, cover, COVERS, tile, nav, util, app, title, backT, ftabs,
-  CW, feedCard, rail, feedBody, comment, commentList, sbar, tabbar, mob, mTop, mobileFeed, ERAIL, editor, EW, EH, boardAt,
+  CW, feedCard, dots, rail, feedBody, comment, commentList, sbar, tabbar, mob, mTop, mobileFeed, ERAIL, editor, EW, EH, boardAt,
   searchIn, selBox, dlg, nrow, nthumb, notifDrawer, profileHead, person, searchTop, filterBar,
 } from './lib.mjs';
 
@@ -20,10 +20,10 @@ const welcome = (o = {}) => `<div class="full" style="background:var(--s0)">
     <div class="row" style="gap:12px"><span class="b p lg">${I('eye', 18)}Browse as guest</span><span class="b lg">Log in</span><span class="b lg o">Register</span></div>
     <div class="help" style="font-size:13px">${L(14)}</div>
     <div class="col" style="gap:10px;margin-top:16px;font-size:15px;color:var(--ink2)">
-      <div class="row" style="gap:10px">${VB(false, 20)}${L(8)}</div>
+      <div>${L(8)}</div>
       <div class="row" style="gap:10px">${I('book', 20)}${L(8)}</div>
       <div class="row" style="gap:10px">${I('chat', 20)}${L(8)}</div></div></div>
-  <div style="position:absolute;right:150px;top:96px;width:390px;height:844px;transform:scale(.88);transform-origin:top center;border-radius:48px;overflow:hidden;box-shadow:0 0 0 10px #4a4a4a">${mobileFeed('', { guest: true })}</div>
+  <div style="position:absolute;right:160px;top:120px;width:330px;height:714px;display:flex;flex-direction:column;align-items:center;gap:12px">${xb('width:330px;height:680px;border-radius:40px')}<span class="muted sm" style="font-weight:600">Phone preview of the Feed</span></div>
   <div style="position:absolute;left:96px;bottom:28px;font-size:12px;color:var(--ink3)">About · Help · Terms · Privacy · © 2026 PARP</div>${o.over || ''}</div>`;
 
 add('welcome', welcome(), { t: 'Welcome page', refs: 'R31, UC01, UC02', v3: 'Changed: v2 landing merged into the R31 Welcome page (Browse as guest added)',
@@ -41,7 +41,7 @@ add('register', welcome({ over: dlg(500, 'Create your PARP account', `
 
 add('login', welcome({ over: dlg(440, 'Log in to PARP', `
   <div class="fld"><label>APU email</label><div class="in v">tp072229@mail.apu.edu.my</div></div>
-  <div class="fld"><label>Password</label><div class="in er v">••••••••<span class="end muted">${I('eye', 18)}</span></div>
+  <div class="fld"><label>Password</label><div class="in bad v">••••••••<span class="end muted">${I('eye', 18)}</span></div>
     <span class="err" role="alert">${I('info', 16)}Email or password is incorrect.</span></div>
   <span class="b p lg w">Log in</span>
   <div class="muted" style="text-align:center">Don't have an account? <b style="color:var(--ink)">Register</b></div>`, '') }),
@@ -56,7 +56,7 @@ add('guest_note', app('Feed', `<div class="content">
   <div style="position:absolute;left:48px;top:0;width:560px;display:flex;flex-direction:column;gap:14px">
     <div class="row">${av('AR', 44, true)}<div><div style="font-weight:700;font-size:16px">Aina Rahman</div><div class="muted sm">BSc (Hons) Software Engineering · 2d ago</div></div><span class="b sm p" style="margin-left:auto">Follow</span><span class="ib s sm">${I('more', 18)}</span></div>
     <div style="position:relative;width:560px;height:700px;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}
-      <div class="sarr" style="left:10px;top:334px">${I('left', 18)}</div><div class="sarr" style="right:10px;top:334px">${I('right', 18)}</div></div></div>
+      <div class="sarr" style="left:10px;top:334px">${I('left', 18)}</div><div class="sarr" style="right:10px;top:334px">${I('right', 18)}</div>${dots(6, 1)}</div></div>
   <div style="position:absolute;left:628px;top:56px;display:flex;flex-direction:column;gap:12px">${[['heart', '1.2K'], ['comment', '44', true], ['bookmark', '318'], ['share', 'Share']].map(([ic, c, on]) => `<div class="rb ${on ? 'on' : ''}"><span class="c">${I(ic, 22)}</span>${c}</div>`).join('')}</div>
   <div class="side" style="width:500px;top:0">
     <div style="padding:20px 24px 0;display:flex;flex-direction:column;gap:6px"><div style="font-size:18px;font-weight:700;letter-spacing:-.01em">Normalisation, 1NF to 3NF in one page</div>
@@ -154,7 +154,7 @@ add('feed_mobile', mobileFeed(), { m: true, t: 'Ranked feed (mobile)', refs: 'UC
     <div style="position:relative;width:560px;height:700px;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm', { hl: true })}
       <div class="sarr" style="left:10px;top:334px">${I('left', 18)}</div><div class="sarr" style="right:10px;top:334px">${I('right', 18)}</div>
       <div class="pop" style="left:150px;top:256px;padding:4px;display:flex;gap:2px"><span class="tb2 on">${I('pencil', 16)}Annotate</span><span class="tb2">${I('copy', 16)}Copy</span></div>
-      <div style="position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:6px">${[0, 1, 0, 0, 0, 0].map((x) => `<span style="width:${x ? 18 : 7}px;height:7px;border-radius:4px;background:${x ? 'var(--ink)' : 'var(--s3)'}"></span>`).join('')}</div></div></div>
+      ${dots(6, 1)}</div></div>
   <div style="position:absolute;left:628px;top:56px;display:flex;flex-direction:column;gap:12px">${[['heartF', '1.2K', true], ['comment', '44'], ['pencil', '6'], ['bookmark', '318'], ['share', 'Share']].map(([ic, c, on]) => `<div class="rb ${on ? 'on' : ''}"><span class="c">${I(ic, 22)}</span>${c}</div>`).join('')}</div>
   <div class="side" style="width:500px;top:0">
     <div style="padding:20px 24px 0;display:flex;flex-direction:column;gap:6px"><div style="font-size:18px;font-weight:700;letter-spacing:-.01em">Normalisation, 1NF to 3NF in one page</div>
@@ -168,7 +168,7 @@ add('feed_mobile', mobileFeed(), { m: true, t: 'Ranked feed (mobile)', refs: 'UC
 }
 
 /* ================================================================== collaboration on notes (R30) */
-add('coauthor_note', app('Following', feedBody(feedCard({ verified: 'Dr Lee', idx: 0, coauthors: [['LQ', 'Lim Qi Cai'], ['HI', 'Hafiz Ismail']], title: 'MVC in five minutes', kind: 'mvc', mod: MODS.se, desc: `${L(6)} <b>#mvc</b> <b>#aict004</b>` }), rail({ coav: ['AR', 'LQ', 'HI'], likes: '640', comments: '31', saves: '152' })), { center: ftabs('Following') }),
+add('coauthor_note', app('Following', feedBody(feedCard({ verified: 'Dr Lee', idx: 0, author: 'Melvin Chen', authorI: 'MC', coauthors: [['LQ', 'Lim Qi Cai'], ['BW', 'Brosnan Wong']], title: 'MVC in five minutes', kind: 'mvc', mod: MODS.se, desc: `${L(6)} <b>#mvc</b> <b>#aict004</b>` }), rail({ coav: ['MC', 'LQ', 'BW'], likes: '640', comments: '31', saves: '152' })), { center: ftabs('Following') }),
   { t: 'Co-authored note card', refs: 'R30, UC09', v3: 'new',
     p: 'A note credits its owner and co-authors on the card and rail; it reaches each co-author\'s followers in Following.' });
 
@@ -402,7 +402,7 @@ add('profile_mobile', mob(`${mTop(`<span class="ib sm">${I('userPlus', 22)}</spa
     <div class="row" style="gap:28px;text-align:center">${[['128', 'Following'], ['342', 'Followers'], ['2.1K', 'Likes']].map(([n, l]) => `<div><b style="font-size:17px">${n}</b><div class="muted sm">${l}</div></div>`).join('')}</div>
     <div class="row" style="gap:8px"><span class="b sm" style="width:120px">Edit profile</span><span class="b sm">Drafts 4</span><span class="ib s sm">${I('share', 16)}</span></div>
     <div style="font-size:13px;text-align:center;color:var(--ink2);max-width:320px">${L(12)}</div></div>
-  <div class="tabs" style="justify-content:space-around;margin-top:10px"><span class="tab on" style="width:80px;justify-content:center">${I('gridI', 20)}</span><span class="tab" style="width:80px;justify-content:center">${I('lock', 20)}</span><span class="tab" style="width:80px;justify-content:center">${I('heart', 20)}</span></div>
+  <div class="tabs" style="justify-content:space-around;margin-top:10px"><span class="tab on" style="width:80px;justify-content:center">Notes</span><span class="tab" style="width:80px;justify-content:center">Saved</span><span class="tab" style="width:80px;justify-content:center">Liked</span></div>
   <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:2px;margin-top:2px">${COVERS.slice(0, 6).map((c, k) => tile(c, { pinned: k === 0 })).join('').replaceAll('border-radius:10px', 'border-radius:0')}</div>`, { tab: 'Profile' }),
 { m: true, t: 'Profile (mobile)', refs: 'UC04, NFR2', p: 'Phone profile with counts, Edit profile, Drafts and a three-column note grid.' });
 
@@ -418,21 +418,27 @@ add('search', app('Explore', `<div class="content" style="padding:0 32px;display
   { left: searchTop('#normalisation') }),
 { t: 'Search results (Top)', refs: 'UC14, FR4, FR5, FR12', p: 'Top tab mixing people, hashtags, modules and notes, with the filter bar and result timing.' });
 
-add('search_filters', app('Explore', `<div class="content" style="padding:0 32px;display:flex;flex-direction:column;gap:16px">
+{
+  // Filters as a fixed left panel beside the results (no floating layers), one field per row, equal input sizes.
+  const sel = (v, muted) => `<div class="in ${muted ? '' : 'v'}">${v}<span class="end">${I('down', 16)}</span></div>`;
+  const panel = `<div style="width:380px;flex:none;background:#fff;border-radius:16px;box-shadow:inset 0 0 0 1.5px var(--s3);padding:20px;display:flex;flex-direction:column;gap:18px">
+    <div class="row" style="justify-content:space-between"><b style="font-size:17px">Filters</b><span class="b sm g">Reset</span></div>
+    <div class="row" style="justify-content:space-between;gap:16px"><div><b>Lecturer content only</b><div class="muted sm">Written or Super Liked by a lecturer</div></div><span class="tog on"></span></div>
+    <div class="fld"><label>Specific lecturer</label>${sel('Dr Lee Chin Wei')}</div>
+    <div class="fld"><label>Academic term</label>${sel('Semester 1, 2026/27')}<span class="help">Shown only when an administrator has added terms.</span></div>
+    <div class="fld"><label>Date range</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="in">From</div><div class="in">To</div></div><span class="help">Use a term or a custom range, not both.</span></div>
+    <div class="fld"><label>Module</label>${sel('CT030-3-2 Database Systems')}</div>
+    <span class="b p w" style="margin-top:4px">Show 14 notes</span></div>`;
+  const results = `<div class="col" style="flex:1;gap:10px;min-width:0">
+    <div class="row" style="gap:8px"><span class="chip on">Lecturer content</span><span class="chip on">Dr Lee Chin Wei</span><span class="chip on">Semester 1, 2026/27</span><span class="chip on">CT030-3-2</span><span class="muted sm" style="margin-left:auto">14 results · 0.21 s</span></div>
+    ${[['Normalisation, 1NF to 3NF in one page', 'Aina Rahman', '12 Sep 2026', '1.2K'], ["Crow's foot notation", 'Dr Lee Chin Wei', '9 Sep 2026', '511'], ['Functional dependency basics', 'Dr Lee Chin Wei', '2 Sep 2026', '402'], ['Normal forms with ENROL_T', 'Lim Qi Cai', '29 Aug 2026', '96']].map(([t, a, d, n]) =>
+    `<div class="li" style="background:var(--s1);padding:10px;gap:16px"><div style="width:96px;height:120px;border-radius:8px;overflow:hidden;flex:none;position:relative">${cover()}</div><div class="t" style="display:flex;flex-direction:column;gap:6px"><div class="n" style="font-size:16px">${t}</div><div class="s">${a} · CT030-3-2 Database Systems · ${d}</div><div class="row" style="gap:6px"><span class="tag" style="background:var(--ink);color:#fff">Verified by Dr Lee</span><span class="tag">#normalisation</span></div></div><div class="muted sm row" style="gap:4px">${n} likes</div></div>`).join('')}</div>`;
+  add('search_filters', app('Explore', `<div class="content" style="padding:0 32px;display:flex;flex-direction:column;gap:20px">
   <div class="tabs">${['Top', 'Notes', 'People', 'Hashtags', 'Modules'].map((t, k) => `<span class="tab ${k === 1 ? 'on' : ''}">${t}${k === 1 ? ' 14' : ''}</span>`).join('')}</div>
-  ${filterBar(true).replace('Lecturer: any', 'Lecturer: Dr Lee Chin Wei').replace('48 results', '14 results')}
-  <div class="col" style="gap:10px;width:760px">${[['Normalisation, 1NF to 3NF in one page', 'Aina Rahman', '12 Sep 2026'], ["Crow's foot notation", 'Dr Lee Chin Wei', '9 Sep 2026'], ['Functional dependency basics', 'Dr Lee Chin Wei', '2 Sep 2026'], ['Normal forms with ENROL_T', 'Lim Qi Cai', '29 Aug 2026']].map(([t, a, d], k) =>
-    `<div class="li" style="background:var(--s1);padding:10px;gap:16px"><div style="width:96px;height:120px;border-radius:8px;overflow:hidden;flex:none;box-shadow:0 0 0 1px var(--s3)">${cover(t, ['a', 'c', 'b', 'a'][k], 'CT030-3-2')}</div><div class="t" style="display:flex;flex-direction:column;gap:6px"><div class="n" style="font-size:16px">${t}</div><div class="s">${a} · CT030-3-2 Database Systems · ${d}</div><div class="row" style="gap:6px"><span class="tag" style="background:var(--ink);color:#fff">${I('check', 12)}Verified by Dr Lee</span><span class="tag">#normalisation</span></div></div><div class="muted sm row" style="gap:4px">${I('heart', 16)}${['1.2K', '511', '402', '96'][k]}</div></div>`).join('')}</div></div>
-  <div class="pop" style="left:32px;top:166px;width:420px;padding:20px;display:flex;flex-direction:column;gap:16px">
-    <div class="row" style="justify-content:space-between"><b style="font-size:16px">Filters</b><span class="b sm g">Reset</span></div>
-    <div class="row" style="justify-content:space-between"><div><b>Lecturer content only</b><div class="muted sm">${L(6)}</div></div><span class="tog on"></span></div>
-    <div class="fld"><label>Specific lecturer</label><div class="in v">${av('LC', 24, true)}Dr Lee Chin Wei<span class="end">${I('down', 16)}</span></div></div>
-    <div class="fld" style="position:relative"><label>Academic term</label><div class="in fo v">${I('cal', 18)}Semester 1, 2026/27<span class="end">${I('up', 16)}</span></div>
-      <div class="pop" style="top:72px;left:0;right:0">${[['Semester 1, 2026/27', 'Sep to Dec 2026'], ['Semester 2, 2025/26', 'Feb to Jun 2026'], ['Semester 1, 2025/26', 'Sep to Dec 2025']].map(([t, d], k) => `<div class="mi ${k === 0 ? 'on' : ''}" style="min-height:46px"><div><div style="font-weight:600">${t}</div><div class="muted sm">${d}</div></div>${k === 0 ? `<span class="k">${I('check', 16)}</span>` : ''}</div>`).join('')}</div></div>
-    <div class="fld"><label>Or a date range</label><div class="row" style="gap:8px"><div class="in" style="flex:1">${I('cal', 16)}From</div><div class="in" style="flex:1">${I('cal', 16)}To</div></div></div>
-    <div class="fld"><label>Module</label><div class="in v">${I('book', 18)}CT030-3-2 Database Systems<span class="end">${I('down', 16)}</span></div></div>
-    <span class="b p w">Show 14 notes</span></div>`, { left: searchTop('#normalisation') }),
-{ t: 'Search filters', refs: 'UC14, FR15', p: 'Filter popover: lecturer content, specific lecturer, academic term or date range, and module.' });
+  <div style="display:flex;gap:28px;align-items:flex-start">${panel}${results}</div></div>`, { left: searchTop('#normalisation') }),
+  { t: 'Search filters', refs: 'UC14, FR15', v3: 'Changed: rebuilt as a side panel (lecturer content, lecturer, term only when terms exist, date range, module)',
+    p: 'Filter panel beside the results: lecturer content, specific lecturer, academic term (only when terms exist), date range and module.' });
+}
 
 add('search_mobile', mob(`<div style="display:flex;gap:10px;align-items:center;padding:6px 16px 10px">${I('left', 24)}<div class="in v" style="flex:1;height:40px;border-radius:999px">${I('search', 18)}#dsa</div><b class="sm" style="font-size:14px">Search</b></div>
   <div class="tabs" style="padding:0 16px;gap:22px">${['Top', 'Notes', 'People', 'Hashtags', 'Modules'].map((t, k) => `<span class="tab ${k === 1 ? 'on' : ''}" style="font-size:14px">${t}</span>`).join('')}</div>

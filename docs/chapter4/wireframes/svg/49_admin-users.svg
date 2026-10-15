@@ -6,8 +6,7 @@
 <rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
 <rect x="272" y="72" width="360" height="44" rx="22" fill="#f2f2f2"/>
 <rect x="272.5" y="72.5" width="359" height="43" rx="21.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
-<g transform="translate(286 85) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
-<text x="312" y="99.15" font-size="14" fill="#6b6b6b">Search name or email</text>
+<text x="286" y="99.15" font-size="14" fill="#6b6b6b">Search name or email</text>
 <rect x="644" y="78" width="39.53" height="32" rx="16" fill="#3a3a3a"/>
 <text x="656" y="98.47" font-size="13" font-weight="600" fill="#ffffff">All</text>
 <rect x="695.53" y="78" width="75.63" height="32" rx="16" fill="#e6e6e6"/>
@@ -30,8 +29,9 @@
 <text x="1221.22" y="152.98" font-size="12" font-weight="600" fill="#6b6b6b">Joined</text>
 <path d="M1326.73 130H1398A10 10 0 0 1 1408 140V157.39A10 10 0 0 1 1398 167.39H1326.73V130Z" fill="#f2f2f2"/>
 <rect x="272" y="226.39" width="242.86" height="1" fill="#d6d6d6"/>
-<rect x="284" y="181.39" width="32" height="32" rx="16" fill="#cdcdcd"/>
-<text x="293.61" y="201.67" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#474747">HI</text>
+<rect x="284" y="181.39" width="32" height="32" rx="16" fill="#f2f2f2"/>
+<path d="M288.69 186.08L311.31 208.7M311.31 186.08L288.69 208.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="284.75" y="182.14" width="30.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="326" y="202.54" font-size="14" font-weight="600" fill="#1c1c1c">Hafiz Ismail</text>
 <rect x="514.86" y="226.39" width="284.75" height="1" fill="#d6d6d6"/>
 <text x="526.86" y="202.54" font-size="14" fill="#6b6b6b">tp071833@mail.apu.edu.my</text>
@@ -47,8 +47,9 @@
 <rect x="1326.73" y="226.39" width="81.27" height="1" fill="#d6d6d6"/>
 <g transform="translate(1345.73 188.39) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#474747" stroke="none"></circle></g>
 <rect x="272" y="286.39" width="242.86" height="1" fill="#d6d6d6"/>
-<rect x="284" y="241.39" width="32" height="32" rx="16" fill="#474747"/>
-<text x="293.45" y="261.67" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#ffffff">LC</text>
+<rect x="284" y="241.39" width="32" height="32" rx="16" fill="#f2f2f2"/>
+<path d="M288.69 246.08L311.31 268.7M311.31 246.08L288.69 268.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="284.75" y="242.14" width="30.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="326" y="262.54" font-size="14" font-weight="600" fill="#1c1c1c">Dr Lee Chin Wei</text>
 <rect x="514.86" y="286.39" width="284.75" height="1" fill="#d6d6d6"/>
 <text x="526.86" y="262.54" font-size="14" fill="#6b6b6b">lee.chinwei@apu.edu.my</text>
@@ -64,8 +65,9 @@
 <rect x="1326.73" y="286.39" width="81.27" height="1" fill="#d6d6d6"/>
 <g transform="translate(1345.73 248.39) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#474747" stroke="none"></circle></g>
 <rect x="272" y="346.39" width="242.86" height="1" fill="#d6d6d6"/>
-<rect x="284" y="301.39" width="32" height="32" rx="16" fill="#cdcdcd"/>
-<text x="290.34" y="321.67" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#474747">CW</text>
+<rect x="284" y="301.39" width="32" height="32" rx="16" fill="#f2f2f2"/>
+<path d="M288.69 306.08L311.31 328.7M311.31 306.08L288.69 328.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="284.75" y="302.14" width="30.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="326" y="322.54" font-size="14" font-weight="600" fill="#1c1c1c">Chloe Wong</text>
 <rect x="514.86" y="346.39" width="284.75" height="1" fill="#d6d6d6"/>
 <text x="526.86" y="322.54" font-size="14" fill="#6b6b6b">tp070412@mail.apu.edu.my</text>
@@ -81,8 +83,9 @@
 <rect x="1326.73" y="346.39" width="81.27" height="1" fill="#d6d6d6"/>
 <g transform="translate(1345.73 308.39) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#474747" stroke="none"></circle></g>
 <rect x="272" y="406.39" width="242.86" height="1" fill="#d6d6d6"/>
-<rect x="284" y="361.39" width="32" height="32" rx="16" fill="#cdcdcd"/>
-<text x="292.77" y="381.67" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#474747">K8</text>
+<rect x="284" y="361.39" width="32" height="32" rx="16" fill="#f2f2f2"/>
+<path d="M288.69 366.08L311.31 388.7M311.31 366.08L288.69 388.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="284.75" y="362.14" width="30.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="326" y="382.54" font-size="14" font-weight="600" fill="#1c1c1c">student_k82</text>
 <rect x="514.86" y="406.39" width="284.75" height="1" fill="#d6d6d6"/>
 <text x="526.86" y="382.54" font-size="14" fill="#6b6b6b">tp073390@mail.apu.edu.my</text>
@@ -98,8 +101,9 @@
 <rect x="1326.73" y="406.39" width="81.27" height="1" fill="#d6d6d6"/>
 <g transform="translate(1345.73 368.39) scale(0.75)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="12" cy="12" r="1.6" fill="#474747" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="#474747" stroke="none"></circle></g>
 <rect x="272" y="466.39" width="242.86" height="1" fill="#d6d6d6"/>
-<rect x="284" y="421.39" width="32" height="32" rx="16" fill="#cdcdcd"/>
-<text x="291.97" y="441.67" font-size="12" font-weight="700" letter-spacing="-0.12" fill="#474747">AR</text>
+<rect x="284" y="421.39" width="32" height="32" rx="16" fill="#f2f2f2"/>
+<path d="M288.69 426.08L311.31 448.7M311.31 426.08L288.69 448.7" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="284.75" y="422.14" width="30.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="326" y="442.54" font-size="14" font-weight="600" fill="#1c1c1c">Aina Rahman</text>
 <rect x="514.86" y="466.39" width="284.75" height="1" fill="#d6d6d6"/>
 <text x="526.86" y="442.54" font-size="14" fill="#6b6b6b">tp072011@mail.apu.edu.my</text>
@@ -117,12 +121,12 @@
 <g id="top-1">
 <text x="272" y="44.18" font-size="22" font-weight="700" letter-spacing="-0.44" fill="#1c1c1c">Users</text>
 <text x="337.86" y="41.33" font-size="15" font-weight="600" fill="#6b6b6b">1,284</text>
-<rect x="1278" y="20" width="90" height="32" rx="16" fill="#ffffff"/>
-<rect x="1278.75" y="20.75" width="88.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
-<g transform="translate(1292 28) scale(0.67)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<rect x="1302" y="20" width="66" height="32" rx="16" fill="#ffffff"/>
+<rect x="1302.75" y="20.75" width="64.5" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1316" y="40.47" font-size="13" font-weight="600" fill="#1c1c1c">Create</text>
-<rect x="1380" y="18" width="36" height="36" rx="18" fill="#cdcdcd"/>
-<text x="1388.77" y="40.47" font-size="13" font-weight="700" letter-spacing="-0.13" fill="#474747">AD</text>
+<rect x="1380" y="18" width="36" height="36" rx="18" fill="#f2f2f2"/>
+<path d="M1385.27 23.27L1410.73 48.73M1410.73 23.27L1385.27 48.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="1380.75" y="18.75" width="34.5" height="34.5" rx="17.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 </g>
 <g id="nav-2">
 <rect x="0" y="0" width="240" height="900" fill="#fafafa"/>
@@ -132,8 +136,7 @@
 <text x="58" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
 <g transform="translate(193 25) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16"></path></g>
 <rect x="12" y="70" width="216" height="40" rx="20" fill="#e6e6e6"/>
-<g transform="translate(26 81) scale(0.75)" fill="none" stroke="#6b6b6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></g>
-<text x="54" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
+<text x="26" y="95.15" font-size="14" fill="#6b6b6b">Search</text>
 <g transform="translate(24 132) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"></path></g>
 <text x="62" y="149.35" font-size="15" fill="#474747">Feed</text>
 <g transform="translate(24 178) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17.5 14.5c2 .3 3.4 1.9 4 4.5"></path></g>
@@ -167,6 +170,8 @@
 <text x="62" y="646.74" font-size="15" fill="#474747">Lecturer applications</text>
 <g transform="translate(24 675.39) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14"></path></g>
 <text x="62" y="692.74" font-size="15" fill="#474747">Modules</text>
+<g transform="translate(24 721.39) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></g>
+<text x="62" y="738.74" font-size="15" fill="#474747">Terms</text>
 <text x="24" y="858.2" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy</text>
 <text x="24" y="878.59" font-size="12" fill="#6b6b6b">© 2026 PARP</text>
 </g>
@@ -177,8 +182,8 @@
 <rect x="490" y="264.78" width="460" height="370.44" rx="20" fill="#ffffff"/>
 <text x="514" y="311.58" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Suspend Hafiz Ismail?</text>
 <g transform="translate(904 290.78) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
-<text x="514" y="343.09" font-size="14" fill="#474747">Ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod</text>
-<text x="514" y="363.39" font-size="14" fill="#474747">tempor incididunt ut labore et dolore magna aliqua.</text>
+<text x="514" y="343.09" font-size="14" fill="#474747">Nulla pariatur excepteur sint occaecat cupidatat non proident sunt</text>
+<text x="514" y="363.39" font-size="14" fill="#474747">culpa lorem ipsum dolor sit amet consectetur adipiscing elit.</text>
 <rect x="514" y="386.38" width="116.27" height="32" rx="16" fill="#ffffff"/>
 <rect x="514.75" y="387.13" width="114.77" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="526" y="406.85" font-size="13" font-weight="600" fill="#474747">Restrict posting</text>
@@ -191,8 +196,7 @@
 <text x="559.98" y="450.27" font-size="13" fill="#6b6b6b">required</text>
 <rect x="514" y="461.22" width="412" height="88" rx="10" fill="#ffffff"/>
 <rect x="515" y="462.22" width="410" height="86" rx="9" fill="none" stroke="#1c1c1c" stroke-width="2"/>
-<text x="528" y="488.53" font-size="14" fill="#1c1c1c">Quis nostrud exercitation ullamco laboris nisi aliquip ex ea</text>
-<text x="528" y="508.83" font-size="14" fill="#1c1c1c">commodo.</text>
+<text x="528" y="488.53" font-size="14" fill="#1c1c1c">Ut labore et dolore magna aliqua ut enim ad minim.</text>
 <rect x="693.75" y="571.22" width="77.86" height="40" rx="20" fill="#e6e6e6"/>
 <text x="711.75" y="596.37" font-size="14" font-weight="600" fill="#1c1c1c">Cancel</text>
 <rect x="781.61" y="571.22" width="144.39" height="40" rx="20" fill="#3a3a3a"/>

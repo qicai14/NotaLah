@@ -47,9 +47,10 @@ b,strong{font-weight:600}
 .top .r{display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end}
 .top h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
 .content{position:absolute;top:72px;left:0;right:0;bottom:0}
-.av{border-radius:50%;background:var(--s3);color:var(--ink2);display:grid;place-items:center;font-weight:700;flex:none;letter-spacing:-.01em}
-.av.d{background:var(--ink2);color:#fff}
-.stk{display:flex}.stk>*+*{margin-left:-10px}.stk.v{flex-direction:column}.stk.v>*+*{margin:-14px 0 0}.stk .av{box-shadow:0 0 0 2px #fff}
+.av{border-radius:50%;background:var(--s1);box-shadow:inset 0 0 0 1.5px var(--s3);flex:none}
+.iph{border-radius:50%;background:var(--s1);box-shadow:inset 0 0 0 1.5px var(--s3);flex:none;display:block}
+.ilab{font-size:12px;font-weight:600;white-space:nowrap;color:var(--ink2)}
+.stk{display:flex}.stk>*+*{margin-left:-10px}.stk.v{flex-direction:column}.stk.v>*+*{margin:-14px 0 0}.stk .av{box-shadow:0 0 0 2px #fff,inset 0 0 0 1.5px var(--s3)}
 
 /* buttons, fields, chips, tabs */
 .b{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;font-weight:600;font-size:14px;background:var(--s2);color:var(--ink);white-space:nowrap;flex:none}
@@ -65,7 +66,7 @@ b,strong{font-weight:600}
 .in{min-height:44px;border-radius:10px;background:var(--s1);box-shadow:inset 0 0 0 1px var(--line);padding:0 14px;display:flex;align-items:center;gap:8px;color:var(--ink3);font-size:14px}
 .in.v{color:var(--ink)}
 .in.fo{background:#fff;box-shadow:inset 0 0 0 2px var(--ink)}
-.in.er{background:#fff;box-shadow:inset 0 0 0 2px var(--ink2)}
+.in.bad{background:#fff;box-shadow:inset 0 0 0 2px var(--ink2)}
 .in.ta{align-items:flex-start;padding-top:12px;min-height:88px}
 .in .end{margin-left:auto;display:flex;align-items:center;gap:6px}
 .help{font-size:12px;color:var(--ink3)}
@@ -115,10 +116,10 @@ b,strong{font-weight:600}
 .stage{position:absolute;inset:0;display:flex;justify-content:center;align-items:flex-start}
 .frow{display:flex;align-items:flex-end;gap:16px;position:relative}
 .card{position:relative;border-radius:var(--r3);background:var(--media);overflow:hidden;color:var(--ink);flex:none;box-shadow:inset 0 0 0 1.5px var(--s3)}
-.prog{position:absolute;top:12px;left:12px;right:12px;display:flex;gap:4px;z-index:3}
-.prog span{flex:1;height:3px;border-radius:2px;background:var(--s3)}
-.prog .on{background:var(--ink2)}
-.ctop{position:absolute;top:24px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:3}
+.dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;align-items:center;gap:6px;z-index:3}
+.dots span{width:7px;height:7px;border-radius:4px;background:var(--s3)}
+.dots .on{width:18px;background:var(--ink)}
+.ctop{position:absolute;top:14px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;z-index:3}
 .vpill{height:28px;padding:0 10px 0 6px;border-radius:999px;background:#fff;color:var(--ink);font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:inset 0 0 0 1px var(--s3)}
 .vpill.ed{border:1.5px dashed var(--ink2);box-shadow:none;padding:0 10px 0 7px}
 .why{height:28px;padding:0 10px 0 8px;border-radius:999px;background:var(--s2);color:var(--ink);font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
@@ -156,6 +157,8 @@ b,strong{font-weight:600}
 .sl .ex{font-size:3.3cqw;line-height:1.4;color:var(--ink2);background:var(--s2);border-radius:2.4cqw;padding:3cqw 3.4cqw}
 .sl mark{background:var(--hl);color:inherit;border-radius:.6cqw;padding:0 .4cqw}
 .sl mark sup{font-size:2.4cqw;font-weight:700;margin-left:.4cqw}
+.ln.hl{background:var(--s3)}
+.anum{width:4.4cqw;height:4.4cqw;border-radius:50%;background:var(--ink);color:#fff;font-size:2.6cqw;font-weight:700;display:grid;place-items:center;flex:none}
 .sl.w .sp{padding:5cqw 6cqw;gap:2cqw}
 .sl.w .k{font-size:1.8cqw}
 .sl.w h3{font-size:4.4cqw}
@@ -265,9 +268,10 @@ b,strong{font-weight:600}
 `;
 
 /* ------------------------------------------------------------------ primitives */
-export const I = (n, s = 20) => `<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+export const I = (n, s = 20) => `<svg class="i" data-n="${n}" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
 export const VB = (w = false, s = 16) => `<span class="vb ${w ? 'w' : ''}" style="width:${s}px;height:${s}px">${I('check', s * 0.7)}</span>`;
-export const av = (t, s = 36, dark = false) => `<div class="av ${dark ? 'd' : ''}" style="width:${s}px;height:${s}px;font-size:${Math.round(s * 0.36)}px">${t}</div>`;
+// avatars are plain crossed circles (initials are kept only as a title for the source)
+export const av = (t, s = 36) => `<div class="av xc" title="${t}" style="width:${s}px;height:${s}px"></div>`;
 export const stack = (ids, s = 28) => `<div class="stk">${ids.map((i, k) => av(i, s, k === 0)).join('')}</div>`;
 export const LECT = `<span class="lect">${I('check', 11)}Lecturer</span>`;
 export const xb = (style = '') => `<div class="xb" style="${style}"></div>`;
@@ -292,47 +296,24 @@ export const MODS = {
 };
 export const MUSIC = 'Track title · Artist';
 
-/* slides: kinds render at any width (container-query units) */
+/* slides: one lo-fi layout for every kind (kicker, title, grey text lines, crossed image box); container-query units */
+const SLIDES = {
+  norm: ['CT030-3-2 · Week 6', 'Normalisation, 1NF to 3NF'], sort: ['CT044-3-2 · Week 8', 'Sorting at a glance'],
+  stack: ['CT044-3-2 · #dsa', 'Stack vs queue'], mvc: ['AICT004 · Week 4', 'Model, view, controller'], img: ['CT060-3-2 · Week 3', 'TCP handshake'],
+};
 export const slide = (kind, opt = {}) => {
-  const mk = (t, n) => (opt.hl ? `<mark>${t}<sup>${n}</sup></mark>` : t);
   const lines = (ws) => ws.map((w) => `<div class="ln" style="width:${w}%"></div>`).join('');
-  const S = {
-    norm: `<div class="sp"><div class="k">CT030-3-2 · Week 6</div><h3>Normalisation, 1NF to 3NF</h3>
-      <div class="nf"><b>1NF</b><span>${mk('Lorem ipsum', 1)} dolor sit amet elit.</span></div>
-      <div class="nf"><b>2NF</b><span>Consectetur ${mk('adipiscing elit', 2)} sed do.</span></div>
-      <div class="nf"><b>3NF</b><span>Eiusmod tempor incididunt ut labore.</span></div>
-      <div class="ex">Ut enim ad minim veniam, ${mk('quis nostrud', 3)} exercitation ullamco.</div></div>`,
-    sort: `<div class="sp"><div class="k">CT044-3-2 · Algorithms and Data Structures</div><h3>Sorting at a glance</h3>
-      <table><tr><th>Algorithm</th><th>Best</th><th>Average</th><th>Worst</th><th>Space</th></tr>
-      ${['Bubble sort', 'Merge sort', 'Quick sort'].map((n) => `<tr><td>${n}</td>${[60, 80, 70, 50].map((w) => `<td><div class="ln" style="width:${w}%;height:1.4cqw"></div></td>`).join('')}</tr>`).join('')}</table></div>`,
-    stack: `<div class="sp" style="gap:4cqw"><div class="k">CT044-3-2 · #dsa</div><h3>Stack vs queue</h3>
-      <div class="row" style="gap:6cqw;align-items:flex-end">
-        <div style="display:flex;flex-direction:column;gap:1.6cqw;width:30cqw">${['push(4)', '3', '2', '1'].map((t, i) => `<div class="bx ${i === 0 ? 'd' : ''}" style="height:10cqw">${t}</div>`).join('')}
-          <div class="p" style="text-align:center"><b>LIFO</b></div></div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:2cqw"><div class="boxes">${['1', '2', '3', '4'].map((t, i) => `<div class="bx ${i === 0 ? 'd' : ''}" style="height:12cqw;flex:1">${t}</div>`).join('')}</div>
-          <div class="p"><b>FIFO</b></div></div></div>
-      <div class="ex">Lorem ipsum dolor sit amet, consectetur adipiscing.</div></div>`,
-    mvc: `<div class="sp"><div class="k">AICT004 · Week 4</div><h3>Model, view, controller</h3>
-      <div style="position:relative;height:44cqw;margin-top:2cqw">
-        <div class="bx d" style="position:absolute;left:30cqw;top:0;width:26cqw;height:12cqw">Controller</div>
-        <div style="position:absolute;left:42.5cqw;top:12cqw;width:1cqw;height:22cqw;background:var(--ink3)"></div>
-        <div style="position:absolute;left:13cqw;right:13cqw;top:33.5cqw;height:1cqw;background:var(--ink3)"></div>
-        <div class="bx" style="position:absolute;left:0;top:28cqw;width:26cqw;height:12cqw">Model</div>
-        <div class="bx" style="position:absolute;right:0;top:28cqw;width:26cqw;height:12cqw">View</div></div>
-      ${lines([90, 70])}</div>`,
-    img: `<div class="sp"><div class="k">CT060-3-2 · Week 3</div><h3>TCP handshake</h3>${xb('flex:1;border-radius:2cqw')}${lines([92, 76])}</div>`,
-    blank: '',
-  };
+  // hl: three text-anchored annotation markers (numbered) on highlighted lines
+  const ann = (n, w) => `<div style="display:flex;gap:1.6cqw;align-items:center"><div class="ln hl" style="width:${w}%"></div><span class="anum">${n}</span><div class="ln" style="flex:1"></div></div>`;
+  const s = SLIDES[kind];
+  const body = !s ? '' : `<div class="sp"><div class="k">${s[0]}</div><h3>${s[1]}</h3>${opt.hl ? `${ann(1, 34)}${lines([88])}${ann(2, 46)}${lines([72])}${ann(3, 28)}` : lines([92, 78, 86])}${xb('flex:1;border-radius:2cqw')}${lines([90, 64])}</div>`;
   const wide = opt.aspect === '16:9';
-  return `<div class="sl ${wide ? 'w' : ''} ${opt.cls || ''}" style="width:100%;height:100%">${S[kind] ?? ''}</div>`;
+  return `<div class="sl ${wide ? 'w' : ''} ${opt.cls || ''}" style="width:100%;height:100%">${body}</div>`;
 };
-// generic cover used by grids and thumbnails
-export const cover = (t, v = 'a', code = '') => {
-  if (v === 'b') return `<div class="sl dk"><div class="sp" style="padding-bottom:22cqw">${xb('flex:1;border-radius:3cqw')}<div class="k">${code}</div><h3 style="font-size:10cqw">${t}</h3></div></div>`;
-  if (v === 'c') return `<div class="sl gy"><div class="sp" style="padding-top:16cqw"><div class="k">${code}</div><h3 style="font-size:10cqw">${t}</h3><div class="boxes" style="margin-top:auto;margin-bottom:24cqw">${[22, 34, 16, 28].map((h, i) => `<div class="bx ${i === 1 ? 'd' : ''}" style="flex:1;height:${h}cqw"></div>`).join('')}</div></div></div>`;
-  if (v === 'd') return `<div class="sl"><div class="sp" style="justify-content:center"><div class="k">${code}</div><div class="big">${t}</div><div class="ln" style="width:70%"></div><div class="ln" style="width:50%"></div></div></div>`;
-  return `<div class="sl"><div class="sp" style="padding-top:16cqw"><div class="k">${code}</div><h3 style="font-size:10cqw">${t}</h3><div class="ln" style="width:90%;margin-top:4cqw"></div><div class="ln" style="width:75%"></div><div class="ln" style="width:82%"></div></div></div>`;
-};
+// slide position indicator, shown at the bottom of every slide (n dots, current one elongated)
+export const dots = (n = 6, idx = 1, style = '') => `<div class="dots" style="${style}">${Array.from({ length: n }, (_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('')}</div>`;
+// cover art for grids and thumbnails is a crossed box
+export const cover = () => `<div class="sl">${xb('position:absolute;inset:0')}</div>`;
 export const COVERS = [
   ['Normalisation, 1NF to 3NF', 'a', 'CT030-3-2', '1.2K', true], ['SQL joins in one page', 'b', 'CT030-3-2', '864', false], ['O(n log n)', 'd', 'CT044-3-2', '2.4K', true],
   ['Use case diagrams: include vs extend', 'c', 'AICT004', '415', false], ['TCP vs UDP', 'b', 'CT060-3-2', '1.1K', true], ['Recursion, traced', 'a', 'CT044-3-2', '378', false],
@@ -346,7 +327,7 @@ export const tile = (c, o = {}) => `<div><div class="tile">${cover(c[0], c[1], c
 /* ------------------------------------------------------------------ shell */
 const NAV = [['Feed', 'home'], ['Following', 'users'], ['Explore', 'compass'], ['Create', 'plus'], ['Messages', 'msg'], ['Notifications', 'bell'], ['Saved', 'bookmark'], ['Profile', 'user'], ['More', 'more']];
 const GUEST_NAV = [['Feed', 'home'], ['Explore', 'compass']];
-const ADMIN = [['Reports', 'flag', 5], ['Users', 'users'], ['Lecturer applications', 'shield'], ['Modules', 'book']];
+const ADMIN = [['Reports', 'flag', 5], ['Users', 'users'], ['Lecturer applications', 'shield'], ['Modules', 'book'], ['Terms', 'cal']];
 export const nav = (on, o = {}) => {
   const badge = (n) => (n === 'Notifications' ? 3 : n === 'Messages' ? 2 : 0);
   const icon = (n, ic) => (n === 'Create' ? `<span class="cr">${I('plus', 18)}</span>` : I(ic, 24));
@@ -387,14 +368,13 @@ export const feedCard = (o) => {
   if (a === '9:16') { sh = h; top = 0; } else if (a === '4:5') { sh = Math.round(w * 1.25); top = 64; } else { sh = Math.round(w * 9 / 16); top = Math.round(h * 0.27); }
   const n = o.count ?? 6, idx = o.idx ?? 1;
   const pill = o.edited ? `<span class="vpill ed">${I('warn', 16)}Edited since verification</span>` : o.verified ? `<span class="vpill">${VB(false, 18)}Verified by ${o.verified}</span>` : '<span></span>';
-  const who = o.coauthors ? `<span class="stk" style="margin-right:4px">${[o.authorI ?? 'AR', ...o.coauthors.map((c) => c[0])].map((i, k) => av(i, 24, k === 0)).join('')}</span>${o.author ?? 'Aina Rahman'} <span style="font-weight:400;font-size:14px">with ${o.coauthors.map((c) => c[1]).join(' and ')}</span>` : `${o.author ?? 'Aina Rahman'}${o.lect ? ` ${VB(true, 16)}` : ''}`;
+  const who = o.coauthors ? `<span class="stk" style="margin-right:4px">${[o.authorI ?? 'AR', ...o.coauthors.map((c) => c[0])].map((i, k) => av(i, 24, k === 0)).join('')}</span>${o.author ?? 'Aina Rahman'}` : `${o.author ?? 'Aina Rahman'}${o.lect ? ` ${VB(true, 16)}` : ''}`;
   return `<div class="card" style="width:${w}px;height:${h}px">
-    <div class="cslide" style="top:${top}px;height:${sh}px">${slide(o.kind ?? 'norm', { aspect: a, cls: a === '9:16' ? 'dk tall' : '' })}</div>
-    <div class="prog">${Array.from({ length: n }, (_, i) => `<span class="${i <= idx ? 'on' : ''}"></span>`).join('')}</div>
+    <div class="cslide" style="top:${top}px;height:${sh}px">${slide(o.kind ?? 'norm', { aspect: a, cls: a === '9:16' ? 'dk tall' : '' })}${a === '16:9' ? '' : dots(n, idx, a === '9:16' ? 'bottom:236px' : '')}</div>
     <div class="ctop">${pill}<span class="why ${o.whyOn ? 'on' : ''}">${I('info', 16)}Why this note?</span></div>
-    ${a === '16:9' ? `<div style="position:absolute;top:${top + sh + 16}px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:14px;z-index:3;font-size:13px;font-weight:600"><span class="sarr" style="position:static">${I('left', 18)}</span>Slide ${idx + 1} of ${n}<span class="sarr" style="position:static">${I('right', 18)}</span></div>`
+    ${a === '16:9' ? `<div style="position:absolute;top:${top + sh + 16}px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:14px;z-index:3;font-size:13px;font-weight:600"><span class="sarr" style="position:static">${I('left', 18)}</span>${dots(n, idx, 'position:static')}<span class="sarr" style="position:static">${I('right', 18)}</span></div>`
       : `<div class="sarr" style="left:10px;top:${top + sh / 2 - 16}px">${I('left', 18)}</div><div class="sarr" style="right:10px;top:${top + sh / 2 - 16}px">${I('right', 18)}</div>`}
-    <div class="cap" style="${a === '9:16' ? 'background:#fff;border-radius:12px;padding:10px 12px;left:10px;right:10px;bottom:10px;box-shadow:inset 0 0 0 1px var(--s3)' : ''}"><div class="nm">${who}<span style="font-weight:400;color:var(--ink3);font-size:14px">· ${o.age ?? '2d ago'}</span></div>
+    <div class="cap" style="${a === '9:16' ? 'background:#fff;border-radius:12px;padding:10px 12px;left:10px;right:10px;bottom:10px;box-shadow:inset 0 0 0 1px var(--s3)' : ''}"><div class="nm">${who}<span style="font-weight:400;color:var(--ink3);font-size:14px">· ${o.age ?? '2d ago'}</span></div>${o.coauthors ? `<div class="ds" style="margin-top:-4px">with <b>${o.coauthors.map((c) => c[1]).join('</b> and <b>')}</b></div>` : ''}
       <div class="tt">${o.title ?? 'Normalisation, 1NF to 3NF in one page'}</div>
       <div class="ds">${o.desc ?? `${L(6)} <b>#normalisation</b> <b>#sql</b>`}</div>
       <span class="mod">${I('book', 14)}${o.mod ?? MODS.db}</span>
@@ -431,9 +411,8 @@ export const mobileFeed = (sheet = '', o = {}) => {
   const mb = (ic, c, on) => `<div class="mrb ${on ? 'on' : ''}"><span class="c">${I(ic, 24)}</span>${c}</div>`;
   return mob(`<div style="position:absolute;top:44px;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;z-index:5">
       <span class="ib">${I('menu', 24)}</span>${ftabs('Feed', o.guest ? ['Feed'] : ['Feed', 'Following'])}${o.guest ? '<span class="b sm p">Log in</span>' : `<span class="ib">${I('search', 24)}</span>`}</div>
-    <div style="position:absolute;top:102px;left:12px;right:12px;display:flex;gap:4px;z-index:4">${[1, 1, 0, 0, 0, 0].map((x) => `<span style="flex:1;height:3px;border-radius:2px;background:${x ? 'var(--ink2)' : 'var(--s3)'}"></span>`).join('')}</div>
-    <div style="position:absolute;top:112px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:4"><span class="vpill">${VB(false, 18)}Verified by Dr Lee</span><span class="why">${I('info', 16)}Why?</span></div>
-    <div style="position:absolute;top:${sTop}px;left:12px;width:${sw}px;height:${sh}px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}</div>
+    <div style="position:absolute;top:104px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:4"><span class="vpill">${VB(false, 18)}Verified by Dr Lee</span><span class="why">${I('info', 16)}Why?</span></div>
+    <div style="position:absolute;top:${sTop}px;left:12px;width:${sw}px;height:${sh}px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}${dots(6, 1)}</div>
     <div class="mrail" style="top:250px;right:6px">
       <div class="rav" style="margin-bottom:4px">${av('AR', 46, true)}<span class="pl">${I('plus', 13)}</span></div>
       ${mb(o.guest ? 'heart' : 'heartF', '1.2K', !o.guest)}${mb('comment', '44')}${mb('bookmark', '318')}${mb('share', 'Share')}</div>
@@ -451,7 +430,7 @@ export const ebar = (o = {}) => `<div class="ebar"><span class="b g sm" style="p
   <span class="ib sm ${o.locked ? 'dim' : ''}">${I('undo', 20)}</span><span class="ib sm" style="opacity:.45">${I('redo', 20)}</span><span class="sep"></span>
   <span class="tb2 dd ${o.resizeOn ? 'on' : ''} ${o.locked ? 'dim' : ''}">${I('resize', 16)}${o.aspect ?? '4:5 Portrait'} ${I('down', 14)}</span>
   <div style="margin-left:auto" class="row">${o.people ? `${stack(o.people, 32)}` : ''}${o.locked
-    ? `<span class="b sm dis">Save draft</span>`
+    ? `<span class="b sm dis">Save draft</span>${o.owner ? `<span class="b sm p">${I('upload', 16)}Publish ${I('down', 14)}</span>` : `<span class="b sm dis" title="Only the owner can publish">Publish ${I('down', 14)}</span>`}`
     : `<span class="b sm g">${I('present', 16)}Preview</span><span class="b sm ${o.shareOn ? 'p' : 'o'}">${I('users', 16)}Share</span><span class="b sm">Save draft</span><span class="b sm p">${I('upload', 16)}Publish</span>`}</div></div>`;
 export const erail = (on, dim) => `<div class="erail">${ERAIL.map(([n, ic]) => `<div class="er ${n === on ? 'on' : ''} ${dim ? 'dim' : ''}">${I(ic, 22)}${n}</div>`).join('')}</div>`;
 export const ebottom = (o = {}) => {
