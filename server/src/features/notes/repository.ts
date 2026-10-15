@@ -13,6 +13,16 @@ export const VISIBLE = `(p.pst_status <> 'deleted' AND (p.pst_usr_id = $1 OR (p.
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')) AND
     (p.pst_visibility = 'public' OR ${friends('$1', 'p.pst_usr_id')}))))`;
 
+/** Post p can be reached through collaboration or a share link: a draft or published note by an active or restricted author, never hidden or deleted (R30, D46). */
+export const SHAREABLE = `(p.pst_status IN ('draft', 'published')
+    AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')))`;
+
+/** SQL: the collaborator role ('view' | 'edit') of user $1 on post p, or NULL when there is none or p is not SHAREABLE. */
+export const COLLAB_ROLE = `(SELECT c.clb_role FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND ${SHAREABLE})`;
+
+/** SQL: viewer $1 may read post p, as anyone it is VISIBLE to or as a collaborator (R30). */
+const READABLE = `(${VISIBLE} OR ${COLLAB_ROLE} IS NOT NULL)`;
+
 /** The note's hashtag names, alphabetical (alias p = POST_T). */
 export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)
                    FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
@@ -28,6 +38,7 @@ export interface Note {
   hashtags: string[];
   slides: { position: number; content: string }[];
   author: { id: number; displayName: string; role: string; isVerifiedLecturer: boolean };
+  coauthors: { id: number; displayName: string }[];
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;
@@ -43,6 +54,11 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
                    FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
                            'isVerifiedLecturer', ${approvedLecturer('u')}) AS "author",
+         COALESCE((SELECT json_agg(json_build_object('id', cu.usr_id, 'displayName', cu.usr_display_name)
+                                   ORDER BY c.clb_created_at, cu.usr_id)
+                   FROM "COLLABORATOR_T" c JOIN "USER_T" cu ON cu.usr_id = c.clb_usr_id
+                   WHERE c.clb_pst_id = p.pst_id AND c.clb_role = 'edit' AND cu.usr_status IN ('active', 'restricted')),
+                  '[]'::JSON) AS "coauthors",
          p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"`;
 
 /** FROM clause defining the aliases p, u and m that NOTE_COLS uses. */
@@ -51,8 +67,14 @@ export const NOTE_FROM = `
   JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
   LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id`;
 
-/** Super Likes that count (alias v): by an approved lecturer whose account is active or restricted (D24). Ends in a WHERE clause, so callers append AND conditions. */
-export const VALID_VERIFICATIONS = `FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id WHERE ${countingLecturer('vu')}`;
+/** Super Likes that count (alias v): by an approved lecturer whose account is active or restricted (D24), made at or after the note's last content edit (R30, D46). Ends in a WHERE clause, so callers append AND conditions. */
+export const VALID_VERIFICATIONS = `FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id
+     JOIN "POST_T" vp ON vp.pst_id = v.ver_pst_id
+     WHERE ${countingLecturer('vu')} AND (vp.pst_content_edited_at IS NULL OR v.ver_created_at >= vp.pst_content_edited_at)`;
+
+/** A counting lecturer's Super Like on note p predates its last content edit, so it stops counting until re-confirmed (R30). */
+const EDITED_SINCE_VERIFICATION = `EXISTS (SELECT 1 FROM "VERIFICATION_T" v JOIN "USER_T" vu ON vu.usr_id = v.ver_usr_id
+     WHERE v.ver_pst_id = p.pst_id AND ${countingLecturer('vu')} AND v.ver_created_at < p.pst_content_edited_at)`;
 
 export const VERIFIED = `EXISTS (SELECT 1 ${VALID_VERIFICATIONS} AND v.ver_pst_id = p.pst_id)`;
 
@@ -69,7 +91,7 @@ export const countsCol = (asOf?: string) => `json_build_object(
 export const ENGAGEMENT_COLS = `${countsCol()},
             EXISTS (SELECT 1 FROM "LIKE_T" WHERE lik_pst_id = p.pst_id AND lik_usr_id = $1) AS "liked",
             EXISTS (SELECT 1 FROM "BOOKMARK_T" WHERE bmk_pst_id = p.pst_id AND bmk_usr_id = $1) AS "bookmarked",
-            ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy",
+            ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy", ${EDITED_SINCE_VERIFICATION} AS "editedSinceVerification",
             EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id AND ver_usr_id = $1) AS "verifiedByMe"`;
 
 export interface NoteWithEngagement extends Note {
@@ -78,13 +100,17 @@ export interface NoteWithEngagement extends Note {
   bookmarked: boolean;
   verified: boolean;
   verifiedBy: string | null;
+  editedSinceVerification: boolean;
   verifiedByMe: boolean;
 }
 
-/** The note as the API returns it, or undefined when it does not exist or the viewer may not see it. */
-export async function getVisibleNote(id: number, viewerId: number): Promise<NoteWithEngagement | undefined> {
+/**
+ * The note as the API returns it, or undefined when it does not exist or the viewer may not read it. `viaLink` is for a
+ * caller that already resolved a share link to this note: any SHAREABLE note is then returned (R30).
+ */
+export async function getVisibleNote(id: number, viewerId: number, viaLink = false): Promise<NoteWithEngagement | undefined> {
   const { rows } = await pool.query<NoteWithEngagement>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = $2 AND ${VISIBLE}`,
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : READABLE}`,
     [viewerId, id],
   );
   return rows[0];
@@ -118,13 +144,19 @@ export async function listDrafts(authorId: number, { cursor, limit }: KeysetPage
 export interface NoteMeta {
   authorId: number;
   status: string;
+  visibility: 'public' | 'contacts' | null;
+  moduleId: number | null;
+  /** The viewer's access: the owner, a collaborator role, or null. */
+  role: 'owner' | 'edit' | 'view' | null;
+  /** The viewer may read the note: VISIBLE or a collaborator. */
   visible: boolean;
 }
 
-/** Ownership/status of a note plus whether the viewer may see it; undefined if it does not exist or is deleted. */
+/** Ownership, status and the viewer's access to a note; undefined if it does not exist or is deleted. */
 export async function getNoteMeta(id: number, viewerId: number): Promise<NoteMeta | undefined> {
   const { rows } = await pool.query<NoteMeta>(
-    `SELECT p.pst_usr_id AS "authorId", p.pst_status AS "status", ${VISIBLE} AS "visible"
+    `SELECT p.pst_usr_id AS "authorId", p.pst_status AS "status", p.pst_visibility AS "visibility", p.pst_mod_id AS "moduleId",
+            CASE WHEN p.pst_usr_id = $1 THEN 'owner' ELSE ${COLLAB_ROLE} END AS "role", ${READABLE} AS "visible"
      FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status <> 'deleted'`,
     [viewerId, id],
   );
@@ -182,18 +214,40 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
   });
 }
 
-export function replaceNote(id: number, n: NoteInput): Promise<boolean> {
+export type ReplaceResult = 'ok' | 'gone' | 'locked' | 'stale';
+
+/**
+ * Replaces the note as `editorId` (the owner or an edit collaborator). Refuses with 'locked' while another user holds a
+ * live soft lock, and with 'stale' when `baseUpdatedAt` is given and differs from pst_updated_at (R30). An edit never moves
+ * pst_published_at; a title or slide change to a published note stamps pst_content_edited_at, which voids older Super Likes.
+ */
+export function replaceNote(id: number, n: NoteInput, editorId: number, baseUpdatedAt: Date | null): Promise<ReplaceResult> {
   return inTransaction(async (c) => {
-    const { rowCount } = await c.query(
+    const { rows } = await c.query<{ status: string; title: string; updatedAt: Date; lockedByOther: boolean; slides: string[] }>(
+      `SELECT pst_status AS "status", pst_title AS "title", pst_updated_at AS "updatedAt",
+              COALESCE(pst_lock_usr_id <> $2 AND pst_lock_expires_at > NOW(), FALSE) AS "lockedByOther",
+              ARRAY(SELECT sld_content FROM "SLIDE_T" WHERE sld_pst_id = pst_id ORDER BY sld_position) AS "slides"
+       FROM "POST_T" WHERE pst_id = $1 AND pst_status IN ('draft', 'published')
+       FOR UPDATE`,
+      [id, editorId],
+    );
+    const cur = rows[0];
+    if (!cur) return 'gone'; // deleted or hidden since the permission check
+    if (cur.lockedByOther) return 'locked';
+    // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
+    if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
+    const contentEdited = cur.status === 'published'
+      && (cur.title !== n.title || cur.slides.length !== n.slides.length || cur.slides.some((s, i) => s !== n.slides[i]));
+    await c.query(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_status = $5, pst_visibility = $6,
-           pst_published_at = CASE WHEN $5::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END
-       WHERE pst_id = $1 AND pst_status IN ('draft', 'published')`,
-      [id, n.moduleId, n.title, n.template, n.status, n.visibility],
+           pst_published_at = CASE WHEN $5::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END,
+           pst_content_edited_at = CASE WHEN $7 THEN NOW() ELSE pst_content_edited_at END
+       WHERE pst_id = $1`,
+      [id, n.moduleId, n.title, n.template, n.status, n.visibility, contentEdited],
     );
-    if (rowCount === 0) return false; // deleted or hidden since the permission check
     await writeChildren(c, id, n);
-    return true;
+    return 'ok';
   });
 }
 

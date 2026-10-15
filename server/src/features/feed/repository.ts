@@ -19,13 +19,16 @@ export async function getNotesByIds(viewerId: number, ids: number[]): Promise<No
   return rows;
 }
 
-/** One page of visible published notes by authors the viewer follows, published by the cutoff, newest first; keyset on (published_at, id), D38. */
+/** One page of visible published notes by authors the viewer follows or co-authored (edit collaborator, R30) by them, published by the cutoff, newest first; keyset on (published_at, id), D38. */
 export async function getFollowingNotes(
   viewerId: number, cutoff: Date, { cursor, limit }: KeysetPage,
 ): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null }> {
   const { rows } = await pool.query<NoteWithEngagement & { cursor: string }>(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor" ${NOTE_FROM}
-     WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${follows('$1', 'p.pst_usr_id')} AND ${VISIBLE}
+     WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
+       AND (${follows('$1', 'p.pst_usr_id')}
+            OR EXISTS (SELECT 1 FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_role = 'edit'
+                       AND ${follows('$1', 'c.clb_usr_id')}))
        AND ($3::BIGINT IS NULL OR (p.pst_published_at, p.pst_id) < (${fromMicros('$3')}, $4::INT))
      ORDER BY p.pst_published_at DESC, p.pst_id DESC
      LIMIT $5`,
