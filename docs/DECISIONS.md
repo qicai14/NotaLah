@@ -770,3 +770,44 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29 to RANK-TC31, CLI-TC19; RANK-TC10 and USR-TC5 changed
   because the feed and profile no longer return 401 without a cookie.
 - **Reversibility:** Easy (swap `optionalAuth` back to `requireAuth` on five routes; no schema change).
+
+## D46 - Collaboration on the server (R30, 15 Oct 2026)
+- **Context:** D44 and the R30 backend spec: collaborators, view and edit links, requests, a soft lock, and edits that
+  must not reset publication but must void stale lecturer verification. UI waits for wireframe sign-off.
+- **Schema:** one migration adds "COLLABORATOR_T", "SHARE_LINK_T", "COLLAB_REQUEST_T" and `pst_content_edited_at`,
+  `pst_lock_usr_id`, `pst_lock_expires_at` on "POST_T". Partial unique indexes enforce one active link per note and role and
+  one pending request per note and user; check constraints keep the lock pair and `crq_decided_at` consistent.
+- **Access rule:** the existing `VISIBLE` is unchanged, so likes, comments, bookmarks, search and ranking ignore
+  collaboration. A separate `SHAREABLE` rule (draft or published, author active or restricted) gates every collaborator
+  and link path, so hidden or deleted notes and suspended authors give no access. `GET /api/notes/:id` reads
+  `VISIBLE OR collaborator`; the link route reads any `SHAREABLE` note once the token resolves.
+- **Edit links join by POST:** the spec put joining on `GET /api/share/:token`. A GET that writes would skip the CSRF
+  header check and the write limiter (D35, D40) and could be triggered by a prefetch, so GET only resolves the link (an
+  edit link needs a login) and `POST /api/share/:token` (signed in, active) joins. The owner redeeming their own link
+  gets role `owner` and no row; a view collaborator redeeming an edit link is upgraded.
+- **Tokens:** 32 bytes from `crypto.randomBytes`, base64url (43 characters); only the SHA-256 hex is stored and looked
+  up by equality on a unique index, so no timing-sensitive comparison is needed. The raw token appears only in the create
+  response. Malformed tokens answer 404 without a query. `GET /share/:token` uses the guest IP limiter for signed-in users
+  too, since `optionalAuth` only limits guests.
+- **Optimistic check:** no `baseUpdatedAt` existed before R30. It is required from editors and optional for the owner, so
+  the current editor client keeps working until the frontend sends it. The check, the lock check and the update run in
+  one transaction with `SELECT ... FOR UPDATE`; timestamps compare at millisecond precision because that is what the
+  client receives. An owner's PUT is also refused with 423 while an editor holds a live lock.
+- **Publication time and V:** `replaceNote` keeps `COALESCE(pst_published_at, NOW())`, so an edit never moves it. A title
+  or slide change to an already published note stamps `pst_content_edited_at`; hashtag, template and draft edits do not
+  (publishing a draft is not a content edit). `VALID_VERIFICATIONS` now joins "POST_T" and drops Super Likes older than
+  that stamp, so V, the badge, `verifiedBy` and the ranking candidates all follow one rule. `editedSinceVerification` is
+  true when any counting Super Like predates the edit, even if another lecturer has re-confirmed. A repeat
+  `POST /notes/:id/verify` moves only a stale row's `ver_created_at` to now and still answers 200. Known limit: the rule
+  compares against the latest edit, not the feed's asOf, so an edit after page 1 changes V if the ranking were recomputed
+  for that asOf; stored snapshots (D40) and the guest cache (D45) keep pages stable, and the next page 1 picks it up.
+- **Requests:** a view collaborator may request edit access (the spec said "non-collaborator"; asking for an upgrade is
+  the obvious use). Owners get 400, editors 409. Approving upserts the collaborator with the chosen role (default edit).
+- **Smaller choices:** co-authors are `{id, displayName}` because "USER_T" has no username column; suspended or deleted
+  co-authors are left out of the credit. Music is in the spec's editable fields but no music field exists yet, so there
+  is nothing to guard. Removing a collaborator also releases their lock. The lock TTL (120 s), token size and request
+  message limit live in `collaboration/config.ts`, not the ranking config. R8 notifications will read the pending
+  requests and `editedSinceVerification`; there is no separate list endpoint for lecturers yet.
+- **Tests:** COL-TC1 to COL-TC18.
+- **Reversibility:** Medium. The migration has a down step; dropping the feature means reverting the PUT role check,
+  `VALID_VERIFICATIONS` and the Following-feed clause.

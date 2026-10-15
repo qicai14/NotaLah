@@ -424,13 +424,15 @@
 
 *Figure 4.13: PARP entity relationship diagram (crow's foot notation)*
 
-	Figure 4.13 presents the relational data model of PARP as twenty-one entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
+	Figure 4.13 presents the relational data model of PARP as twenty-four entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
 	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
 
 	Two entities were added after the first design to meet the scale and reliability targets, and a third replaced an earlier one. FOLLOW_T replaced the original CONTACT_T, which stored a symmetric pair created by an accepted message request. A directed follow with a composite primary key and a check that a user cannot follow themselves is a single relationship from which friendship is derived at query time as a pair of follows in opposite directions, so there is no second table that could drift out of step; the migration that introduced it copied each existing contact into both directions. FEED_SNAPSHOT_T stores, for one viewer and one request time, the ranked list of post identifiers and their scores as arrays. The first page of the For You feed ranks the candidates once and writes this row, and later pages read a slice of it, so that a viewer paging through the feed sees a stable order and the ranking work is not repeated for every page; rows are short-lived and are deleted when they expire. RATE_LIMIT_T is an operational table with no foreign key to any other entity: it holds one counter per rate-limit key (a user identifier or an address) and time window, so that the request limits are enforced consistently across several server instances. It is therefore drawn in Figure 4.13 as a standalone entity.
+
+	Three entities support shared notes (R30), which were added after the first design. COLLABORATOR_T grants a user view or edit access to one note, with a composite primary key so that a user holds one role per note; the owner is never a row, because ownership is already recorded in pst_usr_id. SHARE_LINK_T stores the view and edit links an owner hands out. Only the SHA-256 hash of each random token is kept, so a copy of the database cannot be used to open shared notes, and a partial unique index allows at most one active link per note and role, which makes regenerating a link revoke the old one. COLLAB_REQUEST_T records a reader's request to collaborate until the owner approves or declines it, with a partial unique index that permits one pending request per note and user. POST_T gained three columns for the same feature: pst_content_edited_at records the last change to the title or slides of a published note, and a lecturer Super Like older than it no longer counts towards V until the lecturer confirms it again, while pst_lock_usr_id and pst_lock_expires_at hold a short soft lock so that only one collaborator edits at a time.
 
 ## 4.3.2 Database Schema
 
@@ -469,6 +471,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | pst_created_at | TIMESTAMPTZ | | NOT NULL | Creation time |
 | | pst_updated_at | TIMESTAMPTZ | | NOT NULL | Last edit time |
 | | pst_published_at | TIMESTAMPTZ | | | Publication time; age for recency R |
+| | pst_content_edited_at | TIMESTAMPTZ | | | Last title or slide change after publication; older Super Likes stop counting for V |
+| | pst_lock_usr_id | INTEGER | | FK → USER_T; set together with pst_lock_expires_at | Collaborator holding the soft edit lock |
+| | pst_lock_expires_at | TIMESTAMPTZ | | | Time the soft edit lock lapses unless renewed |
 | SLIDE_T | sld_id | INTEGER (identity) | | PK, NOT NULL | Unique slide identifier |
 | | sld_pst_id | INTEGER | | FK → POST_T, NOT NULL | Owning note |
 | | sld_position | SMALLINT | | NOT NULL, UNIQUE with sld_pst_id | Order of the slide within the note |
@@ -555,6 +560,24 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RATE_LIMIT_T | rlt_key | VARCHAR | 200 | PK, NOT NULL | Rate-limit key built from the user identifier or client address |
 | | rlt_window_start | TIMESTAMPTZ | | NOT NULL | Start of the current fixed window |
 | | rlt_hits | INTEGER | | NOT NULL | Requests counted in the window |
+| COLLABORATOR_T | clb_pst_id | INTEGER | | PK, FK → POST_T, ON DELETE CASCADE | Shared note |
+| | clb_usr_id | INTEGER | | PK, FK → USER_T; indexed | Collaborator; never the owner |
+| | clb_role | VARCHAR | 4 | NOT NULL, CHECK (view, edit) | Read-only access or co-author |
+| | clb_added_by | INTEGER | | FK → USER_T, NOT NULL | Owner who granted the access |
+| | clb_created_at | TIMESTAMPTZ | | NOT NULL | Time access was granted; orders the co-author credit |
+| SHARE_LINK_T | shl_id | INTEGER (identity) | | PK, NOT NULL | Unique link identifier |
+| | shl_pst_id | INTEGER | | FK → POST_T, NOT NULL, ON DELETE CASCADE | Shared note |
+| | shl_role | VARCHAR | 4 | NOT NULL, CHECK (view, edit); one active per note and role | Access the link grants |
+| | shl_token_hash | CHAR | 64 | NOT NULL, UNIQUE | SHA-256 of the random token; the token itself is never stored |
+| | shl_created_at | TIMESTAMPTZ | | NOT NULL | Time created |
+| | shl_revoked_at | TIMESTAMPTZ | | | Time revoked or replaced; null while active |
+| COLLAB_REQUEST_T | crq_id | INTEGER (identity) | | PK, NOT NULL | Unique request identifier |
+| | crq_pst_id | INTEGER | | FK → POST_T, NOT NULL, ON DELETE CASCADE | Note the reader wants to work on |
+| | crq_usr_id | INTEGER | | FK → USER_T, NOT NULL; one pending per note and user | Requesting user |
+| | crq_message | VARCHAR | 300 | | Optional note to the owner |
+| | crq_status | VARCHAR | 8 | NOT NULL, CHECK (pending, approved, declined) | Request state |
+| | crq_created_at | TIMESTAMPTZ | | NOT NULL | Time sent |
+| | crq_decided_at | TIMESTAMPTZ | | Set exactly when not pending | Time approved or declined |
 
 
 	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors. Migrations added after the initial schema create further indexes, each for one access path:
@@ -566,6 +589,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 - `follow_followee_idx` on FOLLOW_T (fol_followee_id): lists a user's followers and checks the reverse direction of a follow.
 - `feed_snapshot_created_idx` on FEED_SNAPSHOT_T (fsn_created_at): deletes expired snapshots.
 - `comment_parent_idx` on COMMENT_T (cmt_parent_id), partial on replies: checks whether a deleted top-level comment still has live replies.
+- `collaborator_user_idx` on COLLABORATOR_T (clb_usr_id): lists the notes shared with a user.
+- `share_link_active_idx` on SHARE_LINK_T (shl_pst_id, shl_role), unique and partial on active links: keeps one active link per note and role.
+- `collab_request_pending_idx` on COLLAB_REQUEST_T (crq_pst_id, crq_usr_id), unique and partial on pending requests: one open request per reader and note.
 
 # 4.4 Interface Design
 
@@ -970,7 +996,30 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC29 | Report queue paging | 23 reported notes whose reports share one time; GET /api/admin/reports, then with nextCursor; cursor "abc" | 20 groups and a nextCursor, then the last 3 with nextCursor null, in note id order; 400 for the bad cursor | | |
 | ADM-TC30 | Review panel loads the full note | GET /api/admin/reports/:noteId for a reported note, a note without reports, id "abc", the note after dismissal | Full note with 3 slides, report count 1 and the spam report; 404; 400; 404 | | |
 
-*Table 4.33: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
+*Table 4.33: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| COL-TC1 | Draft and friends-only notes readable by collaborators only | a draft and a published contacts-only note, each with an editor and a viewer; GET /api/notes/:id as owner, editor, viewer, a stranger and a guest | 200 for owner, editor and viewer; 404 for the stranger and the guest | | |
+| COL-TC2 | Owner-only endpoints refuse everyone else | GET access, PUT collaborator, POST link, DELETE link, DELETE another collaborator and decide a request, as each of the five users | Owner 2xx; editor and viewer 403; stranger 404; guest 401 | | |
+| COL-TC3 | Who may edit and delete a note | PUT /api/notes/:id with a valid body as each user; DELETE as editor, viewer and owner | PUT 200 for owner and editor, 403 viewer, 404 stranger, 401 guest; DELETE 403 for editor and viewer, 204 for the owner | | |
+| COL-TC4 | Editor cannot change owner-only fields | editor PUT with visibility contacts, another module, status draft; without baseUpdatedAt; baseUpdatedAt "yesterday"; publishing a draft | 403 "Only the owner can change status, visibility or module" for each field change and for publishing; 400 "baseUpdatedAt is required"; 400 for the invalid value | | |
+| COL-TC5 | Stale edit refused (optimistic check) | editor saves with the loaded baseUpdatedAt; owner then saves with the same, now old, value; owner saves without baseUpdatedAt | Editor 200; owner 409 and the title stays the editor's; owner without baseUpdatedAt 200 | | |
+| COL-TC6 | Link token returned once, only its hash stored | POST /api/notes/:id/links {role: view}; read SHARE_LINK_T; GET access; role "owner" | 201 with a 43-character token and a /share/ URL; the table holds only the SHA-256 hex of the token; access lists role and date without the token; 400 for the bad role | | |
+| COL-TC7 | View link opens a restricted note and nothing else | contacts-only note; view link opened by a guest and a stranger; stranger likes the note, opens it directly, POSTs the view link | 200 with the note for both, no collaborator row added; like 404; direct GET 404; POST 400 "A view link cannot be joined" | | |
+| COL-TC8 | Edit link needs a signed-in active user | edit link: guest GET and POST; stranger GET; restricted user POST; stranger POST; viewer POST; owner POST | Guest 401 twice; stranger GET 200 role edit without joining; restricted 403; stranger and viewer become edit collaborators; owner gets role owner and no row | | |
+| COL-TC9 | Revoked and regenerated links stop working | two view links in a row; DELETE /links/view; token "not-a-token"; DELETE /links/admin | First token 404 after regeneration, second 200; 404 after revoke; malformed 404; bad role 400 | | |
+| COL-TC10 | No access to hidden notes or suspended authors | view link and collaborators on a note that is then hidden; then a draft whose owner is suspended | Link 404, editor GET 404, PUT 404, Shared with me empty; after suspension link and viewer GET 404 | | |
+| COL-TC11 | Owner manages collaborators; a collaborator can leave | PUT view then edit for an invitee; PUT for the owner, id 999999, role admin; editor removes the viewer; viewer leaves; owner removes the invitee | 200, 200, 400, 404, 400; access lists editor, viewer, invitee in order; 403; 204; 204; only the editor remains | | |
+| COL-TC12 | Requests to collaborate | stranger requests with a message, then again; owner and editor request; 301-character message; viewer requests; stranger requests on a draft; owner approves, declines, re-decides, sends "maybe" and an unknown id | 201, 409, 400, 409, 400, 201, 404; access lists both pending; approve gives role edit; re-decide 409; bad decision 400; decline 200; unknown 404; no pending left | | |
+| COL-TC13 | Shared with me list | editor of one note and viewer of another; a stranger; a guest | Both notes with roles edit and view and the owner; stranger empty list; guest 401 | | |
+| COL-TC14 | Soft lock and expiry | editor locks and renews; owner locks and PUTs; editor PUTs; viewer, stranger, guest lock; lock expired by SQL; releases; editor removed while holding it | 200, 200; owner 423 with lockedBy Editor and PUT 423; editor PUT 200; 403, 404, 401; owner takes the expired lock; release by a non-holder has no effect; removing the editor frees the lock | | |
+| COL-TC15 | V removed by a slide edit until re-confirmed | published note Super Liked by an approved lecturer; editor replaces the slides; lecturer POSTs verify again | After the edit verified false, verifiedBy null, editedSinceVerification true and V = 0 in the ranking candidates; after re-confirm 200, verified true and V = 1 | | |
+| COL-TC16 | Hashtag edits keep V; publish time never moves | verified published note: hashtag-only edit, then a title edit; a draft edited by its editor | Hashtags changed and still verified; title edit removes V; pst_published_at unchanged; the draft keeps null pst_content_edited_at and pst_published_at | | |
+| COL-TC17 | Following feed includes co-authored notes | a follower of the editor; a follower of a view collaborator; a contacts-only note co-authored by the followed editor, before and after the follower befriends its owner | The editor's follower sees the note; the viewer's follower sees nothing; the contacts-only note appears only after the friendship | | |
+| COL-TC18 | Co-authors credited in note payloads | published note with an editor and a viewer; GET as a guest and in the feed; editor then suspended | coauthors lists only the editor (id, display name) in detail and feed; empty after the suspension | | |
+
+*Table 4.34: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -979,7 +1028,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC3 | Request id reused or replaced | no X-Request-Id; "abc-123"; "bad id<script>" | Response carries a generated UUID; "abc-123" echoed; a new UUID instead of the unsafe value | | |
 | OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie parp_token header and a body with a password | Log output shows [redacted] and contains neither the parp_token value nor the password | | |
 
-*Table 4.34: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
+*Table 4.35: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1003,7 +1052,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.35: UAT tester details*
+*Table 4.36: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1011,7 +1060,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.36: UAT scenario tasks*
+*Table 4.37: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1030,7 +1079,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.37: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.38: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1040,7 +1089,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.38: UAT feedback and developer response*
+*Table 4.39: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1051,7 +1100,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.39: Ranking weight re-evaluation (NFR5)*
+*Table 4.40: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

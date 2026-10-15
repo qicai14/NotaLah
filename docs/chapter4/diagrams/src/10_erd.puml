@@ -43,6 +43,9 @@ entity "POST_T" as POST {
   * pst_created_at : TIMESTAMPTZ
   * pst_updated_at : TIMESTAMPTZ
   pst_published_at : TIMESTAMPTZ
+  pst_content_edited_at : TIMESTAMPTZ
+  pst_lock_usr_id : INTEGER <<FK>>
+  pst_lock_expires_at : TIMESTAMPTZ
 }
 entity "SLIDE_T" as SLIDE {
   * sld_id : INTEGER <<PK>>
@@ -177,6 +180,33 @@ entity "FEED_SNAPSHOT_T" as FSN {
   * fsn_scores : DOUBLE PRECISION[]
   * fsn_created_at : TIMESTAMPTZ
 }
+entity "COLLABORATOR_T" as CLB {
+  * clb_pst_id : INTEGER <<PK, FK>>
+  * clb_usr_id : INTEGER <<PK, FK>>
+  --
+  * clb_role : VARCHAR(4)
+  * clb_added_by : INTEGER <<FK>>
+  * clb_created_at : TIMESTAMPTZ
+}
+entity "SHARE_LINK_T" as SHL {
+  * shl_id : INTEGER <<PK>>
+  --
+  * shl_pst_id : INTEGER <<FK>>
+  * shl_role : VARCHAR(4)
+  * shl_token_hash : CHAR(64) <<UNIQUE>>
+  * shl_created_at : TIMESTAMPTZ
+  shl_revoked_at : TIMESTAMPTZ
+}
+entity "COLLAB_REQUEST_T" as CRQ {
+  * crq_id : INTEGER <<PK>>
+  --
+  * crq_pst_id : INTEGER <<FK>>
+  * crq_usr_id : INTEGER <<FK>>
+  crq_message : VARCHAR(300)
+  * crq_status : VARCHAR(8)
+  * crq_created_at : TIMESTAMPTZ
+  crq_decided_at : TIMESTAMPTZ
+}
 entity "RATE_LIMIT_T" as RLT {
   * rlt_key : VARCHAR(200) <<PK>>
   --
@@ -215,4 +245,9 @@ USER ||--o{ MSG : sends
 POST |o--o{ MSG : "anchored to"
 USER ||--o{ FSN : "ranked for"
 USER ||--o{ AAC : "subject of"
+POST ||--o{ CLB : "shared with"
+USER ||--o{ CLB : collaborates
+POST ||--o{ SHL : "shared by link"
+POST ||--o{ CRQ
+USER ||--o{ CRQ : requests
 @enduml

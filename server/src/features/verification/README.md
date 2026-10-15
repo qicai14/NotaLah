@@ -12,7 +12,8 @@ Serves: FR1, FR2 (and FR3 through the V component of ranking). Test table: `VER-
 
 | Method and path | Result |
 | --- | --- |
-| `POST /api/notes/:id/verify` | `{remark?}` (max 300, blank = none); 201 `{verifiedBy, verifiedAt, remark}`, 200 with the existing one on repeat; 403 not an approved lecturer or account not active; 404 unknown, draft or not visible; 409 "Cannot verify own note" |
+| `POST /api/notes/:id/verify` | `{remark?}` (max 300, blank = none); 201 `{verifiedBy, verifiedAt, remark}`, 200 with the existing one on repeat, re-confirmed (time moved to now) when the note's content changed since (R30, D46); 403 not an approved lecturer or account not active; 404 unknown, draft or not visible; 409 "Cannot verify own note" |
 | `DELETE /api/notes/:id/verify` | removes the caller's own Super Like; 200 `{verified, verifiedBy}` for the note afterwards (another lecturer may still verify it); allowed for a restricted lecturer |
 
-Notes expose `verified`, `verifiedBy` (earliest valid verifier, null if none) and `verifiedByMe`.
+Notes expose `verified`, `verifiedBy` (earliest valid verifier, null if none), `editedSinceVerification` (a counting
+Super Like predates the last title or slide edit, so it no longer counts until re-confirmed, D46) and `verifiedByMe`.
