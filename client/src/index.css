@@ -1,16 +1,255 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/plus-jakarta-sans';
 
-/* Slide content (viewer and editor share it): Tailwind's reset strips these element styles. */
+/* Dark mode follows the `.dark` class on <html>; src/lib/theme.ts sets it from the toggle or the system setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * NotaLah design tokens. Every colour in the app is one of these variables: swap a palette by editing these two
+ * blocks only (see client/DESIGN.md). Components use the Tailwind names in @theme inline below, never raw colours.
+ * Ink blue is the brand (ballpoint pen); highlighter yellow marks lecturer validation and nothing else.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #15171c;
+  --surface: #f3f4f6;
+  --surface-strong: #e7e9ee;
+  --card: #ffffff;
+  --card-foreground: #15171c;
+  --popover: #ffffff;
+  --popover-foreground: #15171c;
+  --muted: #f3f4f6;
+  --muted-foreground: #5a606e;
+  --border: #e2e4e9;
+  --input: #d5d8df;
+  --primary: #2b37e3;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #15171c;
+  --accent: #eceef2;
+  --accent-foreground: #15171c;
+  --ring: #2b37e3;
+  --destructive: #c8242b;
+  --destructive-foreground: #ffffff;
+  --success: #0b7a4b;
+  --like: #e5163f;
+  --highlight: #ffe14d;
+  --highlight-foreground: #2a2300;
+  --overlay: rgb(10 12 18 / 0.55);
+  --rail: #fafafb;
+  --slide: #ffffff;
+  --slide-foreground: #15171c;
+  --slide-muted: #f1f2f5;
+  --slide-quote: #5a606e;
+  --slide-rule: #d5d8df;
+  --code-block: #15171c;
+  --code-block-foreground: #e9ebf2;
+  --shadow-color: 220 20% 10%;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0f1015;
+  --foreground: #f2f3f6;
+  --surface: #1a1c23;
+  --surface-strong: #262934;
+  --card: #16181f;
+  --card-foreground: #f2f3f6;
+  --popover: #1c1e26;
+  --popover-foreground: #f2f3f6;
+  --muted: #1a1c23;
+  --muted-foreground: #a3a8b6;
+  --border: #2a2d37;
+  --input: #3a3e4b;
+  --primary: #8a93ff;
+  --primary-foreground: #0b0e2e;
+  --secondary: #1f222b;
+  --secondary-foreground: #f2f3f6;
+  --accent: #23262f;
+  --accent-foreground: #f2f3f6;
+  --ring: #8a93ff;
+  --destructive: #ff6b6b;
+  --destructive-foreground: #1d0606;
+  --success: #4ad295;
+  --like: #ff4d6a;
+  --highlight: #ffe14d;
+  --highlight-foreground: #2a2300;
+  --overlay: rgb(0 0 0 / 0.65);
+  --rail: #121319;
+  --slide: #1a1c23;
+  --slide-foreground: #f2f3f6;
+  --slide-muted: #262934;
+  --slide-quote: #a3a8b6;
+  --slide-rule: #3a3e4b;
+  --code-block: #0a0b0f;
+  --code-block-foreground: #e9ebf2;
+  --shadow-color: 0 0% 0%;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-like: var(--like);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-overlay: var(--overlay);
+  --color-rail: var(--rail);
+  --color-slide: var(--slide);
+  --color-slide-foreground: var(--slide-foreground);
+}
+
+@theme {
+  /* Type: one family, Plus Jakarta Sans (variable), system fallback. */
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+
+  /* Type scale (size / line-height / tracking). Tighter tracking as size grows. */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+  --text-caption--letter-spacing: 0.01em;
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.45rem;
+  --text-title-sm: 1.0625rem;
+  --text-title-sm--line-height: 1.4rem;
+  --text-title-sm--letter-spacing: -0.005em;
+  --text-title: 1.375rem;
+  --text-title--line-height: 1.75rem;
+  --text-title--letter-spacing: -0.015em;
+  --text-headline: 2rem;
+  --text-headline--line-height: 2.25rem;
+  --text-headline--letter-spacing: -0.025em;
+  --text-display: clamp(2.75rem, 6vw, 4.75rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.04em;
+
+  /* Radius: controls 0.75rem, cards 1.25rem, sheets 1.5rem, pills full. */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  /* Layout spacing (multiples of the 0.25rem Tailwind step). */
+  --spacing-rail: 15rem;
+  --spacing-rail-collapsed: 4.5rem;
+  --spacing-tabbar: 3.75rem;
+  --spacing-topbar: 3.5rem;
+  --spacing-action: 3rem;
+
+  /* Elevation, tinted by --shadow-color. */
+  --shadow-card: 0 1px 2px hsl(var(--shadow-color) / 0.06), 0 8px 24px -12px hsl(var(--shadow-color) / 0.18);
+  --shadow-float: 0 12px 40px -12px hsl(var(--shadow-color) / 0.35), 0 2px 6px hsl(var(--shadow-color) / 0.08);
+
+  /* Motion: critically damped feel; reduced-motion collapses durations (below). */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --animate-pop: pop 260ms var(--ease-out-soft);
+  @keyframes pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.18);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-body;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* Theme change eases instead of flashing (set by theme.ts for one frame). */
+  html.theme-transition,
+  html.theme-transition * {
+    transition:
+      background-color var(--duration-slow) var(--ease-in-out-soft),
+      border-color var(--duration-slow) var(--ease-in-out-soft),
+      color var(--duration-slow) var(--ease-in-out-soft) !important;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Highlighter stroke behind lecturer-verified labels: the one decorative device in the system. */
+@utility highlighter {
+  background-image: linear-gradient(
+    100deg,
+    transparent 0.2em,
+    var(--highlight) 0.35em,
+    var(--highlight) calc(100% - 0.35em),
+    transparent calc(100% - 0.2em)
+  );
+  color: var(--highlight-foreground);
+  box-decoration-break: clone;
+}
+
+/* Slide content (viewer and editor share it): Tailwind's reset strips these element styles. Unlayered, so the
+ * surface colours here also override the viewer's fixed utilities until R21b's SlideBoard replaces it. */
+.slide-content {
+  background-color: var(--slide);
+  border-color: var(--border);
+  color: var(--slide-foreground);
+}
 .slide-content > * + * {
   margin-top: 0.6em;
 }
 .slide-content h1 {
   font-size: 1.5rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .slide-content h2 {
   font-size: 1.25rem;
   font-weight: 700;
+  letter-spacing: -0.015em;
 }
 .slide-content h3 {
   font-size: 1.1rem;
@@ -25,19 +264,19 @@
   padding-left: 1.4rem;
 }
 .slide-content blockquote {
-  border-left: 3px solid #cbd5e1;
+  border-left: 3px solid var(--slide-rule);
   padding-left: 0.8rem;
-  color: #475569;
+  color: var(--slide-quote);
 }
 .slide-content code {
-  background: #f1f5f9;
+  background: var(--slide-muted);
   border-radius: 4px;
   padding: 0 0.25em;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 .slide-content pre {
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--code-block);
+  color: var(--code-block-foreground);
   border-radius: 6px;
   padding: 0.7rem;
   overflow-x: auto;
@@ -47,17 +286,27 @@
   padding: 0;
 }
 .slide-content hr {
-  border-color: #cbd5e1;
+  border-color: var(--slide-rule);
 }
 .slide-content.ProseMirror {
   outline: none;
   min-height: 12rem;
 }
 
-/* Mobile feed: vertical snap, one card per screen. Desktop scrolls freely. */
-@media (max-width: 767px) {
-  html.feed-snap {
-    scroll-snap-type: y mandatory;
-    scroll-padding-top: 4rem;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .backdrop-blur-xl,
+  .backdrop-blur-md {
+    backdrop-filter: none;
   }
 }

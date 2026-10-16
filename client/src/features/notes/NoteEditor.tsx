@@ -182,14 +182,14 @@ export default function NoteEditor() {
   if (id && existing.loading) return <p>Loading…</p>;
   if (id && existing.error) {
     return (
-      <p role="alert" className="text-red-600">
+      <p role="alert" className="text-destructive">
         {existing.error}
       </p>
     );
   }
   if (id && existing.data && existing.data.note.author.id !== user?.id) {
     return (
-      <p role="alert" className="text-red-600">
+      <p role="alert" className="text-destructive">
         You can only edit your own notes.
       </p>
     );
@@ -221,7 +221,7 @@ export default function NoteEditor() {
               onChange={(e) => setModuleId(e.target.value)}
               aria-invalid={errors.moduleId ? true : undefined}
               aria-describedby={errors.moduleId ? 'module-error' : undefined}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2"
+              className="rounded-md border border-input bg-card px-3 py-2"
             >
               <option value="">Select a module</option>
               {modules.data?.modules.map((m) => (
@@ -231,12 +231,12 @@ export default function NoteEditor() {
               ))}
             </select>
             {errors.moduleId && (
-              <p id="module-error" role="alert" className="text-sm text-red-600">
+              <p id="module-error" role="alert" className="text-sm text-destructive">
                 {errors.moduleId}
               </p>
             )}
             {modules.error && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className="text-sm text-destructive">
                 {modules.error}
               </p>
             )}
@@ -249,7 +249,7 @@ export default function NoteEditor() {
               id="theme"
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2"
+              className="rounded-md border border-input bg-card px-3 py-2"
             >
               {TEMPLATES.map(([v, l]) => (
                 <option key={v} value={v}>
@@ -277,9 +277,9 @@ export default function NoteEditor() {
                     aria-current={i === active ? 'true' : undefined}
                     aria-label={`Select slide ${i + 1}`}
                     onClick={() => i !== active && show(i)}
-                    className={`w-32 truncate rounded-md border px-2 py-1 text-left text-sm md:w-full ${i === active ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300 bg-white'}`}
+                    className={`w-32 truncate rounded-md border px-2 py-1 text-left text-sm md:w-full ${i === active ? 'border-primary bg-primary/10' : 'border-input bg-card'}`}
                   >
-                    {i + 1}. {preview(s) || <span className="text-slate-400">empty</span>}
+                    {i + 1}. {preview(s) || <span className="text-muted-foreground">empty</span>}
                   </button>
                 </li>
               ))}
@@ -289,11 +289,11 @@ export default function NoteEditor() {
                 type="button"
                 onClick={addSlide}
                 disabled={slides.length >= MAX_SLIDES}
-                className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50"
+                className="rounded-md border border-input px-2 py-1 disabled:opacity-50"
               >
                 Add slide
               </button>
-              <button type="button" onClick={removeSlide} className="rounded-md border border-slate-300 px-2 py-1">
+              <button type="button" onClick={removeSlide} className="rounded-md border border-input px-2 py-1">
                 Remove slide
               </button>
               <button
@@ -301,7 +301,7 @@ export default function NoteEditor() {
                 aria-label="Move slide up"
                 onClick={() => move(-1)}
                 disabled={active === 0}
-                className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50"
+                className="rounded-md border border-input px-2 py-1 disabled:opacity-50"
               >
                 Up
               </button>
@@ -310,7 +310,7 @@ export default function NoteEditor() {
                 aria-label="Move slide down"
                 onClick={() => move(1)}
                 disabled={active === slides.length - 1}
-                className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50"
+                className="rounded-md border border-input px-2 py-1 disabled:opacity-50"
               >
                 Down
               </button>
@@ -318,11 +318,11 @@ export default function NoteEditor() {
           </div>
           <div>
             {editor && <Toolbar editor={editor} />}
-            <div className="rounded-b-md border border-t-0 border-slate-300 bg-white p-3">
+            <div className="rounded-b-md border border-t-0 border-input bg-card p-3">
               <EditorContent editor={editor} />
             </div>
             {errors.slides && (
-              <p role="alert" className="mt-1 text-sm text-red-600">
+              <p role="alert" className="mt-1 text-sm text-destructive">
                 {errors.slides}
               </p>
             )}
@@ -330,14 +330,14 @@ export default function NoteEditor() {
         </div>
 
         {fieldErrors.length > 0 && (
-          <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {fieldErrors.map(([k, v]) => (
               <p key={k}>{v}</p>
             ))}
           </div>
         )}
         {message && (
-          <p role="status" className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">
+          <p role="status" className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">
             {message}
           </p>
         )}
@@ -347,7 +347,7 @@ export default function NoteEditor() {
               type="button"
               disabled={saving}
               onClick={() => save('draft')}
-              className="rounded-md border border-slate-300 bg-white px-4 py-2 disabled:opacity-60"
+              className="rounded-md border border-input bg-card px-4 py-2 disabled:opacity-60"
             >
               Save Draft
             </button>
@@ -356,11 +356,11 @@ export default function NoteEditor() {
             type="button"
             disabled={saving}
             onClick={() => setDialog(true)}
-            className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60"
+            className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground disabled:opacity-60"
           >
             {published ? 'Update' : 'Publish'}
           </button>
-          <Link to="/drafts" className="px-3 py-2 text-sm text-slate-600 underline">
+          <Link to="/drafts" className="px-3 py-2 text-sm text-muted-foreground underline">
             Back to drafts
           </Link>
         </div>
