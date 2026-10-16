@@ -44,6 +44,8 @@ app.use('/api', (req, res, next) => {
 });
 // Write limit per user, or per IP when signed out, counted in Postgres so it holds across instances (D40).
 app.use('/api', (req, res, next) => (SAFE_METHODS.has(req.method) ? next() : writeLimiter(req, res, next)));
+// A full deck (30 slides of up to 48 KB, R21) outgrows the global limit; the first parser to run wins, the later one skips.
+app.use('/api/notes', express.json({ limit: '2mb' }));
 app.use(express.json({ limit: '1mb' }));
 app.use(passport.initialize());
 

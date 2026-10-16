@@ -1,3 +1,5 @@
+import type { Aspect, Fill, SlideElement } from '@parp/shared';
+import { isDeepStrictEqual } from 'node:util';
 import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
@@ -44,12 +46,16 @@ export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh
 export interface Note {
   id: number;
   title: string;
-  template: string;
+  theme: string;
+  aspect: Aspect;
+  music: { trackId: number; title: string | null; artist: string | null; cover: string | null; volume: number } | null;
+  assets: Record<string, string>;
   status: string;
   visibility: string | null;
   module: { id: number; code: string; name: string } | null;
   hashtags: string[];
-  slides: { position: number; content: string }[];
+  /** `notes` (private page notes) is only filled for the author and edit collaborators, by getVisibleNote. */
+  slides: { position: number; background: Fill; elements: SlideElement[]; notes?: string }[];
   author: { id: number; displayName: string; role: string; isVerifiedLecturer: boolean };
   coauthors: { id: number; displayName: string }[];
   createdAt: Date;
@@ -57,12 +63,21 @@ export interface Note {
   publishedAt: Date | null;
 }
 
-/** Note columns (contract: alias p = POST_T; use with NOTE_FROM). */
-export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "template", p.pst_status AS "status",
+/**
+ * Note columns (contract: alias p = POST_T; use with NOTE_FROM).
+ * shortcut: `assets` (presigned asset URLs) is an empty map until R22 adds the asset table and storage.
+ */
+export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "theme", p.pst_aspect AS "aspect", p.pst_status AS "status",
+         CASE WHEN p.pst_music_track_id IS NULL THEN NULL
+              ELSE json_build_object('trackId', p.pst_music_track_id, 'title', p.pst_music_title,
+                                     'artist', p.pst_music_artist, 'cover', p.pst_music_cover,
+                                     'volume', p.pst_music_volume) END AS "music",
+         '{}'::JSON AS "assets",
          p.pst_visibility AS "visibility",
          ${MODULE_COL},
          ${HASHTAGS_COL},
-         COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'content', s.sld_content)
+         COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'background', s.sld_doc -> 'background',
+                                                     'elements', s.sld_doc -> 'elements')
                                    ORDER BY s.sld_position)
                    FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
@@ -141,7 +156,16 @@ export async function getVisibleNote(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole" ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : `(${READABLE} OR ${VISIBLE_OR_ADMIN})`}`,
     [viewerId, id],
   );
-  return rows[0];
+  const note = rows[0];
+  // Page notes are private (NOTE-TC36). Edit collaborators get them too, or their full-replace save would wipe them.
+  if (note && (note.myRole === 'owner' || note.myRole === 'edit')) {
+    const { rows: notes } = await pool.query<{ notes: string }>(
+      `SELECT sld_notes AS "notes" FROM "SLIDE_T" WHERE sld_pst_id = $1 ORDER BY sld_position`,
+      [id],
+    );
+    note.slides.forEach((s, i) => (s.notes = notes[i].notes));
+  }
+  return note;
 }
 
 export interface DraftSummary {
@@ -202,15 +226,19 @@ export async function getNoteMeta(id: number, viewerId: number): Promise<NoteMet
   return rows[0];
 }
 
+/** The slide as stored in sld_doc: the page notes live in their own column. */
+const slideDoc = ({ background, elements }: NoteInput['slides'][number]) => ({ background, elements });
+
 async function writeChildren(client: PoolClient, postId: number, n: NoteInput): Promise<void> {
   const tags = [...n.hashtags].sort(); // fixed order avoids deadlocks between concurrent upserts
   await client.query(`DELETE FROM "SLIDE_T" WHERE sld_pst_id = $1`, [postId]);
   await client.query(`DELETE FROM "POST_HASHTAG_T" WHERE phs_pst_id = $1`, [postId]);
   if (n.slides.length > 0) {
     await client.query(
-      `INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content)
-       SELECT $1, t.ord, t.content FROM unnest($2::TEXT[]) WITH ORDINALITY AS t(content, ord)`,
-      [postId, n.slides],
+      `INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_doc, sld_notes)
+       SELECT $1, t.ord, t.doc::JSONB, t.notes
+       FROM unnest($2::TEXT[], $3::TEXT[]) WITH ORDINALITY AS t(doc, notes, ord)`,
+      [postId, n.slides.map(slideDoc).map((d) => JSON.stringify(d)), n.slides.map((s) => s.notes)],
     );
   }
   if (tags.length > 0) {
@@ -224,13 +252,20 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
       [postId, tags],
     );
   }
-  // Search document is rebuilt in SQL from title, slide text without tags, and hashtags (D20).
+  // Search document is rebuilt in SQL from title, the text, code, table and image alt text of every element, and hashtags
+  // (D20, R21 spec 2.6). Page notes are never indexed.
   await client.query(
     `UPDATE "POST_T" p
      SET pst_search_doc = to_tsvector('english',
            p.pst_title || ' '
-           || COALESCE((SELECT string_agg(regexp_replace(s.sld_content, '<[^>]*>', ' ', 'g'), ' ' ORDER BY s.sld_position)
-                        FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '') || ' '
+           || COALESCE((SELECT string_agg(CASE e ->> 'type'
+                                            WHEN 'text' THEN regexp_replace(e ->> 'html', '<[^>]*>', ' ', 'g')
+                                            WHEN 'code' THEN e ->> 'code'
+                                            WHEN 'table' THEN (SELECT string_agg(c, ' ') FROM jsonb_array_elements(e -> 'cells') r,
+                                                                    jsonb_array_elements_text(r) c)
+                                            ELSE e ->> 'alt' END, ' ' ORDER BY s.sld_position, ord)
+                        FROM "SLIDE_T" s, jsonb_array_elements(s.sld_doc -> 'elements') WITH ORDINALITY AS t(e, ord)
+                        WHERE s.sld_pst_id = p.pst_id AND e ->> 'type' IN ('text', 'code', 'table', 'image')), '') || ' '
            || COALESCE((SELECT string_agg(h.hsh_name, ' ')
                         FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
                         WHERE ph.phs_pst_id = p.pst_id), '')),
@@ -240,13 +275,17 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   );
 }
 
+/** pst_music_provider, track id and volume. shortcut: title, artist and cover stay NULL until R9's Deezer proxy fills them. */
+const musicParams = (n: NoteInput) => [n.music?.provider ?? null, n.music?.trackId ?? null, n.music?.volume ?? null];
+
 export function createNote(authorId: number, n: NoteInput): Promise<number> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ pst_id: number }>(
-      `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_status, pst_visibility, pst_published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $5::VARCHAR = 'published' THEN NOW() END)
+      `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_aspect, pst_status, pst_visibility,
+                             pst_music_provider, pst_music_track_id, pst_music_volume, pst_published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CASE WHEN $6::VARCHAR = 'published' THEN NOW() END)
        RETURNING pst_id`,
-      [authorId, n.moduleId, n.title, n.template, n.status, n.visibility],
+      [authorId, n.moduleId, n.title, n.theme, n.aspect, n.status, n.visibility, ...musicParams(n)],
     );
     await writeChildren(c, rows[0].pst_id, n);
     return rows[0].pst_id;
@@ -274,11 +313,11 @@ export function replaceNote(
       updatedAt: Date;
       role: NoteRole | null;
       lockedByOther: boolean;
-      slides: string[];
+      slides: unknown[];
     }>(
       `SELECT p.pst_status AS "status", p.pst_title AS "title", p.pst_updated_at AS "updatedAt", ${MY_ROLE} AS "role",
               COALESCE(p.pst_lock_usr_id <> $1 AND p.pst_lock_expires_at > NOW(), FALSE) AS "lockedByOther",
-              ARRAY(SELECT sld_content FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id ORDER BY sld_position) AS "slides"
+              COALESCE((SELECT json_agg(sld_doc ORDER BY sld_position) FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id), '[]'::JSON) AS "slides"
        FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status IN ('draft', 'published')
        FOR UPDATE OF p`,
       [editorId, id],
@@ -291,14 +330,16 @@ export function replaceNote(
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
     const contentEdited =
       cur.status === 'published' &&
-      (cur.title !== n.title || cur.slides.length !== n.slides.length || cur.slides.some((s, i) => s !== n.slides[i]));
+      (cur.title !== n.title || !isDeepStrictEqual(cur.slides, n.slides.map(slideDoc)));
     await c.query(
       `UPDATE "POST_T"
-       SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_status = $5, pst_visibility = $6,
-           pst_published_at = CASE WHEN $5::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END,
-           pst_content_edited_at = CASE WHEN $7 THEN NOW() ELSE pst_content_edited_at END
+       SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_aspect = $5, pst_status = $6, pst_visibility = $7,
+           pst_music_provider = $8, pst_music_track_id = $9, pst_music_volume = $10, pst_music_title = NULL,
+           pst_music_artist = NULL, pst_music_cover = NULL,
+           pst_published_at = CASE WHEN $6::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END,
+           pst_content_edited_at = CASE WHEN $11 THEN NOW() ELSE pst_content_edited_at END
        WHERE pst_id = $1`,
-      [id, n.moduleId, n.title, n.template, n.status, n.visibility, contentEdited],
+      [id, n.moduleId, n.title, n.theme, n.aspect, n.status, n.visibility, ...musicParams(n), contentEdited],
     );
     await writeChildren(c, id, n);
     if (cur.role === 'edit') {

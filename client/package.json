@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit",
     "preview": "vp preview",
     "test": "vp test run",
-    "pretest": "npm run build -w shared",
-    "pretypecheck": "npm run build -w shared",
-    "prebuild": "npm run build -w shared"
+    "pretest": "tsc -p ../shared",
+    "pretypecheck": "tsc -p ../shared",
+    "prebuild": "tsc -p ../shared"
   },
   "dependencies": {
     "@parp/shared": "0.1.0",
