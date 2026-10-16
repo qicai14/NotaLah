@@ -1,4 +1,4 @@
-import { type Aspect } from '@parp/shared';
+import type { Aspect, SlideElement } from '@parp/shared';
 import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Proportions, Redo2, Undo2, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -36,7 +36,7 @@ import {
 } from './save';
 import { PageNotes } from './PageNotes';
 import { SlideStrip } from './SlideStrip';
-import { emptyDeck, useEditor } from './store';
+import { emptyDeck, offsetCopy, useEditor } from './store';
 
 const ASPECT_LABELS: Record<Aspect, string> = {
   '4:5': '4:5 Portrait',
@@ -255,13 +255,19 @@ export default function EditorPage() {
     };
   }, []);
 
-  // Undo and redo from the keyboard, except while typing (TipTap and inputs keep their own).
+  // Undo, redo, copy, paste and duplicate from the keyboard, except while typing (TipTap and inputs keep their own).
   useEffect(() => {
+    let copied: SlideElement | null = null;
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || isTyping(e.target)) return;
+      const st = useEditor.getState();
+      const selected = st.deck.slides[st.activeSlide].elements.find((el) => el.id === st.selection);
       const k = e.key.toLowerCase();
-      if (k === 'z' && !e.shiftKey) useEditor.getState().undo();
-      else if ((k === 'z' && e.shiftKey) || k === 'y') useEditor.getState().redo();
+      if (k === 'z' && !e.shiftKey) st.undo();
+      else if ((k === 'z' && e.shiftKey) || k === 'y') st.redo();
+      else if (k === 'c' && selected) copied = selected;
+      else if (k === 'v' && copied) st.addElement(offsetCopy(copied));
+      else if (k === 'd' && selected) st.addElement(offsetCopy(selected));
       else return;
       e.preventDefault();
     };
@@ -472,7 +478,7 @@ export default function EditorPage() {
         </div>
         <nav
           aria-label="Editor tools"
-          className="grid shrink-0 grid-cols-4 border-t bg-background pb-[env(safe-area-inset-bottom)]"
+          className="grid shrink-0 grid-cols-5 border-t bg-background pb-[env(safe-area-inset-bottom)]"
         >
           {PANELS.map((p) => (
             <button

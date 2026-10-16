@@ -1223,10 +1223,11 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `updatedAt` and saves over it. The editor route sits outside `AppShell` (paths unchanged) so it fills the window; when the
   first autosave moves `/notes/new` to `/notes/:id/edit`, the page remounts but keeps the store, so typing in flight and
   undo history survive. Backups are cleared on Update and on logout. Arrow keys nudge (Shift: 10 units) and a Position
-  popover sets x, y, size, angle and opacity exactly, as the single-pointer alternative to dragging (WCAG 2.5.7).
+  popover sets x, y, size, angle and opacity exactly, as the single-pointer alternative to dragging (WCAG 2.5.7); a Layers
+  panel lists elements top first with move up/down buttons. Ctrl+C/V/D copy, paste and duplicate (an in-editor clipboard).
 - **Removed:** the old TipTap `NoteEditor`, its `Toolbar`, and the `lib/slides.ts` HTML adapter, which nothing else used,
   so NOTE-TC47 and NOTE-TC48 are retired; the `.slide-content` CSS went with them.
 - **Test IDs:** NOTE-TC44 (geometry), NOTE-TC58 (undo/redo), NOTE-TC59 (slide strip and aspect), NOTE-TC60 (save state),
-  NOTE-TC61 (autosave timing, create then PUT with baseUpdatedAt, 409).
+  NOTE-TC61 (autosave timing, create then PUT with baseUpdatedAt, 409), NOTE-TC62 (keyboard selection, nudge, delete; layers).
 - **Reversibility:** Easy: client only; the API is unchanged.
 

@@ -22,7 +22,7 @@ import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { newId, useEditor } from './store';
+import { offsetCopy, useEditor } from './store';
 
 const FONT_NAMES: Record<FontId, string> = {
   'source-sans-3': 'Source Sans 3',
@@ -316,10 +316,7 @@ export function ElementBar() {
       <Tool label={el.locked ? 'Unlock' : 'Lock'} pressed={el.locked} onClick={() => update({ locked: !el.locked })}>
         {el.locked ? <Lock /> : <LockOpen />}
       </Tool>
-      <Tool
-        label="Duplicate"
-        onClick={() => addElement({ ...el, id: newId(), x: round1(el.x + 24), y: round1(el.y + 24) })}
-      >
+      <Tool label="Duplicate (Ctrl+D)" onClick={() => addElement(offsetCopy(el))}>
         <Copy />
       </Tool>
       <Tool label="Delete" disabled={el.locked} onClick={() => deleteElement(el.id)}>

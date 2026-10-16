@@ -73,6 +73,14 @@ const initial = (): EditorState => ({
 
 export const newId = (): string => crypto.randomUUID();
 
+/** A copy of an element with a new id, nudged down and right so it does not hide the original. */
+export const offsetCopy = (el: SlideElement): SlideElement => ({
+  ...el,
+  id: newId(),
+  x: round1(el.x + 24),
+  y: round1(el.y + 24),
+});
+
 const withNewIds = (s: Slide): Slide => ({ ...s, elements: s.elements.map((e) => ({ ...e, id: newId() })) });
 
 /** Array.prototype.toSpliced, which the ES2022 lib lacks. */

@@ -1,19 +1,34 @@
 import { boardHeight, type Fill, type SlideElement } from '@parp/shared';
-import { Circle, Diamond, Info, MoveRight, Palette, Shapes, Square, Triangle, Type } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  Diamond,
+  Info,
+  Layers,
+  Lock,
+  MoveRight,
+  Palette,
+  Shapes,
+  Square,
+  Triangle,
+  Type,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { inputClass } from '@/components/Field';
 import { cn } from '@/lib/utils';
 import type { ModuleRef } from '@/types';
 import { HashtagInput } from '../notes/HashtagInput';
-import { makeLine, makeShape, makeText, SHAPES, TEXT_PRESETS } from './elements';
+import { elementLabel, makeLine, makeShape, makeText, SHAPES, TEXT_PRESETS } from './elements';
 import { mapSlide, useEditor } from './store';
 
-export type PanelId = 'text' | 'elements' | 'background' | 'details';
+export type PanelId = 'text' | 'elements' | 'background' | 'layers' | 'details';
 
 export const PANELS: { id: PanelId; label: string; icon: typeof Type }[] = [
   { id: 'text', label: 'Text', icon: Type },
   { id: 'elements', label: 'Elements', icon: Shapes },
   { id: 'background', label: 'Background', icon: Palette },
+  { id: 'layers', label: 'Layers', icon: Layers },
   { id: 'details', label: 'Details', icon: Info },
 ];
 
@@ -182,6 +197,62 @@ function BackgroundPanel() {
   );
 }
 
+/** Elements top layer first: select one, or move it up and down the stack without dragging. */
+function LayersPanel() {
+  const elements = useEditor((s) => s.deck.slides[s.activeSlide].elements);
+  const selection = useEditor((s) => s.selection);
+  if (!elements.length) {
+    return <p className="text-body-sm text-muted-foreground">This slide is empty. Add text or an element first.</p>;
+  }
+  const shift = (from: number, to: number) => {
+    const { apply, activeSlide } = useEditor.getState();
+    apply((d) =>
+      mapSlide(d, activeSlide, (s) => {
+        const els = [...s.elements];
+        const [moved] = els.splice(from, 1);
+        els.splice(to, 0, moved);
+        return { ...s, elements: els };
+      }),
+    );
+  };
+  const order = elements.map((el, z) => ({ el, z })).reverse();
+  return (
+    <ol aria-label="Layers, top first" className="flex flex-col gap-1">
+      {order.map(({ el, z }) => (
+        <li key={el.id} className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-pressed={selection === el.id}
+            onClick={() => useEditor.getState().select(el.id)}
+            className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md px-3 text-left text-body-sm hover:bg-surface aria-pressed:bg-surface-strong aria-pressed:font-semibold"
+          >
+            <span className="truncate">{elementLabel(el)}</span>
+            {el.locked && <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-label="Locked" />}
+          </button>
+          <button
+            type="button"
+            aria-label={`Move ${elementLabel(el)} up`}
+            disabled={z === elements.length - 1}
+            onClick={() => shift(z, z + 1)}
+            className="flex size-8 items-center justify-center rounded-md hover:bg-surface disabled:opacity-40"
+          >
+            <ChevronUp className="size-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Move ${elementLabel(el)} down`}
+            disabled={z === 0}
+            onClick={() => shift(z, z - 1)}
+            className="flex size-8 items-center justify-center rounded-md hover:bg-surface disabled:opacity-40"
+          >
+            <ChevronDown className="size-4" aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 export interface Details {
   moduleId: string;
   hashtags: string[];
@@ -258,6 +329,7 @@ export function PanelBody({ id, details, onAdd }: { id: PanelId; details: Detail
       {id === 'text' && <TextPanel onAdd={onAdd} />}
       {id === 'elements' && <ElementsPanel onAdd={onAdd} />}
       {id === 'background' && <BackgroundPanel />}
+      {id === 'layers' && <LayersPanel />}
       {id === 'details' && <DetailsPanel d={details} />}
     </div>
   );
