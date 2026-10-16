@@ -12,7 +12,7 @@ import {
   softDeleteNote,
 } from './repository';
 import { moduleExists } from '../modules/repository';
-import { parseBaseUpdatedAt, parseNoteBody } from './service';
+import { findBadAsset, parseBaseUpdatedAt, parseNoteBody } from './service';
 import { notifyVoidedVerifiers } from '../notifications/service';
 
 export const notesRouter = Router();
@@ -32,6 +32,8 @@ notesRouter.post('/', requireAuth, requireActive, async (req, res) => {
   if (n.moduleId !== null && !(await moduleExists(n.moduleId))) {
     return res.status(400).json({ error: 'Validation failed', errors: { moduleId: 'Module not found' } });
   }
+  const badAsset = await findBadAsset(n.slides, me(req).id, null);
+  if (badAsset) return res.status(400).json({ error: 'Validation failed', errors: { slides: badAsset } });
   const id = await createNote(me(req).id, n);
   res.status(201).json({ note: await getVisibleNote(id, me(req).id) });
 });
@@ -74,6 +76,8 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
   if (n.moduleId !== null && !(await moduleExists(n.moduleId))) {
     return res.status(400).json({ error: 'Validation failed', errors: { moduleId: 'Module not found' } });
   }
+  const badAsset = await findBadAsset(n.slides, me(req).id, Number(req.params.id));
+  if (badAsset) return res.status(400).json({ error: 'Validation failed', errors: { slides: badAsset } });
   const id = Number(req.params.id);
   const result = await replaceNote(id, n, me(req).id, base.data);
   if (result === 'gone') return res.status(404).json({ error: 'Note not found' });
