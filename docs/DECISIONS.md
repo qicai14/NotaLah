@@ -976,7 +976,8 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   ("<lower id>_<higher id>", unique, set only for direct chats) gives one direct conversation per pair, so two first messages
   racing cannot open two chats. `"CONV_MEMBER_T".cmb_last_read_msg_id` replaces `cmb_last_read_at`, and `cmb_left_at` is
   dropped because leaving deletes the member row. `"MESSAGE_T"` gains `msg_reply_to_id` and `msg_deleted_at`, and its index
-  becomes (conversation, id) for history paging. The pending-request index now covers the pair in either direction. No
+  becomes (conversation, id) for history paging, plus a partial index on `msg_reply_to_id` for the reply foreign key. The
+  pending-request index now covers the pair in either direction. No
   attachment column: chat images come with R22's upload pipeline, which will add its own column.
 - **Split of work:** every write goes over REST (so it gets the CSRF header check, the shared Postgres write limiter of
   D40 and `requireActive`), and Socket.io only delivers. The one client event is `typing`. MSG-TC2 and MSG-TC3 therefore
@@ -987,7 +988,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   same rules as `requireAuth`. Suspended and deleted users are refused. A socket is disconnected when its token expires
   (at most one hour, so a logout on another tab holds within the token lifetime), and an admin suspension or deletion
   disconnects the user's sockets at once. Shutdown calls `io.close()`, which disconnects sockets and then closes the HTTP
-  server (D41).
+  server (D41). `maxHttpBufferSize` is 1,000 bytes, since clients send only typing events.
+- **Deployment:** the app runs on a single Fly machine until the Socket.io Postgres adapter lands (R27): rooms, typing
+  throttles and the kicks done through them (suspension, removal from a group) are in-memory and per process.
 - **Rooms and events:** each socket joins `user:<id>` and `conv:<id>` for every conversation it belongs to. Joins and
   leaves follow REST changes through `socketsJoin`/`socketsLeave`. Server events: `message:new`, `message:deleted`,
   `request:new` (recipient only), `request:accepted` (sender only; a decline notifies nobody), `conversation:read`,
@@ -1005,8 +1008,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Rules:**
   - Friends (D38), or a pair that already has a conversation, message directly. Otherwise the first message is a pending
     request holding the text and note card, one per pair. Accepting opens the conversation with the held message (its
-    original time and note), marks it read for the recipient and creates no follow. Declining only sets the status, so
-    the sender may ask again later.
+    original time and note, inserted through the same block-checked INSERT, rolled back if refused), marks it read for the
+    recipient and creates no follow. Whenever a direct conversation opens or takes a message, a pending request between the
+    pair is accepted in the same transaction and its held message inserted first, so a pair who became friends meanwhile
+    keeps its history in order. Declining only sets the status, so the sender may ask again later.
   - Blocks (D49): the recipient check and the message INSERT ... SELECT both embed `blockedWith`, so a committed block
     always stops a message. A direct chat across a block disappears from both lists, and its history and sends answer 404
     until an unblock restores it. Requests from a blocked sender leave the inbox and cannot be accepted. The typing relay
@@ -1025,8 +1030,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - Restricted users (requireActive) cannot send, start chats, create groups, add members or rename. They can read, mark
     read, delete their own messages, answer requests and leave.
 - **Groups (FR13):** the creator plus 2-29 friends, 30 at most. Any member may add one of their own friends; the new
-  member starts with all earlier history marked read. The group row is locked during membership changes, so the cap
-  holds under concurrent adds. Anyone may leave; the owner renames and removes members.
+  member starts with all earlier history marked read. Membership changes lock the group row first and only then read its
+  size and the actor's membership, in a separate statement, so a change committed while waiting for the lock is counted
+  and the cap holds under concurrent adds (MSG-TC26). Anyone may leave; the owner renames and removes members.
 - **Choices made (safe option, logged for review):**
   - When the owner leaves, the earliest-joined remaining member (ties by user id) becomes owner; the group is deleted
     with its messages when its last member leaves.
@@ -1037,11 +1043,16 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - A deleted account's member rows and messages stay, shown as "Deleted user"; if it owned a group, ownership does not
     move automatically.
   - Logout does not disconnect sockets on other tabs; the token expiry timer closes them within the hour.
+  - Accepted, not fixed: a `message:deleted` event (two ids, no content) still reaches both sides of a direct chat hidden
+    by a block, since they share its room; and the socket handshake has no rate limit of its own.
+  - A held message accepted on the friends path is not pushed live; it appears in history.
 - **Rate limit:** REST writes count against the shared write limiter (120 per minute per user, D40); the typing throttle
   covers the only socket event.
-- **Shortcut:** message ids are read as INT and keyset cursors cap ids at the INT maximum; both move to BIGINT past
-  2^31 messages.
-- **Tests:** MSG-TC1 to MSG-TC25 (REST in `tests/messaging/messaging.test.ts`; real socket.io-client connections on an
+- **Shortcuts:** message ids are read as INT and keyset cursors cap ids at the INT maximum; both move to BIGINT past
+  2^31 messages. The conversation list builds every conversation of the user before its keyset filter and LIMIT.
+- **Live note cards:** a message is read once for its sender and reused for the response and the room; with a note card,
+  one query computes the card for every member and each gets their own copy.
+- **Tests:** MSG-TC1 to MSG-TC27 (REST in `tests/messaging/messaging.test.ts`; real socket.io-client connections on an
   ephemeral port in `socket.test.ts`). The shutdown path and the rate limit (skipped under test, as elsewhere) are not
   unit tested.
 - **Reversibility:** Medium: one migration with a down step (rolling back loses read receipts, replies and soft-delete
