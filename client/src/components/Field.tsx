@@ -37,7 +37,7 @@ export function Field({ label, name, error, hint, type, className, ...input }: F
             type="button"
             onClick={() => setShown((s) => !s)}
             aria-pressed={shown}
-            aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+            aria-label={`Show ${label.toLowerCase()}`}
             className="absolute inset-y-1.5 right-1.5 rounded-sm px-3 text-body-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             {shown ? 'Hide' : 'Show'}
