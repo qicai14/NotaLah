@@ -881,6 +881,15 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
   - Not changed: likes by suspended users, and their comments in E, still count.
   - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.
+- **Implementation (16 Oct, `chore/vite-plus`):** `vite-plus` 1.0.0 with `vite` aliased to `@voidzero-dev/vite-plus-core` 1.0.0
+  and `vitest` pinned to the bundled 5.0.1 through npm `overrides`; `dev`, `build` and `test` run through `vp`, and `lint`,
+  `format:check` and `check` are new scripts. CI gains a Lint step. Typecheck, 208 server tests, 21 client tests and build pass.
+  Oxlint reports 0 errors and 5 warnings. The format check is not in CI because Oxfmt would change 107 files; a dedicated
+  formatting PR comes first. Measured build and test times were not faster (build 5.94 s to 6.54 s, server tests 32.5 s to 35.8 s).
+  Details in `docs/sprints/vite_plus_migration.md`.
+  Bumped to 1.3.0 on 16 Oct as a user-approved exception to the two-week rule (1.3.0 published that day; vitest pin 5.0.5).
+  Interleaved re-timing, median of 3 plain Vite vs Vite+: build 8.81 s vs 8.41 s, client tests 3.98 s vs 4.40 s, server tests
+  55.90 s vs 54.93 s, so the speed is the same within noise and the earlier 10 percent slowdown does not reproduce.
 
 ## D48 - Search and academic terms on the server (Sprint 4, 16 Oct 2026)
 - **Context:** Sprint 4 spec (D47): FR4, FR5/NFR1, FR12, FR15 and R7; SRCH-TC1 to SRCH-TC16. UI waits for wireframe sign-off.
