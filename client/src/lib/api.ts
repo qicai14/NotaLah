@@ -4,6 +4,9 @@ export function setSignedIn(value: boolean): void {
   signedIn = value;
 }
 
+/** Where the API lives: empty in dev (the Vite proxy), the server's origin in production. */
+export const apiOrigin = (): string => import.meta.env.VITE_API_URL ?? '';
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -22,7 +25,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   const headers: Record<string, string> = { 'X-Requested-With': 'parp' };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api${path}`, {
+  const res = await fetch(`${apiOrigin()}/api${path}`, {
     method: options.method ?? 'GET',
     headers,
     credentials: 'include',

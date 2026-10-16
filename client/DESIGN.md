@@ -140,8 +140,10 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   note with its comments.
 - **Forms.** Labels above inputs, `gap-4` between fields, the submit as `Button size="lg"` full width, the switch link
   ("Already have an account? Log in") centred below in `text-body-sm`.
-- **Slides.** `SlideViewer` is unchanged until R21b's SlideBoard; its colours come from the `--slide*` tokens through
-  `.slide-content` in `index.css`. Size it from the parent with `[&_.slide-content]:h-...`.
+- **Slides.** `SlideCarousel` (`components/board/`) shows a note's slides with prev/next, arrow keys and swipe; it
+  fills its parent, so give the parent a height (`h-[min(36rem,64dvh)]`, or `min-h-0 flex-1` in a flex column). Each slide is a
+  `SlideBoard`, a fixed 1000 x H board scaled to fit; slide colours come from the deck, not the theme. Only the old editor
+  still uses `.slide-content` in `index.css`.
 
 ## 8. Accessibility checklist
 
