@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react';
-import { Dialog } from '../../components/Dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { api, errorText } from '../../lib/api';
 
 /** Confirmation with an optional review remark before a lecturer verifies a note (UC19, wireframe 17). */
@@ -34,11 +35,14 @@ export function SuperLikeDialog({
   }
 
   return (
-    <Dialog title="Super Like this note?" onClose={onClose}>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogTitle className="text-title font-bold">Super Like this note?</DialogTitle>
+        <DialogDescription className="text-body-sm text-muted-foreground">
+          The note gets a &ldquo;Verified by&rdquo; mark with your name, and ranks higher in every feed. You can remove
+          it later.
+        </DialogDescription>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">
-          The note gets a verified frame with your name, and ranks higher in every feed. You can remove it later.
-        </p>
         <div className="flex flex-col gap-1">
           <label htmlFor="superlike-remark" className="text-sm font-medium">
             Review remark (optional)
@@ -60,18 +64,15 @@ export function SuperLikeDialog({
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="h-10 rounded-full px-5 font-semibold hover:bg-accent">
+          <Button variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="h-10 rounded-full bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" disabled={busy}>
             {busy ? 'Verifying…' : 'Super Like'}
-          </button>
+          </Button>
         </div>
       </form>
+      </DialogContent>
     </Dialog>
   );
 }

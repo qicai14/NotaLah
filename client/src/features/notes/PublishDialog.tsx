@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Dialog } from '../../components/Dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 export type PublishChoice = 'public' | 'contacts' | 'draft';
 
@@ -26,7 +27,10 @@ export function PublishDialog({
   const [choice, setChoice] = useState<PublishChoice | null>(initial);
   const options = alreadyPublished ? OPTIONS.slice(0, 2) : OPTIONS;
   return (
-    <Dialog title="Who can see this note?" onClose={onClose}>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogTitle className="text-title font-bold">Who can see this note?</DialogTitle>
+        <DialogDescription className="sr-only">Choose the note&rsquo;s visibility.</DialogDescription>
       <fieldset className="flex flex-col gap-2">
         <legend className="sr-only">Visibility</legend>
         {options.map((o) => (
@@ -47,18 +51,14 @@ export function PublishDialog({
         ))}
       </fieldset>
       <div className="mt-4 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="rounded-md border border-input px-4 py-2">
+        <Button variant="ghost" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          type="button"
-          disabled={!choice || busy}
-          onClick={() => choice && onChoose(choice)}
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-        >
+        </Button>
+        <Button disabled={!choice || busy} onClick={() => choice && onChoose(choice)}>
           {busy ? 'Saving…' : 'Confirm'}
-        </button>
+        </Button>
       </div>
+      </DialogContent>
     </Dialog>
   );
 }

@@ -1,8 +1,10 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type RefObject, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { useAction } from '@/lib/useAction';
 import { useAuth } from '../features/auth/AuthContext';
-import { api, errorText } from '../lib/api';
+import { api } from '../lib/api';
 import { isApprovedLecturer } from '../lib/roles';
-import { Dialog } from './Dialog';
 
 const COMMON = [
   ['inaccurate', 'Inaccurate content'],
@@ -15,45 +17,55 @@ const LECTURER = [
   ['copyright', 'Copyright infringement'],
 ];
 
-export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): void }) {
+/** Report a note (UC12, wireframe 41). `returnFocus` gets focus back when the dialog closes (the opener may be gone). */
+export function ReportDialog({
+  noteId,
+  onClose,
+  returnFocus,
+}: {
+  noteId: number;
+  onClose(): void;
+  returnFocus?: RefObject<HTMLElement | null>;
+}) {
   const { user } = useAuth();
   const approved = isApprovedLecturer(user);
   const reasons = approved ? [...COMMON, ...LECTURER] : COMMON;
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { run, pending: busy, error, setError } = useAction();
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!reason) return setError('Choose a reason');
     if (details.length > 500) return setError('Details must be at most 500 characters');
-    setBusy(true);
-    setError(null);
-    try {
+    const ok = await run(async () => {
       await api(`/notes/${noteId}/report`, { method: 'POST', body: { reason, details: details.trim() || null } });
-      setDone(true);
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setBusy(false);
-    }
+      return true;
+    });
+    if (ok) setDone(true);
   }
 
   return (
-    <Dialog title="Report this note" onClose={onClose}>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        className="sm:max-w-md"
+        onCloseAutoFocus={(e) => {
+          if (!returnFocus?.current) return;
+          e.preventDefault();
+          returnFocus.current.focus();
+        }}
+      >
+        <DialogTitle className="text-title font-bold">Report this note</DialogTitle>
+        <DialogDescription className="text-body-sm text-muted-foreground">
+          Moderators review every report. The author is not told who reported it.
+        </DialogDescription>
       {done ? (
         <div>
           <p role="status">Thanks. Your report was sent to the moderators.</p>
-          <button
-            type="button"
-            autoFocus
-            onClick={onClose}
-            className="mt-4 h-10 rounded-full bg-primary px-5 font-semibold text-primary-foreground"
-          >
+          <Button autoFocus onClick={onClose} className="mt-4">
             Close
-          </button>
+          </Button>
         </div>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-3">
@@ -87,19 +99,16 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
             </p>
           )}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="h-10 rounded-full px-5 font-semibold hover:bg-accent">
+            <Button variant="ghost" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="h-10 rounded-full bg-destructive px-5 font-semibold text-destructive-foreground disabled:opacity-60"
-            >
+            </Button>
+            <Button type="submit" variant="destructive" disabled={busy}>
               {busy ? 'Sending…' : 'Send report'}
-            </button>
+            </Button>
           </div>
         </form>
       )}
+      </DialogContent>
     </Dialog>
   );
 }

@@ -1,5 +1,5 @@
 import { Bookmark, Flag, Heart, Highlighter, MessageCircle, MessageSquareText, MoreHorizontal } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -108,6 +108,7 @@ export function NoteActions({
   const [likes, setLikes] = useState(note.counts.likes);
   const [saved, setSaved] = useState(note.bookmarked);
   const [reporting, setReporting] = useState(false);
+  const moreTrigger = useRef<HTMLButtonElement>(null);
   const { run, pending, error } = useAction();
   const returnTo = `/notes/${note.id}`;
 
@@ -212,6 +213,7 @@ export function NoteActions({
           ) : null)}
         <DropdownMenu>
           <DropdownMenuTrigger
+            ref={moreTrigger}
             aria-label="More actions"
             className={cn('group flex cursor-pointer rounded-full', bar ? 'flex-row' : 'flex-col')}
           >
@@ -244,7 +246,7 @@ export function NoteActions({
           {error}
         </p>
       )}
-      {reporting && <ReportDialog noteId={note.id} onClose={() => setReporting(false)} />}
+      {reporting && <ReportDialog noteId={note.id} onClose={() => setReporting(false)} returnFocus={moreTrigger} />}
       {superLiking && (
         <SuperLikeDialog
           noteId={note.id}

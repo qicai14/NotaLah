@@ -17,7 +17,7 @@ palette class such as `slate-500` or `indigo-600`.
 | `cn()` (clsx + tailwind-merge that knows the type scale) | `src/lib/utils.ts` |
 | shadcn/ui primitives (CLI-added, then tuned) | `src/components/ui/` |
 | App shell: rail, tab bar, More menu, nav lists | `src/components/shell/` |
-| Shared building blocks | `src/components/` (`Field`, `Dialog`, `ConfirmButton`, `UserAvatar`, `VerifiedPill`, `LecturerBadge`, `Logo`, `NoteActions`) |
+| Shared building blocks | `src/components/` (`Field`, `ConfirmButton`, `UserAvatar`, `VerifiedPill`, `LecturerBadge`, `Logo`, `NoteActions`) |
 | Write state (pending + error) | `src/lib/useAction.ts` |
 | Breakpoint hook | `src/hooks/useMediaQuery.ts` (`DESKTOP` = `(min-width: 768px)`) |
 
@@ -96,9 +96,9 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
 | Need | Use | Notes |
 |---|---|---|
 | Button | `Button` (`@/components/ui/button`) | Variants: `default` (primary), `secondary`, `outline`, `ghost`, `destructive`, `link`. Sizes: `xs`, `sm`, `default` (40 px), `lg` (48 px, full-width form actions), `icon*`. Use `asChild` with `Link` for navigation. |
-| Text input | `Field` | Label, hint, error with `aria-describedby`; `type="password"` gets Show/Hide. Reuse `inputClass` for a raw `<select>` or `<input>`. |
+| Text input | `Field` | Label, hint, error with `aria-describedby`; `type="password"` gets Show/Hide. Reuse `inputClass` for a raw `<select>` or `<input>` (there is no shadcn Input/Label; use `Field`). |
 | Programme picker | `ProgrammeSelect` | Already styled. |
-| Modal | shadcn `Dialog` for new work; legacy `components/Dialog` (bottom sheet on phones, centred from `sm`) still serves Report, Super Like, Publish | Always give a `DialogTitle` and `DialogDescription` (sr-only is fine). |
+| Modal | shadcn `Dialog` (`@/components/ui/dialog`), mounted with `open` and `onOpenChange={(o) => !o && onClose()}` | Always give a `DialogTitle` and `DialogDescription` (sr-only is fine). When the opener disappears (a menu item), pass a ref and focus it in `onCloseAutoFocus`, as `ReportDialog` does with `returnFocus`. |
 | Bottom or side sheet | shadcn `Sheet` | `side="bottom"` on phones with `rounded-t-2xl border-t-0`, `side="right"` on desktop (`w-[26rem]`). Pick with `useMediaQuery(DESKTOP)`. |
 | Menu | shadcn `DropdownMenu` | Items `h-10 rounded-sm`, icon `size-4` first. Disabled items for features not yet built. |
 | Popover | shadcn `Popover` (+ `PopoverClose`) | `rounded-xl p-5 shadow-(--shadow-float)`. |
