@@ -854,7 +854,26 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC26 | Guest views a profile | no cookie: GET /api/users/:id and /api/users/:id/notes of an author with a public and a contacts-only note; user 99999 | 200 with follower and following counts, followedByMe false, no draftCount, and only the public note in both lists; 404; a signed-in friend sees both notes | | |
 | USR-TC27 | Suspended profile hidden except from admins | user with a note and one follower is suspended; guest, the follower and an admin open the profile, its notes, followers and following, and the note | Guest: 404 for the profile and its notes; follower: 404 for all four and for the note; admin: 200 for all four and the note, the profile shows followerCount 1 and the note, while the admin's feed stays empty; the follower's following list is empty | | |
 
-*Table 4.27: Ranking and feed module test cases (RANK)*
+*Table 4.27: Blocking test cases (BLK). BLK covers user blocks (D49): the block endpoints and every path a block closes, each checked from both sides of the pair.*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| BLK-TC1 | Block a user | A and B follow each other, C follows B; A blocks B twice; A and B open GET /api/users/me/blocks | 201 then 200 with blockedByMe true; only C's follow remains; A's list shows B with blockedAt and nextCursor null; B's list is empty | | |
+| BLK-TC2 | Invalid block targets | A blocks themself, user 99999, a deleted user and an admin; then A blocks P and the admin bootstrap promotes P | 400; 404; 404; 403 "Administrators cannot be blocked"; no BLOCK_T row; A's block on P is removed by the promotion | | |
+| BLK-TC3 | Restricted user and unblock | restricted R blocks B, then unblocks twice | 201 for the block; both unblocks 200 with blockedByMe false; B's note returns 404 before and 200 after; B's profile shows blockedByMe false | | |
+| BLK-TC4 | Block list paging | A blocks 3 users; GET /api/users/me/blocks?limit=2 following nextCursor; guest | Pages [3rd, 2nd] and [1st], newest first; 401 for the guest | | |
+| BLK-TC5 | Profiles across a block | A blocks B; each opens the other's profile, notes, followers and following | A gets 200 {id, displayName, blockedByMe: true} for B's profile; B gets 404 for A's profile; 404 both ways for the notes and both lists; after B also blocks A, each gets the minimal payload for the other | | |
+| BLK-TC6 | Follow across a block | each side follows the other | 404 both ways; no FOLLOW_T row | | |
+| BLK-TC7 | Notes hidden across a block | A blocks B; each has a public "Kernel" note tagged #kernel in the same module, bookmarked by the other; B's note is co-authored by C, whom A follows | Each side: 404 for the other's note; the For You feed and note search list only their own note; saved notes are empty; the #kernel and module noteCount is 1 (2 for a guest); A's following feed is empty; C still sees B's note on B's profile | | |
+| BLK-TC8 | Engagement across a block | both sides are lecturers; each likes, comments on, lists comments of, Super Likes, bookmarks and reports the other's note | 404 for like, comment, comment list, Super Like and bookmark; 201 for both reports | | |
+| BLK-TC9 | Comments across a block | on a third user's note, Y posts a comment with a reply from the owner and a lone comment; X (in a block with Y) lists, replies to and likes them; both directions | X sees Y's replied comment as "[comment unavailable]" with no author and the owner's reply, does not see the lone comment, gets 400 replying and 404 liking it; the owner still sees Y's comments | | |
+| BLK-TC10 | People search across a block | A blocks B, both named "Kernel ..."; each and a guest search people for "kernel" | Each side finds only themself; the guest finds both | | |
+| BLK-TC11 | Collaboration across a block | owner has an edit link and a pending request from U; U views a second note and edits a third, holding its lock; U blocks the owner, then (fresh data) the owner blocks U; each time the blocker then unblocks | Both directions: pending request deleted and U's lock released; owner's invite 404; approving a stale request 404; U gets 404 opening and joining the link, requesting and opening the shared note, and an empty shared list; U can still leave the third note (204); after unblock U is a view collaborator again, the shared list shows the second note, and U joins the link (200) | | |
+| BLK-TC12 | Guests ignore blocks | A blocks B; guest opens both profiles, A's note, the feed and note search | 200 for every call; A's note is listed | | |
+| BLK-TC13 | Admin views ignore blocks | Y blocks X and reports X's note; admin blocks X, then searches users, opens the report and the note | Report 201; admin finds X, the report group with 1 report, and the note (200) | | |
+| BLK-TC14 | isBlocked helper | A blocks B; C is a stranger; guest id 0 | true for (A, B) and (B, A); false for (A, C) and (0, A) | | |
+
+*Table 4.28: Ranking and feed module test cases (RANK)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -891,7 +910,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC31 | Later guest pages read the shared ranking | 12 notes, the oldest with 30 likes; guest page 1; all likes deleted; guest page 2 with page 1's asOf | Pages 1 and 2 together list all 12 notes once each; no snapshot row stored | | |
 | RANK-TC32 | Own likes do not raise engagement | note liked by its author, an edit collaborator, a view collaborator and a stranger; another user loads the feed | Each like 201; the ranking candidate counts 2 likes; the feed shows likes 4 and E = engagement(2 likes, 0 comments) | | |
 
-*Table 4.28: Engagement module test cases (ENG)*
+*Table 4.29: Engagement module test cases (ENG)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -918,7 +937,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC21 | Guest writes are refused | no cookie, with the CSRF header: like and unlike, save and unsave, comment, delete and like a comment, report, Super Like, follow and unfollow, create, edit and delete a note, edit profile; GET saved notes, drafts and follow lists; one like without the CSRF header | 401 for every write and list; 403 without the CSRF header; no like, bookmark or report rows created | | |
 | ENG-TC22 | Comments by a suspended author | a lecturer writes a comment with a reader reply, a comment with no replies and a reply to a reader comment, then is suspended; guest, a reader and an admin read the thread | Guest and reader: the replied-to comment shows as "[comment unavailable]" with no author and no pin, its reply kept; the other comment and the reply are omitted; the note's comment count is 2; replying to or liking the hidden comment gives 400 and 404. Admin: every comment and reply with its text, the lecturer's two comments pinned | | |
 
-*Table 4.29: Lecturer verification module test cases (VER)*
+*Table 4.30: Lecturer verification module test cases (VER)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -935,22 +954,29 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | VER-TC11 | "Verified by" with two verifiers | lecturers F then S verify P; P bookmarked; F withdraws; S suspended | Feed, detail and saved list show "Verified by F"; after F withdraws "Verified by S"; after S is suspended P is no longer verified | | |
 | VER-TC12 | Invisible note and restricted lecturer | contacts-only note; lecturer restricted after verifying P | 404 for the contacts-only note; restricted lecturer gets 403 on a new Super Like but can still withdraw (200) | | |
 
-*Table 4.30: Search module test cases (SRCH)*
+*Table 4.31: Search module test cases (SRCH)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
 | SRCH-TC1 | Empty or whitespace query | q = "", q = "   " | 400; no query executed | | |
 | SRCH-TC2 | Query longer than 100 characters | q of 101 characters | 400 "Query too long" | | |
-| SRCH-TC3 | Query with SQL metacharacters | q = "'; DROP TABLE \"POST_T\"; --" | 200 with no results; table intact (parameterised query) | | |
+| SRCH-TC3 | Query with SQL metacharacters | q = "'; DROP TABLE \"POST_T\"; --" on every tab; q = "%" on people and "_" on hashtags while users and tags exist | 200 with no results; table intact (parameterised query); LIKE wildcards match literally | | |
 | SRCH-TC4 | Hashtag search | q = "#Normalisation" | Only published, visible posts tagged "normalisation" | | |
 | SRCH-TC5 | Module code search | q = "CT071-3-3" | Posts in module CT071-3-3 only | | |
 | SRCH-TC6 | Keyword in slide text | q = "third normal form" (appears only in slide 2 of P) | P returned | | |
 | SRCH-TC7 | Programme and people search | q = "Software Engineering"; q = "tan" | Posts in that programme's modules; users whose name contains "tan" | | |
-| SRCH-TC8 | Lecturer content filter | lecturer=1 | Only posts authored or Super Liked by lecturers | | |
-| SRCH-TC9 | Date range filter, including invalid range | from 2026-10-01 to 2026-10-13; from after to | Only posts published in range; 400 "Invalid date range" | | |
+| SRCH-TC8 | Lecturer content filter | lecturer=any; lecturer=<id of lecturer A>; lecturer=<id of a student> | Only posts authored or validly Super Liked by approved, non-suspended lecturers; only A's own or A-Super-Liked posts; no results | | |
+| SRCH-TC9 | Date range filter, including invalid range | from 2026-10-01 to 2026-10-13; from after to | Only posts published in range (Malaysian calendar days, both ends inclusive); 400 "Invalid date range" | | |
 | SRCH-TC10 | Search latency (NFR1) | 10,000 seeded posts, 50 mixed queries | Every response under 3,000 ms; median and maximum recorded | | |
+| SRCH-TC11 | Note order blends text rank with E and V | five notes matching "deadlock": strongest text match, a Super Liked one, a liked one, two plain ones (one older, one self-liked) | Strong match, Super Liked, liked, newer plain, older plain; a self-like adds nothing; same order for a guest and a signed-in user | | |
+| SRCH-TC12 | Keyset paging of notes | 25 matching notes, limit 10, follow nextCursor | 10, 10, 5 notes; each exactly once in score order; Top pages 20 by default | | |
+| SRCH-TC13 | Invalid search parameters | tab=videos; lecturer=some, 0, 1.0, +1; term=abc, 2147483648; module=-1, 1e3; from=2026-13-01; asOf=yesterday; term with from; unknown term on top, people and modules; cursor abc | 400 with "Invalid tab", "Invalid lecturer", "Invalid term", "Invalid module", "Invalid date", "Invalid asOf", "Choose a term or a date range, not both", "Term not found", "Invalid cursor" | | |
+| SRCH-TC14 | Academic term and module filters | term Sem 2 (2026-09-01 to 2026-12-20); notes in and outside it; module=CT050-3-2 | Only notes published within the term; with module only that module's | | |
+| SRCH-TC15 | Top, people, hashtags and modules tabs | q "network": 5 matching people, tags on published notes and on a draft only, two matching modules | Top adds 3 people, the 2 published tags with note counts, 2 modules; people tab pages all 5; "ct060" finds CT060-3-2 only; "#" on hashtags is empty | | |
+| SRCH-TC16 | Visibility in search | public, contacts-only, draft and hidden notes; a suspended author with a note and tag; guest, friend, author, admin | Guest: the public note only (X-Viewer guest); friend and author: public and contacts-only; nobody sees drafts, hidden notes or the suspended user, their notes or tags | | |
+| SRCH-TC17 | Stable paging with asOf | 25 matching notes, limit 10; after page 1, 5 likes on a later-page note and a new stronger match; later pages sent with page 1's asOf | Each of the 25 notes exactly once; the new note absent until a fresh search, where it ranks first | | |
 
-*Table 4.31: Messaging module test cases (MSG)*
+*Table 4.32: Messaging module test cases (MSG)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -965,7 +991,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | MSG-TC9 | Create group with invalid input | name ""; one member; a non-friend member | Rejected with a message for each case | | |
 | MSG-TC10 | Create group and leave | name "FYP Team", two friends; one member leaves | Group created with owner and members; leaver no longer receives group messages | | |
 
-*Table 4.32: Administration module test cases (ADM)*
+*Table 4.33: Administration module test cases (ADM)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -999,8 +1025,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC28 | Code is immutable | PATCH with code only; with {}; with a blank name | 400 each; stored code unchanged | | |
 | ADM-TC29 | Report queue paging | 23 reported notes whose reports share one time; GET /api/admin/reports, then with nextCursor; cursor "abc" | 20 groups and a nextCursor, then the last 3 with nextCursor null, in note id order; 400 for the bad cursor | | |
 | ADM-TC30 | Review panel loads the full note | GET /api/admin/reports/:noteId for a reported note, a note without reports, id "abc", the note after dismissal | Full note with 3 slides, report count 1 and the spam report; 404; 400; 404 | | |
+| ADM-TC31 | Term endpoints by role | student and lecturer call GET, POST, PUT, DELETE /api/admin/terms; guest calls GET /api/terms | 403 on every admin endpoint; 200 with an empty list for the public list | | |
+| ADM-TC32 | Create overlapping terms | "Semester 2 2026" 2026-09-01 to 2026-12-20; "Intake Oct 2026" 2026-10-05 to 2027-01-30 | 201 each; GET /api/terms lists both, latest start first, dates as YYYY-MM-DD | | |
+| ADM-TC33 | Invalid term input | blank name; 51-character name; start 2026-02-30; end "01/12/2026"; end equal to start; duplicate name | 400 with a field error for each; 409 "A term with this name already exists"; one term stored | | |
+| ADM-TC34 | Edit and delete a term | PUT new name and dates; PUT to a taken name; PUT end before start; unknown id; DELETE twice | 200 with the new values; 409; 400; 404; 204 then 404 | | |
 
-*Table 4.33: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
+*Table 4.34: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1029,7 +1059,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | COL-TC23 | Restricted author blocks co-author edits | author restricted; editor PUT and lock; stranger joins an edit link; editor GET; stranger GET of the link | 403, 403, 403; reading 200 and 200 | | |
 | COL-TC24 | Concurrent link regeneration | five simultaneous POST /links {role: view} | All 201; exactly one active link | | |
 
-*Table 4.34: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
+*Table 4.35: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1039,7 +1069,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie parp_token header and a body with a password | Log output shows [redacted] and contains neither the parp_token value nor the password | | |
 | OPS-TC5 | Share-link tokens kept out of the request log | paths /api/share/AbC_-123?x=1, /api/notes/5?cursor=abc, no URL | /api/share/[token]; /api/notes/5; undefined | | |
 
-*Table 4.35: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
+*Table 4.36: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1067,7 +1097,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.36: UAT tester details*
+*Table 4.37: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1075,7 +1105,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.37: UAT scenario tasks*
+*Table 4.38: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1094,7 +1124,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.38: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.39: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1104,7 +1134,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.39: UAT feedback and developer response*
+*Table 4.40: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1115,7 +1145,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.40: Ranking weight re-evaluation (NFR5)*
+*Table 4.41: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

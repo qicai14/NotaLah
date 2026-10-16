@@ -1,5 +1,5 @@
 import { app } from './app';
-import { assertWeightsSumToOne } from './features/ranking/config';
+import { RANKING, assertWeightsSumToOne } from './features/ranking/config';
 import { env } from './lib/env';
 import { initErrorReporting } from './lib/errorReporting';
 import { logger } from './lib/logger';
@@ -10,6 +10,7 @@ const SHUTDOWN_TIMEOUT_MS = 10_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 assertWeightsSumToOne();
+assertWeightsSumToOne(RANKING.searchWeights);
 void initErrorReporting().catch((err) => logger.error({ err }, 'error reporting failed to start'));
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, 'server listening'));
 
