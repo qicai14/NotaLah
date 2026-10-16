@@ -36,7 +36,7 @@ export function SuperLikeDialog({
   return (
     <Dialog title="Super Like this note?" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-muted-foreground">
           The note gets a verified frame with your name, and ranks higher in every feed. You can remove it later.
         </p>
         <div className="flex flex-col gap-1">
@@ -48,25 +48,25 @@ export function SuperLikeDialog({
             value={remark}
             onChange={(e) => setRemark(e.target.value)}
             rows={3}
-            className="rounded-md border border-slate-300 px-3 py-2"
+            className="rounded-md border border-input bg-background px-3 py-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
           />
-          <span className={`text-xs ${remark.length > 300 ? 'text-red-600' : 'text-slate-500'}`}>
+          <span className={`text-xs ${remark.length > 300 ? 'text-destructive' : 'text-muted-foreground'}`}>
             {remark.length}/300
           </span>
         </div>
         {error && (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
             {error}
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-4 py-2">
+          <button type="button" onClick={onClose} className="h-10 rounded-full px-5 font-semibold hover:bg-accent">
             Cancel
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60"
+            className="h-10 rounded-full bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-60"
           >
             {busy ? 'Verifying…' : 'Super Like'}
           </button>

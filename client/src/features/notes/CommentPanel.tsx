@@ -64,7 +64,7 @@ function Composer({
           placeholder={parentId ? 'Write a reply' : 'Add a comment'}
           aria-invalid={error ? true : undefined}
           aria-describedby={`${idp}-count`}
-          className="max-h-40 min-h-11 flex-1 resize-y rounded-[1.375rem] border border-input bg-background px-4 py-2.5 text-body outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+          className="max-h-40 min-h-11 flex-1 resize-none rounded-[1.375rem] border border-input bg-background px-4 py-2.5 text-body outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
         />
         <Button type="submit" disabled={pending} className="h-11">
           {pending ? 'Posting…' : parentId ? 'Reply' : 'Post'}

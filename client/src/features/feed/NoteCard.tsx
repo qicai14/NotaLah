@@ -63,12 +63,14 @@ export const NoteCard = memo(function NoteCard({
       className="flex h-full snap-start snap-always items-end justify-center gap-2 px-3 pt-topbar pb-3 md:gap-5 md:px-6 md:pb-6"
     >
       <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-(--shadow-card) md:aspect-[9/16] md:max-w-[34rem] md:flex-none md:rounded-2xl">
-        <div className="flex min-h-14 items-center justify-between gap-2 px-3 pt-3">
-          {item.verified ? <VerifiedPill by={item.verifiedBy} /> : <span />}
-          {item.components && item.score !== undefined && (
-            <WhyThisNote score={item.score} components={item.components} guest={guest} className="bg-surface" />
-          )}
-        </div>
+        {(item.verified || item.components) && (
+          <div className="flex min-h-14 items-center justify-between gap-2 px-3 pt-3">
+            {item.verified ? <VerifiedPill by={item.verifiedBy} /> : <span />}
+            {item.components && item.score !== undefined && (
+              <WhyThisNote score={item.score} components={item.components} guest={guest} className="bg-surface" />
+            )}
+          </div>
+        )}
 
         <div className="flex min-h-0 flex-1 flex-col justify-center px-4 py-2 md:px-6 max-md:[&_.slide-content]:h-[40dvh] md:[&_.slide-content]:h-[min(30rem,50dvh)] [&_.slide-content]:rounded-lg">
           {item.module && (

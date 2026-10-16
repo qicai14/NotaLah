@@ -50,7 +50,7 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
             type="button"
             autoFocus
             onClick={onClose}
-            className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-white"
+            className="mt-4 h-10 rounded-full bg-primary px-5 font-semibold text-primary-foreground"
           >
             Close
           </button>
@@ -75,25 +75,25 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               rows={3}
-              className="rounded-md border border-slate-300 px-3 py-2"
+              className="rounded-md border border-input bg-background px-3 py-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
             />
-            <span className={`text-xs ${details.length > 500 ? 'text-red-600' : 'text-slate-500'}`}>
+            <span className={`text-xs ${details.length > 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
               {details.length}/500
             </span>
           </div>
           {error && (
-            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
               {error}
             </p>
           )}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-4 py-2">
+            <button type="button" onClick={onClose} className="h-10 rounded-full px-5 font-semibold hover:bg-accent">
               Cancel
             </button>
             <button
               type="submit"
               disabled={busy}
-              className="rounded-md bg-red-600 px-4 py-2 text-white disabled:opacity-60"
+              className="h-10 rounded-full bg-destructive px-5 font-semibold text-destructive-foreground disabled:opacity-60"
             >
               {busy ? 'Sending…' : 'Send report'}
             </button>
