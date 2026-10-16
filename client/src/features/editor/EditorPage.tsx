@@ -1,5 +1,5 @@
 import { type Aspect } from '@parp/shared';
-import { ArrowLeft, Check, CloudOff, LoaderCircle, Proportions, Redo2, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Proportions, Redo2, Undo2, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ import {
   type SaveOutcome,
   writeBackup,
 } from './save';
+import { PageNotes } from './PageNotes';
 import { SlideStrip } from './SlideStrip';
 import { emptyDeck, useEditor } from './store';
 
@@ -164,6 +165,7 @@ export default function EditorPage() {
   const [panel, setPanel] = useState<PanelId | null>('text');
   const [sheet, setSheet] = useState<PanelId | null>(null);
   const [backup, setBackup] = useState<Backup | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
 
   async function fetchAndLoad(noteId: number) {
     const { note } = await api<{ note: Note }>(`/notes/${noteId}`);
@@ -235,6 +237,7 @@ export default function EditorPage() {
       unsub();
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onHide);
+      if (eligible()) void saveNote('draft'); // leaving within the idle delay still saves the draft
     };
   }, []);
 
@@ -450,10 +453,21 @@ export default function EditorPage() {
         <div className="min-h-0 flex-1">
           <Canvas compact />
         </div>
+        {notesOpen && <PageNotes />}
         <div className="flex shrink-0 items-center gap-1 border-t bg-background px-2">
           <div className="min-w-0 flex-1">
             <SlideStrip compact />
           </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Page notes"
+            aria-pressed={notesOpen}
+            onClick={() => setNotesOpen(!notesOpen)}
+            className="shrink-0 rounded-md aria-pressed:bg-surface-strong"
+          >
+            <NotebookPen />
+          </Button>
           <AspectPicker compact />
         </div>
         <nav
@@ -541,10 +555,21 @@ export default function EditorPage() {
           <div className="min-h-0 flex-1">
             <Canvas compact={false} />
           </div>
+          {notesOpen && <PageNotes />}
           <div className="flex shrink-0 items-center gap-3 border-t bg-background px-3">
             <div className="min-w-0 flex-1">
               <SlideStrip compact={false} />
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-pressed={notesOpen}
+              onClick={() => setNotesOpen(!notesOpen)}
+              className="shrink-0 rounded-md aria-pressed:bg-surface-strong"
+            >
+              <NotebookPen aria-hidden="true" />
+              Notes
+            </Button>
             <SlideCount />
           </div>
         </div>
