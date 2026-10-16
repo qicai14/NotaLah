@@ -149,7 +149,7 @@ describe('Image upload (R22)', () => {
     expect(res.status).toBe(400);
   });
 
-  it('enforces the 500 MB storage quota on the stored bytes', async () => {
+  it('NOTE-TC49: enforces the 500 MB storage quota on the stored bytes', async () => {
     const uid = await insertUser();
     await pool.query(
       `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_mime, ast_bytes, ast_status)
@@ -263,7 +263,7 @@ describe('Assets in notes (R22)', () => {
 });
 
 describe('Asset file access (R22)', () => {
-  it('serves a public published note image to a guest and to other users', async () => {
+  it('NOTE-TC50: serves a public published note image to a guest and to other users', async () => {
     const { asset } = await noteWithImage();
     const res = await getAsset(asset);
     expect(res.status).toBe(200);
@@ -402,7 +402,7 @@ describe('Unsplash proxy (R22)', () => {
     ]);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toContain('https://api.unsplash.com/search/photos?query=desk&page=2');
-    expect((init?.headers as Record<string, string>).Authorization).toBe('Client-ID secret-key');
+    expect(((init as RequestInit).headers as Record<string, string>).Authorization).toBe('Client-ID secret-key');
     await request(app).get('/api/unsplash/search?q=DESK&page=2').set(asUser(uid));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     restore();
