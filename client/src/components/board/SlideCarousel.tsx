@@ -40,7 +40,7 @@ export function SlideCarousel({
       className="flex size-full min-h-0 flex-col gap-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div
-        className="min-h-0 flex-1 touch-pan-y rounded-lg"
+        className="relative min-h-0 flex-1 touch-pan-y rounded-lg"
         onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
         onTouchEnd={(e) => {
           if (touchX.current === null) return;
@@ -51,7 +51,11 @@ export function SlideCarousel({
       >
         {slides.map((slide, i) =>
           Math.abs(i - cur) > 1 ? null : (
-            <div key={i} hidden={i !== cur} className="size-full rounded-lg">
+            <div
+              key={i}
+              inert={i !== cur}
+              className={i === cur ? 'size-full rounded-lg' : 'invisible absolute inset-0 rounded-lg'}
+            >
               <SlideBoard slide={slide} aspect={aspect} assets={assets} label={`Slide ${i + 1} of ${slides.length}`} />
             </div>
           ),

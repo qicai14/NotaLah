@@ -9,6 +9,7 @@ import {
   type Slide,
   type SlideElement,
 } from '@parp/shared';
+import { apiOrigin } from '@/lib/api';
 import { arrowHead, backgroundCss, cropBox, FONT_STACK, fitScale, inReadingOrder, shapePoints } from './geometry';
 
 /** What the board draws; page notes are never shown on it. */
@@ -16,8 +17,13 @@ export type BoardSlide = Pick<Slide, 'background' | 'elements'>;
 type Assets = Record<string, string>;
 type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
 
-const imageUrl = (src: ImageSource, assets: Assets): string =>
-  src.kind === 'unsplash' ? src.url : (assets[String(src.assetId)] ?? `/api/assets/${src.assetId}/file`);
+/** The image's URL, or null when an upload is not in the note's asset map (the frame then stays a plain tile). */
+const imageUrl = (src: ImageSource, assets: Assets): string | null => {
+  if (src.kind === 'unsplash') return src.url;
+  const u = assets[String(src.assetId)];
+  if (!u) return null;
+  return u.startsWith('/') ? apiOrigin() + u : u;
+};
 
 /** Unsplash requires a credit next to every photo it supplies. */
 const creditsOf = (slide: BoardSlide): { name: string; url: string }[] => {
@@ -31,9 +37,10 @@ const creditsOf = (slide: BoardSlide): { name: string; url: string }[] => {
 
 function Background({ fill, assets }: { fill: Fill; assets: Assets }) {
   if (fill.kind !== 'image') return <div className="absolute inset-0" style={{ background: backgroundCss(fill) }} />;
+  const url = imageUrl(fill.image, assets);
   return (
     <div className="absolute inset-0 bg-surface-strong">
-      <img src={imageUrl(fill.image, assets)} alt="" className="size-full object-cover" draggable={false} />
+      {url && <img src={url} alt="" loading="lazy" className="size-full object-cover" draggable={false} />}
       {fill.overlay && <div className="absolute inset-0" style={{ background: fill.overlay }} />}
     </div>
   );
@@ -113,16 +120,23 @@ function Line({ el }: { el: El<'line'> }) {
 }
 
 function Picture({ el, assets }: { el: El<'image'>; assets: Assets }) {
-  const flip = `scale(${el.flipX ? -1 : 1}, ${el.flipY ? -1 : 1})`;
+  const url = imageUrl(el.source, assets);
+  const flip = el.flipX || el.flipY ? `scale(${el.flipX ? -1 : 1}, ${el.flipY ? -1 : 1})` : undefined;
   return (
-    <div className="relative size-full overflow-hidden bg-surface-strong" style={{ borderRadius: el.radius }}>
-      <img
-        src={imageUrl(el.source, assets)}
-        alt={el.alt}
-        draggable={false}
-        className="absolute max-w-none"
-        style={{ ...cropBox(el.w, el.h, el.crop), transform: flip }}
-      />
+    <div
+      className="relative size-full overflow-hidden bg-surface-strong"
+      style={{ borderRadius: el.radius, transform: flip }}
+    >
+      {url && (
+        <img
+          src={url}
+          alt={el.alt}
+          loading="lazy"
+          draggable={false}
+          className="absolute max-w-none"
+          style={cropBox(el.w, el.h, el.crop)}
+        />
+      )}
     </div>
   );
 }
@@ -301,7 +315,7 @@ export function SlideBoard({
           <p className="absolute bottom-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
             Photo by{' '}
             {credits.map((c, i) => (
-              <span key={c.url}>
+              <span key={c.name}>
                 {i > 0 && ', '}
                 <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
                   {c.name}
@@ -310,7 +324,7 @@ export function SlideBoard({
             ))}{' '}
             on{' '}
             <a
-              href="https://unsplash.com"
+              href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
               target="_blank"
               rel="noreferrer noopener"
               className="font-semibold underline"

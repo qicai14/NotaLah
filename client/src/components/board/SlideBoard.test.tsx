@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Slide, SlideElement } from '@parp/shared';
 import { cropBox, fitScale, inReadingOrder } from './geometry';
 import { SlideBoard } from './SlideBoard';
@@ -137,6 +137,33 @@ beforeAll(() => {
 
 afterEach(cleanup);
 
+describe('image frame', () => {
+  it('NOTE-TC56: flip is applied to the frame, not to the cropped image', () => {
+    const img = {
+      ...base,
+      id: 'iiiiiiii',
+      type: 'image',
+      source: { kind: 'upload', assetId: 1 },
+      alt: 'x',
+      crop: { x: 0.5, y: 0, w: 0.5, h: 1 },
+      flipX: true,
+      flipY: false,
+      radius: 0,
+    } as SlideElement;
+    render(
+      <SlideBoard
+        slide={{ background: slide.background, elements: [img] }}
+        aspect="4:5"
+        assets={{ '1': 'https://x.test/a.png' }}
+      />,
+    );
+    const tag = screen.getByAltText('x');
+    expect((tag as HTMLElement).style.transform).toBe('');
+    expect((tag.parentElement as HTMLElement).style.transform).toBe('scale(-1, 1)');
+    expect((tag as HTMLElement).style.left).toBe('-300px');
+  });
+});
+
 describe('SlideBoard', () => {
   it('NOTE-TC57: renders every element type as real DOM with an accessible name', () => {
     const { container } = render(<SlideBoard slide={slide} aspect="4:5" assets={{ '7': '/api/assets/7/file' }} />);
@@ -158,9 +185,17 @@ describe('SlideBoard', () => {
     expect(container.querySelector('img[src="https://images.unsplash.com/photo-1"]')?.getAttribute('alt')).toBe('');
   });
 
-  it('NOTE-TC57: falls back to the asset file route and uses array order for z-index', () => {
+  it('NOTE-TC57: asset URLs follow VITE_API_URL; a missing asset leaves a plain tile; z-index is array order', () => {
+    vi.stubEnv('VITE_API_URL', 'https://api.example.test');
+    render(<SlideBoard slide={slide} aspect="16:9" assets={{ '7': '/api/assets/7/file' }} />);
+    expect(screen.getByAltText('A diagram of a cell').getAttribute('src')).toBe(
+      'https://api.example.test/api/assets/7/file',
+    );
+    vi.unstubAllEnvs();
+    cleanup();
     render(<SlideBoard slide={slide} aspect="16:9" />);
-    expect(screen.getByAltText('A diagram of a cell').getAttribute('src')).toBe('/api/assets/7/file');
+    expect(screen.queryByAltText('A diagram of a cell')).toBeNull();
+    expect(document.querySelector('[data-element="image"] > div')).toBeTruthy();
     const z = (type: string) =>
       Number((document.querySelector(`[data-element="${type}"]`) as HTMLElement).style.zIndex);
     expect(z('text')).toBe(0);
