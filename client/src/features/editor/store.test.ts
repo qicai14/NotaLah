@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { SlideElement } from '@parp/shared';
-import { emptyDeck, HISTORY_LIMIT, reaspect, useEditor } from './store';
+import { emptyDeck, HISTORY_LIMIT, patchElement, reaspect, useEditor } from './store';
 
 const rect = (id: string, x = 100): SlideElement => ({
   id,
@@ -26,9 +26,9 @@ beforeEach(() => s().load(emptyDeck()));
 describe('editor store', () => {
   it('NOTE-TC58: undo and redo step through discrete changes and a drag counts once', () => {
     s().addElement(rect('el-000001'));
-    s().beginGesture();
-    for (let x = 110; x <= 150; x += 10) s().preview((d) => ({ ...d, slides: [{ ...d.slides[0], elements: [rect('el-000001', x)] }] }));
-    s().endGesture();
+    const base = s().deck;
+    for (let x = 110; x <= 150; x += 10) s().preview((d) => patchElement(d, 0, 'el-000001', { x }));
+    s().commitFrom(base);
     expect(s().past).toHaveLength(2);
     expect(s().deck.slides[0].elements[0].x).toBe(150);
     s().undo();
@@ -89,11 +89,13 @@ describe('editor store', () => {
 
   it('NOTE-TC60: a save only clears dirty when nothing changed while it was in flight', () => {
     s().addElement(rect('el-000001'));
-    const sent = s().deck;
+    const sent = s().rev;
     s().updateElement('el-000001', { x: 300 });
-    s().markSaved(sent);
+    s().markSaved(sent, { noteId: 7 });
     expect(s().dirty).toBe(true);
-    s().markSaved(s().deck);
+    expect(s().meta.noteId).toBe(7);
+    s().setMeta({ title: 'Week 6' });
+    s().markSaved(s().rev, {});
     expect(s().dirty).toBe(false);
     expect(s().saveState).toBe('saved');
   });

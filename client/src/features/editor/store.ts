@@ -1,3 +1,4 @@
+import type { Editor as TipTapEditor } from '@tiptap/react';
 import { create } from 'zustand';
 import {
   type Aspect,
@@ -25,9 +26,34 @@ export interface EditorState {
   /** The deck differs from what the server last confirmed. */
   dirty: boolean;
   saveState: SaveState;
-  /** Deck as it was when the current drag began; the drag becomes one undo step on release. */
-  gestureBase: Deck | null;
+  /** Note details saved with the deck but kept out of undo. */
+  meta: NoteMeta;
+  /** Bumped by every change, so a finished save can tell whether anything moved while it was in flight. */
+  rev: number;
+  /** The TipTap instance of the text box being edited, so the toolbar can format inside it. */
+  textEditor: TipTapEditor | null;
 }
+
+export interface NoteMeta {
+  noteId: number | null;
+  title: string;
+  moduleId: string;
+  hashtags: string[];
+  status: 'draft' | 'published';
+  visibility: 'public' | 'contacts' | null;
+  /** The server's `updatedAt` this editor started from, for the 409 check. */
+  baseUpdatedAt: string | null;
+}
+
+export const emptyMeta = (): NoteMeta => ({
+  noteId: null,
+  title: '',
+  moduleId: '',
+  hashtags: [],
+  status: 'draft',
+  visibility: null,
+  baseUpdatedAt: null,
+});
 
 export const blankSlide = (): Slide => ({ background: { kind: 'color', color: '#ffffff' }, elements: [], notes: '' });
 export const emptyDeck = (): Deck => ({ aspect: '4:5', theme: 'plain', slides: [blankSlide()], music: null });
@@ -40,7 +66,9 @@ const initial = (): EditorState => ({
   future: [],
   dirty: false,
   saveState: 'idle',
-  gestureBase: null,
+  meta: emptyMeta(),
+  rev: 0,
+  textEditor: null,
 });
 
 export const newId = (): string => crypto.randomUUID();
@@ -56,10 +84,17 @@ const spliced = <T,>(a: T[], at: number, remove: number, ...add: T[]): T[] => {
 
 const capped = (past: Deck[], deck: Deck) => [...past, deck].slice(-HISTORY_LIMIT);
 
-const mapSlide = (deck: Deck, index: number, fn: (s: Slide) => Slide): Deck => ({
+export const mapSlide = (deck: Deck, index: number, fn: (s: Slide) => Slide): Deck => ({
   ...deck,
   slides: deck.slides.map((s, i) => (i === index ? fn(s) : s)),
 });
+
+/** The deck with one element on one slide patched. */
+export const patchElement = (deck: Deck, slide: number, id: string, patch: Partial<SlideElement>): Deck =>
+  mapSlide(deck, slide, (s) => ({
+    ...s,
+    elements: s.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as SlideElement) : e)),
+  }));
 
 /** Keeps the active slide and selection valid after the deck changes under them (undo, delete). */
 function settle(deck: Deck, activeSlide: number, selection: string | null) {
@@ -108,13 +143,15 @@ export function reaspect(deck: Deck, aspect: Aspect): Deck {
 
 interface Actions {
   /** Replaces everything with a loaded (or new) deck; history is cleared. */
-  load: (deck: Deck) => void;
+  load: (deck: Deck, meta?: NoteMeta) => void;
+  /** Detail edits (title, module, hashtags) mark the note dirty without an undo step. */
+  setMeta: (patch: Partial<NoteMeta>) => void;
   /** One undoable change. */
   apply: (recipe: (deck: Deck) => Deck) => void;
-  beginGesture: () => void;
-  /** Live update during a drag; not recorded until `endGesture`. */
+  /** Live update during a drag or while typing; not recorded until `commitFrom`. */
   preview: (recipe: (deck: Deck) => Deck) => void;
-  endGesture: () => void;
+  /** Ends a drag or a text edit that started from `base`: the whole change becomes one undo step. */
+  commitFrom: (base: Deck) => void;
   undo: () => void;
   redo: () => void;
   select: (id: string | null) => void;
@@ -128,8 +165,8 @@ interface Actions {
   updateElement: (id: string, patch: Partial<SlideElement>) => void;
   deleteElement: (id: string) => void;
   setSaveState: (s: SaveState) => void;
-  /** The server confirmed `sent`; the deck stays dirty if it changed while the save was in flight. */
-  markSaved: (sent: Deck) => void;
+  /** The server confirmed the state at `sentRev`; the note stays dirty if it changed while the save was in flight. */
+  markSaved: (sentRev: number, meta: Partial<NoteMeta>) => void;
 }
 
 export type EditorStore = EditorState & Actions;
@@ -140,21 +177,23 @@ export const useEditor = create<EditorStore>()((set, get) => {
     const next = recipe(deck);
     if (next === deck) return;
     const pos = settle(next, extra.activeSlide ?? activeSlide, 'selection' in extra ? (extra.selection ?? null) : selection);
-    set({ ...extra, ...pos, deck: next, past: capped(past, deck), future: [], dirty: true });
+    set({ ...extra, ...pos, deck: next, past: capped(past, deck), future: [], dirty: true, rev: get().rev + 1 });
   };
   const active = () => get().activeSlide;
   const slideCount = () => get().deck.slides.length;
 
   return {
     ...initial(),
-    load: (deck) => set({ ...initial(), deck }),
+    load: (deck, meta = emptyMeta()) => set({ ...initial(), deck, meta }),
+    setMeta: (patch) => set({ meta: { ...get().meta, ...patch }, dirty: true, rev: get().rev + 1 }),
     apply: (recipe) => apply(recipe),
-    beginGesture: () => set({ gestureBase: get().deck }),
-    preview: (recipe) => set({ deck: recipe(get().deck), dirty: true }),
-    endGesture: () => {
-      const { gestureBase, deck, past } = get();
-      if (gestureBase && gestureBase !== deck) set({ past: capped(past, gestureBase), future: [] });
-      set({ gestureBase: null });
+    preview: (recipe) => {
+      const next = recipe(get().deck);
+      if (next !== get().deck) set({ deck: next, dirty: true, rev: get().rev + 1 });
+    },
+    commitFrom: (base) => {
+      const { deck, past } = get();
+      if (base !== deck) set({ past: capped(past, base), future: [] });
     },
     undo: () => {
       const { past, future, deck, activeSlide, selection } = get();
@@ -165,6 +204,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
         past: past.slice(0, -1),
         future: [deck, ...future].slice(0, HISTORY_LIMIT),
         dirty: true,
+        rev: get().rev + 1,
         ...settle(prev, activeSlide, selection),
       });
     },
@@ -172,7 +212,14 @@ export const useEditor = create<EditorStore>()((set, get) => {
       const { past, future, deck, activeSlide, selection } = get();
       if (!future.length) return;
       const next = future[0];
-      set({ deck: next, past: capped(past, deck), future: future.slice(1), dirty: true, ...settle(next, activeSlide, selection) });
+      set({
+        deck: next,
+        past: capped(past, deck),
+        future: future.slice(1),
+        dirty: true,
+        rev: get().rev + 1,
+        ...settle(next, activeSlide, selection),
+      });
     },
     select: (id) => set({ selection: id }),
     setActiveSlide: (index) => set({ activeSlide: Math.max(0, Math.min(index, slideCount() - 1)), selection: null }),
@@ -211,18 +258,13 @@ export const useEditor = create<EditorStore>()((set, get) => {
       if (get().deck.slides[active()].elements.length >= LIMITS.elementsPerSlide) return;
       apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: [...s.elements, el] })), { selection: el.id });
     },
-    updateElement: (id, patch) =>
-      apply((d) =>
-        mapSlide(d, active(), (s) => ({
-          ...s,
-          elements: s.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as SlideElement) : e)),
-        })),
-      ),
+    updateElement: (id, patch) => apply((d) => patchElement(d, active(), id, patch)),
     deleteElement: (id) =>
       apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== id) })), {
         selection: null,
       }),
     setSaveState: (saveState) => set({ saveState }),
-    markSaved: (sent) => set({ saveState: 'saved', dirty: get().deck !== sent }),
+    markSaved: (sentRev, meta) =>
+      set({ saveState: 'saved', dirty: get().rev !== sentRev, meta: { ...get().meta, ...meta } }),
   };
 });

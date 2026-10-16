@@ -51,6 +51,8 @@
   --board-code-dark-foreground: #e9ebf2;
   --board-credit: rgb(0 0 0 / 0.6);
   --board-credit-foreground: #ffffff;
+  --editor-guide: #e5167a;
+  --editor-canvas: #eceef2;
   --shadow-color: 220 20% 10%;
   color-scheme: light;
 }
@@ -96,6 +98,8 @@
   --board-code-dark-foreground: #e9ebf2;
   --board-credit: rgb(0 0 0 / 0.6);
   --board-credit-foreground: #ffffff;
+  --editor-guide: #ff5fae;
+  --editor-canvas: #0a0b0f;
   --shadow-color: 0 0% 0%;
   color-scheme: dark;
 }
@@ -132,6 +136,8 @@
   --color-slide-foreground: var(--slide-foreground);
   --color-board-credit: var(--board-credit);
   --color-board-credit-foreground: var(--board-credit-foreground);
+  --color-editor-guide: var(--editor-guide);
+  --color-editor-canvas: var(--editor-canvas);
 }
 
 @theme {
@@ -375,4 +381,40 @@
   .backdrop-blur-md {
     backdrop-filter: none;
   }
+}
+
+/* Rich text on the slide board (view and edit), in em so it follows each text box's own size. */
+.board-text > * + * {
+  margin-top: 0.5em;
+}
+.board-text h1 {
+  font-size: 1.75em;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.board-text h2 {
+  font-size: 1.4em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.board-text h3 {
+  font-size: 1.15em;
+  font-weight: 600;
+}
+.board-text ul {
+  list-style: disc;
+  padding-left: 1.2em;
+}
+.board-text ol {
+  list-style: decimal;
+  padding-left: 1.2em;
+}
+.board-text blockquote {
+  border-left: 0.15em solid currentColor;
+  padding-left: 0.6em;
+  opacity: 0.85;
+}
+.board-text .ProseMirror {
+  min-height: 100%;
+  outline: none;
 }
