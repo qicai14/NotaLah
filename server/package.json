@@ -13,9 +13,13 @@
     "db:migrate": "dbmate --env-file ../.env --no-dump-schema up",
     "db:rollback": "dbmate --env-file ../.env --no-dump-schema rollback",
     "db:migrate:test": "dbmate --env-file ../.env --env TEST_DATABASE_URL --no-dump-schema up",
-    "db:status": "dbmate --env-file ../.env --no-dump-schema status"
+    "db:status": "dbmate --env-file ../.env --no-dump-schema status",
+    "pretest": "npm run build -w shared",
+    "pretypecheck": "npm run build -w shared",
+    "prebuild": "npm run build -w shared"
   },
   "dependencies": {
+    "@parp/shared": "0.1.0",
     "@sentry/node": "10.75.3",
     "bcryptjs": "3.0.3",
     "cors": "2.8.6",

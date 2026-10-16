@@ -8,9 +8,13 @@
     "build": "tsc --noEmit && vp build",
     "typecheck": "tsc --noEmit",
     "preview": "vp preview",
-    "test": "vp test run"
+    "test": "vp test run",
+    "pretest": "npm run build -w shared",
+    "pretypecheck": "npm run build -w shared",
+    "prebuild": "npm run build -w shared"
   },
   "dependencies": {
+    "@parp/shared": "0.1.0",
     "@tiptap/pm": "3.31.3",
     "@tiptap/react": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",

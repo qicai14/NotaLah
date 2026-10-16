@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
+    "shared",
     "client",
     "server"
   ],
@@ -14,7 +15,8 @@
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "lint": "vp lint",
-    "format:check": "vp fmt --check"
+    "format:check": "vp fmt --check",
+    "prepare": "npm run build -w shared"
   },
   "devDependencies": {
     "concurrently": "10.0.5",
