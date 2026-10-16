@@ -1,30 +1,32 @@
-# Handover — 16 Oct 2026, evening (Sprint 4 backend done)
+# Handover — 17 Oct 2026, early morning (Sprint 4 backend done, wireframes v3 approved)
 
-Read with `../PLAN.md` (backlog R0-R33), `docs/DECISIONS.md` (D1-D51), `../AUTOPILOT_2026-10-16.md` (today's run log
-and the decisions to confirm) and `docs/specs/Sprint4_spec.md`. Older run logs are in `../run-logs/`.
+NotaLah (formerly PARP). Read with `../PLAN.md` (backlog R0-R33), `docs/DECISIONS.md` (D1-D51),
+`../AUTOPILOT_2026-10-16.md` (16-17 Oct run log) and `docs/specs/Sprint4_spec.md`. Older run logs: `../run-logs/`.
 
 ## State
-- `main` holds everything merged so far (PRs #1-#11): Sprint R hardening, R30 collaboration, R31 guests, R33 dropdown,
-  D47 (self-likes not ranked, suspended users hidden from all but admins), Vite+ 1.3.0 (D47), and the Sprint 4 backend:
-  search + academic terms (D48), blocking (D49), messaging over Socket.io (D50), notifications R8 (D51).
-  Server 288 tests (+1 perf test run on demand), client 21; typecheck, lint (0 errors) and build clean; CI green.
-- **Dev DB is 10 migrations behind.** The user runs, in `FYP_Project`: `npm run db:migrate -w server` (the guard blocks
-  the agent).
-- **Wireframes v3** (R32) on `docs/wireframes-v3` (not merged): 57 screens, SVG per screen + `ALL_SCREENS.svg`, index in
-  `docs/chapter4/wireframes/INDEX.md`. **Waiting for the user's review.** Gate: no frontend work (Sprint D, and the
-  UI halves of R30/R31/Sprint 4), no .docx, no deployment until approved.
-- Worktrees in `FYP/worktrees/`: only `wf3` (wireframes) and this handover's are live; old folders hold leftover
-  `node_modules` the guard would not let the agent delete. Private test DBs `parp_test_<name>` can be dropped.
+- `main` holds PRs #1-#17, all CI green: Sprint R hardening, R30 collaboration, R31 guests, R33 dropdown, D47
+  (self-likes not ranked; suspended users hidden from all but admins, who can also read their comments), Vite+ 1.3.0,
+  Sprint 4 backend (search + terms D48, blocking D49, messaging over Socket.io D50, notifications R8 D51),
+  Chapter 4.3 for the new tables, **wireframes v3 approved and merged** (57 screens, SVG + PNG, Chapter 4.4 with 3-5
+  lines per screen), the NotaLah name in visible strings, and a one-off Oxfmt format pass (CI now checks format).
+- Tests: server 288 (+1 perf test on demand), client 21; `vp check`, typecheck, lint (0 errors), build clean.
+- Dev DB is fully migrated (12 migrations; every down step verified on a throwaway DB, 16 Oct).
+- Global `vp` lives in `%LOCALAPPDATA%ite-plusin` (add it to PATH in agent shells); the repo itself uses the
+  pinned npm package, so `npm run ...` scripts work without it.
+- No live worktrees. `FYP/worktrees/` holds only leftover `node_modules` folders the guard won't let agents delete.
+- `erd.png` still shows 24 entities: rendering needs Java + PlantUML (not installed). The `.puml` source is current.
 
 ## Next work, in order
-1. User: run the migrations; review wireframes v3; confirm the decisions in `../AUTOPILOT_2026-10-16.md`.
-2. After wireframe sign-off: Chapter 4.4 text for v3, then Sprint D (R19 design system, R21 editor, R22 images, R29
-   video) and the UI for R30, R31, search, blocking, messaging (Vite proxy needs `/socket.io` with `ws: true`) and R8.
-3. Docs debt: `"TERM_T"`, `"BLOCK_T"`, `"NOTIFICATION_T"` and the messaging columns are not yet in Chapter 4.3's data
-   dictionary/ERD; `erd.png` needs PlantUML. A one-off formatting PR (`vp fmt`, 107 files) before frontend work starts.
-4. Sprint 5: R9 Jamendo (needs `JAMENDO_CLIENT_ID`), R10 annotations (after R21), R11 deploy, R20 audit, R27 scale-out.
-5. Before the first deploy (R11): `trust proxy` = hop count `1` (never `true`, D45), `COOKIE_SECURE=true`,
+1. **Sprint D (gate lifted 17 Oct):** short spec interview first, then R19 design system and redesign
+   (`frontend-designer` sets the system; `frontend` applies it), R21 editor (spec `docs/specs/R21_editor_data_model.md`),
+   R22 images, R29 video, and the UI for R30, R31, search, blocking, messaging (Vite proxy needs `/socket.io` with
+   `ws: true`) and R8 notifications, following the v3 wireframes.
+2. Sprint 5: R9 Jamendo (needs `JAMENDO_CLIENT_ID`), R10 annotations (after R21), R11 deploy, R20 audit
+   (incl. a full security pass), R27 scale-out.
+3. Report: Chapters 1-3 edits (R13), length plan (R14), Chapter 5/6 from `docs/` once UI exists.
+4. Before the first deploy (R11): `trust proxy` = hop count `1` (never `true`, D45), `COOKIE_SECURE=true`,
    `kill_timeout = 15` (D35, D41), **one Fly machine** until the Socket.io Postgres adapter lands (D50, R27).
+5. Run `/security-review` on every PR that touches auth, uploads or messaging (it reviews a branch diff).
 
 ## Still-open proposals
 **Local backup for published notes (R21 Q6):** pros — no lost edits when a tab crashes or closes (published notes do
