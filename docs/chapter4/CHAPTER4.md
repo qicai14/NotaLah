@@ -424,15 +424,17 @@
 
 *Figure 4.13: PARP entity relationship diagram (crow's foot notation)*
 
-	Figure 4.13 presents the relational data model of PARP as twenty-four entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
+	Figure 4.13 presents the relational data model of PARP as twenty-seven entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
-	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T and ACCOUNT_ACTION_T are listed in Table 4.23.
+	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. A direct conversation stores its pair of members as a text key (cnv_pair), unique and present only for direct chats, so two first messages sent at the same moment cannot open two chats (D50). Each member row keeps the identifier of the last message read (cmb_last_read_msg_id) rather than a time, and MESSAGE_T can reference an earlier message it replies to and carries a deletion time that blanks the body for readers without removing the row. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T, ACCOUNT_ACTION_T and NOTIFICATION_T are listed in Table 4.23.
 
 	Two entities were added after the first design to meet the scale and reliability targets, and a third replaced an earlier one. FOLLOW_T replaced the original CONTACT_T, which stored a symmetric pair created by an accepted message request. A directed follow with a composite primary key and a check that a user cannot follow themselves is a single relationship from which friendship is derived at query time as a pair of follows in opposite directions, so there is no second table that could drift out of step; the migration that introduced it copied each existing contact into both directions. FEED_SNAPSHOT_T stores, for one viewer and one request time, the ranked list of post identifiers and their scores as arrays. The first page of the For You feed ranks the candidates once and writes this row, and later pages read a slice of it, so that a viewer paging through the feed sees a stable order and the ranking work is not repeated for every page; rows are short-lived and are deleted when they expire. RATE_LIMIT_T is an operational table with no foreign key to any other entity: it holds one counter per rate-limit key (a user identifier or an address) and time window, so that the request limits are enforced consistently across several server instances. It is therefore drawn in Figure 4.13 as a standalone entity.
 
 	Three entities support shared notes (R30), which were added after the first design. COLLABORATOR_T grants a user view or edit access to one note, with a composite primary key so that a user holds one role per note; the owner is never a row, because ownership is already recorded in pst_usr_id. An invited editor is credited on the note, and the note reaches their followers, only once clb_edited_at records their first save, so an owner cannot attach someone's name to a note they never worked on. SHARE_LINK_T stores the view and edit links an owner hands out. Only the SHA-256 hash of each random token is kept, so a copy of the database cannot be used to open shared notes, and a partial unique index allows at most one active link per note and role, which makes regenerating a link revoke the old one. COLLAB_REQUEST_T records a reader's request to collaborate until the owner approves or declines it, with a partial unique index that permits one pending request per note and user. POST_T gained three columns for the same feature: pst_content_edited_at records the last change to the title or slides of a published note, and a lecturer Super Like older than it no longer counts towards V until the lecturer confirms it again, while pst_lock_usr_id and pst_lock_expires_at hold a short soft lock so that only one collaborator edits at a time.
+
+	Three entities were added in Sprint 4. TERM_T holds the academic terms (name, start date and end date) that the search filter offers beside lecturer and module (FR15, D2, D47). Terms are maintained by administrators and may overlap, because the start dates of intakes differ between programmes; a check requires the start date to precede the end date, and a note belongs to a term when its publication time falls inside the range, so no column is added to POST_T and a change to a term needs no data migration. It is drawn as a standalone entity. BLOCK_T records that one user has blocked another (D49). Its composite primary key allows one row per direction, a check prevents a user from blocking themselves, and an index on the blocked user lets the queries that hide content in both directions find the blockers of a viewer as quickly as their blocked list. A block removes follows, pending collaboration requests and edit locks between the two users, and every feed, search, profile, comment, messaging and collaboration query excludes blocked pairs through one shared condition. NOTIFICATION_T stores the in-app notifications of R8 (D51). Each row names its recipient, an optional actor (moderation outcomes have none, so an administrator is not named), a type from a fixed list of eleven (mention, Super Like, follow, lecturer approval or rejection, hidden note, message request, collaboration request and its two outcomes, and edited since verification), and nullable references to the note, comment, collaboration request or message request concerned. Separate nullable columns are used instead of a JSON payload so that every reference is a foreign key; deleting the referenced row deletes the notification, so a request removed by a block takes its notification with it. A check prevents a user from notifying themselves, and the read time is null until the recipient opens the notification, which gives the unread count.
 
 ## 4.3.2 Database Schema
 
@@ -440,7 +442,7 @@
 
 *Table 4.23: PARP database schema*
 
-The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_4.png`.
+The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_5.png`.
 
 | Table name | Field name | Data type | Size | Constraint | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -527,24 +529,26 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | mrq_recipient_id | INTEGER | | FK → USER_T, NOT NULL | Recipient who must approve |
 | | mrq_pst_id | INTEGER | | FK → POST_T | Note the request is anchored to |
 | | mrq_body | VARCHAR | 2000 | NOT NULL | First message, held until accepted |
-| | mrq_status | VARCHAR | 10 | NOT NULL, CHECK (pending, accepted, declined); one pending per pair | Request state |
+| | mrq_status | VARCHAR | 10 | NOT NULL, CHECK (pending, accepted, declined); one pending per pair, either direction | Request state |
 | | mrq_created_at | TIMESTAMPTZ | | NOT NULL | Time sent |
 | | mrq_responded_at | TIMESTAMPTZ | | | Time accepted or declined |
 | CONVERSATION_T | cnv_id | INTEGER (identity) | | PK, NOT NULL | Unique conversation identifier |
 | | cnv_type | VARCHAR | 10 | NOT NULL, CHECK (direct, group) | Conversation kind |
 | | cnv_name | VARCHAR | 80 | Required for groups | Group chat name |
 | | cnv_owner_id | INTEGER | | FK → USER_T; required for groups | Group creator who manages members |
+| | cnv_pair | VARCHAR | 21 | UNIQUE, CHECK set exactly when cnv_type is direct | Lower and higher member id joined by an underscore; one direct chat per pair |
 | | cnv_created_at | TIMESTAMPTZ | | NOT NULL | Creation time |
 | CONV_MEMBER_T | cmb_cnv_id | INTEGER | | PK, FK → CONVERSATION_T | Conversation |
 | | cmb_usr_id | INTEGER | | PK, FK → USER_T | Member |
 | | cmb_joined_at | TIMESTAMPTZ | | NOT NULL | Time joined |
-| | cmb_last_read_at | TIMESTAMPTZ | | | Last read time, for unread counts |
-| | cmb_left_at | TIMESTAMPTZ | | | Time the member left a group |
+| | cmb_last_read_msg_id | BIGINT | | | Last message read; later messages are unread |
 | MESSAGE_T | msg_id | BIGINT (identity) | | PK, NOT NULL | Unique message identifier |
 | | msg_cnv_id | INTEGER | | FK → CONVERSATION_T, NOT NULL | Conversation |
 | | msg_sender_id | INTEGER | | FK → USER_T, NOT NULL | Sender |
 | | msg_pst_id | INTEGER | | FK → POST_T | Note attached to the message (post anchor) |
+| | msg_reply_to_id | BIGINT | | FK → MESSAGE_T; indexed | Earlier message this one replies to |
 | | msg_body | VARCHAR | 2000 | NOT NULL | Message text |
+| | msg_deleted_at | TIMESTAMPTZ | | | Time the sender deleted the message; body hidden from readers |
 | | msg_created_at | TIMESTAMPTZ | | NOT NULL | Time sent |
 | ACCOUNT_ACTION_T | aac_id | INTEGER (identity) | | PK, NOT NULL | Unique action identifier |
 | | aac_usr_id | INTEGER | | FK → USER_T, NOT NULL | Account acted on |
@@ -579,7 +583,23 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | crq_status | VARCHAR | 8 | NOT NULL, CHECK (pending, approved, declined) | Request state |
 | | crq_created_at | TIMESTAMPTZ | | NOT NULL | Time sent |
 | | crq_decided_at | TIMESTAMPTZ | | Set exactly when not pending | Time approved or declined |
-
+| TERM_T | trm_id | INTEGER (identity) | | PK, NOT NULL | Unique term identifier |
+| | trm_name | VARCHAR | 50 | NOT NULL, UNIQUE | Term name shown in the search filter |
+| | trm_start_date | DATE | | NOT NULL, CHECK before trm_end_date | First day of the term |
+| | trm_end_date | DATE | | NOT NULL | Last day of the term |
+| BLOCK_T | blk_blocker_id | INTEGER | | PK, FK → USER_T | User who blocked |
+| | blk_blocked_id | INTEGER | | PK, FK → USER_T, CHECK differs from blk_blocker_id; indexed | User who is blocked |
+| | blk_created_at | TIMESTAMPTZ | | NOT NULL | Time of the block |
+| NOTIFICATION_T | ntf_id | INTEGER (identity) | | PK, NOT NULL | Unique notification identifier |
+| | ntf_usr_id | INTEGER | | FK → USER_T, NOT NULL, ON DELETE CASCADE | Recipient |
+| | ntf_actor_id | INTEGER | | FK → USER_T, ON DELETE CASCADE, CHECK differs from ntf_usr_id | User who caused it; null for moderation outcomes |
+| | ntf_type | VARCHAR | 30 | NOT NULL, CHECK (mention, super_like, follow, lecturer_approved, lecturer_rejected, note_hidden, message_request, collab_request, collab_approved, collab_declined, edited_since_verification) | Notification kind |
+| | ntf_pst_id | INTEGER | | FK → POST_T, ON DELETE CASCADE | Note concerned |
+| | ntf_cmt_id | INTEGER | | FK → COMMENT_T, ON DELETE CASCADE | Comment concerned |
+| | ntf_crq_id | INTEGER | | FK → COLLAB_REQUEST_T, ON DELETE CASCADE; indexed | Collaboration request concerned |
+| | ntf_mrq_id | INTEGER | | FK → MESSAGE_REQUEST_T, ON DELETE CASCADE | Message request concerned |
+| | ntf_read_at | TIMESTAMPTZ | | | Time the recipient read it; null while unread |
+| | ntf_created_at | TIMESTAMPTZ | | NOT NULL | Time created |
 
 	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors. Migrations added after the initial schema create further indexes, each for one access path:
 
@@ -593,6 +613,13 @@ The schema table is also rendered as high-resolution images for the report: `dia
 - `collaborator_user_idx` on COLLABORATOR_T (clb_usr_id): lists the notes shared with a user.
 - `share_link_active_idx` on SHARE_LINK_T (shl_pst_id, shl_role), unique and partial on active links: keeps one active link per note and role.
 - `collab_request_pending_idx` on COLLAB_REQUEST_T (crq_pst_id, crq_usr_id), unique and partial on pending requests: one open request per reader and note.
+- `block_blocked_idx` on BLOCK_T (blk_blocked_id): finds the users who have blocked a viewer.
+- `message_conv_id_idx` on MESSAGE_T (msg_cnv_id, msg_id), replacing the time-based index: pages through a conversation's history and finds its last message.
+- `message_reply_to_idx` on MESSAGE_T (msg_reply_to_id), partial on replies: serves the reply foreign key check when messages are purged.
+- `message_request_pending_pair_idx` on MESSAGE_REQUEST_T (lower and higher of mrq_sender_id and mrq_recipient_id), unique and partial on pending requests, replacing the per-direction index: one pending request per pair in either direction.
+- `notification_recipient_idx` on NOTIFICATION_T (ntf_usr_id, ntf_created_at DESC, ntf_id DESC): lists a user's notifications newest first with a stable page cursor.
+- `notification_unread_idx` on NOTIFICATION_T (ntf_usr_id), partial on unread: counts unread notifications.
+- `notification_collab_request_idx` on NOTIFICATION_T (ntf_crq_id), partial on notifications that reference a collaboration request: indexes the cascade when a request is deleted.
 
 # 4.4 Interface Design
 
