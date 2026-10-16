@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { VerifiedPill } from '@/components/VerifiedPill';
+import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
 import { SlideViewer } from '../../components/SlideViewer';
@@ -30,6 +31,7 @@ export default function NoteDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const { data, setData, error, loading } = useFetch<{ note: Note }>(`/notes/${id}`);
+  const desktop = useMediaQuery(DESKTOP);
 
   if (loading)
     return (
@@ -57,6 +59,15 @@ export default function NoteDetail() {
   }
   const n = data.note;
   const published = n.status === 'published';
+  const actions = (
+    <NoteActions
+      note={n}
+      layout={desktop ? 'rail' : 'bar'}
+      showAuthor={false}
+      commentsLink={false}
+      onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })}
+    />
+  );
 
   return (
     <article
@@ -94,27 +105,9 @@ export default function NoteDetail() {
               {n.module && <p className="mb-3 text-caption font-semibold text-muted-foreground">{n.module.code}</p>}
               <SlideViewer slides={n.slides} />
             </div>
-            {published && (
-              <div className="relative hidden md:block">
-                <NoteActions
-                  note={n}
-                  showAuthor={false}
-                  commentsLink={false}
-                  onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })}
-                />
-              </div>
-            )}
+            {published && desktop && <div className="relative">{actions}</div>}
           </div>
-          {published && (
-            <div className="md:hidden">
-              <NoteActions
-                note={n}
-                layout="bar"
-                commentsLink={false}
-                onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })}
-              />
-            </div>
-          )}
+          {published && !desktop && actions}
         </div>
       </div>
 
