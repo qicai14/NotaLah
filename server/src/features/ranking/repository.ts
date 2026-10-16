@@ -16,7 +16,11 @@ interface CandidateRow extends Candidate {
  * the same asOf after a collaborator change can shift E slightly.
  */
 // shortcut: an unverified note older than the newest `limit` is never ranked, however popular; widen if UAT shows misses.
-export async function getCandidates(viewerId: number, asOf: Date, limit: number = RANKING.candidateLimit): Promise<CandidateRow[]> {
+export async function getCandidates(
+  viewerId: number,
+  asOf: Date,
+  limit: number = RANKING.candidateLimit,
+): Promise<CandidateRow[]> {
   const { rows } = await pool.query<CandidateRow>(
     `WITH newest AS (
        SELECT p.pst_id FROM "POST_T" p

@@ -18,7 +18,9 @@ export const convRoom = (id: number) => `conv:${id}`;
 /** The user behind the handshake's auth cookie, by the same passport-jwt rules as requireAuth (reloaded; suspended or deleted refused). */
 const authenticate = (req: IncomingMessage) =>
   new Promise<AuthUser | false>((resolve, reject) => {
-    passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => (err ? reject(err) : resolve(user)))(req, {}, reject);
+    passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) =>
+      err ? reject(err) : resolve(user),
+    )(req, {}, reject);
   });
 
 interface SocketData {
@@ -94,8 +96,10 @@ async function onConnection(socket: Socket): Promise<void> {
 export const emit = (room: string, event: string, payload: unknown) => void io?.to(room).emit(event, payload);
 
 /** Puts every open socket of the users into (or takes them out of) the conversation's room. */
-export const joinConversation = (userIds: number[], conversationId: number) => void io?.in(userIds.map(userRoom)).socketsJoin(convRoom(conversationId));
-export const leaveConversation = (userId: number, conversationId: number) => void io?.in(userRoom(userId)).socketsLeave(convRoom(conversationId));
+export const joinConversation = (userIds: number[], conversationId: number) =>
+  void io?.in(userIds.map(userRoom)).socketsJoin(convRoom(conversationId));
+export const leaveConversation = (userId: number, conversationId: number) =>
+  void io?.in(userRoom(userId)).socketsLeave(convRoom(conversationId));
 
 /** Cuts a user's sockets, for a suspension or deletion (the handshake then refuses them). */
 export const disconnectUser = (userId: number) => void io?.in(userRoom(userId)).disconnectSockets(true);

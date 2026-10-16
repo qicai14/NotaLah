@@ -20,10 +20,23 @@ const TEMPLATES = [
 ];
 
 // Exactly the server sanitize allow-list (D20): StarterKit v3 also ships Underline, Link, ListKeymap and TrailingNode.
-const EXTENSIONS = [StarterKit.configure({ heading: { levels: [1, 2, 3] }, underline: false, link: false, listKeymap: false, trailingNode: false })];
+const EXTENSIONS = [
+  StarterKit.configure({
+    heading: { levels: [1, 2, 3] },
+    underline: false,
+    link: false,
+    listKeymap: false,
+    trailingNode: false,
+  }),
+];
 
 const isEmpty = (html: string) => html === '' || html === '<p></p>';
-const preview = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 28);
+const preview = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 28);
 
 export default function NoteEditor() {
   const { id } = useParams();
@@ -170,7 +183,14 @@ export default function NoteEditor() {
     <section>
       <h1 className="mb-4 text-xl font-semibold">{id ? 'Edit note' : 'Create note'}</h1>
       <fieldset disabled={saving} className="flex min-w-0 flex-col gap-4">
-        <Field label="Title" name="title" value={title} maxLength={150} onChange={(e) => setTitle(e.target.value)} error={errors.title} />
+        <Field
+          label="Title"
+          name="title"
+          value={title}
+          maxLength={150}
+          onChange={(e) => setTitle(e.target.value)}
+          error={errors.title}
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <div className={card}>
             <label htmlFor="module" className="text-sm font-medium">
@@ -206,7 +226,12 @@ export default function NoteEditor() {
             <label htmlFor="template" className="text-sm font-medium">
               Template
             </label>
-            <select id="template" value={template} onChange={(e) => setTemplate(e.target.value)} className="rounded-md border border-slate-300 bg-white px-3 py-2">
+            <select
+              id="template"
+              value={template}
+              onChange={(e) => setTemplate(e.target.value)}
+              className="rounded-md border border-slate-300 bg-white px-3 py-2"
+            >
               {TEMPLATES.map(([v, l]) => (
                 <option key={v} value={v}>
                   {l}
@@ -222,7 +247,10 @@ export default function NoteEditor() {
             <h2 className="mb-1 text-sm font-medium">
               Slides ({slides.length}/{MAX_SLIDES})
             </h2>
-            <ol aria-label="Slide strip" className="flex gap-1 overflow-x-auto md:max-h-80 md:flex-col md:overflow-y-auto">
+            <ol
+              aria-label="Slide strip"
+              className="flex gap-1 overflow-x-auto md:max-h-80 md:flex-col md:overflow-y-auto"
+            >
               {slides.map((s, i) => (
                 <li key={i} className="shrink-0">
                   <button
@@ -238,16 +266,33 @@ export default function NoteEditor() {
               ))}
             </ol>
             <div className="mt-2 flex flex-wrap gap-1 text-sm">
-              <button type="button" onClick={addSlide} disabled={slides.length >= MAX_SLIDES} className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50">
+              <button
+                type="button"
+                onClick={addSlide}
+                disabled={slides.length >= MAX_SLIDES}
+                className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50"
+              >
                 Add slide
               </button>
               <button type="button" onClick={removeSlide} className="rounded-md border border-slate-300 px-2 py-1">
                 Remove slide
               </button>
-              <button type="button" aria-label="Move slide up" onClick={() => move(-1)} disabled={active === 0} className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50">
+              <button
+                type="button"
+                aria-label="Move slide up"
+                onClick={() => move(-1)}
+                disabled={active === 0}
+                className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50"
+              >
                 Up
               </button>
-              <button type="button" aria-label="Move slide down" onClick={() => move(1)} disabled={active === slides.length - 1} className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50">
+              <button
+                type="button"
+                aria-label="Move slide down"
+                onClick={() => move(1)}
+                disabled={active === slides.length - 1}
+                className="rounded-md border border-slate-300 px-2 py-1 disabled:opacity-50"
+              >
                 Down
               </button>
             </div>
@@ -279,11 +324,21 @@ export default function NoteEditor() {
         )}
         <div className="flex flex-wrap gap-2">
           {!published && (
-            <button type="button" disabled={saving} onClick={() => save('draft')} className="rounded-md border border-slate-300 bg-white px-4 py-2 disabled:opacity-60">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => save('draft')}
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 disabled:opacity-60"
+            >
               Save Draft
             </button>
           )}
-          <button type="button" disabled={saving} onClick={() => setDialog(true)} className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => setDialog(true)}
+            className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60"
+          >
             {published ? 'Update' : 'Publish'}
           </button>
           <Link to="/drafts" className="px-3 py-2 text-sm text-slate-600 underline">

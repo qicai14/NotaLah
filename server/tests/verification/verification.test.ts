@@ -85,7 +85,10 @@ describe('Lecturer Super Like (UC19)', () => {
 
   it('VER-TC9: verifying moves V from 0 to 1 and ranks P above an identical unverified post', async () => {
     const twin = await insertNote(student);
-    await pool.query(`UPDATE "POST_T" SET pst_published_at = (SELECT pst_published_at FROM "POST_T" WHERE pst_id = $1) WHERE pst_id = $2`, [twin, note]);
+    await pool.query(
+      `UPDATE "POST_T" SET pst_published_at = (SELECT pst_published_at FROM "POST_T" WHERE pst_id = $1) WHERE pst_id = $2`,
+      [twin, note],
+    );
     const viewer = await insertUser();
     expect((await feedItem(viewer, note)).components.V).toBe(0);
     await verify(await lecturer(), note);

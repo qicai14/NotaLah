@@ -28,7 +28,11 @@ export function parseKeyset(req: Request, res: Response, parts: number, defaultL
       .regex(new RegExp(`^\\d{1,17}(?:_\\d{1,17}){${parts - 1}}$`), 'Invalid cursor')
       .refine((c) => Number(c.slice(c.lastIndexOf('_') + 1)) <= 2147483647, 'Invalid cursor')
       .optional(),
-    limit: z.coerce.number({ error: 'Invalid limit' }).int('Invalid limit').min(1, 'Invalid limit').max(MAX_LIMIT, 'Invalid limit')
+    limit: z.coerce
+      .number({ error: 'Invalid limit' })
+      .int('Invalid limit')
+      .min(1, 'Invalid limit')
+      .max(MAX_LIMIT, 'Invalid limit')
       .default(defaultLimit),
   });
   const parsed = schema.safeParse(req.query);
@@ -37,7 +41,10 @@ export function parseKeyset(req: Request, res: Response, parts: number, defaultL
 }
 
 /** The first `limit` rows of a query run with LIMIT limit + 1, without their `cursor` column, and the cursor of the last one when more follow. */
-export function toPage<T extends { cursor: string | null }>(rows: T[], limit: number): { items: Omit<T, 'cursor'>[]; nextCursor: string | null } {
+export function toPage<T extends { cursor: string | null }>(
+  rows: T[],
+  limit: number,
+): { items: Omit<T, 'cursor'>[]; nextCursor: string | null } {
   const page = rows.slice(0, limit);
   return {
     items: page.map(({ cursor: _cursor, ...item }) => item),

@@ -6,7 +6,17 @@ import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { programmeExists } from '../modules/repository';
 import { notify } from '../notifications/service';
-import { block, findProfile, follow, getFollowState, listBlocks, listFollows, unblock, unfollow, updateProfile } from './repository';
+import {
+  block,
+  findProfile,
+  follow,
+  getFollowState,
+  listBlocks,
+  listFollows,
+  unblock,
+  unfollow,
+  updateProfile,
+} from './repository';
 
 export const usersRouter = Router();
 const PROFILE_NOTES = 50;
@@ -24,16 +34,23 @@ const profileSchema = z.object({
     .trim()
     .min(1, 'Display name is required')
     .max(50, 'Display name must be at most 50 characters'),
-  programme: z.string({ error: 'Invalid programme' }).trim().max(100, 'Programme must be at most 100 characters').optional(),
+  programme: z
+    .string({ error: 'Invalid programme' })
+    .trim()
+    .max(100, 'Programme must be at most 100 characters')
+    .optional(),
   bio: z.string({ error: 'Invalid bio' }).trim().max(300, 'Bio must be at most 300 characters').optional(),
 });
 
 usersRouter.put('/me', requireAuth, async (req, res) => {
   const parsed = profileSchema.safeParse(bodyOrEmpty(req));
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { displayName, programme, bio } = parsed.data;
   if (programme && !(await programmeExists(programme, me(req).id))) {
-    return res.status(400).json({ error: 'Validation failed', errors: { programme: 'Choose a programme from the list' } });
+    return res
+      .status(400)
+      .json({ error: 'Validation failed', errors: { programme: 'Choose a programme from the list' } });
   }
   // omitted fields keep their value; an empty string clears to NULL (D22)
   const user = await updateProfile(me(req).id, {
@@ -108,12 +125,15 @@ usersRouter.get('/:id', optionalAuth, async (req, res) => {
   const profile = await findProfile(Number(req.params.id), viewerId(req));
   if (!profile) return res.status(404).json({ error: 'User not found' });
   // wireframe 34: someone the viewer blocked shows only enough to offer Unblock (D49)
-  if (profile.blockedByMe) return res.json({ user: { id: profile.id, displayName: profile.displayName, blockedByMe: true } });
+  if (profile.blockedByMe)
+    return res.json({ user: { id: profile.id, displayName: profile.displayName, blockedByMe: true } });
   const own = profile.id === viewerId(req);
   const [notes, draftCount] = await Promise.all([
     listNotesByAuthor(profile.id, viewerId(req), { cursor: null, limit: PROFILE_NOTES }),
     own ? countDrafts(profile.id) : undefined,
   ]);
   // the first page is embedded; GET /:id/notes?cursor=<notesNextCursor> continues it (D40)
-  res.json({ user: { ...profile, notes: notes.items, notesNextCursor: notes.nextCursor, ...(own ? { draftCount } : {}) } });
+  res.json({
+    user: { ...profile, notes: notes.items, notesNextCursor: notes.nextCursor, ...(own ? { draftCount } : {}) },
+  });
 });

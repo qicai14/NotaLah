@@ -13,7 +13,11 @@ const PAGE_SIZE = 20;
 /** Results per section in the Top tab, which pages its notes only. */
 const TOP_SECTION_SIZE = 3;
 
-const id = (message: string) => z.string({ error: message }).refine((s) => !invalidId(s), message).transform(Number);
+const id = (message: string) =>
+  z
+    .string({ error: message })
+    .refine((s) => !invalidId(s), message)
+    .transform(Number);
 
 const searchSchema = z
   .object({
@@ -26,7 +30,10 @@ const searchSchema = z
     to: z.iso.date({ error: 'Invalid date' }).optional(),
     asOf: z.iso.datetime({ offset: true, error: 'Invalid asOf' }).optional(),
   })
-  .refine((s) => s.term === undefined || (s.from === undefined && s.to === undefined), 'Choose a term or a date range, not both')
+  .refine(
+    (s) => s.term === undefined || (s.from === undefined && s.to === undefined),
+    'Choose a term or a date range, not both',
+  )
   .refine((s) => !s.from || !s.to || s.from <= s.to, 'Invalid date range');
 
 // FR4, FR5, FR12, FR15 (D48). Guests search public notes, rate-limited by IP (D44).
@@ -57,7 +64,11 @@ searchRouter.get('/', optionalAuth, async (req, res) => {
   if (s.tab === 'notes' || keyset.cursor) return res.json(notes);
   const first = { cursor: null, limit: TOP_SECTION_SIZE };
   const [people, hashtags, modules] = text
-    ? await Promise.all([searchPeople(viewer, text, first), searchHashtags(viewer, text, first), searchModules(viewer, text, first)])
+    ? await Promise.all([
+        searchPeople(viewer, text, first),
+        searchHashtags(viewer, text, first),
+        searchModules(viewer, text, first),
+      ])
     : [empty, empty, empty];
   res.json({ ...notes, people: people.items, hashtags: hashtags.items, modules: modules.items });
 });

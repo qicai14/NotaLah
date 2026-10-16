@@ -8,7 +8,8 @@ beforeEach(truncateAll);
 afterAll(() => pool.end());
 
 const followReq = (uid: number, target: number) => request(app).post(`/api/users/${target}/follow`).set(asUser(uid));
-const unfollowReq = (uid: number, target: number) => request(app).delete(`/api/users/${target}/follow`).set(asUser(uid));
+const unfollowReq = (uid: number, target: number) =>
+  request(app).delete(`/api/users/${target}/follow`).set(asUser(uid));
 const get = (uid: number, url: string) => request(app).get(url).set(asUser(uid));
 const ids = (items: { id: number }[]) => items.map((i) => i.id);
 
@@ -17,9 +18,19 @@ describe('Follows', () => {
     const [a, b] = [await insertUser(), await insertUser()];
     const res = await followReq(a, b);
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ followerCount: 1, followingCount: 0, followedByMe: true, followsMe: false, isFriend: false });
+    expect(res.body).toEqual({
+      followerCount: 1,
+      followingCount: 0,
+      followedByMe: true,
+      followsMe: false,
+      isFriend: false,
+    });
     expect((await get(a, `/api/users/${a}`)).body.user).toMatchObject({ followerCount: 0, followingCount: 1 });
-    expect((await get(b, `/api/users/${a}`)).body.user).toMatchObject({ followedByMe: false, followsMe: true, isFriend: false });
+    expect((await get(b, `/api/users/${a}`)).body.user).toMatchObject({
+      followedByMe: false,
+      followsMe: true,
+      isFriend: false,
+    });
   });
 
   it('USR-TC13: a repeated follow returns 200 and keeps one row', async () => {
@@ -101,7 +112,12 @@ describe('Follows', () => {
   });
 
   it('USR-TC18: a contacts-only note is visible to a friend, not to a one-way follower', async () => {
-    const [author, friend, fan, followee] = [await insertUser(), await insertUser(), await insertUser(), await insertUser()];
+    const [author, friend, fan, followee] = [
+      await insertUser(),
+      await insertUser(),
+      await insertUser(),
+      await insertUser(),
+    ];
     await befriend(author, friend);
     await follow(fan, author);
     await follow(author, followee);
@@ -126,7 +142,12 @@ describe('Follows', () => {
     expect(p1.status).toBe(200);
     expect(ids(p1.body.items)).toEqual(fans.slice(5).reverse());
     expect(p1.body.items[0]).toEqual({
-      id: fans[24], displayName: 'Test User', role: 'student', isVerifiedLecturer: false, followedByMe: false, isFriend: false,
+      id: fans[24],
+      displayName: 'Test User',
+      role: 'student',
+      isVerifiedLecturer: false,
+      followedByMe: false,
+      isFriend: false,
     });
     const p2 = await get(target, `/api/users/${target}/followers?cursor=${p1.body.nextCursor}`);
     expect(ids(p2.body.items)).toEqual(fans.slice(0, 5).reverse());
@@ -170,7 +191,9 @@ describe('Follows', () => {
     await follow(other, third);
     const res = await request(app).post(`/api/admin/users/${gone}/delete`).set(asUser(admin)).send({ reason: 'Spam' });
     expect(res.status).toBe(200);
-    const { rows } = await pool.query(`SELECT 1 FROM "FOLLOW_T" WHERE $1 IN (fol_follower_id, fol_followee_id)`, [gone]);
+    const { rows } = await pool.query(`SELECT 1 FROM "FOLLOW_T" WHERE $1 IN (fol_follower_id, fol_followee_id)`, [
+      gone,
+    ]);
     expect(rows).toHaveLength(0);
     expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(1);
   });

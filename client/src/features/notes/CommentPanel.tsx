@@ -9,8 +9,18 @@ import { LecturerBadge } from '../../components/LecturerBadge';
 
 const MAX = 1000;
 
-function Composer({ noteId, slideCount, parentId, onDone, onCancel }: {
-  noteId: number; slideCount: number; parentId?: number; onDone(): void; onCancel?(): void;
+function Composer({
+  noteId,
+  slideCount,
+  parentId,
+  onDone,
+  onCancel,
+}: {
+  noteId: number;
+  slideCount: number;
+  parentId?: number;
+  onDone(): void;
+  onCancel?(): void;
 }) {
   const [body, setBody] = useState('');
   const [slideNo, setSlideNo] = useState('');
@@ -43,7 +53,13 @@ function Composer({ noteId, slideCount, parentId, onDone, onCancel }: {
       <label htmlFor={`${idp}-body`} className="text-sm font-medium">
         {parentId ? 'Your reply' : 'Add a comment'}
       </label>
-      <textarea id={`${idp}-body`} value={body} onChange={(e) => setBody(e.target.value)} rows={parentId ? 2 : 3} className="rounded-md border border-slate-300 px-3 py-2" />
+      <textarea
+        id={`${idp}-body`}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={parentId ? 2 : 3}
+        className="rounded-md border border-slate-300 px-3 py-2"
+      />
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className={body.length > MAX ? 'text-red-600' : 'text-slate-500'}>
           {body.length}/{MAX}
@@ -51,7 +67,11 @@ function Composer({ noteId, slideCount, parentId, onDone, onCancel }: {
         {!parentId && slideCount > 0 && (
           <label className="flex items-center gap-1">
             Slide
-            <select value={slideNo} onChange={(e) => setSlideNo(e.target.value)} className="rounded-md border border-slate-300 px-2 py-1">
+            <select
+              value={slideNo}
+              onChange={(e) => setSlideNo(e.target.value)}
+              className="rounded-md border border-slate-300 px-2 py-1"
+            >
               <option value="">Whole note</option>
               {Array.from({ length: slideCount }, (_, i) => (
                 <option key={i} value={i + 1}>
@@ -68,7 +88,11 @@ function Composer({ noteId, slideCount, parentId, onDone, onCancel }: {
         </p>
       )}
       <div className="flex gap-2">
-        <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-4 py-1.5 text-white disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={busy}
+          className="rounded-md bg-indigo-600 px-4 py-1.5 text-white disabled:opacity-60"
+        >
           {busy ? 'Posting…' : parentId ? 'Reply' : 'Post comment'}
         </button>
         {onCancel && (
@@ -81,8 +105,22 @@ function Composer({ noteId, slideCount, parentId, onDone, onCancel }: {
   );
 }
 
-function CommentRow({ c, pinned, canReply, replying, onReply, onChanged, onError }: {
-  c: CommentReply; pinned?: boolean; canReply: boolean; replying: boolean; onReply(): void; onChanged(): void; onError(m: string): void;
+function CommentRow({
+  c,
+  pinned,
+  canReply,
+  replying,
+  onReply,
+  onChanged,
+  onError,
+}: {
+  c: CommentReply;
+  pinned?: boolean;
+  canReply: boolean;
+  replying: boolean;
+  onReply(): void;
+  onChanged(): void;
+  onError(m: string): void;
 }) {
   const { user } = useAuth();
   const deleted = c.author === null;
@@ -96,13 +134,16 @@ function CommentRow({ c, pinned, canReply, replying, onReply, onChanged, onError
   }
   return (
     <div className={pinned ? 'rounded-md bg-indigo-50 p-2' : ''}>
-      {!deleted && <p className="text-sm text-slate-600">
-        <span className="font-medium text-slate-900">{c.author!.displayName}</span>
-        {c.author!.isVerifiedLecturer && <LecturerBadge />}{' '}
-        · {timeAgo(c.createdAt)}
-        {pinned && <span className="ml-2 rounded bg-indigo-600 px-1.5 text-xs text-white">Pinned lecturer comment</span>}
-        {c.slideNo && <span className="ml-2 rounded bg-slate-200 px-1.5 text-xs">Slide {c.slideNo}</span>}
-      </p>}
+      {!deleted && (
+        <p className="text-sm text-slate-600">
+          <span className="font-medium text-slate-900">{c.author!.displayName}</span>
+          {c.author!.isVerifiedLecturer && <LecturerBadge />} · {timeAgo(c.createdAt)}
+          {pinned && (
+            <span className="ml-2 rounded bg-indigo-600 px-1.5 text-xs text-white">Pinned lecturer comment</span>
+          )}
+          {c.slideNo && <span className="ml-2 rounded bg-slate-200 px-1.5 text-xs">Slide {c.slideNo}</span>}
+        </p>
+      )}
       <p className={`whitespace-pre-wrap ${deleted ? 'italic text-slate-500' : ''}`}>{c.body}</p>
       {!deleted && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -120,7 +161,9 @@ function CommentRow({ c, pinned, canReply, replying, onReply, onChanged, onError
               Reply
             </button>
           )}
-          {c.author!.id === user?.id && <ConfirmButton label="Delete" onConfirm={() => act(() => api(`/comments/${c.id}`, { method: 'DELETE' }))} />}
+          {c.author!.id === user?.id && (
+            <ConfirmButton label="Delete" onConfirm={() => act(() => api(`/comments/${c.id}`, { method: 'DELETE' }))} />
+          )}
         </div>
       )}
     </div>
@@ -149,7 +192,14 @@ export function CommentPanel({ noteId, slideCount }: { noteId: number; slideCoun
       <ul className="mb-4 flex flex-col gap-4">
         {data?.comments.map((c) => (
           <li key={c.id}>
-            <CommentRow c={c} pinned={c.pinned} canReply replying={replyTo === c.id} onReply={() => setReplyTo(c.id)} {...common} />
+            <CommentRow
+              c={c}
+              pinned={c.pinned}
+              canReply
+              replying={replyTo === c.id}
+              onReply={() => setReplyTo(c.id)}
+              {...common}
+            />
             {(c.replies.length > 0 || replyTo === c.id) && (
               <ul className="ml-5 mt-2 flex flex-col gap-3 border-l-2 border-slate-200 pl-3">
                 {c.replies.map((r) => (
@@ -159,7 +209,13 @@ export function CommentPanel({ noteId, slideCount }: { noteId: number; slideCoun
                 ))}
                 {replyTo === c.id && (
                   <li>
-                    <Composer noteId={noteId} slideCount={slideCount} parentId={c.id} onCancel={() => setReplyTo(null)} onDone={() => (setReplyTo(null), reload())} />
+                    <Composer
+                      noteId={noteId}
+                      slideCount={slideCount}
+                      parentId={c.id}
+                      onCancel={() => setReplyTo(null)}
+                      onDone={() => (setReplyTo(null), reload())}
+                    />
                   </li>
                 )}
               </ul>

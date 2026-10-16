@@ -5,8 +5,17 @@ import { blockedWith, friends, userRef } from '../users/repository';
 import { NOTIFICATIONS } from './config';
 
 export const NOTIFICATION_TYPES = [
-  'mention', 'super_like', 'follow', 'lecturer_approved', 'lecturer_rejected', 'note_hidden',
-  'message_request', 'collab_request', 'collab_approved', 'collab_declined', 'edited_since_verification',
+  'mention',
+  'super_like',
+  'follow',
+  'lecturer_approved',
+  'lecturer_rejected',
+  'note_hidden',
+  'message_request',
+  'collab_request',
+  'collab_approved',
+  'collab_declined',
+  'edited_since_verification',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -25,7 +34,10 @@ export interface NewNotification {
  * actor, not active or restricted (suspended and deleted accounts get nothing), in a block with the actor (D49), or
  * already got an identical notification within the type's `dedupeWindowMinutes`.
  */
-export async function insertNotifications(n: NewNotification, recipientIds: number[]): Promise<{ id: number; recipientId: number }[]> {
+export async function insertNotifications(
+  n: NewNotification,
+  recipientIds: number[],
+): Promise<{ id: number; recipientId: number }[]> {
   const { rows } = await pool.query<{ id: number; recipientId: number }>(
     `INSERT INTO "NOTIFICATION_T" (ntf_usr_id, ntf_actor_id, ntf_type, ntf_pst_id, ntf_cmt_id, ntf_crq_id, ntf_mrq_id)
      SELECT u.usr_id, $2::INT, $3::VARCHAR, $4::INT, $5::INT, $6::INT, $7::INT
@@ -38,8 +50,16 @@ export async function insertNotifications(n: NewNotification, recipientIds: numb
                          AND d.ntf_crq_id IS NOT DISTINCT FROM $6::INT AND d.ntf_mrq_id IS NOT DISTINCT FROM $7::INT
                          AND d.ntf_created_at > NOW() - make_interval(mins => $8))
      RETURNING ntf_id AS "id", ntf_usr_id AS "recipientId"`,
-    [[...new Set(recipientIds)], n.actorId, n.type, n.noteId ?? null, n.commentId ?? null, n.collabRequestId ?? null,
-      n.messageRequestId ?? null, NOTIFICATIONS.dedupeWindowMinutes[n.type] ?? 0],
+    [
+      [...new Set(recipientIds)],
+      n.actorId,
+      n.type,
+      n.noteId ?? null,
+      n.commentId ?? null,
+      n.collabRequestId ?? null,
+      n.messageRequestId ?? null,
+      NOTIFICATIONS.dedupeWindowMinutes[n.type] ?? 0,
+    ],
   );
   return rows;
 }
@@ -49,9 +69,19 @@ export async function insertNotifications(n: NewNotification, recipientIds: numb
  * display name followed by a non-word character, and they must be the note's author, have commented in the same thread (root comment or its replies) or
  * be a friend of the commenter (D38). Visibility of the note is checked by the caller.
  */
-export async function mentionable(
-  { noteId, rootId, actorId, body, candidates }: { noteId: number; rootId: number; actorId: number; body: string; candidates: number[] },
-): Promise<number[]> {
+export async function mentionable({
+  noteId,
+  rootId,
+  actorId,
+  body,
+  candidates,
+}: {
+  noteId: number;
+  rootId: number;
+  actorId: number;
+  body: string;
+  candidates: number[];
+}): Promise<number[]> {
   const { rows } = await pool.query<{ id: number }>(
     // The name's punctuation is escaped for the regex; a letter, digit or _ right after it means a longer name.
     String.raw`SELECT u.usr_id AS "id" FROM "USER_T" u JOIN "POST_T" p ON p.pst_id = $1
@@ -116,7 +146,9 @@ const COLS = `n.ntf_id AS "id", n.ntf_type AS "type", n.ntf_read_at IS NOT NULL 
 
 /** One page of the user's notifications, newest first, optionally only `types` (the drawer's groups); keyset on (created at, id), D40. */
 export async function listNotifications(
-  userId: number, types: NotificationType[] | null, { cursor, limit }: KeysetPage,
+  userId: number,
+  types: NotificationType[] | null,
+  { cursor, limit }: KeysetPage,
 ): Promise<{ items: Notification[]; nextCursor: string | null }> {
   const { rows } = await pool.query<Notification & { cursor: string }>(
     `SELECT ${COLS}, ${micros('n.ntf_created_at')} || '_' || n.ntf_id AS "cursor"
@@ -132,12 +164,17 @@ export async function listNotifications(
 
 /** One notification as its recipient sees it, for the live event; undefined if it is not shown to them. */
 export async function getNotification(id: number, userId: number): Promise<Notification | undefined> {
-  const { rows } = await pool.query<Notification>(`SELECT ${COLS} FROM "NOTIFICATION_T" n WHERE ${SHOWN} AND n.ntf_id = $2`, [userId, id]);
+  const { rows } = await pool.query<Notification>(
+    `SELECT ${COLS} FROM "NOTIFICATION_T" n WHERE ${SHOWN} AND n.ntf_id = $2`,
+    [userId, id],
+  );
   return rows[0];
 }
 
 /** Unread notifications the user sees, in total and per type. */
-export async function unreadCount(userId: number): Promise<{ total: number; byType: Partial<Record<NotificationType, number>> }> {
+export async function unreadCount(
+  userId: number,
+): Promise<{ total: number; byType: Partial<Record<NotificationType, number>> }> {
   const { rows } = await pool.query<{ type: NotificationType; n: number }>(
     `SELECT n.ntf_type AS "type", COUNT(*)::INT AS "n" FROM "NOTIFICATION_T" n
      WHERE ${SHOWN} AND n.ntf_read_at IS NULL GROUP BY n.ntf_type`,

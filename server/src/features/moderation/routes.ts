@@ -40,7 +40,12 @@ adminRouter.post('/lecturer-applications/:userId/reject', (req, res) => decide(r
 
 /** A required trimmed text of 1-300 characters (remark or reason); sends 400 and returns undefined when missing. */
 function requiredText(res: Response, value: unknown, label: 'Remark' | 'Reason'): string | undefined {
-  const parsed = z.string().trim().min(1).max(300, `${label} must be at most 300 characters`).safeParse(value ?? '');
+  const parsed = z
+    .string()
+    .trim()
+    .min(1)
+    .max(300, `${label} must be at most 300 characters`)
+    .safeParse(value ?? '');
   if (parsed.success) return parsed.data;
   const tooLong = parsed.error.issues[0].code === 'too_big';
   res.status(400).json({ error: tooLong ? parsed.error.issues[0].message : `${label} is required` });
@@ -63,7 +68,8 @@ adminRouter.get('/reports/:noteId', async (req, res) => {
 
 adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   const outcome = req.body?.outcome;
-  if (outcome !== 'dismiss' && outcome !== 'hide') return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
+  if (outcome !== 'dismiss' && outcome !== 'hide')
+    return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
   const remark = requiredText(res, req.body?.remark, 'Remark');
   if (remark === undefined) return;
   const noteId = Number(req.params.noteId);
@@ -92,7 +98,11 @@ adminRouter.post('/users/:userId/:action', async (req, res) => {
   res.json({ user: out });
 });
 
-const moduleName = z.string({ error: 'Name is required' }).trim().min(1, 'Name is required').max(150, 'Name must be at most 150 characters');
+const moduleName = z
+  .string({ error: 'Name is required' })
+  .trim()
+  .min(1, 'Name is required')
+  .max(150, 'Name must be at most 150 characters');
 const moduleProgramme = z
   .string({ error: 'Programme is required' })
   .trim()
@@ -117,7 +127,8 @@ adminRouter.get('/modules', async (_req, res) => {
 
 adminRouter.post('/modules', async (req, res) => {
   const parsed = newModuleSchema.safeParse(bodyOrEmpty(req));
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { code, name, programme } = parsed.data;
   try {
     res.status(201).json({ module: await modules.createModule({ code, name, programme }) });
@@ -130,7 +141,8 @@ adminRouter.post('/modules', async (req, res) => {
 // The code is immutable: notes and the dissertation refer to it, so only name and programme can change.
 adminRouter.patch('/modules/:moduleId', async (req, res) => {
   const parsed = moduleEditSchema.safeParse(bodyOrEmpty(req));
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { name, programme } = parsed.data;
   if (name === undefined && programme === undefined) return res.status(400).json({ error: 'Nothing to change' });
   const updated = await modules.updateModule(Number(req.params.moduleId), { name, programme });
@@ -140,7 +152,11 @@ adminRouter.patch('/modules/:moduleId', async (req, res) => {
 
 const termSchema = z
   .object({
-    name: z.string({ error: 'Name is required' }).trim().min(1, 'Name is required').max(50, 'Name must be at most 50 characters'),
+    name: z
+      .string({ error: 'Name is required' })
+      .trim()
+      .min(1, 'Name is required')
+      .max(50, 'Name must be at most 50 characters'),
     startDate: z.iso.date({ error: 'Start date must be a date (YYYY-MM-DD)' }),
     endDate: z.iso.date({ error: 'End date must be a date (YYYY-MM-DD)' }),
   })
@@ -153,7 +169,8 @@ adminRouter.get('/terms', async (_req, res) => {
 // Overlapping terms are allowed: intakes differ per programme (D48).
 adminRouter.post('/terms', async (req, res) => {
   const parsed = termSchema.safeParse(bodyOrEmpty(req));
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   try {
     res.status(201).json({ term: await modules.createTerm(parsed.data) });
   } catch (err) {
@@ -164,7 +181,8 @@ adminRouter.post('/terms', async (req, res) => {
 
 adminRouter.put('/terms/:termId', async (req, res) => {
   const parsed = termSchema.safeParse(bodyOrEmpty(req));
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   try {
     const term = await modules.updateTerm(Number(req.params.termId), parsed.data);
     if (!term) return res.status(404).json({ error: 'Term not found' });

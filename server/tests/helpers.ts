@@ -72,13 +72,19 @@ export async function insertNote(authorId: number, o: NoteOpts = {}): Promise<nu
   );
   const id = rows[0].pst_id;
   for (let i = 1; i <= (o.slides ?? 3); i++) {
-    await pool.query(`INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content) VALUES ($1, $2, '<p>x</p>')`, [id, i]);
+    await pool.query(`INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content) VALUES ($1, $2, '<p>x</p>')`, [
+      id,
+      i,
+    ]);
   }
   return id;
 }
 
 export async function follow(follower: number, followee: number): Promise<void> {
-  await pool.query(`INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [follower, followee]);
+  await pool.query(`INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [
+    follower,
+    followee,
+  ]);
 }
 
 /** Makes two users friends (a mutual follow, D38). */
@@ -89,7 +95,8 @@ export async function befriend(a: number, b: number): Promise<void> {
 
 /** Follows `nextCursor` from the first page to the last; returns each page's `key` list (keyset lists, D40). */
 export async function walkPages<T>(
-  fetchPage: (cursor?: string) => Promise<{ body: Record<string, unknown> }>, key: string,
+  fetchPage: (cursor?: string) => Promise<{ body: Record<string, unknown> }>,
+  key: string,
 ): Promise<T[][]> {
   const pages: T[][] = [];
   let cursor: string | undefined;

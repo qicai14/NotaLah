@@ -1,7 +1,13 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
 import { approvedLecturer, blockedWith, viewerIsAdmin } from '../users/repository';
-import { VISIBLE, VISIBLE_IGNORING_BLOCKS, VISIBLE_OR_ADMIN, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
+import {
+  VISIBLE,
+  VISIBLE_IGNORING_BLOCKS,
+  VISIBLE_OR_ADMIN,
+  SUMMARY_COLS,
+  type NoteSummary,
+} from '../notes/repository';
 
 /** SQL: comment c (author alias u) shows as unavailable: deleted, by a suspended author and the viewer $1 is not an admin (D47), or by someone in a block with the viewer (D49). */
 const GONE = (c: string, u: string) =>
@@ -18,7 +24,12 @@ export interface Target {
 }
 
 /** Engagement needs a published note the viewer may see; undefined otherwise (callers answer 404). Reporting passes `ignoreBlocks` (D49); reading comments passes `adminRead`, so an admin also sees a suspended author's note (D47). */
-export async function getTarget(noteId: number, viewerId: number, ignoreBlocks = false, adminRead = false): Promise<Target | undefined> {
+export async function getTarget(
+  noteId: number,
+  viewerId: number,
+  ignoreBlocks = false,
+  adminRead = false,
+): Promise<Target | undefined> {
   const { rows } = await pool.query<Target>(
     `SELECT p.pst_usr_id AS "authorId",
             (SELECT COUNT(*)::INT FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id) AS "slideCount",
@@ -42,7 +53,8 @@ export async function logView(noteId: number, viewerId: number): Promise<void> {
 }
 
 const noteLikes = async (noteId: number): Promise<number> =>
-  (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "LIKE_T" WHERE lik_pst_id = $1`, [noteId])).rows[0].n;
+  (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "LIKE_T" WHERE lik_pst_id = $1`, [noteId])).rows[0]
+    .n;
 
 /** Idempotent: the interaction is logged only when the like row is new, and never for the author or an edit co-author (D47). */
 export async function likeNote(noteId: number, userId: number): Promise<{ added: boolean; likes: number }> {
@@ -89,7 +101,9 @@ export interface Comment extends Reply {
  */
 // shortcut: replies are not paged; page them too if one thread ever grows to thousands of replies.
 export async function listComments(
-  noteId: number, viewerId: number, { cursor, limit }: KeysetPage,
+  noteId: number,
+  viewerId: number,
+  { cursor, limit }: KeysetPage,
 ): Promise<{ items: Comment[]; nextCursor: string | null }> {
   const { rows } = await pool.query<CommentRow & { cursor: string | null }>(
     `WITH top AS (
@@ -124,17 +138,25 @@ export async function listComments(
   for (const { parentId, deleted: _deleted, cursor: _cursor, ...r } of rows) {
     if (parentId !== null) replies.set(parentId, [...(replies.get(parentId) ?? []), r]); // a reply has no replies of its own
   }
-  const { items, nextCursor } = toPage(rows.filter((r) => r.parentId === null), limit);
+  const { items, nextCursor } = toPage(
+    rows.filter((r) => r.parentId === null),
+    limit,
+  );
   return {
     items: items.map(({ parentId: _parentId, deleted: _deleted, ...r }) => ({
-      ...r, pinned: r.author?.isVerifiedLecturer ?? false, replies: replies.get(r.id) ?? [],
+      ...r,
+      pinned: r.author?.isVerifiedLecturer ?? false,
+      replies: replies.get(r.id) ?? [],
     })),
     nextCursor,
   };
 }
 
 /** A live comment the viewer may reply to: not deleted, its author not suspended and in no block with the viewer (D49). */
-export async function getParent(id: number, viewerId: number): Promise<{ noteId: number; parentId: number | null } | undefined> {
+export async function getParent(
+  id: number,
+  viewerId: number,
+): Promise<{ noteId: number; parentId: number | null } | undefined> {
   const { rows } = await pool.query<{ noteId: number; parentId: number | null }>(
     `SELECT c.cmt_pst_id AS "noteId", c.cmt_parent_id AS "parentId" FROM "COMMENT_T" c JOIN "USER_T" u ON u.usr_id = c.cmt_usr_id
      WHERE c.cmt_id = $1 AND NOT c.cmt_is_deleted AND u.usr_status <> 'suspended' AND NOT ${blockedWith('$2', 'u.usr_id')}`,
@@ -149,7 +171,11 @@ export interface NewComment {
   parentId: number | null;
 }
 
-export async function addComment(noteId: number, userId: number, c: NewComment): Promise<{ id: number; createdAt: Date }> {
+export async function addComment(
+  noteId: number,
+  userId: number,
+  c: NewComment,
+): Promise<{ id: number; createdAt: Date }> {
   const { rows } = await pool.query<{ id: number; createdAt: Date }>(
     `WITH c AS (INSERT INTO "COMMENT_T" (cmt_pst_id, cmt_usr_id, cmt_parent_id, cmt_slide_no, cmt_body)
                 VALUES ($1, $2, $3, $4, $5) RETURNING cmt_id, cmt_created_at),
@@ -188,7 +214,8 @@ export async function softDeleteComment(id: number, userId: number): Promise<boo
 }
 
 const commentLikes = async (id: number): Promise<number> =>
-  (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = $1`, [id])).rows[0].n;
+  (await pool.query<{ n: number }>(`SELECT COUNT(*)::INT AS n FROM "COMMENT_LIKE_T" WHERE clk_cmt_id = $1`, [id]))
+    .rows[0].n;
 
 export async function likeComment(id: number, userId: number): Promise<{ added: boolean; likes: number }> {
   const { rowCount } = await pool.query(
@@ -204,7 +231,12 @@ export async function unlikeComment(id: number, userId: number): Promise<number>
 }
 
 /** Returns false when the user already has an open report on the note (partial unique index, SQLSTATE 23505). */
-export async function addReport(noteId: number, reporterId: number, reason: string, details: string | null): Promise<boolean> {
+export async function addReport(
+  noteId: number,
+  reporterId: number,
+  reason: string,
+  details: string | null,
+): Promise<boolean> {
   try {
     await pool.query(
       `INSERT INTO "REPORT_T" (rpt_pst_id, rpt_reporter_id, rpt_reason, rpt_details) VALUES ($1, $2, $3, $4)`,
@@ -218,7 +250,10 @@ export async function addReport(noteId: number, reporterId: number, reason: stri
 }
 
 export async function addBookmark(noteId: number, userId: number): Promise<void> {
-  await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [userId, noteId]);
+  await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [
+    userId,
+    noteId,
+  ]);
 }
 
 export async function removeBookmark(noteId: number, userId: number): Promise<void> {
@@ -230,7 +265,10 @@ export interface SavedNote extends NoteSummary {
 }
 
 /** One page of the user's saved notes, newest bookmark first; keyset on (saved at, note id), D40. */
-export async function listBookmarks(userId: number, { cursor, limit }: KeysetPage): Promise<{ items: SavedNote[]; nextCursor: string | null }> {
+export async function listBookmarks(
+  userId: number,
+  { cursor, limit }: KeysetPage,
+): Promise<{ items: SavedNote[]; nextCursor: string | null }> {
   const { rows } = await pool.query<SavedNote & { cursor: string }>(
     `SELECT ${SUMMARY_COLS}, b.bmk_created_at AS "savedAt", ${micros('b.bmk_created_at')} || '_' || p.pst_id AS "cursor"
      FROM "BOOKMARK_T" b JOIN "POST_T" p ON p.pst_id = b.bmk_pst_id

@@ -50,6 +50,8 @@ jobs:
         run: psql -h localhost -U parp -d postgres -c "CREATE DATABASE parp_test"
       - name: Lint
         run: npm run lint
+      - name: Format check
+        run: npm run format:check
       - name: Typecheck
         run: npm run typecheck
       - name: Test

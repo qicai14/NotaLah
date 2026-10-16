@@ -13,8 +13,10 @@ const api = {
   patch: (who: number, url: string, body: object = {}) => request(app).patch(url).set(asUser(who)).send(body),
   del: (who: number, url: string) => request(app).delete(url).set(asUser(who)),
 };
-const dm = (from: number, to: number, body = 'hello', extra: object = {}) => api.post(from, '/api/messages', { toUserId: to, body, ...extra });
-const send = (from: number, conv: number, body = 'hi', extra: object = {}) => api.post(from, `/api/conversations/${conv}/messages`, { body, ...extra });
+const dm = (from: number, to: number, body = 'hello', extra: object = {}) =>
+  api.post(from, '/api/messages', { toUserId: to, body, ...extra });
+const send = (from: number, conv: number, body = 'hi', extra: object = {}) =>
+  api.post(from, `/api/conversations/${conv}/messages`, { body, ...extra });
 const count = async (table: string) => Number((await pool.query(`SELECT COUNT(*) AS n FROM "${table}"`)).rows[0].n);
 /** `n` users created in order, so their ids ascend. */
 async function users(n: number): Promise<number[]> {
@@ -63,7 +65,10 @@ describe('Messages', () => {
   it('MSG-TC5: a second request while one is pending is refused, in either direction', async () => {
     const [a, b] = await users(2);
     expect((await dm(a, b)).status).toBe(202);
-    for (const [from, to] of [[a, b], [b, a]]) {
+    for (const [from, to] of [
+      [a, b],
+      [b, a],
+    ]) {
       const res = await dm(from, to, 'again');
       expect(res.status).toBe(409);
       expect(res.body.error).toBe('A message request between you is already pending');
@@ -76,7 +81,14 @@ describe('Messages', () => {
     const { body } = await dm(a, b, 'hi there');
     const inbox = await api.get(b, '/api/message-requests');
     expect(inbox.body.requests).toEqual([
-      { id: body.request.id, sender: { id: a, displayName: 'User 0' }, body: 'hi there', note: null, noteUnavailable: false, createdAt: expect.any(String) },
+      {
+        id: body.request.id,
+        sender: { id: a, displayName: 'User 0' },
+        body: 'hi there',
+        note: null,
+        noteUnavailable: false,
+        createdAt: expect.any(String),
+      },
     ]);
     expect((await api.post(a, `/api/message-requests/${body.request.id}/decline`)).status).toBe(404); // only the recipient answers
     expect((await api.post(b, `/api/message-requests/${body.request.id}/decline`)).status).toBe(204);
@@ -93,8 +105,12 @@ describe('Messages', () => {
     const create = (body: object) => api.post(a, '/api/conversations', body);
     expect((await create({ name: '', memberIds: [b, c] })).body.errors).toEqual({ name: 'Name is required' });
     expect((await create({ name: 'G', memberIds: [b] })).body.errors).toEqual({ memberIds: 'Add at least 2 friends' });
-    expect((await create({ name: 'G', memberIds: [b, b] })).body.errors).toEqual({ memberIds: 'Each member can be added once' });
-    expect((await create({ name: 'G', memberIds: [a, b] })).body.errors).toEqual({ memberIds: 'You are already in the group' });
+    expect((await create({ name: 'G', memberIds: [b, b] })).body.errors).toEqual({
+      memberIds: 'Each member can be added once',
+    });
+    expect((await create({ name: 'G', memberIds: [a, b] })).body.errors).toEqual({
+      memberIds: 'You are already in the group',
+    });
     const res = await create({ name: 'G', memberIds: [b, stranger] });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('You can only add your friends');
@@ -125,7 +141,13 @@ describe('Messages', () => {
     await befriend(c, d);
     expect((await api.post(b, `/api/users/${a}/block`)).status).toBe(201);
     expect((await api.post(a, `/api/users/${c}/block`)).status).toBe(201);
-    for (const [from, to] of [[a, b], [b, a], [a, c], [c, a]]) expect((await dm(from, to)).status).toBe(404);
+    for (const [from, to] of [
+      [a, b],
+      [b, a],
+      [a, c],
+      [c, a],
+    ])
+      expect((await dm(from, to)).status).toBe(404);
     for (const who of [a, b]) {
       expect((await send(who, conv)).status).toBe(404);
       expect((await api.get(who, `/api/conversations/${conv}/messages`)).status).toBe(404);
@@ -155,7 +177,9 @@ describe('Messages', () => {
     await pool.query(`UPDATE "USER_T" SET usr_status = 'restricted' WHERE usr_id = $1`, [r]);
     const restricted = 'Your account is restricted and cannot perform this action';
     for (const res of [
-      await send(r, conv), await dm(r, c), await api.post(r, '/api/conversations', { name: 'G', memberIds: [c, d] }),
+      await send(r, conv),
+      await dm(r, c),
+      await api.post(r, '/api/conversations', { name: 'G', memberIds: [c, d] }),
       await api.post(r, `/api/conversations/${g}/members`, { userId: d }),
     ]) {
       expect(res.status).toBe(403);
@@ -215,8 +239,15 @@ describe('Messages', () => {
     expect((await api.del(a, `/api/messages/${id}`)).status).toBe(404);
     const [latest] = (await api.get(b, `/api/conversations/${conv}/messages`)).body.messages;
     expect(latest).toMatchObject({ id, body: null, deleted: true, note: null, noteUnavailable: false });
-    expect((await pool.query(`SELECT msg_body, msg_pst_id FROM "MESSAGE_T" WHERE msg_id = $1`, [id])).rows[0]).toEqual({ msg_body: '', msg_pst_id: null });
-    expect((await api.get(b, '/api/conversations')).body.conversations[0].lastMessage).toMatchObject({ id, body: null, deleted: true });
+    expect((await pool.query(`SELECT msg_body, msg_pst_id FROM "MESSAGE_T" WHERE msg_id = $1`, [id])).rows[0]).toEqual({
+      msg_body: '',
+      msg_pst_id: null,
+    });
+    expect((await api.get(b, '/api/conversations')).body.conversations[0].lastMessage).toMatchObject({
+      id,
+      body: null,
+      deleted: true,
+    });
   });
 
   it('MSG-TC18: the conversation list shows the last message, unread counts and read receipts', async () => {
@@ -227,7 +258,11 @@ describe('Messages', () => {
     const two = (await send(b, first, 'two')).body.message.id;
     const list = (await api.get(a, '/api/conversations')).body;
     expect(list.conversations.map((x: { id: number }) => x.id)).toEqual([first, second]);
-    expect(list.conversations[0]).toMatchObject({ type: 'direct', unreadCount: 2, lastMessage: { id: two, senderId: b, body: 'two' } });
+    expect(list.conversations[0]).toMatchObject({
+      type: 'direct',
+      unreadCount: 2,
+      lastMessage: { id: two, senderId: b, body: 'two' },
+    });
     expect(list.conversations[1].unreadCount).toBe(0); // own messages are never unread
     const read = await api.post(a, `/api/conversations/${first}/read`, { messageId: two - 1 });
     expect(read.body).toEqual({ lastReadMessageId: two - 1 });
@@ -244,9 +279,13 @@ describe('Messages', () => {
     const [a, b] = await users(2);
     const conv = await friendsChat(a, b);
     await pool.query(
-      `INSERT INTO "MESSAGE_T" (msg_cnv_id, msg_sender_id, msg_body) SELECT $1, $2, 'm' || g FROM generate_series(1, 119) g`, [conv, a],
+      `INSERT INTO "MESSAGE_T" (msg_cnv_id, msg_sender_id, msg_body) SELECT $1, $2, 'm' || g FROM generate_series(1, 119) g`,
+      [conv, a],
     );
-    const pages = await walkPages<{ id: number }>((cursor) => api.get(b, `/api/conversations/${conv}/messages${cursor ? `?cursor=${cursor}` : ''}`), 'messages');
+    const pages = await walkPages<{ id: number }>(
+      (cursor) => api.get(b, `/api/conversations/${conv}/messages${cursor ? `?cursor=${cursor}` : ''}`),
+      'messages',
+    );
     expect(pages.map((p) => p.length)).toEqual([50, 50, 20]);
     const ids = pages.flat().map((m) => m.id);
     expect(ids).toEqual([...ids].sort((x, y) => y - x));
@@ -275,14 +314,18 @@ describe('Messages', () => {
     expect(full.status).toBe(409);
     expect(full.body.error).toBe('A group has at most 30 members');
     // a direct chat is not a group
-    expect((await api.post(owner, `/api/conversations/${await friendsChat(owner, extra)}/members`, { userId: b })).status).toBe(404);
+    expect(
+      (await api.post(owner, `/api/conversations/${await friendsChat(owner, extra)}/members`, { userId: b })).status,
+    ).toBe(404);
   });
 
   it('MSG-TC21: the owner renames and removes; when the owner leaves the earliest member takes over', async () => {
     const [owner, b, c] = await users(3);
     const g = await group(owner, [b, c]);
     expect((await api.patch(b, `/api/conversations/${g}`, { name: 'Mine' })).status).toBe(403);
-    expect((await api.del(b, `/api/conversations/${g}/members/${c}`)).body.error).toBe('Only the group owner can do this');
+    expect((await api.del(b, `/api/conversations/${g}/members/${c}`)).body.error).toBe(
+      'Only the group owner can do this',
+    );
     const renamed = await api.patch(owner, `/api/conversations/${g}`, { name: '  Study Group ' });
     expect(renamed.body.conversation.name).toBe('Study Group');
     expect((await api.patch(owner, `/api/conversations/${g}`, { name: 'x'.repeat(81) })).status).toBe(400);
@@ -311,7 +354,9 @@ describe('Messages', () => {
     holder.release();
     const results = await Promise.all(adds);
     expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
-    expect((await pool.query(`SELECT COUNT(*)::INT AS n FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1`, [g])).rows[0].n).toBe(30);
+    expect(
+      (await pool.query(`SELECT COUNT(*)::INT AS n FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1`, [g])).rows[0].n,
+    ).toBe(30);
   });
 
   it('MSG-TC27: a direct message between new friends accepts the pending request and keeps history in order', async () => {

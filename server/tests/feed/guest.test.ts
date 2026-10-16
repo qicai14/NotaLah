@@ -12,7 +12,8 @@ afterAll(() => pool.end());
 
 const guest = (url: string) => request(app).get(url);
 const ids = (items: { id: number }[]) => items.map((i) => i.id);
-const lecturer = () => insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
+const lecturer = () =>
+  insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
 
 /** A public note, plus one of each kind a guest must never see: contacts-only, hidden, draft, by a suspended author. */
 async function world() {
@@ -31,14 +32,24 @@ describe('Guest browsing (R31)', () => {
   it('RANK-TC29: guest feed lists only public notes with M = 0, no flags and no stored snapshot', async () => {
     const w = await world();
     await pool.query(`INSERT INTO "HASHTAG_T" (hsh_name) VALUES ('sql')`);
-    await pool.query(`INSERT INTO "POST_HASHTAG_T" (phs_pst_id, phs_hsh_id) SELECT $1, hsh_id FROM "HASHTAG_T"`, [w.pub]);
-    await pool.query(`INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) VALUES ($1, $2, 'like')`, [w.friend, w.pub]);
+    await pool.query(`INSERT INTO "POST_HASHTAG_T" (phs_pst_id, phs_hsh_id) SELECT $1, hsh_id FROM "HASHTAG_T"`, [
+      w.pub,
+    ]);
+    await pool.query(`INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type) VALUES ($1, $2, 'like')`, [
+      w.friend,
+      w.pub,
+    ]);
     await pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [w.friend, w.pub]);
 
     const res = await guest('/api/feed');
     expect(res.status).toBe(200);
     expect(ids(res.body.items)).toEqual([w.pub]);
-    expect(res.body.items[0]).toMatchObject({ liked: false, bookmarked: false, verifiedByMe: false, counts: { likes: 1 } });
+    expect(res.body.items[0]).toMatchObject({
+      liked: false,
+      bookmarked: false,
+      verifiedByMe: false,
+      counts: { likes: 1 },
+    });
     expect(res.body.items[0].components.M).toBe(0);
     const p2 = await guest(`/api/feed?page=2&asOf=${encodeURIComponent(res.body.asOf)}`);
     expect(p2.body).toMatchObject({ items: [], nextPage: null });
@@ -92,8 +103,14 @@ describe('Guest browsing (R31)', () => {
     expect(friendView.status).toBe(200);
     expect(friendView.headers['x-viewer']).toBeUndefined();
     // A validly signed but expired token is a guest too.
-    const expired = jwt.sign({ role: 'student' }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(w.friend), expiresIn: -1 });
-    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', `parp_token=${expired}`)).status).toBe(404);
+    const expired = jwt.sign({ role: 'student' }, env.JWT_SECRET, {
+      algorithm: 'HS256',
+      subject: String(w.friend),
+      expiresIn: -1,
+    });
+    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', `parp_token=${expired}`)).status).toBe(
+      404,
+    );
     // A suspended author's still-valid cookie no longer opens their own draft.
     const banned = await insertUser({ status: 'suspended' });
     const ownDraft = await insertNote(banned, { status: 'draft' });
@@ -102,8 +119,14 @@ describe('Guest browsing (R31)', () => {
 
   it('ENG-TC20: guest reads comments and replies of a public note only, and no view is logged', async () => {
     const w = await world();
-    const { body } = await request(app).post(`/api/notes/${w.pub}/comments`).set(asUser(w.friend)).send({ body: 'top' });
-    await request(app).post(`/api/notes/${w.pub}/comments`).set(asUser(w.author)).send({ body: 'reply', parentId: body.comment.id });
+    const { body } = await request(app)
+      .post(`/api/notes/${w.pub}/comments`)
+      .set(asUser(w.friend))
+      .send({ body: 'top' });
+    await request(app)
+      .post(`/api/notes/${w.pub}/comments`)
+      .set(asUser(w.author))
+      .send({ body: 'reply', parentId: body.comment.id });
     const res = await guest(`/api/notes/${w.pub}/comments`);
     expect(res.status).toBe(200);
     expect(res.body.comments).toHaveLength(1);
@@ -117,7 +140,10 @@ describe('Guest browsing (R31)', () => {
 
   it('ENG-TC21: guest gets 401 on every write: like, save, comment, comment like, report, Super Like, follow, create', async () => {
     const w = await world();
-    const { body } = await request(app).post(`/api/notes/${w.pub}/comments`).set(asUser(w.friend)).send({ body: 'top' });
+    const { body } = await request(app)
+      .post(`/api/notes/${w.pub}/comments`)
+      .set(asUser(w.friend))
+      .send({ body: 'top' });
     await lecturer();
     const writes: [string, string, object?][] = [
       ['post', `/api/notes/${w.pub}/like`],
@@ -142,17 +168,34 @@ describe('Guest browsing (R31)', () => {
     }
     // Writes keep the CSRF check: without the header a guest gets 403 before auth.
     expect((await request(app).post(`/api/notes/${w.pub}/like`)).status).toBe(403);
-    for (const url of ['/api/bookmarks', '/api/notes/drafts', `/api/users/${w.author}/followers`, `/api/users/${w.author}/following`]) {
+    for (const url of [
+      '/api/bookmarks',
+      '/api/notes/drafts',
+      `/api/users/${w.author}/followers`,
+      `/api/users/${w.author}/following`,
+    ]) {
       expect((await guest(url)).status, url).toBe(401);
     }
-    expect((await pool.query(`SELECT 1 FROM "LIKE_T" UNION ALL SELECT 1 FROM "BOOKMARK_T" UNION ALL SELECT 1 FROM "REPORT_T"`)).rowCount).toBe(0);
+    expect(
+      (
+        await pool.query(
+          `SELECT 1 FROM "LIKE_T" UNION ALL SELECT 1 FROM "BOOKMARK_T" UNION ALL SELECT 1 FROM "REPORT_T"`,
+        )
+      ).rowCount,
+    ).toBe(0);
   });
 
   it('USR-TC26: guest views a profile with counts and only its public notes', async () => {
     const w = await world();
     const res = await guest(`/api/users/${w.author}`);
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ id: w.author, followerCount: 1, followingCount: 1, followedByMe: false, isFriend: false });
+    expect(res.body.user).toMatchObject({
+      id: w.author,
+      followerCount: 1,
+      followingCount: 1,
+      followedByMe: false,
+      isFriend: false,
+    });
     expect(res.body.user.draftCount).toBeUndefined();
     expect(ids(res.body.user.notes)).toEqual([w.pub]);
     const more = await guest(`/api/users/${w.author}/notes`);
@@ -169,7 +212,9 @@ describe('Guest browsing (R31)', () => {
     process.env.NODE_ENV = 'development'; // the limiters skip themselves under NODE_ENV=test
     try {
       expect((await guest(`/api/users/${uid}`)).status).toBe(200);
-      const { rowCount } = await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_hits = $1 WHERE rlt_key LIKE 'guest:%'`, [RATE_LIMITS.guestReads]);
+      const { rowCount } = await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_hits = $1 WHERE rlt_key LIKE 'guest:%'`, [
+        RATE_LIMITS.guestReads,
+      ]);
       expect(rowCount).toBe(1);
       const limited = await guest(`/api/users/${uid}`);
       expect(limited.status).toBe(429);

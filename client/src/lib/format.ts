@@ -8,4 +8,5 @@ export function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export const visibilityLabel = (v: string | null) => (v === 'public' ? 'Public' : v === 'contacts' ? 'Contacts only' : 'Draft');
+export const visibilityLabel = (v: string | null) =>
+  v === 'public' ? 'Public' : v === 'contacts' ? 'Contacts only' : 'Draft';

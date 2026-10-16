@@ -25,7 +25,11 @@ const hashToken = (token: string) => createHash('sha256').update(token).digest('
 const TOKEN_FORMAT = /^[A-Za-z0-9_-]{43}$/; // base64url of tokenBytes (32) random bytes
 
 /** The note's meta for the signed-in user, after answering 404 (cannot read it) or 403 (lacks one of `roles`). */
-async function access(req: Request, res: Response, ...roles: NonNullable<NoteMeta['role']>[]): Promise<NoteMeta | undefined> {
+async function access(
+  req: Request,
+  res: Response,
+  ...roles: NonNullable<NoteMeta['role']>[]
+): Promise<NoteMeta | undefined> {
   const meta = await getNoteMeta(Number(req.params.id), me(req).id);
   if (!meta || !meta.visible) return void res.status(404).json({ error: 'Note not found' });
   if (!meta.role || !roles.includes(meta.role)) return void res.status(403).json({ error: 'Forbidden' });
@@ -48,7 +52,8 @@ collaborationRouter.put('/notes/:id/collaborators/:userId', requireAuth, require
   const meta = await access(req, res, 'owner');
   if (!meta) return;
   const role = roleSchema.safeParse(bodyOrEmpty(req).role);
-  if (!role.success) return res.status(400).json({ error: 'Validation failed', errors: { role: role.error.issues[0].message } });
+  if (!role.success)
+    return res.status(400).json({ error: 'Validation failed', errors: { role: role.error.issues[0].message } });
   const userId = Number(req.params.userId);
   if (userId === meta.authorId) return res.status(400).json({ error: 'You already own this note' });
   if (!(await repo.setCollaborator(Number(req.params.id), userId, role.data, meta.authorId))) {
@@ -68,7 +73,8 @@ collaborationRouter.delete('/notes/:id/collaborators/:userId', requireAuth, asyn
 collaborationRouter.post('/notes/:id/links', requireAuth, requireActive, async (req, res) => {
   if (!(await access(req, res, 'owner'))) return;
   const role = roleSchema.safeParse(bodyOrEmpty(req).role);
-  if (!role.success) return res.status(400).json({ error: 'Validation failed', errors: { role: role.error.issues[0].message } });
+  if (!role.success)
+    return res.status(400).json({ error: 'Validation failed', errors: { role: role.error.issues[0].message } });
   const token = randomBytes(COLLABORATION.tokenBytes).toString('base64url');
   await repo.replaceLink(Number(req.params.id), role.data, hashToken(token));
   res.status(201).json({ role: role.data, token, url: `${env.CLIENT_ORIGIN}/share/${token}` });
@@ -93,12 +99,17 @@ async function link(req: Request, res: Response) {
 }
 
 // Token lookups are limited per IP for everyone, not only guests (optionalAuth limits only guests).
-collaborationRouter.get('/share/:token', optionalAuth, (req, res, next) => (req.user ? guestReadLimiter(req, res, next) : next()), async (req, res) => {
-  const found = await link(req, res);
-  if (!found) return;
-  if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
-  res.json({ role: found.role, note: await getVisibleNote(found.noteId, viewerId(req), true) });
-});
+collaborationRouter.get(
+  '/share/:token',
+  optionalAuth,
+  (req, res, next) => (req.user ? guestReadLimiter(req, res, next) : next()),
+  async (req, res) => {
+    const found = await link(req, res);
+    if (!found) return;
+    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
+    res.json({ role: found.role, note: await getVisibleNote(found.noteId, viewerId(req), true) });
+  },
+);
 
 // Joining through an edit link is a write, so it is a POST behind CSRF and the write limiter, not a side effect of the GET (D46).
 collaborationRouter.post('/share/:token', requireAuth, requireActive, async (req, res) => {
@@ -110,8 +121,11 @@ collaborationRouter.post('/share/:token', requireAuth, requireActive, async (req
   res.json({ noteId: found.noteId, role: found.ownerId === me(req).id ? 'owner' : 'edit' });
 });
 
-const requestSchema = z.string({ error: 'Invalid message' }).trim()
-  .max(COLLABORATION.requestMessageMax, `Message must be at most ${COLLABORATION.requestMessageMax} characters`).nullish();
+const requestSchema = z
+  .string({ error: 'Invalid message' })
+  .trim()
+  .max(COLLABORATION.requestMessageMax, `Message must be at most ${COLLABORATION.requestMessageMax} characters`)
+  .nullish();
 
 // Anyone who can read the note and is not already its owner or an editor; a view collaborator may ask to edit (D46).
 collaborationRouter.post('/notes/:id/requests', requireAuth, requireActive, async (req, res) => {
@@ -120,10 +134,13 @@ collaborationRouter.post('/notes/:id/requests', requireAuth, requireActive, asyn
   if (meta.role === 'owner') return res.status(400).json({ error: 'You own this note' });
   if (meta.role === 'edit') return res.status(409).json({ error: 'You can already edit this note' });
   const message = requestSchema.safeParse(bodyOrEmpty(req).message);
-  if (!message.success) return res.status(400).json({ error: 'Validation failed', errors: { message: message.error.issues[0].message } });
+  if (!message.success)
+    return res.status(400).json({ error: 'Validation failed', errors: { message: message.error.issues[0].message } });
   try {
     const id = await repo.createRequest(Number(req.params.id), me(req).id, message.data || null);
-    await notify({ type: 'collab_request', actorId: me(req).id, noteId: Number(req.params.id), collabRequestId: id }, [meta.authorId]);
+    await notify({ type: 'collab_request', actorId: me(req).id, noteId: Number(req.params.id), collabRequestId: id }, [
+      meta.authorId,
+    ]);
     res.status(201).json({ id, status: 'pending' });
   } catch (err) {
     if (isUniqueViolation(err)) return res.status(409).json({ error: 'You already asked to collaborate on this note' });
@@ -141,7 +158,10 @@ collaborationRouter.post('/notes/:id/requests/:requestId', requireAuth, requireA
   if (!meta) return;
   const parsed = decisionSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Validation failed', errors: { [String(parsed.error.issues[0].path[0])]: parsed.error.issues[0].message } });
+    return res.status(400).json({
+      error: 'Validation failed',
+      errors: { [String(parsed.error.issues[0].path[0])]: parsed.error.issues[0].message },
+    });
   }
   const { decision, role } = parsed.data;
   const [noteId, requestId] = [Number(req.params.id), Number(req.params.requestId)];
@@ -159,7 +179,8 @@ collaborationRouter.post('/notes/:id/lock', requireAuth, requireActive, async (r
   if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
   if (!meta.authorActive) return res.status(403).json({ error: NOT_EDITABLE });
   const lock = await repo.takeLock(Number(req.params.id), me(req).id);
-  if (!lock.ok) return res.status(423).json({ error: 'Another collaborator is editing this note', lockedBy: lock.holder });
+  if (!lock.ok)
+    return res.status(423).json({ error: 'Another collaborator is editing this note', lockedBy: lock.holder });
   res.json({ expiresAt: lock.expiresAt });
 });
 

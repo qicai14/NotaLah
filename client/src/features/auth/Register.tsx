@@ -54,8 +54,24 @@ export default function Register() {
     <section className="mx-auto max-w-sm">
       <h1 className="mb-4 text-xl font-semibold">Create an account</h1>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-        <Field label="Display name" name="displayName" autoComplete="nickname" maxLength={50} value={form.displayName} onChange={set('displayName')} error={errors.displayName} />
-        <Field label="Email" name="email" type="email" autoComplete="email" value={form.email} onChange={set('email')} error={errors.email} />
+        <Field
+          label="Display name"
+          name="displayName"
+          autoComplete="nickname"
+          maxLength={50}
+          value={form.displayName}
+          onChange={set('displayName')}
+          error={errors.displayName}
+        />
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={form.email}
+          onChange={set('email')}
+          error={errors.email}
+        />
         {errors.email === 'This email is already registered' && (
           <p className="-mt-2 text-sm">
             <Link to="/login" className="text-indigo-600 underline">
@@ -63,8 +79,25 @@ export default function Register() {
             </Link>
           </p>
         )}
-        <Field label="Password" name="password" type="password" autoComplete="new-password" hint="At least 8 characters." value={form.password} onChange={set('password')} error={errors.password} />
-        <Field label="Confirm password" name="confirmPassword" type="password" autoComplete="new-password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} />
+        <Field
+          label="Password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          hint="At least 8 characters."
+          value={form.password}
+          onChange={set('password')}
+          error={errors.password}
+        />
+        <Field
+          label="Confirm password"
+          name="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          value={form.confirmPassword}
+          onChange={set('confirmPassword')}
+          error={errors.confirmPassword}
+        />
         <ProgrammeSelect value={form.programme} onChange={set('programme')} error={errors.programme} />
 
         <fieldset className="flex flex-col gap-2">
@@ -84,7 +117,14 @@ export default function Register() {
 
         {isLecturer && (
           <>
-            <Field label="Staff ID" name="staffId" maxLength={20} value={form.staffId} onChange={set('staffId')} error={errors.staffId} />
+            <Field
+              label="Staff ID"
+              name="staffId"
+              maxLength={20}
+              value={form.staffId}
+              onChange={set('staffId')}
+              error={errors.staffId}
+            />
             <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
               Lecturer features (such as Super Like) unlock after an administrator approves your application. Until then
               your account works as a student account.
@@ -97,7 +137,11 @@ export default function Register() {
             {formError}
           </p>
         )}
-        <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={busy}
+          className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60"
+        >
           {busy ? 'Creating account…' : 'Register'}
         </button>
       </form>

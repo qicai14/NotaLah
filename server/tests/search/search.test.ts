@@ -33,14 +33,21 @@ interface Opts {
 async function note(authorId: number, o: Opts = {}): Promise<number> {
   const status = o.status ?? 'published';
   const id = await createNote(authorId, {
-    title: o.title ?? 'Untitled', template: 'plain', slides: o.slides ?? ['<p>Intro</p>'], hashtags: o.hashtags ?? [],
-    moduleId: await moduleId(o.module ?? 'CT030-3-2'), status, visibility: status === 'published' ? o.visibility ?? 'public' : null,
+    title: o.title ?? 'Untitled',
+    template: 'plain',
+    slides: o.slides ?? ['<p>Intro</p>'],
+    hashtags: o.hashtags ?? [],
+    moduleId: await moduleId(o.module ?? 'CT030-3-2'),
+    status,
+    visibility: status === 'published' ? (o.visibility ?? 'public') : null,
   });
-  if (o.publishedAt) await pool.query(`UPDATE "POST_T" SET pst_published_at = $2 WHERE pst_id = $1`, [id, o.publishedAt]);
+  if (o.publishedAt)
+    await pool.query(`UPDATE "POST_T" SET pst_published_at = $2 WHERE pst_id = $1`, [id, o.publishedAt]);
   return id;
 }
 
-const like = (userId: number, noteId: number) => pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [userId, noteId]);
+const like = (userId: number, noteId: number) =>
+  pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [userId, noteId]);
 const superLike = (lecturerId: number, noteId: number) =>
   pool.query(`INSERT INTO "VERIFICATION_T" (ver_pst_id, ver_usr_id) VALUES ($1, $2)`, [noteId, lecturerId]);
 
@@ -114,13 +121,20 @@ describe('Search matching', () => {
     expect(ids((await search({ q: '#Normalisation' })).body.items)).toEqual([tagged]);
     const friend = await insertUser();
     await befriend(author, friend);
-    expect(ids((await search({ q: '#Normalisation', tab: 'notes' }, asUser(friend))).body.items).sort()).toEqual([tagged, contacts].sort());
+    expect(ids((await search({ q: '#Normalisation', tab: 'notes' }, asUser(friend))).body.items).sort()).toEqual(
+      [tagged, contacts].sort(),
+    );
   });
 
-  it('SRCH-TC5: module code returns that module\'s notes only', async () => {
-    await pool.query(`INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('CT071-3-3', 'Advanced Topics', 'BSc (Hons) Software Engineering')`);
+  it("SRCH-TC5: module code returns that module's notes only", async () => {
+    await pool.query(
+      `INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('CT071-3-3', 'Advanced Topics', 'BSc (Hons) Software Engineering')`,
+    );
     const author = await insertUser();
-    const inModule = [await note(author, { module: 'CT071-3-3' }), await note(author, { module: 'CT071-3-3', title: 'Second' })];
+    const inModule = [
+      await note(author, { module: 'CT071-3-3' }),
+      await note(author, { module: 'CT071-3-3', title: 'Second' }),
+    ];
     await note(author, { module: 'CT071-3-2' });
     await note(author, { module: 'CT030-3-2' });
     expect(ids((await search({ q: 'CT071-3-3' })).body.items).sort()).toEqual(inModule.sort());
@@ -129,7 +143,10 @@ describe('Search matching', () => {
 
   it('SRCH-TC6: a keyword phrase in slide 2 finds the note', async () => {
     const author = await insertUser();
-    const p = await note(author, { title: 'Database design', slides: ['<p>Keys and tables</p>', '<p>Moving to <b>third normal form</b></p>'] });
+    const p = await note(author, {
+      title: 'Database design',
+      slides: ['<p>Keys and tables</p>', '<p>Moving to <b>third normal form</b></p>'],
+    });
     await note(author, { title: 'Normal distribution', slides: ['<p>Statistics</p>'] });
     expect(ids((await search({ q: 'third normal form' })).body.items)).toEqual([p]);
     expect(ids((await search({ q: '"third normal form"' })).body.items)).toEqual([p]);
@@ -148,10 +165,17 @@ describe('Search matching', () => {
     await insertUser({ displayName: 'Tan Deleted', status: 'deleted' });
     const res = await search({ q: 'tan', tab: 'people' });
     expect(ids(res.body.items)).toEqual([exact, prefix, contains]);
-    expect(res.body.items[0]).toEqual({ id: exact, displayName: 'Tan', role: 'student', programme: 'Software Engineering', avatarUrl: null, isVerifiedLecturer: false });
+    expect(res.body.items[0]).toEqual({
+      id: exact,
+      displayName: 'Tan',
+      role: 'student',
+      programme: 'Software Engineering',
+      avatarUrl: null,
+      isVerifiedLecturer: false,
+    });
   });
 
-  it('SRCH-TC8: lecturer=any keeps notes by or Super Liked by a lecturer; lecturer=<id> keeps that lecturer\'s', async () => {
+  it("SRCH-TC8: lecturer=any keeps notes by or Super Liked by a lecturer; lecturer=<id> keeps that lecturer's", async () => {
     const student = await insertUser();
     const lecA = await lecturer('Dr A');
     const lecB = await lecturer('Dr B');
@@ -256,7 +280,11 @@ describe('Search order, paging, tabs and filters', () => {
     const author = await insertUser();
     const inTerm = await note(author, { title: 'Threads', publishedAt: '2026-10-02T04:00:00Z', module: 'CT050-3-2' });
     await note(author, { title: 'Threads', publishedAt: '2026-08-02T04:00:00Z', module: 'CT050-3-2' });
-    const otherModule = await note(author, { title: 'Threads', publishedAt: '2026-10-03T04:00:00Z', module: 'CT060-3-2' });
+    const otherModule = await note(author, {
+      title: 'Threads',
+      publishedAt: '2026-10-03T04:00:00Z',
+      module: 'CT060-3-2',
+    });
     const { rows } = await pool.query<{ trm_id: number }>(
       `INSERT INTO "TERM_T" (trm_name, trm_start_date, trm_end_date) VALUES ('Sem 2', '2026-09-01', '2026-12-20') RETURNING trm_id`,
     );
@@ -290,7 +318,10 @@ describe('Search order, paging, tabs and filters', () => {
     expect(more.body.nextCursor).toBeNull();
 
     const modules = await search({ q: 'ct060', tab: 'modules' });
-    expect(modules.body).toEqual({ items: [expect.objectContaining({ code: 'CT060-3-2', noteCount: 1 })], nextCursor: null });
+    expect(modules.body).toEqual({
+      items: [expect.objectContaining({ code: 'CT060-3-2', noteCount: 1 })],
+      nextCursor: null,
+    });
     expect((await search({ q: '#', tab: 'hashtags' })).body).toEqual({ items: [], nextCursor: null });
   });
 
@@ -301,7 +332,9 @@ describe('Search order, paging, tabs and filters', () => {
     const pub = await note(author, { title: 'Kernel' });
     const contacts = await note(author, { title: 'Kernel', visibility: 'contacts' });
     await note(author, { title: 'Kernel', status: 'draft' });
-    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [await note(author, { title: 'Kernel' })]);
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [
+      await note(author, { title: 'Kernel' }),
+    ]);
     const banned = await insertUser({ displayName: 'Kernel Banned' });
     await note(banned, { title: 'Kernel', hashtags: ['kernel_banned'] });
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [banned]);

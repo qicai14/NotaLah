@@ -18,11 +18,15 @@ beforeEach(async () => {
 });
 
 const post = (body: object, h = admin) => request(app).post('/api/admin/modules').set(h).send(body);
-const patch = (id: number | string, body: object) => request(app).patch(`/api/admin/modules/${id}`).set(admin).send(body);
+const patch = (id: number | string, body: object) =>
+  request(app).patch(`/api/admin/modules/${id}`).set(admin).send(body);
 
 describe('admin modules', () => {
   it('ADM-TC21: non-admin tokens get 403 on every module endpoint', async () => {
-    for (const h of [asUser(await insertUser()), asUser(await insertUser({ role: 'lecturer', lecturerStatus: 'approved' }))]) {
+    for (const h of [
+      asUser(await insertUser()),
+      asUser(await insertUser({ role: 'lecturer', lecturerStatus: 'approved' })),
+    ]) {
       expect((await request(app).get('/api/admin/modules').set(h)).status).toBe(403);
       expect((await post(NEW, h)).status).toBe(403);
       expect((await request(app).patch('/api/admin/modules/1').set(h).send({ name: 'x' })).status).toBe(403);
@@ -47,7 +51,12 @@ describe('admin modules', () => {
   it('ADM-TC23: creates a module with the code trimmed and uppercased', async () => {
     const res = await post({ ...NEW, code: '  tst-101-a ' });
     expect(res.status).toBe(201);
-    expect(res.body.module).toMatchObject({ code: 'TST-101-A', name: 'Test Module', programme: NEW.programme, noteCount: 0 });
+    expect(res.body.module).toMatchObject({
+      code: 'TST-101-A',
+      name: 'Test Module',
+      programme: NEW.programme,
+      noteCount: 0,
+    });
     const list = await request(app).get('/api/admin/modules').set(admin);
     expect(list.body.modules.map((m: { code: string }) => m.code)).toContain('TST-101-A');
   });
@@ -72,7 +81,12 @@ describe('admin modules', () => {
     const id = (await post(NEW)).body.module.id;
     const res = await patch(id, { name: 'Renamed', programme: 'BSc (Hons) Computer Science' });
     expect(res.status).toBe(200);
-    expect(res.body.module).toMatchObject({ id, code: 'TST101', name: 'Renamed', programme: 'BSc (Hons) Computer Science' });
+    expect(res.body.module).toMatchObject({
+      id,
+      code: 'TST101',
+      name: 'Renamed',
+      programme: 'BSc (Hons) Computer Science',
+    });
     const only = await patch(id, { name: 'Again' });
     expect(only.body.module).toMatchObject({ name: 'Again', programme: 'BSc (Hons) Computer Science' });
   });

@@ -105,8 +105,11 @@ const OWN_LIKE = `(l.lik_usr_id = p.pst_usr_id OR EXISTS (SELECT 1 FROM "COLLABO
 export const countsCol = (asOf?: string) => `json_build_object(
               'likes', (SELECT COUNT(*)::INT FROM "LIKE_T" l WHERE l.lik_pst_id = p.pst_id${asOf ? ` AND l.lik_created_at <= ${asOf} AND NOT ${OWN_LIKE}` : ''}),
               'comments', (SELECT COUNT(*)::INT FROM "COMMENT_T" WHERE cmt_pst_id = p.pst_id AND NOT cmt_is_deleted
-                           AND cmt_usr_id <> p.pst_usr_id${asOf ? ` AND cmt_created_at <= ${asOf}`
-                             : ` AND NOT EXISTS (SELECT 1 FROM "USER_T" cu WHERE cu.usr_id = cmt_usr_id AND cu.usr_status = 'suspended')`})) AS "counts"`;
+                           AND cmt_usr_id <> p.pst_usr_id${
+                             asOf
+                               ? ` AND cmt_created_at <= ${asOf}`
+                               : ` AND NOT EXISTS (SELECT 1 FROM "USER_T" cu WHERE cu.usr_id = cmt_usr_id AND cu.usr_status = 'suspended')`
+                           })) AS "counts"`;
 
 /** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; `verified`/`verifiedBy` per VERIFIED, `verifiedByMe` = the viewer's own Super Like) shared by the feed and the note detail so the counts exist once. */
 export const ENGAGEMENT_COLS = `${countsCol()},
@@ -130,7 +133,9 @@ export interface NoteWithEngagement extends Note {
  * caller that already resolved a share link to this note: any SHAREABLE note is then returned (R30).
  */
 export async function getVisibleNote(
-  id: number, viewerId: number, viaLink = false,
+  id: number,
+  viewerId: number,
+  viaLink = false,
 ): Promise<(NoteWithEngagement & { myRole: NoteRole | null }) | undefined> {
   const { rows } = await pool.query<NoteWithEngagement & { myRole: NoteRole | null }>(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole" ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : `(${READABLE} OR ${VISIBLE_OR_ADMIN})`}`,
@@ -148,7 +153,10 @@ export interface DraftSummary {
 }
 
 /** One page of the author's drafts, last edited first; keyset on (updated_at, id), D40. */
-export async function listDrafts(authorId: number, { cursor, limit }: KeysetPage): Promise<{ items: DraftSummary[]; nextCursor: string | null }> {
+export async function listDrafts(
+  authorId: number,
+  { cursor, limit }: KeysetPage,
+): Promise<{ items: DraftSummary[]; nextCursor: string | null }> {
   const { rows } = await pool.query<DraftSummary & { cursor: string }>(
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
             ${MODULE_COL},
@@ -253,10 +261,20 @@ export type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
  * editor lost edit access since the route checked it (R30). A co-author's first save starts their credit (clb_edited_at, D46). An edit never moves
  * pst_published_at; a title or slide change to a published note stamps pst_content_edited_at, which voids older Super Likes.
  */
-export function replaceNote(id: number, n: NoteInput, editorId: number, baseUpdatedAt: Date | null): Promise<ReplaceResult> {
+export function replaceNote(
+  id: number,
+  n: NoteInput,
+  editorId: number,
+  baseUpdatedAt: Date | null,
+): Promise<ReplaceResult> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{
-      status: string; title: string; updatedAt: Date; role: NoteRole | null; lockedByOther: boolean; slides: string[];
+      status: string;
+      title: string;
+      updatedAt: Date;
+      role: NoteRole | null;
+      lockedByOther: boolean;
+      slides: string[];
     }>(
       `SELECT p.pst_status AS "status", p.pst_title AS "title", p.pst_updated_at AS "updatedAt", ${MY_ROLE} AS "role",
               COALESCE(p.pst_lock_usr_id <> $1 AND p.pst_lock_expires_at > NOW(), FALSE) AS "lockedByOther",
@@ -271,8 +289,9 @@ export function replaceNote(id: number, n: NoteInput, editorId: number, baseUpda
     if (cur.lockedByOther) return 'locked';
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
-    const contentEdited = cur.status === 'published'
-      && (cur.title !== n.title || cur.slides.length !== n.slides.length || cur.slides.some((s, i) => s !== n.slides[i]));
+    const contentEdited =
+      cur.status === 'published' &&
+      (cur.title !== n.title || cur.slides.length !== n.slides.length || cur.slides.some((s, i) => s !== n.slides[i]));
     await c.query(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_status = $5, pst_visibility = $6,
@@ -293,7 +312,10 @@ export function replaceNote(id: number, n: NoteInput, editorId: number, baseUpda
 }
 
 export async function softDeleteNote(id: number): Promise<void> {
-  await pool.query(`UPDATE "POST_T" SET pst_status = 'deleted', pst_updated_at = NOW() WHERE pst_id = $1 AND pst_status <> 'deleted'`, [id]);
+  await pool.query(
+    `UPDATE "POST_T" SET pst_status = 'deleted', pst_updated_at = NOW() WHERE pst_id = $1 AND pst_status <> 'deleted'`,
+    [id],
+  );
 }
 
 export interface NoteSummary {
@@ -311,7 +333,9 @@ export const SUMMARY_COLS = `p.pst_id AS "id", p.pst_title AS "title", m.mod_cod
 
 /** One page of an author's published notes that the viewer may see, newest first; keyset on (published_at, id), D40. */
 export async function listNotesByAuthor(
-  authorId: number, viewerId: number, { cursor, limit }: KeysetPage,
+  authorId: number,
+  viewerId: number,
+  { cursor, limit }: KeysetPage,
 ): Promise<{ items: NoteSummary[]; nextCursor: string | null }> {
   const { rows } = await pool.query<NoteSummary & { cursor: string }>(
     `SELECT ${SUMMARY_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor"

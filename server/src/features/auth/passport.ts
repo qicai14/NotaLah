@@ -37,7 +37,8 @@ export function authCookieOptions(): CookieOptions {
 }
 
 // The token is read from the httpOnly cookie only, never a bearer header, so page script can never hold it (D35).
-export const fromAuthCookie = (req: Pick<Request, 'headers'>): string | null => req.headers.cookie?.match(COOKIE_PATTERN)?.[1] ?? null;
+export const fromAuthCookie = (req: Pick<Request, 'headers'>): string | null =>
+  req.headers.cookie?.match(COOKIE_PATTERN)?.[1] ?? null;
 
 /** Verification rules shared by the JWT strategy and tokenSubject, so the rate-limit key never trusts a token the strategy would reject. */
 const JWT_VERIFY = { algorithms: ['HS256'] as jwt.Algorithm[] };

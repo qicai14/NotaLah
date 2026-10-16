@@ -37,7 +37,10 @@ const OPEN_GROUPS = `
 const GROUP_COLS = `g.n AS "reportCount", g.oldest AS "oldestReportAt", g.reports AS "reports"`;
 
 /** One page of the queue, the note with the oldest open report first; keyset on (oldest report, note id), D40. */
-export async function listOpenReports({ cursor, limit }: KeysetPage): Promise<{ items: ReportSummary[]; nextCursor: string | null }> {
+export async function listOpenReports({
+  cursor,
+  limit,
+}: KeysetPage): Promise<{ items: ReportSummary[]; nextCursor: string | null }> {
   const { rows } = await pool.query<ReportSummary & { cursor: string }>(
     `${OPEN_GROUPS}
      SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_status AS "status",
@@ -71,7 +74,10 @@ export async function getOpenReportGroup(noteId: number): Promise<ReportGroup | 
  * and, when this call hid the note, its author.
  */
 export async function resolveReports(
-  noteId: number, adminId: number, outcome: 'dismiss' | 'hide', remark: string,
+  noteId: number,
+  adminId: number,
+  outcome: 'dismiss' | 'hide',
+  remark: string,
 ): Promise<{ resolved: number; hiddenAuthorId: number | null }> {
   return inTransaction(async (client) => {
     const { rowCount } = await client.query(
@@ -120,7 +126,12 @@ export async function searchUsers(q: string): Promise<AdminUserRow[]> {
 }
 
 export type AccountAction = 'restrict' | 'suspend' | 'reinstate' | 'delete';
-const NEW_STATUS: Record<AccountAction, UserStatus> = { restrict: 'restricted', suspend: 'suspended', reinstate: 'active', delete: 'deleted' };
+const NEW_STATUS: Record<AccountAction, UserStatus> = {
+  restrict: 'restricted',
+  suspend: 'suspended',
+  reinstate: 'active',
+  delete: 'deleted',
+};
 
 /**
  * Applies an account action and logs it in "ACCOUNT_ACTION_T" in one transaction (UC21). Delete also anonymises the
@@ -128,10 +139,15 @@ const NEW_STATUS: Record<AccountAction, UserStatus> = { restrict: 'restricted', 
  * it was refused: unknown user, administrator target, or an already deleted account.
  */
 export async function applyAccountAction(
-  userId: number, adminId: number, action: AccountAction, reason: string,
+  userId: number,
+  adminId: number,
+  action: AccountAction,
+  reason: string,
 ): Promise<AdminUserRow | 'not_found' | 'admin' | 'deleted'> {
   return inTransaction(async (client) => {
-    const { rows: [target] } = await client.query<{ usr_role: Role; usr_status: UserStatus }>(
+    const {
+      rows: [target],
+    } = await client.query<{ usr_role: Role; usr_status: UserStatus }>(
       `SELECT usr_role, usr_status FROM "USER_T" WHERE usr_id = $1 FOR UPDATE`,
       [userId],
     );
@@ -148,7 +164,10 @@ export async function applyAccountAction(
       );
       // shortcut: a note published in a concurrent request just after this UPDATE stays visible (the deleted user's token
       // is refused from the next request); lock the user's posts first if that race ever matters.
-      await client.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_usr_id = $1 AND pst_status = 'published'`, [userId]);
+      await client.query(
+        `UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_usr_id = $1 AND pst_status = 'published'`,
+        [userId],
+      );
       await client.query(`DELETE FROM "FOLLOW_T" WHERE fol_follower_id = $1 OR fol_followee_id = $1`, [userId]);
     } else {
       await client.query(`UPDATE "USER_T" SET usr_status = $2 WHERE usr_id = $1`, [userId, NEW_STATUS[action]]);
@@ -157,7 +176,9 @@ export async function applyAccountAction(
       `INSERT INTO "ACCOUNT_ACTION_T" (aac_usr_id, aac_admin_id, aac_action, aac_reason) VALUES ($1, $2, $3, $4)`,
       [userId, adminId, action, reason],
     );
-    const { rows } = await client.query<AdminUserRow>(`SELECT ${ADMIN_USER_COLS} FROM "USER_T" u WHERE u.usr_id = $1`, [userId]);
+    const { rows } = await client.query<AdminUserRow>(`SELECT ${ADMIN_USER_COLS} FROM "USER_T" u WHERE u.usr_id = $1`, [
+      userId,
+    ]);
     return rows[0];
   });
 }

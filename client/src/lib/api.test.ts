@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, ApiError, setSignedIn } from './api';
 
 const respond = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
-  Promise.resolve({ status, ok: status < 400, headers: new Headers(headers), json: () => Promise.resolve(body) } as Response);
+  Promise.resolve({
+    status,
+    ok: status < 400,
+    headers: new Headers(headers),
+    json: () => Promise.resolve(body),
+  } as Response);
 
 let fetchMock: ReturnType<typeof vi.fn>;
 let assign: ReturnType<typeof vi.fn>;

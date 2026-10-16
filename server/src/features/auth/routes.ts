@@ -22,7 +22,10 @@ export const authRouter = Router();
 const PROGRAMME_ERROR = 'Choose a programme from the list';
 
 const required = (label: string) =>
-  z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`);
+  z
+    .string({ error: `${label} is required` })
+    .trim()
+    .min(1, `${label} is required`);
 
 const registerSchema = z.object({
   displayName: required('Display name').max(50, 'Display name must be at most 50 characters'),

@@ -62,7 +62,12 @@ describe('Ranked feed', () => {
     const res = await feed(viewer);
     expect(res.status).toBe(200);
     const items: Item[] = res.body.items;
-    expect(items.slice(0, 2).map((i) => i.id).sort()).toEqual([verified, byRestricted].sort());
+    expect(
+      items
+        .slice(0, 2)
+        .map((i) => i.id)
+        .sort(),
+    ).toEqual([verified, byRestricted].sort());
     expect(items[0].components.V).toBe(1);
     expect(items[1].components.V).toBe(1);
     expect(items.find((i) => i.id === plain)!.components.V).toBe(0);
@@ -119,7 +124,10 @@ describe('Ranked feed', () => {
     const fresh = await insertNote(author, ['sql'], 4000);
     await verify(stale, await lecturer());
     await verify(fresh, await lecturer());
-    await pool.query(`UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`, [RANKING.verifiedCandidateWindowDays + 1, stale]);
+    await pool.query(
+      `UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`,
+      [RANKING.verifiedCandidateWindowDays + 1, stale],
+    );
     const recent = await insertNote(author, ['sql'], 1);
     const ids = (await getCandidates(viewer, await dbNow(), 1)).map((c) => c.id);
     expect(ids.sort()).toEqual([recent, fresh].sort());
@@ -130,7 +138,10 @@ describe('Ranked feed', () => {
     const viewer = await insertUser();
     const note = await insertNote(author, ['sql'], 5);
     await verify(note, await lecturer());
-    await pool.query(`UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`, [RANKING.verifiedCandidateWindowDays + 1, note]);
+    await pool.query(
+      `UPDATE "VERIFICATION_T" SET ver_created_at = NOW() - make_interval(days => $1) WHERE ver_pst_id = $2`,
+      [RANKING.verifiedCandidateWindowDays + 1, note],
+    );
     expect((await getCandidates(viewer, await dbNow())).find((c) => c.id === note)!.verified).toBe(true);
     const item: Item = (await feed(viewer)).body.items.find((i: Item) => i.id === note);
     expect(item.components.V).toBe(1);
@@ -172,7 +183,12 @@ describe('Ranked feed', () => {
     const viewer = await insertUser();
     for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
     const page = async (n: number, asOf?: string) =>
-      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(viewer))).body;
+      (
+        await request(app)
+          .get('/api/feed')
+          .query({ page: n, ...(asOf && { asOf }) })
+          .set(asUser(viewer))
+      ).body;
     const first = await page(1);
     const before: Item[] = (await page(2, first.asOf)).items;
     const last = before[before.length - 1].id;
@@ -197,7 +213,12 @@ describe('Ranked feed', () => {
       await pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [await insertUser(), oldest]);
     }
     const page = async (n: number, asOf?: string) =>
-      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(viewer))).body;
+      (
+        await request(app)
+          .get('/api/feed')
+          .query({ page: n, ...(asOf && { asOf }) })
+          .set(asUser(viewer))
+      ).body;
     const idsOf = (body: { items: Item[] }) => body.items.map((i) => i.id);
     const first = await page(1);
     expect(idsOf(first)).toContain(oldest);
@@ -242,8 +263,12 @@ describe('Ranked feed', () => {
     const asOfs: string[] = [];
     for (let i = 0; i < RANKING.snapshotsPerViewer + 2; i++) asOfs.push((await feed(viewer)).body.asOf);
     const kept = async (uid: number) =>
-      (await pool.query<{ t: Date }>(`SELECT fsn_as_of AS t FROM "FEED_SNAPSHOT_T" WHERE fsn_usr_id = $1 ORDER BY fsn_as_of`, [uid]))
-        .rows.map((r) => r.t.toISOString());
+      (
+        await pool.query<{ t: Date }>(
+          `SELECT fsn_as_of AS t FROM "FEED_SNAPSHOT_T" WHERE fsn_usr_id = $1 ORDER BY fsn_as_of`,
+          [uid],
+        )
+      ).rows.map((r) => r.t.toISOString());
     expect(await kept(viewer)).toEqual(asOfs.slice(-RANKING.snapshotsPerViewer));
     expect(await kept(other)).toHaveLength(1);
   });
@@ -253,7 +278,12 @@ describe('Ranked feed', () => {
     const viewer = await insertUser();
     for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
     const page = async (n: number, asOf?: string) =>
-      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(viewer))).body;
+      (
+        await request(app)
+          .get('/api/feed')
+          .query({ page: n, ...(asOf && { asOf }) })
+          .set(asUser(viewer))
+      ).body;
     const first = await page(1);
     const victim = (await page(2, first.asOf)).items[0].id;
     await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [victim]);
@@ -266,7 +296,12 @@ describe('Ranked feed', () => {
     const author = await insertUser();
     for (let h = 0; h < 20; h++) await insertNote(author, ['sql'], h);
     const page = async (n: number, asOf?: string) =>
-      (await request(app).get('/api/feed').query({ page: n, ...(asOf && { asOf }) }).set(asUser(author))).body;
+      (
+        await request(app)
+          .get('/api/feed')
+          .query({ page: n, ...(asOf && { asOf }) })
+          .set(asUser(author))
+      ).body;
     const first = await page(1);
     const victim = (await page(2, first.asOf)).items[0].id;
     await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [victim]);
@@ -283,7 +318,8 @@ describe('Ranked feed', () => {
     const byActive = await insertNote(active, ['sql']);
     const byRestricted = await insertNote(restricted, ['sql']);
     const bySuspended = await insertNote(suspended, ['sql']);
-    const flags = async (uid: number) => new Map((await getCandidates(uid, new Date())).map((c) => [c.id, c.lecturerAuthor]));
+    const flags = async (uid: number) =>
+      new Map((await getCandidates(uid, new Date())).map((c) => [c.id, c.lecturerAuthor]));
     const seen = await flags(viewer);
     expect(seen.get(byActive)).toBe(true);
     expect(seen.get(byRestricted)).toBe(true);
@@ -292,7 +328,13 @@ describe('Ranked feed', () => {
   });
 
   it('RANK-TC32: likes by the author and edit collaborators are shown but do not raise E', async () => {
-    const [author, editor, viewOnly, stranger, viewer] = [await insertUser(), await insertUser(), await insertUser(), await insertUser(), await insertUser()];
+    const [author, editor, viewOnly, stranger, viewer] = [
+      await insertUser(),
+      await insertUser(),
+      await insertUser(),
+      await insertUser(),
+      await insertUser(),
+    ];
     const note = await insertNote(author, ['sql']);
     await pool.query(
       `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by) VALUES ($1, $2, 'edit', $4), ($1, $3, 'view', $4)`,

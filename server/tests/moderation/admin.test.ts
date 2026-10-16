@@ -6,7 +6,9 @@ import { createAdmin } from '../../src/scripts/createAdmin';
 import { asUser, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
 const superLike = async (lecturerId: number) =>
-  request(app).post(`/api/notes/${await insertNote(await insertUser())}/verify`).set(asUser(lecturerId));
+  request(app)
+    .post(`/api/notes/${await insertNote(await insertUser())}/verify`)
+    .set(asUser(lecturerId));
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -60,7 +62,11 @@ describe('admin lecturer approval (UC22)', () => {
     const res = await request(app).get(base).set(admin);
     expect(res.status).toBe(200);
     expect(res.body.applications.map((x: { id: number }) => x.id)).toEqual([b, a]);
-    expect(res.body.applications[0]).toMatchObject({ displayName: 'B', staffId: 'S2', programme: 'Software Engineering' });
+    expect(res.body.applications[0]).toMatchObject({
+      displayName: 'B',
+      staffId: 'S2',
+      programme: 'Software Engineering',
+    });
     expect(res.body.applications[0].email).toBeDefined();
     expect(res.body.applications[0].createdAt).toBeDefined();
   });
@@ -92,7 +98,12 @@ describe('admin lecturer approval (UC22)', () => {
     expect(res.status).toBe(200);
     expect(await roleOf(id)).toEqual({ usr_role: 'student', usr_lecturer_status: 'rejected' });
     expect(await actions()).toEqual([
-      { aac_usr_id: id, aac_admin_id: expect.any(Number), aac_action: 'reject_lecturer', aac_reason: 'Staff ID not found in directory' },
+      {
+        aac_usr_id: id,
+        aac_admin_id: expect.any(Number),
+        aac_action: 'reject_lecturer',
+        aac_reason: 'Staff ID not found in directory',
+      },
     ]);
     const me = await request(app).get('/api/auth/me').set(asUser(id));
     expect(me.body.user.role).toBe('student');
@@ -145,7 +156,10 @@ describe('admin:create bootstrap script', () => {
     const id = await insertUser({ email: 'root@parp.test', lecturerStatus: 'pending' });
     const user = await createAdmin(valid);
     expect(user).toMatchObject({ id, email: 'root@parp.test', role: 'admin', lecturerStatus: null });
-    const res = await request(app).post('/api/auth/login').set(CSRF).send({ email: 'root@parp.test', password: 'Str0ngAdminPass' });
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set(CSRF)
+      .send({ email: 'root@parp.test', password: 'Str0ngAdminPass' });
     expect(res.status).toBe(200);
     expect(res.body.user.role).toBe('admin');
   });
@@ -164,14 +178,25 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
   });
 
   const report = async (noteId: number, reason = 'inaccurate') =>
-    pool.query(`INSERT INTO "REPORT_T" (rpt_pst_id, rpt_reporter_id, rpt_reason) VALUES ($1, $2, $3)`, [noteId, await insertUser(), reason]);
-  const resolve = (noteId: number, body: object) => request(app).post(`/api/admin/reports/${noteId}/resolve`).set(admin).send(body);
+    pool.query(`INSERT INTO "REPORT_T" (rpt_pst_id, rpt_reporter_id, rpt_reason) VALUES ($1, $2, $3)`, [
+      noteId,
+      await insertUser(),
+      reason,
+    ]);
+  const resolve = (noteId: number, body: object) =>
+    request(app).post(`/api/admin/reports/${noteId}/resolve`).set(admin).send(body);
   const act = (userId: number, action: string, body: object) =>
     request(app).post(`/api/admin/users/${userId}/${action}`).set(admin).send(body);
   const reports = async () =>
-    (await pool.query('SELECT rpt_status, rpt_resolved_by, rpt_remark, rpt_resolved_at FROM "REPORT_T" ORDER BY rpt_id')).rows;
-  const statusOf = async (id: number) => (await pool.query('SELECT usr_status FROM "USER_T" WHERE usr_id = $1', [id])).rows[0].usr_status;
-  const noteStatus = async (id: number) => (await pool.query('SELECT pst_status FROM "POST_T" WHERE pst_id = $1', [id])).rows[0].pst_status;
+    (
+      await pool.query(
+        'SELECT rpt_status, rpt_resolved_by, rpt_remark, rpt_resolved_at FROM "REPORT_T" ORDER BY rpt_id',
+      )
+    ).rows;
+  const statusOf = async (id: number) =>
+    (await pool.query('SELECT usr_status FROM "USER_T" WHERE usr_id = $1', [id])).rows[0].usr_status;
+  const noteStatus = async (id: number) =>
+    (await pool.query('SELECT pst_status FROM "POST_T" WHERE pst_id = $1', [id])).rows[0].pst_status;
 
   it('ADM-TC2: resolving without a remark returns 400 and changes nothing', async () => {
     await report(note);
@@ -190,9 +215,20 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ outcome: 'dismiss', resolved: 1 });
     expect(await reports()).toEqual([
-      { rpt_status: 'dismissed', rpt_resolved_by: adminId, rpt_remark: 'Content accurate', rpt_resolved_at: expect.any(Date) },
+      {
+        rpt_status: 'dismissed',
+        rpt_resolved_by: adminId,
+        rpt_remark: 'Content accurate',
+        rpt_resolved_at: expect.any(Date),
+      },
     ]);
-    expect((await request(app).get(`/api/notes/${note}`).set(asUser(await insertUser()))).status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .get(`/api/notes/${note}`)
+          .set(asUser(await insertUser()))
+      ).status,
+    ).toBe(200);
     expect((await request(app).get('/api/admin/reports').set(admin)).body.groups).toEqual([]);
   });
 
@@ -226,7 +262,9 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     const res = await act(author, 'suspend', { reason: 'Repeated spam' });
     expect(res.status).toBe(200);
     expect(res.body.user).toMatchObject({ id: author, status: 'suspended' });
-    expect(await actions()).toEqual([{ aac_usr_id: author, aac_admin_id: adminId, aac_action: 'suspend', aac_reason: 'Repeated spam' }]);
+    expect(await actions()).toEqual([
+      { aac_usr_id: author, aac_admin_id: adminId, aac_action: 'suspend', aac_reason: 'Repeated spam' },
+    ]);
     expect((await request(app).get('/api/auth/me').set(token)).status).toBe(401);
   });
 
@@ -234,7 +272,10 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     await act(author, 'restrict', { reason: 'Warning' });
     const token = asUser(author);
     expect((await request(app).get('/api/feed').set(token)).status).toBe(200);
-    const created = await request(app).post('/api/notes').set(token).send({ title: 'New', slides: ['<p>x</p>'] });
+    const created = await request(app)
+      .post('/api/notes')
+      .set(token)
+      .send({ title: 'New', slides: ['<p>x</p>'] });
     expect(created.status).toBe(403);
     const other = await insertNote(await insertUser());
     const commented = await request(app).post(`/api/notes/${other}/comments`).set(token).send({ body: 'hi' });
@@ -265,12 +306,18 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     const res = await request(app).get('/api/admin/reports').set(admin);
     expect(res.status).toBe(200);
     expect(res.body.groups.map((g: { id: number }) => g.id)).toEqual([note, newer]);
-    expect(res.body.groups[0]).toMatchObject({ title: 'Reported note', reportCount: 2, author: { id: author, displayName: 'Author A' } });
+    expect(res.body.groups[0]).toMatchObject({
+      title: 'Reported note',
+      reportCount: 2,
+      author: { id: author, displayName: 'Author A' },
+    });
     expect(res.body.groups[0].reports.map((r: { reason: string }) => r.reason)).toEqual(['inaccurate', 'other']);
     expect(res.body.groups[0].slides).toBeUndefined(); // the queue carries summaries only; the review panel loads the note (ADM-TC30)
     expect(res.body.nextCursor).toBeNull();
     expect((await resolve(note, { outcome: 'archive', remark: 'x' })).status).toBe(400);
-    expect((await resolve(note, { outcome: 'hide', remark: 'x'.repeat(301) })).body.error).toBe('Remark must be at most 300 characters');
+    expect((await resolve(note, { outcome: 'hide', remark: 'x'.repeat(301) })).body.error).toBe(
+      'Remark must be at most 300 characters',
+    );
   });
 
   it('ADM-TC29: the report queue pages 20 groups at a time by oldest report, then note id', async () => {
@@ -278,7 +325,11 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     for (let i = 0; i < 22; i++) notes.push(await insertNote(author));
     for (const n of notes) await report(n);
     await pool.query(`UPDATE "REPORT_T" SET rpt_created_at = '2026-10-01T00:00:00.123456Z'`); // one shared timestamp: ties break on id
-    const page = (cursor?: string) => request(app).get('/api/admin/reports').query(cursor ? { cursor } : {}).set(admin);
+    const page = (cursor?: string) =>
+      request(app)
+        .get('/api/admin/reports')
+        .query(cursor ? { cursor } : {})
+        .set(admin);
     const p1 = await page();
     expect(p1.body.groups).toHaveLength(20);
     expect(p1.body.nextCursor).toMatch(/^\d+_\d+$/);
@@ -293,7 +344,12 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     const get = (id: number | string) => request(app).get(`/api/admin/reports/${id}`).set(admin);
     const res = await get(note);
     expect(res.status).toBe(200);
-    expect(res.body.group).toMatchObject({ id: note, title: 'Reported note', reportCount: 1, reports: [{ reason: 'spam' }] });
+    expect(res.body.group).toMatchObject({
+      id: note,
+      title: 'Reported note',
+      reportCount: 1,
+      reports: [{ reason: 'spam' }],
+    });
     expect(res.body.group.slides).toHaveLength(3);
     expect((await get(await insertNote(author))).status).toBe(404); // no open reports
     expect((await get('abc')).status).toBe(400);
@@ -306,7 +362,13 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     await resolve(note, { outcome: 'hide', remark: 'Wrong' });
     const res = await request(app).get('/api/admin/users?q=author').set(admin);
     expect(res.body.users).toEqual([
-      expect.objectContaining({ id: author, displayName: 'Author A', role: 'student', status: 'active', upheldReports: 1 }),
+      expect.objectContaining({
+        id: author,
+        displayName: 'Author A',
+        role: 'student',
+        status: 'active',
+        upheldReports: 1,
+      }),
     ]);
     await act(author, 'suspend', { reason: 'Plagiarism' });
     expect((await act(author, 'reinstate', { reason: 'Appeal accepted' })).body.user.status).toBe('active');
@@ -317,19 +379,33 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
 
   it('ADM-TC18: deleting anonymises the account, hides its notes, and the account cannot be acted on again', async () => {
     const draft = await insertNote(author, { status: 'draft' });
-    const lect = await insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: 'S77', displayName: 'Dr Gone' });
+    const lect = await insertUser({
+      role: 'lecturer',
+      lecturerStatus: 'approved',
+      staffId: 'S77',
+      displayName: 'Dr Gone',
+    });
     const other = await insertNote(await insertUser());
     await request(app).post(`/api/notes/${other}/comments`).set(asUser(lect)).send({ body: 'Lecturer tip' });
-    const thread = async () => (await request(app).get(`/api/notes/${other}/comments`).set(asUser(author))).body.comments[0];
+    const thread = async () =>
+      (await request(app).get(`/api/notes/${other}/comments`).set(asUser(author))).body.comments[0];
     expect(await thread()).toMatchObject({ pinned: true, author: { isVerifiedLecturer: true } });
     await act(lect, 'delete', { reason: 'Left the university' });
-    expect(await thread()).toMatchObject({ pinned: false, author: { displayName: 'Deleted user', isVerifiedLecturer: false } });
-    expect((await pool.query('SELECT usr_programme, usr_lecturer_status FROM "USER_T" WHERE usr_id = $1', [lect])).rows[0])
-      .toEqual({ usr_programme: null, usr_lecturer_status: null });
+    expect(await thread()).toMatchObject({
+      pinned: false,
+      author: { displayName: 'Deleted user', isVerifiedLecturer: false },
+    });
+    expect(
+      (await pool.query('SELECT usr_programme, usr_lecturer_status FROM "USER_T" WHERE usr_id = $1', [lect])).rows[0],
+    ).toEqual({ usr_programme: null, usr_lecturer_status: null });
 
     const res = await act(author, 'delete', { reason: 'Requested by user' });
     expect(res.status).toBe(200);
-    expect(res.body.user).toMatchObject({ status: 'deleted', displayName: 'Deleted user', email: `deleted-${author}@invalid` });
+    expect(res.body.user).toMatchObject({
+      status: 'deleted',
+      displayName: 'Deleted user',
+      email: `deleted-${author}@invalid`,
+    });
     expect(await noteStatus(note)).toBe('hidden');
     expect(await noteStatus(draft)).toBe('draft');
     expect((await request(app).get('/api/auth/me').set(asUser(author))).status).toBe(401);

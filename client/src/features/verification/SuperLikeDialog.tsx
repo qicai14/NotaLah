@@ -3,7 +3,15 @@ import { Dialog } from '../../components/Dialog';
 import { api, errorText } from '../../lib/api';
 
 /** Confirmation with an optional review remark before a lecturer verifies a note (UC19, wireframe 17). */
-export function SuperLikeDialog({ noteId, onDone, onClose }: { noteId: number; onDone(verifiedBy: string): void; onClose(): void }) {
+export function SuperLikeDialog({
+  noteId,
+  onDone,
+  onClose,
+}: {
+  noteId: number;
+  onDone(verifiedBy: string): void;
+  onClose(): void;
+}) {
   const [remark, setRemark] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -14,7 +22,10 @@ export function SuperLikeDialog({ noteId, onDone, onClose }: { noteId: number; o
     setBusy(true);
     setError(null);
     try {
-      const r = await api<{ verifiedBy: string }>(`/notes/${noteId}/verify`, { method: 'POST', body: { remark: remark.trim() || null } });
+      const r = await api<{ verifiedBy: string }>(`/notes/${noteId}/verify`, {
+        method: 'POST',
+        body: { remark: remark.trim() || null },
+      });
       onDone(r.verifiedBy);
     } catch (err) {
       setError(errorText(err));
@@ -32,8 +43,16 @@ export function SuperLikeDialog({ noteId, onDone, onClose }: { noteId: number; o
           <label htmlFor="superlike-remark" className="text-sm font-medium">
             Review remark (optional)
           </label>
-          <textarea id="superlike-remark" value={remark} onChange={(e) => setRemark(e.target.value)} rows={3} className="rounded-md border border-slate-300 px-3 py-2" />
-          <span className={`text-xs ${remark.length > 300 ? 'text-red-600' : 'text-slate-500'}`}>{remark.length}/300</span>
+          <textarea
+            id="superlike-remark"
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
+            rows={3}
+            className="rounded-md border border-slate-300 px-3 py-2"
+          />
+          <span className={`text-xs ${remark.length > 300 ? 'text-red-600' : 'text-slate-500'}`}>
+            {remark.length}/300
+          </span>
         </div>
         {error && (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -44,7 +63,11 @@ export function SuperLikeDialog({ noteId, onDone, onClose }: { noteId: number; o
           <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-4 py-2">
             Cancel
           </button>
-          <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={busy}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60"
+          >
             {busy ? 'Verifying…' : 'Super Like'}
           </button>
         </div>

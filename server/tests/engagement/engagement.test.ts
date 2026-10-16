@@ -14,7 +14,8 @@ const get = (uid: number, url: string) => request(app).get(url).set(auth(uid));
 const comment = (uid: number, noteId: number, body: object) => post(uid, `/api/notes/${noteId}/comments`, body);
 const interactions = async (type: string) =>
   Number((await pool.query(`SELECT COUNT(*) FROM "INTERACTION_T" WHERE int_type = $1`, [type])).rows[0].count);
-const lecturer = () => insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
+const lecturer = () =>
+  insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
 
 describe('Engagement', () => {
   it('ENG-TC12: a view is logged once per 30 minutes; invisible notes give 404', async () => {
@@ -70,9 +71,12 @@ describe('Engagement', () => {
       expect((await comment(a, id, { body: 'x' })).status).toBe(404);
       expect((await post(a, `/api/notes/${id}/bookmark`)).status).toBe(404);
     }
-    const cid = (await pool.query<{ cmt_id: number }>(
-      `INSERT INTO "COMMENT_T" (cmt_pst_id, cmt_usr_id, cmt_body) VALUES ($1, $2, 'hello') RETURNING cmt_id`, [priv, b],
-    )).rows[0].cmt_id;
+    const cid = (
+      await pool.query<{ cmt_id: number }>(
+        `INSERT INTO "COMMENT_T" (cmt_pst_id, cmt_usr_id, cmt_body) VALUES ($1, $2, 'hello') RETURNING cmt_id`,
+        [priv, b],
+      )
+    ).rows[0].cmt_id;
     expect((await post(a, `/api/comments/${cid}/like`)).status).toBe(404);
     expect((await get(a, `/api/notes/${priv}/comments`)).status).toBe(404);
     expect((await del(b, `/api/comments/${cid}`)).status).toBe(204); // author may still delete
@@ -93,7 +97,12 @@ describe('Engagement', () => {
   });
 
   it('ENG-TC22: comments and replies by a suspended author are unavailable except to admins', async () => {
-    const [author, reader, gone, admin] = [await insertUser(), await insertUser(), await lecturer(), await insertUser({ role: 'admin' })];
+    const [author, reader, gone, admin] = [
+      await insertUser(),
+      await insertUser(),
+      await lecturer(),
+      await insertUser({ role: 'admin' }),
+    ];
     const p = await insertNote(author);
     const withReply = (await comment(gone, p, { body: 'lecturer note' })).body.comment.id;
     await comment(reader, p, { body: 'reader reply', parentId: withReply });
@@ -115,7 +124,11 @@ describe('Engagement', () => {
     expect((await comment(reader, p, { body: 'x', parentId: withReply })).status).toBe(400); // like a deleted parent
     expect((await post(reader, `/api/comments/${withReply}/like`)).status).toBe(404);
     const all: Shown[] = (await get(admin, url)).body.comments;
-    expect(all.map((c) => [c.body, c.pinned])).toEqual([['lecturer note', true], ['lonely', true], ['reader top', false]]);
+    expect(all.map((c) => [c.body, c.pinned])).toEqual([
+      ['lecturer note', true],
+      ['lonely', true],
+      ['reader top', false],
+    ]);
     expect(all[2].replies.map((r) => r.body)).toEqual(['suspended reply']);
 
     const owner = await insertUser();
@@ -207,13 +220,19 @@ describe('Engagement', () => {
     ids.push((await comment(students[1], p, { body: 'five' })).body.comment.id);
     ids.push((await comment(students[2], p, { body: 'two-b' })).body.comment.id);
     const l = (await comment(lect, p, { body: 'lecturer' })).body.comment.id;
-    const likeBy = (n: number, id: number) => Promise.all(fans.slice(0, n).map((f) => post(f, `/api/comments/${id}/like`)));
+    const likeBy = (n: number, id: number) =>
+      Promise.all(fans.slice(0, n).map((f) => post(f, `/api/comments/${id}/like`)));
     await likeBy(2, ids[0]);
     await likeBy(5, ids[1]);
     await likeBy(2, ids[2]);
     const res = await get(fans[0], `/api/notes/${p}/comments`);
     expect(res.body.comments.map((c: { id: number }) => c.id)).toEqual([l, ids[1], ids[0], ids[2]]);
-    expect(res.body.comments[0]).toMatchObject({ pinned: true, author: { isVerifiedLecturer: true }, likes: 0, likedByMe: false });
+    expect(res.body.comments[0]).toMatchObject({
+      pinned: true,
+      author: { isVerifiedLecturer: true },
+      likes: 0,
+      likedByMe: false,
+    });
     expect(res.body.comments[1]).toMatchObject({ likes: 5, likedByMe: true });
   });
 
@@ -267,7 +286,9 @@ describe('Engagement', () => {
     expect(dup.status).toBe(409);
     expect(dup.body.error).toBe('You have already reported this note');
     expect((await post(await lecturer(), `/api/notes/${p}/report`, { reason: 'copyright' })).status).toBe(201);
-    expect((await post(await insertUser(), `/api/notes/${p}/report`, { reason: 'spam', details: 'x'.repeat(501) })).status).toBe(400);
+    expect(
+      (await post(await insertUser(), `/api/notes/${p}/report`, { reason: 'spam', details: 'x'.repeat(501) })).status,
+    ).toBe(400);
   });
 
   it('ENG-TC10: bookmark, list newest first, remove', async () => {
@@ -298,10 +319,17 @@ describe('Engagement', () => {
     await pool.query(`UPDATE "COMMENT_T" SET cmt_is_deleted = TRUE WHERE cmt_id = $1`, [ids[4]]); // no replies: omitted
     await pool.query(`UPDATE "COMMENT_T" SET cmt_created_at = '2026-10-01T00:00:00.123456Z'`); // ties break on id
     const pages = await walkPages<{ id: number; replies: { id: number }[] }>(
-      (cursor) => get(fan, `/api/notes/${p}/comments?limit=2${cursor ? `&cursor=${cursor}` : ''}`), 'comments');
+      (cursor) => get(fan, `/api/notes/${p}/comments?limit=2${cursor ? `&cursor=${cursor}` : ''}`),
+      'comments',
+    );
     expect(pages.map((pg) => pg.length)).toEqual([2, 2, 1]);
     expect(pages.flat().map((c) => c.id)).toEqual([pinned, ids[3], ids[0], ids[1], ids[2]]);
-    expect(pages.flat().find((c) => c.id === ids[0])!.replies.map((r) => r.id)).toEqual([reply]);
+    expect(
+      pages
+        .flat()
+        .find((c) => c.id === ids[0])!
+        .replies.map((r) => r.id),
+    ).toEqual([reply]);
     const first = await get(fan, `/api/notes/${p}/comments`); // no cursor: first page (default 50), as the current client calls it
     expect(first.body.comments).toHaveLength(5);
     expect(first.body.nextCursor).toBeNull();
@@ -317,7 +345,10 @@ describe('Engagement', () => {
     for (let i = 0; i < 5; i++) notes.push(await insertNote(author, { slides: 0 }));
     for (const n of notes) await post(a, `/api/notes/${n}/bookmark`);
     await pool.query(`UPDATE "BOOKMARK_T" SET bmk_created_at = '2026-10-01T00:00:00.123456Z'`);
-    const pages = await walkPages<{ id: number }>((cursor) => get(a, `/api/bookmarks?limit=2${cursor ? `&cursor=${cursor}` : ''}`), 'notes');
+    const pages = await walkPages<{ id: number }>(
+      (cursor) => get(a, `/api/bookmarks?limit=2${cursor ? `&cursor=${cursor}` : ''}`),
+      'notes',
+    );
     expect(pages.map((pg) => pg.length)).toEqual([2, 2, 1]);
     expect(pages.flat().map((n) => n.id)).toEqual([...notes].reverse());
     expect((await get(a, '/api/bookmarks?cursor=1')).status).toBe(400);

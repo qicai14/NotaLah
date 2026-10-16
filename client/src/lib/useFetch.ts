@@ -25,10 +25,13 @@ export function useFetch<T>(path: string | null) {
   }, [path, tick]);
 
   const current = state.path === path;
-  const setData = useCallback(
-    (fn: (d: T | null) => T | null) => setState((s) => ({ ...s, data: fn(s.data) })),
-    [],
-  );
+  const setData = useCallback((fn: (d: T | null) => T | null) => setState((s) => ({ ...s, data: fn(s.data) })), []);
   const reload = useCallback(() => setTick((t) => t + 1), []);
-  return { data: current ? state.data : null, setData, error: current ? state.error : null, loading: path !== null && !current, reload };
+  return {
+    data: current ? state.data : null,
+    setData,
+    error: current ? state.error : null,
+    loading: path !== null && !current,
+    reload,
+  };
 }

@@ -59,12 +59,24 @@ export default function AdminLecturers() {
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-300">
-                <th scope="col" className="py-2 pr-3">Name</th>
-                <th scope="col" className="py-2 pr-3">Email</th>
-                <th scope="col" className="py-2 pr-3">Staff ID</th>
-                <th scope="col" className="py-2 pr-3">Programme</th>
-                <th scope="col" className="py-2 pr-3">Applied</th>
-                <th scope="col" className="py-2">Actions</th>
+                <th scope="col" className="py-2 pr-3">
+                  Name
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Email
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Staff ID
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Programme
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Applied
+                </th>
+                <th scope="col" className="py-2">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -90,13 +102,21 @@ export default function AdminLecturers() {
                           className="rounded-md border border-slate-300 px-2 py-1"
                         />
                         <div className="flex gap-2">
-                          <button type="submit" disabled={busy} className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60">
+                          <button
+                            type="submit"
+                            disabled={busy}
+                            className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                          >
                             Confirm reject
                           </button>
-                          <button type="button" onClick={() => {
+                          <button
+                            type="button"
+                            onClick={() => {
                               setRejecting(null);
                               setError(null);
-                            }} className="rounded-md border border-slate-300 px-3 py-1">
+                            }}
+                            className="rounded-md border border-slate-300 px-3 py-1"
+                          >
                             Cancel
                           </button>
                         </div>

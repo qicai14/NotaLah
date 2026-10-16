@@ -12,7 +12,11 @@ export const verificationRouter = Router();
 
 verificationRouter.param('id', idParam('Note not found'));
 
-const remarkSchema = z.string({ error: 'Invalid remark' }).trim().max(300, 'Remark must be at most 300 characters').nullish();
+const remarkSchema = z
+  .string({ error: 'Invalid remark' })
+  .trim()
+  .max(300, 'Remark must be at most 300 characters')
+  .nullish();
 
 // Role and approval come from the DB on every request (requireAuth); a pending applicant is still a student (D6).
 const approved: RequestHandler = (req, res, next) => {
@@ -26,7 +30,8 @@ verificationRouter.post('/notes/:id/verify', ...lecturerOnly, requireActive, asy
   const t = await getTarget(id, me(req).id);
   if (!t) return res.status(404).json({ error: 'Note not found' });
   const parsed = remarkSchema.safeParse(req.body?.remark);
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: { remark: parsed.error.issues[0].message } });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: { remark: parsed.error.issues[0].message } });
   if (t.authorId === me(req).id || t.isEditor) return res.status(409).json({ error: 'Cannot verify own note' });
   const { added, verification } = await repo.addVerification(id, me(req).id, parsed.data || null);
   if (added) await notify({ type: 'super_like', actorId: me(req).id, noteId: id }, [t.authorId]);

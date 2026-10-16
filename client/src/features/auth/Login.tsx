@@ -45,7 +45,14 @@ export default function Login() {
         </p>
       )}
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-        <Field label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <Field
           label="Password"
           name="password"
@@ -59,7 +66,11 @@ export default function Login() {
             {error}
           </p>
         )}
-        <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={busy}
+          className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60"
+        >
           {busy ? 'Logging in…' : 'Log in'}
         </button>
       </form>

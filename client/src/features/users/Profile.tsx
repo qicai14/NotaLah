@@ -59,7 +59,14 @@ export default function Profile() {
               {n.title}
             </Link>
             <p className="text-sm text-slate-600">
-              {[n.moduleCode, timeAgo(n.publishedAt), n.verifiedBy && `Verified by ${n.verifiedBy}`, n.hashtags.map((h) => `#${h}`).join(' ')].filter(Boolean).join(' · ')}
+              {[
+                n.moduleCode,
+                timeAgo(n.publishedAt),
+                n.verifiedBy && `Verified by ${n.verifiedBy}`,
+                n.hashtags.map((h) => `#${h}`).join(' '),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           </li>
         ))}

@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useId, useRef } from 'react';
 
-const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Modal: focus moves in on open and back to the opener on close; Escape closes; Tab stays inside. */
 export function Dialog({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
@@ -34,7 +35,10 @@ export function Dialog({ title, onClose, children }: { title: string; onClose():
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div
         ref={ref}
         role="dialog"

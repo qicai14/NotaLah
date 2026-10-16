@@ -6,13 +6,21 @@ import { useFetch } from '../../lib/useFetch';
 import type { AdminUser } from '../../types';
 
 type Action = 'restrict' | 'suspend' | 'reinstate' | 'delete';
-const LABEL: Record<Action, string> = { restrict: 'Restrict', suspend: 'Suspend', reinstate: 'Reinstate', delete: 'Delete' };
+const LABEL: Record<Action, string> = {
+  restrict: 'Restrict',
+  suspend: 'Suspend',
+  reinstate: 'Reinstate',
+  delete: 'Delete',
+};
 
 /** Actions that change something for an account in this status; administrators and deleted accounts get none. */
 function actionsFor(u: AdminUser): Action[] {
   if (u.role === 'admin' || u.status === 'deleted') return [];
   return (['restrict', 'suspend', 'reinstate', 'delete'] as Action[]).filter(
-    (a) => !(a === 'restrict' && u.status === 'restricted') && !(a === 'suspend' && u.status === 'suspended') && !(a === 'reinstate' && u.status === 'active'),
+    (a) =>
+      !(a === 'restrict' && u.status === 'restricted') &&
+      !(a === 'suspend' && u.status === 'suspended') &&
+      !(a === 'reinstate' && u.status === 'active'),
   );
 }
 
@@ -39,7 +47,10 @@ export default function AdminUsers() {
     setBusy(true);
     setFormError(undefined);
     try {
-      const r = await api<{ user: AdminUser }>(`/admin/users/${u.id}/${action}`, { method: 'POST', body: { reason: reason.trim() } });
+      const r = await api<{ user: AdminUser }>(`/admin/users/${u.id}/${action}`, {
+        method: 'POST',
+        body: { reason: reason.trim() },
+      });
       setData((d) => d && { users: d.users.map((x) => (x.id === u.id ? r.user : x)) });
       setStatus(`${u.displayName}: ${LABEL[action].toLowerCase()} done (status ${r.user.status}).`);
       setPending(null);
@@ -56,7 +67,12 @@ export default function AdminUsers() {
       <h1 className="mb-4 text-xl font-semibold">Users</h1>
       <form onSubmit={search} role="search" className="mb-4 flex items-end gap-2">
         <div className="flex-1">
-          <Field label="Search by name or email" name="user-search" value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <Field
+            label="Search by name or email"
+            name="user-search"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
         </div>
         <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-white">
           Search
@@ -77,12 +93,24 @@ export default function AdminUsers() {
           <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-300">
-                <th scope="col" className="py-2 pr-3">Name</th>
-                <th scope="col" className="py-2 pr-3">Email</th>
-                <th scope="col" className="py-2 pr-3">Role</th>
-                <th scope="col" className="py-2 pr-3">Status</th>
-                <th scope="col" className="py-2 pr-3">Upheld reports</th>
-                <th scope="col" className="py-2">Actions</th>
+                <th scope="col" className="py-2 pr-3">
+                  Name
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Email
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Role
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Status
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Upheld reports
+                </th>
+                <th scope="col" className="py-2">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -109,10 +137,18 @@ export default function AdminUsers() {
                           onChange={(e) => setReason(e.target.value)}
                         />
                         <div className="flex gap-2">
-                          <button type="submit" disabled={busy} className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60">
+                          <button
+                            type="submit"
+                            disabled={busy}
+                            className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                          >
                             Confirm {pending.action}
                           </button>
-                          <button type="button" onClick={() => (setPending(null), setFormError(undefined))} className="rounded-md border border-slate-300 px-3 py-1">
+                          <button
+                            type="button"
+                            onClick={() => (setPending(null), setFormError(undefined))}
+                            className="rounded-md border border-slate-300 px-3 py-1"
+                          >
                             Cancel
                           </button>
                         </div>
@@ -124,7 +160,11 @@ export default function AdminUsers() {
                             key={a}
                             type="button"
                             disabled={busy}
-                            onClick={() => (setPending({ id: u.id, action: a }), setReason(''), setFormError(undefined))}
+                            onClick={() => (
+                              setPending({ id: u.id, action: a }),
+                              setReason(''),
+                              setFormError(undefined)
+                            )}
                             aria-label={`${LABEL[a]} ${u.displayName}`}
                             className={`rounded-md border px-2 py-1 ${a === 'delete' || a === 'suspend' ? 'border-red-400 text-red-700' : 'border-slate-300'}`}
                           >

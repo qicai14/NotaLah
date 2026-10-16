@@ -62,7 +62,11 @@ export default function Feed() {
             <Link to="/notes/new" className="rounded-md bg-indigo-600 px-4 py-2 text-white">
               Create Note
             </Link>
-            <span aria-disabled="true" title="Search arrives in Sprint 4" className="cursor-not-allowed rounded-md border border-slate-300 px-4 py-2 text-slate-400">
+            <span
+              aria-disabled="true"
+              title="Search arrives in Sprint 4"
+              className="cursor-not-allowed rounded-md border border-slate-300 px-4 py-2 text-slate-400"
+            >
               Search (coming soon)
             </span>
           </div>
@@ -82,7 +86,9 @@ export default function Feed() {
         </div>
       )}
       {loading && <p className="mt-4 text-center text-sm text-slate-500">Loading…</p>}
-      {next === null && items.length > 0 && <p className="mt-6 text-center text-sm text-slate-500">You are all caught up.</p>}
+      {next === null && items.length > 0 && (
+        <p className="mt-6 text-center text-sm text-slate-500">You are all caught up.</p>
+      )}
       <div ref={sentinel} className="h-4" />
     </section>
   );
