@@ -1,13 +1,12 @@
 import { Bookmark, Heart, Highlighter, MessageCircle } from 'lucide-react';
-import { lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { markGuest } from './guest';
+import Login from './Login';
+import Register from './Register';
 
-const Login = lazy(() => import('./Login'));
-const Register = lazy(() => import('./Register'));
 
 /** A still of the phone feed, drawn with tokens so it follows the theme. Decorative. */
 function PhonePreview() {
@@ -81,6 +80,7 @@ const POINTS = [
 /** First screen for signed-out visitors (R31, wireframe 01). `/login` and `/register` open their dialog on top. */
 export default function Welcome({ dialog }: { dialog?: 'login' | 'register' }) {
   const navigate = useNavigate();
+  const close = () => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/welcome'));
   const browse = () => {
     markGuest();
     navigate('/');
@@ -138,7 +138,7 @@ export default function Welcome({ dialog }: { dialog?: 'login' | 'register' }) {
 
       <footer className="px-5 pb-6 text-caption text-muted-foreground md:px-10">&copy; 2026 NotaLah</footer>
 
-      <Dialog open={dialog !== undefined} onOpenChange={(o) => !o && navigate('/welcome')}>
+      <Dialog open={dialog !== undefined} onOpenChange={(o) => !o && close()}>
         <DialogContent className="max-h-[92dvh] gap-0 overflow-y-auto p-6 sm:max-w-[28rem] sm:p-8">
           <DialogTitle className="mb-5 text-title font-bold">
             {dialog === 'register' ? 'Create your NotaLah account' : 'Log in to NotaLah'}
@@ -146,9 +146,7 @@ export default function Welcome({ dialog }: { dialog?: 'login' | 'register' }) {
           <DialogDescription className="sr-only">
             {dialog === 'register' ? 'Register with your APU email.' : 'Log in with your APU email and password.'}
           </DialogDescription>
-          <Suspense fallback={<p className="text-body-sm text-muted-foreground">Loading…</p>}>
-            {dialog === 'register' ? <Register /> : dialog === 'login' ? <Login /> : null}
-          </Suspense>
+          {dialog === 'register' ? <Register /> : dialog === 'login' ? <Login /> : null}
         </DialogContent>
       </Dialog>
     </div>
