@@ -166,9 +166,7 @@ function Loaded({
   const loadMore = () =>
     run(async () => {
       const cursor = more ? more.next : p.notesNextCursor;
-      const r = await api<{ notes: ProfileNote[]; nextCursor: string | null }>(
-        `/users/${p.id}/notes?cursor=${cursor}`,
-      );
+      const r = await api<{ notes: ProfileNote[]; nextCursor: string | null }>(`/users/${p.id}/notes?cursor=${cursor}`);
       setMore((m) => ({ notes: [...(m?.notes ?? []), ...r.notes], next: r.nextCursor }));
     });
 

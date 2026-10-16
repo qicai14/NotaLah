@@ -135,6 +135,12 @@ usersRouter.get('/:id', optionalAuth, async (req, res) => {
   ]);
   // the first page is embedded; GET /:id/notes?cursor=<notesNextCursor> continues it (D40)
   res.json({
-    user: { ...profile, likeCount, notes: notes.items, notesNextCursor: notes.nextCursor, ...(own ? { draftCount } : {}) },
+    user: {
+      ...profile,
+      likeCount,
+      notes: notes.items,
+      notesNextCursor: notes.nextCursor,
+      ...(own ? { draftCount } : {}),
+    },
   });
 });
