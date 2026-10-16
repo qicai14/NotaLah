@@ -23,8 +23,7 @@ import { Canvas } from './Canvas';
 import { ElementBar } from './ElementBar';
 import { type Details, PanelBody, type PanelId, PANELS } from './Panels';
 import {
-  AUTOSAVE_IDLE_MS,
-  AUTOSAVE_MAX_MS,
+  autosaveDelay,
   type Backup,
   clearBackup,
   keepMine,
@@ -222,7 +221,7 @@ export default function EditorPage() {
       if (!alive || !eligible()) return;
       first ??= Date.now();
       clearTimeout(timer);
-      timer = setTimeout(run, Math.max(0, Math.min(AUTOSAVE_IDLE_MS, first + AUTOSAVE_MAX_MS - Date.now())));
+      timer = setTimeout(run, autosaveDelay(first, Date.now()));
     };
     const onHide = () => {
       if (document.visibilityState !== 'hidden') return;
@@ -443,7 +442,7 @@ export default function EditorPage() {
           {actions}
         </header>
         {banners}
-        <div className="h-12 shrink-0 overflow-x-auto border-b bg-background">
+        <div className="h-12 shrink-0 overflow-x-auto border-b bg-background [scrollbar-width:none]">
           <div className="flex h-full items-center">
             <ElementBar />
           </div>
@@ -479,7 +478,7 @@ export default function EditorPage() {
               <SheetTitle>{PANELS.find((p) => p.id === sheet)?.label}</SheetTitle>
               <SheetDescription className="sr-only">Add to the current slide</SheetDescription>
             </SheetHeader>
-            {sheet && <PanelBody id={sheet} details={details} />}
+            {sheet && <PanelBody id={sheet} details={details} onAdd={() => setSheet(null)} />}
           </SheetContent>
         </Sheet>
         {dialogEl}

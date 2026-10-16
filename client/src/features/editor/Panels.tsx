@@ -1,4 +1,4 @@
-import { boardHeight, type Fill } from '@parp/shared';
+import { boardHeight, type Fill, type SlideElement } from '@parp/shared';
 import { Circle, Diamond, Info, MoveRight, Palette, Shapes, Square, Triangle, Type } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { inputClass } from '@/components/Field';
@@ -56,9 +56,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function TextPanel() {
-  const add = (k: keyof typeof TEXT_PRESETS) =>
+function TextPanel({ onAdd }: { onAdd?: () => void }) {
+  const add = (k: keyof typeof TEXT_PRESETS) => {
     useEditor.getState().addElement(makeText(k, boardHeight(useEditor.getState().deck.aspect)));
+    onAdd?.();
+  };
   return (
     <Section title="Default text styles">
       <button
@@ -84,9 +86,12 @@ function TextPanel() {
 
 const SHAPE_ICONS = { rect: Square, ellipse: Circle, triangle: Triangle, diamond: Diamond, arrow: MoveRight } as const;
 
-function ElementsPanel() {
+function ElementsPanel({ onAdd }: { onAdd?: () => void }) {
   const h = () => boardHeight(useEditor.getState().deck.aspect);
-  const add = useEditor.getState().addElement;
+  const add = (el: SlideElement) => {
+    useEditor.getState().addElement(el);
+    onAdd?.();
+  };
   return (
     <>
       <Section title="Shapes">
@@ -246,11 +251,12 @@ function DetailsPanel({ d }: { d: Details }) {
   );
 }
 
-export function PanelBody({ id, details }: { id: PanelId; details: Details }) {
+/** `onAdd` lets the phone sheet close once something has been added, so the new element is visible at once. */
+export function PanelBody({ id, details, onAdd }: { id: PanelId; details: Details; onAdd?: () => void }) {
   return (
     <div className="flex flex-col gap-5">
-      {id === 'text' && <TextPanel />}
-      {id === 'elements' && <ElementsPanel />}
+      {id === 'text' && <TextPanel onAdd={onAdd} />}
+      {id === 'elements' && <ElementsPanel onAdd={onAdd} />}
       {id === 'background' && <BackgroundPanel />}
       {id === 'details' && <DetailsPanel d={details} />}
     </div>

@@ -1205,3 +1205,28 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   would remove that. Video (R29) adds its own routes and the poster key.
 - **Test IDs:** NOTE-TC33, 34, 37, 38, 40 as in the R21 spec (TC34 stays R21a's URL spoofing; the proxy is NOTE-TC51), plus NOTE-TC49 (quota), TC50 (file access incl. share links), TC52 (purge), TC53 (request checks), TC54 (asset links) and TC55 (co-author assets). The quota lock is `pg_advisory_xact_lock(hashtext('asset_quota'), user)`.
 - **Reversibility:** Easy: the down step drops both tables; uploaded files stay on disk.
+
+## D56 - Slide editor core, first slice (R21c, 17 Oct 2026)
+- **Built:** `client/src/features/editor/`: zustand 5.0.15 store (13 Aug 2026, over two weeks old) with `{deck, selection,
+  activeSlide, past, future, dirty, saveState}` plus `meta` (title, module, hashtags, status, visibility, noteId,
+  baseUpdatedAt) and a `rev` counter; snapshot undo capped at 100. `shared/src/geometry.ts`: move, 8-handle resize in the
+  box's rotated frame (opposite corner or edge midpoint fixed, Shift keeps the ratio, minimum 8 units), rotation from the
+  pointer with 15-degree snap, centre/edge guides against the board and the other elements. Canvas on `SlideBoard
+  mode="edit"`, slide strip (add, duplicate with new element ids, delete, drag or menu reorder), aspect picker, text boxes
+  (TipTap only in the box being edited) and shapes/lines, contextual element bar, Text/Elements/Background/Details panels,
+  save with `baseUpdatedAt`, draft autosave, 409 Reload / Keep mine, local backup for published notes.
+- **Choices the spec left open:** a drag, a resize, a rotation and a whole text-editing session are each one undo step
+  (`preview` while moving, `commitFrom(base)` on release); title, module and hashtags are not in undo. Rotation snaps by
+  default and Alt turns snapping off (Shift is taken by keep-ratio); Alt also turns off move guides. A first tap selects
+  a text box, a second tap (or Enter) opens it for typing; Escape closes it. Autosave is skipped while the title is empty
+  (the server requires one) and the status line says "Add a title to save". "Keep mine" refetches the note's current
+  `updatedAt` and saves over it. The editor route sits outside `AppShell` (paths unchanged) so it fills the window; when the
+  first autosave moves `/notes/new` to `/notes/:id/edit`, the page remounts but keeps the store, so typing in flight and
+  undo history survive. Backups are cleared on Update and on logout. Arrow keys nudge (Shift: 10 units) and a Position
+  popover sets x, y, size, angle and opacity exactly, as the single-pointer alternative to dragging (WCAG 2.5.7).
+- **Removed:** the old TipTap `NoteEditor`, its `Toolbar`, and the `lib/slides.ts` HTML adapter, which nothing else used,
+  so NOTE-TC47 and NOTE-TC48 are retired; the `.slide-content` CSS went with them.
+- **Test IDs:** NOTE-TC44 (geometry), NOTE-TC58 (undo/redo), NOTE-TC59 (slide strip and aspect), NOTE-TC60 (save state),
+  NOTE-TC61 (autosave timing, create then PUT with baseUpdatedAt, 409).
+- **Reversibility:** Easy: client only; the API is unchanged.
+

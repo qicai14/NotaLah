@@ -12,6 +12,10 @@ export const AUTOSAVE_IDLE_MS = 2000;
 /** ...but never wait longer than this while changes keep coming. */
 export const AUTOSAVE_MAX_MS = 10_000;
 
+/** Wait before the next autosave: the idle delay, cut short so no change waits more than the maximum. */
+export const autosaveDelay = (firstChangeAt: number, now: number): number =>
+  Math.max(0, Math.min(AUTOSAVE_IDLE_MS, firstChangeAt + AUTOSAVE_MAX_MS - now));
+
 export const noteToDeck = (note: Note): Deck => ({
   aspect: note.aspect,
   theme: note.theme as ThemeId,
@@ -75,6 +79,7 @@ async function send(choice: SaveChoice): Promise<SaveOutcome> {
   } catch (e) {
     const conflict = e instanceof ApiError && e.status === 409;
     useEditor.getState().setSaveState(conflict ? 'conflict' : 'error');
+    if (conflict) return { ok: false, errors: {} }; // the conflict banner says it, with Reload and Keep mine
     if (e instanceof ApiError && Object.keys(e.errors ?? {}).length) return { ok: false, errors: e.errors };
     return { ok: false, errors: { form: errorText(e) } };
   }
