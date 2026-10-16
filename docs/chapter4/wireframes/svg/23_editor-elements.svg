@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<title>Editor: elements, shapes and slide size</title>
+<defs></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#ffffff"/>
+<g id="ws-1">
+<rect x="416" y="56" width="1024" height="844" fill="#e6e6e6"/>
+<g id="board-2">
+<rect x="703.5" y="157.5" width="449" height="561" rx="0.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="704" y="158" width="448" height="560" fill="#ffffff"/>
+<rect x="704" y="158" width="448" height="560" fill="#ffffff"/>
+<text x="735.36" y="203.94" font-size="13.44" font-weight="600" fill="#6b6b6b">AICT004 · Week 4</text>
+<text x="735.36" y="253.93" font-size="33.15" font-weight="700" letter-spacing="-0.83" fill="#1c1c1c">Model, view, controller</text>
+<rect x="735.36" y="273.3" width="354.45" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="735.36" y="297.47" width="300.52" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="735.36" y="321.64" width="331.33" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="735.36" y="345.81" width="385.28" height="292.48" rx="8.96" fill="#f2f2f2"/>
+<path d="M735.36 345.81L1120.64 638.3M1120.64 345.81L735.36 638.3" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="736.11" y="346.56" width="383.78" height="290.98" rx="8.21" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="735.36" y="652.63" width="346.75" height="9.84" rx="4.48" fill="#e6e6e6"/>
+<rect x="735.36" y="676.8" width="246.58" height="9.84" rx="4.48" fill="#e6e6e6"/>
+</g>
+<rect x="866" y="279" width="122" height="60" rx="3" fill="none" stroke="#1c1c1c" stroke-width="2"/>
+<rect x="860.25" y="273.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>
+<rect x="861" y="274" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="980.25" y="273.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>
+<rect x="981" y="274" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="860.25" y="331.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>
+<rect x="861" y="332" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="980.25" y="331.25" width="13.5" height="13.5" rx="6.75" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>
+<rect x="981" y="332" width="12" height="12" rx="6" fill="#ffffff"/>
+<rect x="862.25" y="299.25" width="9.5" height="19.5" rx="4.75" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>
+<rect x="863" y="300" width="8" height="18" rx="4" fill="#ffffff"/>
+<rect x="982.25" y="299.25" width="9.5" height="19.5" rx="4.75" fill="none" stroke="#1c1c1c" stroke-width="1.5"/>
+<rect x="983" y="300" width="8" height="18" rx="4" fill="#ffffff"/>
+<rect x="913.5" y="349.5" width="27" height="27" rx="13.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="914" y="350" width="26" height="26" rx="13" fill="#ffffff"/>
+<rect x="921" y="357" width="12" height="12" rx="6" fill="#f2f2f2"/>
+<path d="M922.76 358.76L931.24 367.24M931.24 358.76L922.76 367.24" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="921.75" y="357.75" width="10.5" height="10.5" rx="5.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="807.39" y="67.5" width="617.11" height="49" rx="12.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<rect x="807.89" y="68" width="616.11" height="48" rx="12" fill="#ffffff"/>
+<rect x="821.89" y="82" width="20" height="20" rx="6" fill="#474747"/>
+<text x="847.89" y="96.47" font-size="13" font-weight="600" fill="#1c1c1c">Fill</text>
+<text x="882.63" y="96.47" font-size="13" font-weight="600" fill="#1c1c1c">Border</text>
+<rect x="933" y="74.5" width="57.94" height="35" rx="7.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<text x="940.5" y="96.47" font-size="13" font-weight="600" fill="#1c1c1c">2 px</text>
+<g transform="translate(971.44 86) scale(0.5)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<text x="1001.44" y="96.47" font-size="13" font-weight="600" fill="#1c1c1c">Corner 8</text>
+<rect x="1066.19" y="80" width="1" height="24" fill="#d6d6d6"/>
+<text x="1081.19" y="96.47" font-size="13" font-weight="600" fill="#1c1c1c">Add text</text>
+<text x="1149.91" y="96.28" font-size="12" font-weight="600" fill="#474747">Opacity</text>
+<text x="1209.55" y="96.47" font-size="13" font-weight="600" fill="#1c1c1c">Position</text>
+<rect x="1270.92" y="80" width="1" height="24" fill="#d6d6d6"/>
+<text x="1285.92" y="96.28" font-size="12" font-weight="600" fill="#474747">Lock</text>
+<text x="1328.91" y="96.28" font-size="12" font-weight="600" fill="#474747">Copy</text>
+<text x="1374.86" y="96.28" font-size="12" font-weight="600" fill="#474747">Delete</text>
+</g>
+<g id="ebot-3">
+<rect x="416" y="756" width="1024" height="144" fill="#ffffff"/>
+<rect x="416" y="756" width="1024" height="1" fill="#d6d6d6"/>
+<rect x="434.75" y="770.75" width="60.5" height="74.5" rx="9.25" fill="none" stroke="#1c1c1c" stroke-width="2.5"/>
+<rect x="436" y="772" width="58" height="72" rx="8" fill="#ffffff"/>
+<rect x="436" y="772" width="58" height="72" fill="#ffffff"/>
+<text x="440.05" y="777.77" font-size="1.74" font-weight="600" fill="#6b6b6b">AICT004 · Week 4</text>
+<text x="440.05" y="784.17" font-size="4.29" font-weight="700" letter-spacing="-0.11" fill="#1c1c1c">Model, view, controller</text>
+<rect x="440.05" y="786.88" width="45.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="440.05" y="789.98" width="38.92" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="440.05" y="793.09" width="42.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="440.05" y="796.2" width="49.91" height="37.53" rx="1.16" fill="#f2f2f2"/>
+<path d="M440.05 796.2L489.95 833.73M489.95 796.2L440.05 833.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="440.8" y="796.95" width="48.41" height="36.03" rx="0.41" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="440.05" y="835.58" width="44.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="440.05" y="838.69" width="31.94" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="440" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
+<text x="444" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">1</text>
+<rect x="503.5" y="771.5" width="59" height="73" rx="8.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="504" y="772" width="58" height="72" rx="8" fill="#ffffff"/>
+<rect x="504" y="772" width="58" height="72" fill="#ffffff"/>
+<text x="508.05" y="777.77" font-size="1.74" font-weight="600" fill="#6b6b6b">AICT004 · Week 4</text>
+<text x="508.05" y="784.17" font-size="4.29" font-weight="700" letter-spacing="-0.11" fill="#1c1c1c">Model, view, controller</text>
+<rect x="508.05" y="786.88" width="45.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="508.05" y="789.98" width="38.92" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="508.05" y="793.09" width="42.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="508.05" y="796.2" width="49.91" height="37.53" rx="1.16" fill="#f2f2f2"/>
+<path d="M508.05 796.2L557.95 833.73M557.95 796.2L508.05 833.73" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="508.8" y="796.95" width="48.41" height="36.03" rx="0.41" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<rect x="508.05" y="835.58" width="44.91" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="508.05" y="838.69" width="31.94" height="1.27" rx="0.58" fill="#e6e6e6"/>
+<rect x="508" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
+<text x="512" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">2</text>
+<rect x="571.5" y="771.5" width="59" height="73" rx="8.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="572" y="772" width="58" height="72" rx="8" fill="#ffffff"/>
+<rect x="572" y="772" width="58" height="72" fill="#ffffff"/>
+<rect x="576" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
+<text x="580" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">3</text>
+<rect x="639.5" y="771.5" width="59" height="73" rx="8.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="640" y="772" width="58" height="72" rx="8" fill="#ffffff"/>
+<rect x="640" y="772" width="58" height="72" fill="#ffffff"/>
+<rect x="644" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
+<text x="648" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">4</text>
+<rect x="707.5" y="771.5" width="59" height="73" rx="8.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<rect x="708" y="772" width="58" height="72" rx="8" fill="#ffffff"/>
+<rect x="708" y="772" width="58" height="72" fill="#ffffff"/>
+<rect x="712" y="825.5" width="13.77" height="14.5" rx="4" fill="#ffffff"/>
+<text x="716" y="836.65" font-size="10" font-weight="700" fill="#1c1c1c">5</text>
+<rect x="776" y="772" width="52" height="72" rx="8" fill="#f2f2f2"/>
+<g transform="translate(791 797) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></g>
+<rect x="838" y="772" width="52" height="72" rx="8" fill="#f2f2f2"/>
+<text x="850.02" y="812.28" font-size="12" font-weight="600" fill="#474747">Copy</text>
+<text x="446" y="882.47" font-size="13" font-weight="600" fill="#1c1c1c">Notes</text>
+<text x="506.88" y="882.47" font-size="13" font-weight="600" fill="#6b6b6b">Drag thumbnails to reorder</text>
+<text x="1060.83" y="882.47" font-size="13" font-weight="600" fill="#474747">Slide 1 of 5</text>
+<rect x="1140.64" y="866" width="1" height="24" fill="#d6d6d6"/>
+<rect x="1157.64" y="876" width="120" height="4" rx="2" fill="#cdcdcd"/>
+<rect x="1209.69" y="869.25" width="17.5" height="17.5" rx="8.75" fill="none" stroke="#474747" stroke-width="1.5"/>
+<rect x="1210.44" y="870" width="16" height="16" rx="8" fill="#ffffff"/>
+<text x="1289.64" y="882.47" font-size="13" font-weight="600" fill="#474747">64%</text>
+<text x="1339.31" y="882.28" font-size="12" font-weight="600" fill="#474747">Grid</text>
+<text x="1398.5" y="882.28" font-size="12" font-weight="600" fill="#474747">Fit</text>
+</g>
+<g id="epan-4">
+<rect x="76" y="56" width="340" height="844" fill="#ffffff"/>
+<rect x="415" y="56" width="1" height="844" fill="#d6d6d6"/>
+<rect x="92" y="72" width="308" height="44" rx="22" fill="#f2f2f2"/>
+<rect x="92.5" y="72.5" width="307" height="43" rx="21.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="106" y="99.15" font-size="14" fill="#6b6b6b">Search elements</text>
+<text x="92" y="143.89" font-size="13" font-weight="700" fill="#474747">Shapes</text>
+<rect x="92" y="162.84" width="44.66" height="44.66" rx="10" fill="#f2f2f2"/>
+<g transform="translate(102.33 173.17) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect></g>
+<rect x="144.66" y="162.84" width="44.67" height="44.67" rx="10" fill="#f2f2f2"/>
+<g transform="translate(154.98 173.17) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle></g>
+<rect x="197.33" y="162.84" width="44.67" height="44.67" rx="10" fill="#f2f2f2"/>
+<g transform="translate(207.66 173.17) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 21 20H3z"></path></g>
+<rect x="250" y="162.84" width="44.66" height="44.66" rx="10" fill="#f2f2f2"/>
+<g transform="translate(260.33 173.17) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 20 4"></path></g>
+<rect x="302.66" y="162.84" width="44.67" height="44.67" rx="10" fill="#f2f2f2"/>
+<g transform="translate(312.98 173.17) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M14 7l5 5-5 5"></path></g>
+<rect x="355.33" y="162.84" width="44.67" height="44.67" rx="10" fill="#f2f2f2"/>
+<g transform="translate(365.66 173.17) scale(1)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path></g>
+<text x="92" y="235.41" font-size="13" font-weight="700" fill="#474747">Lines and dividers</text>
+<rect x="92" y="254.36" width="97.33" height="48" rx="10" fill="#f2f2f2"/>
+<rect x="111.47" y="277.36" width="58.39" height="2" fill="#474747"/>
+<rect x="197.33" y="254.36" width="97.33" height="48" rx="10" fill="#f2f2f2"/>
+<rect x="216.8" y="277.36" width="58.39" height="2" fill="#474747"/>
+<rect x="302.66" y="254.36" width="97.34" height="48" rx="10" fill="#f2f2f2"/>
+<rect x="322.13" y="277.36" width="58.41" height="2" fill="#474747"/>
+<text x="92" y="330.25" font-size="13" font-weight="700" fill="#474747">Blocks</text>
+<rect x="92" y="349.2" width="150" height="96" rx="10" fill="#f2f2f2"/>
+<text x="104" y="376.51" font-size="14" font-weight="600" fill="#1c1c1c">Code block</text>
+<text x="104" y="400.48" font-size="12" font-family="Consolas, monospace" fill="#474747">SELECT * FROM</text>
+<text x="104" y="417.28" font-size="12" font-family="Consolas, monospace" fill="#474747">&quot;NOTE_T&quot;;</text>
+<rect x="250" y="349.2" width="150" height="96" rx="10" fill="#f2f2f2"/>
+<text x="262" y="376.51" font-size="14" font-weight="600" fill="#1c1c1c">Table</text>
+<text x="262" y="400.48" font-size="12" fill="#6b6b6b">Nulla pariatur</text>
+<text x="262" y="417.87" font-size="12" fill="#6b6b6b">excepteur sint occaecat</text>
+<text x="262" y="435.26" font-size="12" fill="#6b6b6b">cupidatat.</text>
+</g>
+<g id="erail-5">
+<rect x="0" y="56" width="76" height="844" fill="#ffffff"/>
+<rect x="75" y="56" width="1" height="844" fill="#d6d6d6"/>
+<g transform="translate(27 74.03) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M3 9h18M9 9v12"></path></g>
+<text x="12.83" y="112.1" font-size="11" font-weight="600" fill="#474747">Templates</text>
+<rect x="6" y="128" width="64" height="62" rx="12" fill="#e6e6e6"/>
+<g transform="translate(27 138.03) scale(0.92)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="4"></circle><rect x="13" y="13" width="8" height="8" rx="1.5"></rect><path d="M17 3l4 7h-8z"></path></g>
+<text x="14.63" y="176.1" font-size="11" font-weight="700" fill="#1c1c1c">Elements</text>
+<g transform="translate(27 202.03) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7V5h14v2M12 5v14M9 19h6"></path></g>
+<text x="27.83" y="240.1" font-size="11" font-weight="600" fill="#474747">Text</text>
+<g transform="translate(27 266.03) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M7 9l5-5 5 5"></path><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"></path></g>
+<text x="17.59" y="304.1" font-size="11" font-weight="600" fill="#474747">Uploads</text>
+<g transform="translate(27 330.03) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8.5" cy="8.5" r="1.6"></circle><path d="m21 15-5-5L5 21"></path></g>
+<text x="20.69" y="368.1" font-size="11" font-weight="600" fill="#474747">Photos</text>
+<g transform="translate(27 394.03) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5.5l11-2V16"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>
+<text x="23.31" y="432.1" font-size="11" font-weight="600" fill="#474747">Music</text>
+<g transform="translate(27 458.03) scale(0.92)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.3-1-1.5-1-2.6 0-.9.7-1.7 1.7-1.7H17a4 4 0 0 0 4-4C21 6.5 17 3 12 3z"></path><circle cx="7.5" cy="11.5" r="1.2" fill="#474747" stroke="none"></circle><circle cx="10" cy="7.5" r="1.2" fill="#474747" stroke="none"></circle><circle cx="15" cy="7.5" r="1.2" fill="#474747" stroke="none"></circle></g>
+<text x="8.11" y="496.1" font-size="11" font-weight="600" fill="#474747">Background</text>
+</g>
+<g id="ebar-6">
+<rect x="0" y="0" width="1440" height="56" fill="#ffffff"/>
+<rect x="0" y="55" width="1440" height="1" fill="#d6d6d6"/>
+<g transform="translate(26 19) scale(0.75)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></g>
+<text x="52" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Home</text>
+<rect x="109.75" y="16" width="1" height="24" fill="#d6d6d6"/>
+<text x="130.75" y="33.15" font-size="14" font-weight="600" fill="#1c1c1c">MVC in five minutes</text>
+<text x="280.22" y="32.28" font-size="12" fill="#6b6b6b">Saved 14:32</text>
+<rect x="355.56" y="16" width="1" height="24" fill="#d6d6d6"/>
+<text x="380.56" y="32.28" font-size="12" font-weight="600" fill="#474747">Undo</text>
+<text x="442.41" y="32.28" font-size="12" font-weight="600" fill="#474747" fill-opacity="0.45">Redo</text>
+<rect x="494.34" y="16" width="1" height="24" fill="#d6d6d6"/>
+<rect x="507.34" y="10" width="101.92" height="36" rx="8" fill="#e6e6e6"/>
+<rect x="507.84" y="10.5" width="100.92" height="35" rx="7.5" fill="none" stroke="#cdcdcd" stroke-width="1"/>
+<text x="515.34" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">4:5 Portrait</text>
+<g transform="translate(587.27 21) scale(0.58)" fill="none" stroke="#1c1c1c" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></g>
+<text x="1108.34" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Preview</text>
+<rect x="1180.28" y="12" width="61.05" height="32" rx="16" fill="#ffffff"/>
+<rect x="1181.03" y="12.75" width="59.55" height="30.5" rx="15.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1194.28" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Share</text>
+<rect x="1253.33" y="12" width="87.69" height="32" rx="16" fill="#e6e6e6"/>
+<text x="1267.33" y="32.47" font-size="13" font-weight="600" fill="#1c1c1c">Save draft</text>
+<rect x="1353.02" y="12" width="70.98" height="32" rx="16" fill="#3a3a3a"/>
+<text x="1367.02" y="32.47" font-size="13" font-weight="600" fill="#ffffff">Publish</text>
+</g>
+<g id="pop-7">
+<rect x="496.25" y="51.25" width="271.5" height="352.72" rx="12.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="497" y="52" width="270" height="351.22" rx="12" fill="#ffffff"/>
+<text x="511" y="81.31" font-size="14" font-weight="600" fill="#1c1c1c">Slide size</text>
+<text x="511" y="103.28" font-size="12" fill="#6b6b6b">Ipsum dolor sit amet consectetur adipiscing</text>
+<text x="511" y="120.67" font-size="12" fill="#6b6b6b">elit sed.</text>
+<rect x="511" y="135.08" width="242" height="65" rx="12" fill="#e6e6e6"/>
+<rect x="533" y="145.08" width="36" height="45" rx="4" fill="#ffffff"/>
+<rect x="534" y="146.08" width="34" height="43" rx="3" fill="none" stroke="#474747" stroke-width="2"/>
+<text x="593" y="163.31" font-size="14" font-weight="600" fill="#1c1c1c">4:5 Portrait</text>
+<text x="593" y="182.19" font-size="13" fill="#6b6b6b">Labore et dolore.</text>
+<rect x="537.5" y="220.08" width="27" height="48" rx="4" fill="#ffffff"/>
+<rect x="538.5" y="221.08" width="25" height="46" rx="3" fill="none" stroke="#474747" stroke-width="2"/>
+<text x="593" y="239.81" font-size="14" font-weight="600" fill="#1c1c1c">9:16 Full screen</text>
+<text x="593" y="258.69" font-size="13" fill="#6b6b6b">Minim veniam quis.</text>
+<rect x="523" y="301.64" width="56" height="32" rx="4" fill="#ffffff"/>
+<rect x="524" y="302.64" width="54" height="30" rx="3" fill="none" stroke="#474747" stroke-width="2"/>
+<text x="593" y="313.39" font-size="14" font-weight="600" fill="#1c1c1c">16:9 Widescreen</text>
+<text x="593" y="332.27" font-size="13" fill="#6b6b6b">Aliquip ex ea.</text>
+<rect x="609.52" y="357.22" width="66.88" height="32" rx="16" fill="#e6e6e6"/>
+<text x="623.52" y="377.69" font-size="13" font-weight="600" fill="#1c1c1c">Cancel</text>
+<rect x="688.39" y="357.22" width="64.61" height="32" rx="16" fill="#3a3a3a"/>
+<text x="702.39" y="377.69" font-size="13" font-weight="600" fill="#ffffff">Resize</text>
+</g>
+</svg>

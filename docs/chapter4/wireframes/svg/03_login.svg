@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Segoe UI, Arial, sans-serif">
+<title>Log in dialog (error state)</title>
+<defs></defs>
+<rect width="1440" height="900" fill="#ffffff"/>
+<rect x="0" y="0" width="1440" height="900" fill="#fafafa"/>
+<rect x="0" y="71" width="1440" height="1" fill="#d6d6d6"/>
+<rect x="48" y="21" width="30" height="30" rx="9" fill="#1c1c1c"/>
+<text x="56.67" y="42.55" font-size="16" font-weight="700" fill="#ffffff">N</text>
+<text x="86" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">NotaLah</text>
+<text x="1147.72" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">About</text>
+<rect x="1217.16" y="16" width="75.33" height="40" rx="20" fill="#e6e6e6"/>
+<text x="1235.16" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">Log in</text>
+<rect x="1304.48" y="16" width="87.52" height="40" rx="20" fill="#ffffff"/>
+<rect x="1305.23" y="16.75" width="86.02" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1322.48" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">Register</text>
+<text x="96" y="245.9" font-size="60" font-weight="700" letter-spacing="-2.7" fill="#1c1c1c">Welcome to NotaLah</text>
+<text x="96" y="298.28" font-size="19" fill="#474747">Do eiusmod tempor incididunt ut labore et dolore magna aliqua</text>
+<text x="96" y="326.78" font-size="19" fill="#474747">ut enim ad minim veniam quis nostrud exercitation ullamco</text>
+<text x="96" y="355.28" font-size="19" fill="#474747">laboris nisi aliquip ex ea commodo consequat.</text>
+<rect x="96" y="385.89" width="161.42" height="48" rx="24" fill="#3a3a3a"/>
+<text x="122" y="415.24" font-size="15" font-weight="600" fill="#ffffff">Browse as guest</text>
+<rect x="269.42" y="385.89" width="94.13" height="48" rx="24" fill="#e6e6e6"/>
+<text x="295.42" y="415.24" font-size="15" font-weight="600" fill="#1c1c1c">Log in</text>
+<rect x="375.55" y="385.89" width="107.2" height="48" rx="24" fill="#ffffff"/>
+<rect x="376.3" y="386.64" width="105.7" height="46.5" rx="23.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="401.55" y="415.24" font-size="15" font-weight="600" fill="#1c1c1c">Register</text>
+<text x="96" y="471.79" font-size="13" fill="#6b6b6b">Voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt.</text>
+<text x="96" y="532.96" font-size="15" fill="#474747">Amet consectetur adipiscing elit sed do eiusmod tempor.</text>
+<text x="96" y="564.71" font-size="15" fill="#474747">Magna aliqua ut enim ad minim veniam quis.</text>
+<text x="96" y="596.46" font-size="15" fill="#474747">Aliquip ex ea commodo consequat duis aute irure.</text>
+<rect x="950" y="120" width="330" height="680" rx="12" fill="#f2f2f2"/>
+<path d="M950 120L1280 800M1280 120L950 800" fill="none" stroke="#a8a8a8" stroke-width="1"/>
+<rect x="950.75" y="120.75" width="328.5" height="678.5" rx="11.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
+<text x="1042.41" y="824.98" font-size="12" font-weight="600" fill="#6b6b6b">Phone preview of the Feed</text>
+<text x="96" y="867.59" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy · © 2026 NotaLah</text>
+<g id="scrim-1">
+<rect x="0" y="0" width="1440" height="900" fill="#282828" fill-opacity="0.4"/>
+<g id="dlg-2">
+<rect x="499.25" y="259.33" width="441.5" height="381.33" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
+<rect x="500" y="260.08" width="440" height="379.83" rx="20" fill="#ffffff"/>
+<text x="524" y="306.88" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Log in to NotaLah</text>
+<g transform="translate(894 286.08) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
+<text x="524" y="344.97" font-size="13" font-weight="600" fill="#474747">APU email</text>
+<rect x="524" y="355.92" width="392" height="44" rx="10" fill="#f2f2f2"/>
+<rect x="524.5" y="356.42" width="391" height="43" rx="9.5" fill="none" stroke="#d6d6d6" stroke-width="1"/>
+<text x="538" y="383.08" font-size="14" fill="#1c1c1c">tp072229@mail.apu.edu.my</text>
+<text x="524" y="431.82" font-size="13" font-weight="600" fill="#474747">Password</text>
+<rect x="524" y="442.77" width="392" height="44" rx="10" fill="#ffffff"/>
+<rect x="525" y="443.77" width="390" height="42" rx="9" fill="none" stroke="#474747" stroke-width="2"/>
+<text x="538" y="469.92" font-size="14" fill="#1c1c1c">••••••••</text>
+<text x="872.23" y="469.04" font-size="12" font-weight="600" fill="#474747">Show</text>
+<text x="524" y="506.66" font-size="13" font-weight="600" fill="#1c1c1c">Email or password is incorrect.</text>
+<rect x="524" y="529.61" width="392" height="48" rx="24" fill="#3a3a3a"/>
+<text x="698.94" y="558.96" font-size="15" font-weight="600" fill="#ffffff">Log in</text>
+<text x="619.98" y="610.92" font-size="14" fill="#6b6b6b">Don't have an account?</text>
+<text x="768.48" y="610.92" font-size="14" font-weight="600" fill="#1c1c1c">Register</text>
+</g>
+</g>
+</svg>
