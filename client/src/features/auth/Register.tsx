@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAction } from '@/lib/useAction';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ const EMPTY: RegisterInput = {
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const from = (useLocation().state as { from?: string } | null)?.from;
   const [form, setForm] = useState<RegisterInput>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { run, pending, error: formError } = useAction();
@@ -50,6 +51,7 @@ export default function Register() {
     if (done)
       navigate('/login', {
         state: {
+          from,
           notice: isLecturer
             ? 'Account created. Lecturer features unlock after an administrator approves your application.'
             : 'Account created. You can now log in.',
@@ -158,7 +160,7 @@ export default function Register() {
       </form>
       <p className="mt-5 text-center text-body-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link to="/login" className="font-bold text-foreground hover:underline">
+        <Link to="/login" state={from ? { from } : undefined} className="font-bold text-foreground hover:underline">
           Log in
         </Link>
       </p>
