@@ -879,7 +879,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     shows an author-less comment as its body text alone.
   - Review fixes: a self-like or co-author like logs no `INTERACTION_T` row, so M is not skewed. `OWN_LIKE` reads the
     current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
-  - Admin comment read (16 Oct, `fix/admin-suspended-comments`): `GET /api/notes/:id/comments` uses `VISIBLE_OR_ADMIN`, so an admin sees the comments list of a suspended author's note, with suspended commenters shown in full (`GONE` already honours `viewerIsAdmin`). Only that read path changed: like, comment and reply still use `VISIBLE` and answer 404 for admins, and search still hides suspended content from everyone.
+  - Admin comment read (16 Oct, `fix/admin-suspended-comments`): `GET /api/notes/:id/comments` uses `VISIBLE_OR_ADMIN`, so an admin sees the comments list of a suspended author's note, with suspended commenters shown in full (`GONE` already honours `viewerIsAdmin`). Only that read path changed: like, comment and reply still use `VISIBLE` and answer 404 for admins, and search still hides suspended content from everyone. As with note detail and profiles, this covers any published note, including friends-only notes and notes across a block; drafts, hidden and deleted notes stay closed.
   - Not changed: likes by suspended users, and their comments in E, still count.
   - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.
 - **Implementation (16 Oct, `chore/vite-plus`):** `vite-plus` 1.0.0 with `vite` aliased to `@voidzero-dev/vite-plus-core` 1.0.0

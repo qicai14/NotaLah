@@ -101,7 +101,7 @@ describe('Engagement', () => {
     const kept = (await comment(reader, p, { body: 'reader top' })).body.comment.id;
     await comment(gone, p, { body: 'suspended reply', parentId: kept });
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [gone]);
-    type Shown = { body: string; author: unknown; pinned: boolean; replies: { body: string }[] };
+    type Shown = { body: string; author: { id: number } | null; pinned: boolean; replies: { body: string }[] };
     const url = `/api/notes/${p}/comments`;
     for (const res of [await request(app).get(url), await get(reader, url)]) {
       const shown: Shown[] = res.body.comments;
@@ -125,7 +125,9 @@ describe('Engagement', () => {
     const qUrl = `/api/notes/${q}/comments`;
     const seen = await get(admin, qUrl);
     expect(seen.status).toBe(200);
-    expect(seen.body.comments.map((c: Shown) => [c.body, c.author])).toEqual([['on a suspended note', expect.anything()]]);
+    expect(seen.body.comments.map((c: Shown) => [c.body, c.author?.id])).toEqual([['on a suspended note', reader]]);
+    const friendsOnly = await insertNote(owner, { visibility: 'contacts' });
+    expect((await get(admin, `/api/notes/${friendsOnly}/comments`)).status).toBe(200);
     expect((await get(reader, qUrl)).status).toBe(404);
     expect((await request(app).get(qUrl)).status).toBe(404);
     expect((await post(admin, `/api/notes/${q}/like`)).status).toBe(404);
