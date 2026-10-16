@@ -45,13 +45,13 @@ export default function EditProfile() {
   if (loading) return <p>Loading…</p>;
   if (error) {
     return (
-      <p role="alert" className="text-red-600">
+      <p role="alert" className="text-destructive">
         {error}
       </p>
     );
   }
   const count = (s: string, max: number) => (
-    <span className={`text-xs ${s.length > max ? 'text-red-600' : 'text-slate-500'}`}>
+    <span className={`text-xs ${s.length > max ? 'text-destructive' : 'text-muted-foreground'}`}>
       {s.length}/{max}
     </span>
   );
@@ -81,17 +81,17 @@ export default function EditProfile() {
             onChange={(e) => setBio(e.target.value)}
             aria-invalid={errors.bio ? true : undefined}
             aria-describedby={errors.bio ? 'bio-error' : undefined}
-            className="rounded-md border border-slate-300 px-3 py-2"
+            className="rounded-md border border-input px-3 py-2"
           />
           {count(bio, 300)}
           {errors.bio && (
-            <p id="bio-error" role="alert" className="text-sm text-red-600">
+            <p id="bio-error" role="alert" className="text-sm text-destructive">
               {errors.bio}
             </p>
           )}
         </div>
         {formError && (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {formError}
           </p>
         )}
@@ -99,14 +99,14 @@ export default function EditProfile() {
           <button
             type="submit"
             disabled={busy}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60"
+            className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60"
           >
             {busy ? 'Saving…' : 'Save'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/profile')}
-            className="rounded-md border border-slate-300 px-4 py-2"
+            className="rounded-md border border-input px-4 py-2"
           >
             Cancel
           </button>

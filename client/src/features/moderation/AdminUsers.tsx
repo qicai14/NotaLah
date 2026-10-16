@@ -74,25 +74,25 @@ export default function AdminUsers() {
             onChange={(e) => setDraft(e.target.value)}
           />
         </div>
-        <button type="submit" className="rounded-md bg-indigo-600 px-4 py-2 text-white">
+        <button type="submit" className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
           Search
         </button>
       </form>
-      <p role="status" className="mb-2 text-sm text-green-700">
+      <p role="status" className="mb-2 text-sm text-success">
         {status}
       </p>
       {error && (
-        <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
-      {loading && <p className="text-slate-500">Loading…</p>}
-      {data?.users.length === 0 && <p className="text-slate-500">No matching accounts.</p>}
+      {loading && <p className="text-muted-foreground">Loading…</p>}
+      {data?.users.length === 0 && <p className="text-muted-foreground">No matching accounts.</p>}
       {data && data.users.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-300">
+              <tr className="border-b border-input">
                 <th scope="col" className="py-2 pr-3">
                   Name
                 </th>
@@ -115,7 +115,7 @@ export default function AdminUsers() {
             </thead>
             <tbody>
               {data.users.map((u) => (
-                <tr key={u.id} className="border-b border-slate-200 align-top">
+                <tr key={u.id} className="border-b border-border align-top">
                   <td className="py-2 pr-3">{u.displayName}</td>
                   <td className="py-2 pr-3 break-all">{u.email}</td>
                   <td className="py-2 pr-3">
@@ -140,14 +140,14 @@ export default function AdminUsers() {
                           <button
                             type="submit"
                             disabled={busy}
-                            className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                            className="rounded-md bg-destructive px-3 py-1 text-primary-foreground disabled:opacity-60"
                           >
                             Confirm {pending.action}
                           </button>
                           <button
                             type="button"
                             onClick={() => (setPending(null), setFormError(undefined))}
-                            className="rounded-md border border-slate-300 px-3 py-1"
+                            className="rounded-md border border-input px-3 py-1"
                           >
                             Cancel
                           </button>
@@ -166,7 +166,7 @@ export default function AdminUsers() {
                               setFormError(undefined)
                             )}
                             aria-label={`${LABEL[a]} ${u.displayName}`}
-                            className={`rounded-md border px-2 py-1 ${a === 'delete' || a === 'suspend' ? 'border-red-400 text-red-700' : 'border-slate-300'}`}
+                            className={`rounded-md border px-2 py-1 ${a === 'delete' || a === 'suspend' ? 'border-destructive text-destructive' : 'border-input'}`}
                           >
                             {LABEL[a]}
                           </button>

@@ -25,22 +25,22 @@ export default function Saved() {
       <h1 className="mb-4 text-xl font-semibold">Saved notes</h1>
       {loading && <p>Loading…</p>}
       {(error || actionError) && (
-        <p role="alert" className="text-red-600">
+        <p role="alert" className="text-destructive">
           {error ?? actionError}
         </p>
       )}
-      {data?.notes.length === 0 && <p className="text-slate-600">Nothing saved yet. Use Save on a note in the feed.</p>}
+      {data?.notes.length === 0 && <p className="text-muted-foreground">Nothing saved yet. Use Save on a note in the feed.</p>}
       <ul className="flex flex-col gap-3">
         {data?.notes.map((n) => (
           <li
             key={n.id}
-            className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
+            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3"
           >
             <div>
-              <Link to={`/notes/${n.id}`} className="font-medium text-indigo-700">
+              <Link to={`/notes/${n.id}`} className="font-medium text-primary">
                 {n.title}
               </Link>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 {[
                   n.moduleCode,
                   `saved ${timeAgo(n.savedAt ?? null)}`,
@@ -55,7 +55,7 @@ export default function Saved() {
               type="button"
               onClick={() => remove(n.id)}
               aria-label={`Remove ${n.title} from saved`}
-              className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+              className="rounded-md border border-input px-2 py-1 text-sm"
             >
               Remove
             </button>

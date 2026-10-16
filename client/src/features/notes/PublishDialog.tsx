@@ -5,7 +5,7 @@ export type PublishChoice = 'public' | 'contacts' | 'draft';
 
 const OPTIONS: { value: PublishChoice; title: string; text: string }[] = [
   { value: 'public', title: 'Public', text: 'Everyone on NotaLah can see this note.' },
-  { value: 'contacts', title: 'Contacts only', text: 'Only people in your contacts can see it.' },
+  { value: 'contacts', title: 'Friends only', text: 'Only your friends can see it.' },
   { value: 'draft', title: 'Keep as private draft', text: 'Only you can see it. Publish later.' },
 ];
 
@@ -39,22 +39,22 @@ export function PublishDialog({
               onChange={() => setChoice(o.value)}
               className="peer sr-only"
             />
-            <span className="block rounded-md border-2 border-slate-300 bg-white px-4 py-3 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500">
+            <span className="block rounded-md border-2 border-input bg-card px-4 py-3 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
               <span className="block font-medium">{o.title}</span>
-              <span className="block text-sm text-slate-600">{o.text}</span>
+              <span className="block text-sm text-muted-foreground">{o.text}</span>
             </span>
           </label>
         ))}
       </fieldset>
       <div className="mt-4 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-4 py-2">
+        <button type="button" onClick={onClose} className="rounded-md border border-input px-4 py-2">
           Cancel
         </button>
         <button
           type="button"
           disabled={!choice || busy}
           onClick={() => choice && onChoose(choice)}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-50"
+          className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
         >
           {busy ? 'Saving…' : 'Confirm'}
         </button>

@@ -37,12 +37,12 @@ export function HashtagInput({
         Hashtags ({value.length}/{LIMITS.hashtags})
       </label>
       <div
-        className={`flex flex-wrap items-center gap-2 rounded-md border bg-white px-2 py-1.5 ${shown ? 'border-red-500' : 'border-slate-300'}`}
+        className={`flex flex-wrap items-center gap-2 rounded-md border bg-card px-2 py-1.5 ${shown ? 'border-destructive' : 'border-input'}`}
       >
         {value.map((t) => (
           <span
             key={t}
-            className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-sm text-indigo-800"
+            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-sm text-primary"
           >
             #{t}
             <button
@@ -65,11 +65,11 @@ export function HashtagInput({
           className="min-w-24 flex-1 outline-none"
         />
       </div>
-      <p id="hashtag-hint" className="text-xs text-slate-500">
+      <p id="hashtag-hint" className="text-xs text-muted-foreground">
         Press Enter or comma to add. At least one is needed to publish.
       </p>
       {shown && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {shown}
         </p>
       )}

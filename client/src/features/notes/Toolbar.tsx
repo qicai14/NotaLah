@@ -58,7 +58,7 @@ export function Toolbar({ editor }: { editor: Editor }) {
     <div
       role="toolbar"
       aria-label="Formatting"
-      className="flex flex-wrap gap-1 rounded-t-md border border-slate-300 bg-slate-50 p-1"
+      className="flex flex-wrap gap-1 rounded-t-md border border-input bg-surface p-1"
     >
       {ITEMS.map((i, n) => (
         <button
@@ -68,7 +68,7 @@ export function Toolbar({ editor }: { editor: Editor }) {
           title={i.label}
           aria-pressed={i.active ? active[n] : undefined}
           onClick={() => i.run(editor)}
-          className={`min-w-9 rounded px-2 py-1 text-sm ${active[n] ? 'bg-indigo-600 text-white' : 'bg-white hover:bg-slate-100'} border border-slate-200`}
+          className={`min-w-9 rounded px-2 py-1 text-sm ${active[n] ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-surface'} border border-border`}
         >
           {i.text}
         </button>
