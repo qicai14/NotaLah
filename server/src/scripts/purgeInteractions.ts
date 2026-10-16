@@ -2,8 +2,8 @@ import { pool } from '../lib/pool';
 import { purgeAll } from '../lib/purge';
 
 purgeAll()
-  .then(({ interactions, snapshots, limits }) =>
-    console.log(`Purged ${interactions} interactions, ${snapshots} feed snapshots, ${limits} rate-limit rows`))
+  .then(({ interactions, snapshots, limits, notifications }) =>
+    console.log(`Purged ${interactions} interactions, ${snapshots} feed snapshots, ${limits} rate-limit rows, ${notifications} notifications`))
   .catch((err: Error) => {
     console.error(`db:purge-interactions failed: ${err.message}`);
     process.exitCode = 1;

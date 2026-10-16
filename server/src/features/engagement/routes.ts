@@ -4,6 +4,8 @@ import { idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { isApprovedLecturer } from '../users/repository';
 import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
+import { NOTIFICATIONS } from '../notifications/config';
+import { notifyMentions } from '../notifications/service';
 import * as repo from './repository';
 
 /** Mounted at /api; auth is applied per route so unrelated /api paths keep their own behaviour. */
@@ -49,6 +51,11 @@ const commentSchema = z.object({
   body: z.string({ error: 'Comment is required' }).trim().min(1, 'Comment is required').max(1000, 'Comment must be at most 1000 characters'),
   slideNo: z.number({ error: 'Invalid slide number' }).int('Invalid slide number').min(1, 'Invalid slide number').nullish(),
   parentId: z.number({ error: 'Invalid parent comment' }).int('Invalid parent comment').min(1, 'Invalid parent comment').nullish(),
+  mentions: z
+    .array(z.number({ error: 'Invalid mention' }).int('Invalid mention').min(1, 'Invalid mention').max(2147483647, 'Invalid mention'),
+      { error: 'Mentions must be a list' })
+    .max(NOTIFICATIONS.mentionMax, `At most ${NOTIFICATIONS.mentionMax} mentions`)
+    .nullish(),
 });
 
 engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, async (req, res) => {
@@ -56,7 +63,7 @@ engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, asy
   if (!t) return;
   const parsed = commentSchema.safeParse(req.body ?? {});
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
-  const { body, slideNo = null, parentId = null } = parsed.data;
+  const { body, slideNo = null, parentId = null, mentions } = parsed.data;
   if (slideNo !== null && slideNo > t.slideCount) {
     return res.status(400).json({ error: 'Validation failed', errors: { slideNo: 'Slide number is beyond the last slide' } });
   }
@@ -68,6 +75,7 @@ engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, asy
     if (parent.parentId !== null) return res.status(400).json({ error: 'Replies are limited to one level' });
   }
   const comment = await repo.addComment(t.id, me(req).id, { body, slideNo, parentId });
+  await notifyMentions({ noteId: t.id, commentId: comment.id, parentId, actorId: me(req).id, body, mentions: mentions ?? [] });
   res.status(201).json({ comment: { ...comment, body, slideNo, parentId } });
 });
 

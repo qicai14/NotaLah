@@ -8,6 +8,7 @@ import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import * as repo from './repository';
 import { disconnectUser } from '../messaging/socket';
+import { notify } from '../notifications/service';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
@@ -30,6 +31,7 @@ async function decide(req: Request<{ userId: string }>, res: Response, approve: 
     res.status(404).json({ error: 'No pending lecturer application for this user' });
     return;
   }
+  await notify({ type: approve ? 'lecturer_approved' : 'lecturer_rejected', actorId: null }, [userId]);
   res.json({ user });
 }
 
@@ -64,8 +66,10 @@ adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   if (outcome !== 'dismiss' && outcome !== 'hide') return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
   const remark = requiredText(res, req.body?.remark, 'Remark');
   if (remark === undefined) return;
-  const resolved = await repo.resolveReports(Number(req.params.noteId), me(req).id, outcome, remark);
+  const noteId = Number(req.params.noteId);
+  const { resolved, hiddenAuthorId } = await repo.resolveReports(noteId, me(req).id, outcome, remark);
   if (resolved === 0) return res.status(404).json({ error: 'No open reports for this note' });
+  if (hiddenAuthorId !== null) await notify({ type: 'note_hidden', actorId: null, noteId }, [hiddenAuthorId]);
   res.json({ outcome, resolved });
 });
 

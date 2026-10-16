@@ -7,6 +7,7 @@ import {
 } from './repository';
 import { moduleExists } from '../modules/repository';
 import { parseBaseUpdatedAt, parseNoteBody } from './service';
+import { notifyVoidedVerifiers } from '../notifications/service';
 
 export const notesRouter = Router();
 notesRouter.param('id', idParam('Note not found'));
@@ -67,6 +68,7 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
   if (result === 'forbidden') return res.status(403).json({ error: 'Forbidden' });
   if (result === 'locked') return res.status(423).json({ error: 'Another collaborator is editing this note' });
   if (result === 'stale') return res.status(409).json({ error: 'This note changed since you opened it. Reload to see the latest version' });
+  await notifyVoidedVerifiers(id, me(req).id);
   res.json({ note: await getVisibleNote(id, me(req).id) });
 });
 

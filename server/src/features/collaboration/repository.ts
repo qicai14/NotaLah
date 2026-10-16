@@ -132,7 +132,7 @@ export async function createRequest(noteId: number, userId: number, message: str
  */
 export function decideRequest(
   noteId: number, requestId: number, approve: boolean, role: CollabRole, ownerId: number,
-): Promise<'ok' | 'not_found' | 'decided'> {
+): Promise<{ requesterId: number } | 'not_found' | 'decided'> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ userId: number; status: string }>(
       `SELECT crq_usr_id AS "userId", crq_status AS "status" FROM "COLLAB_REQUEST_T"
@@ -146,7 +146,7 @@ export function decideRequest(
       `UPDATE "COLLAB_REQUEST_T" SET crq_status = $2, crq_decided_at = NOW() WHERE crq_id = $1`,
       [requestId, approve ? 'approved' : 'declined'],
     );
-    return 'ok';
+    return { requesterId: rows[0].userId };
   });
 }
 

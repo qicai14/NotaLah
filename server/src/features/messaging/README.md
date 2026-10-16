@@ -16,5 +16,7 @@ or deletion disconnects them at once. `io.close()` runs on shutdown before the H
 
 Rooms: `user:<id>` and `conv:<id>`. Server events: `message:new`, `message:deleted`, `request:new`, `request:accepted`,
 `conversation:read`, `conversation:updated`, `conversation:removed`, `typing`. Client event: `typing {conversationId}`.
+The notifications feature reuses `emit` and `userRoom` for `notification:new` and `notification:count`, and a message
+request also stores a `message_request` notification (D51).
 
 Tests: `MSG-TC*` in `docs/chapter4/4.5_test_cases.md`; `server/tests/messaging/`.

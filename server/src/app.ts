@@ -15,6 +15,7 @@ import { messagingRouter } from './features/messaging/routes';
 import { healthRouter } from './lib/health';
 import { modulesRouter, programmesRouter, termsRouter } from './features/modules/routes';
 import { notesRouter } from './features/notes/routes';
+import { notificationsRouter } from './features/notifications/routes';
 import { searchRouter } from './features/search/routes';
 import { usersRouter } from './features/users/routes';
 import { verificationRouter } from './features/verification/routes';
@@ -47,6 +48,7 @@ app.use('/api/programmes', programmesRouter);
 app.use('/api/terms', termsRouter);
 app.use('/api/feed', feedRouter);
 app.use('/api/search', searchRouter);
+app.use('/api/notifications', notificationsRouter);
 app.use('/api', verificationRouter);
 app.use('/api', collaborationRouter); // before notesRouter so /notes/shared is not read as a note id
 app.use('/api', messagingRouter);
