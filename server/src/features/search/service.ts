@@ -17,7 +17,11 @@ const compare = (a: Key, b: readonly number[]) => a[0] - b[0] || a[1] - b[1] || 
  * `asOf` freezes the candidates and their E and V like the feed's cutoff (D24), so later pages neither skip nor repeat.
  */
 export async function searchNotes(
-  viewerId: number, q: string, filters: NoteFilters, { cursor, limit }: KeysetPage, asOf: Date | null,
+  viewerId: number,
+  q: string,
+  filters: NoteFilters,
+  { cursor, limit }: KeysetPage,
+  asOf: Date | null,
 ): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null; asOf: Date }> {
   const cutoff = await getCutoff(asOf);
   const matches = await matchNotes(viewerId, q, filters, cutoff);
@@ -26,14 +30,25 @@ export async function searchNotes(
   const ranked = matches
     .map((m): Key => {
       const T = best > 0 ? m.textRank / best : 0;
-      const S = w.textRank * T + w.engagement * engagement(m.counts.likes, m.counts.comments) + w.lecturerValidation * validation(m);
+      const S =
+        w.textRank * T +
+        w.engagement * engagement(m.counts.likes, m.counts.comments) +
+        w.lecturerValidation * validation(m);
       return [Math.round(S * 1e12), m.publishedAt.getTime(), m.id];
     })
     .sort((a, b) => compare(b, a));
   const after = cursor?.map(Number);
   const start = after ? ranked.findIndex((k) => compare(k, after) < 0) : 0;
   const page = start < 0 ? [] : ranked.slice(start, start + limit);
-  const notes = new Map((page.length ? await getNotesByIds(viewerId, page.map((k) => k[2])) : []).map((n) => [n.id, n]));
+  const notes = new Map(
+    (page.length
+      ? await getNotesByIds(
+          viewerId,
+          page.map((k) => k[2]),
+        )
+      : []
+    ).map((n) => [n.id, n]),
+  );
   return {
     items: page.flatMap(([, , id]) => notes.get(id) ?? []),
     nextCursor: start >= 0 && ranked.length > start + limit ? page[page.length - 1].join('_') : null,

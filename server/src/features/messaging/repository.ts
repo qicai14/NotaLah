@@ -7,8 +7,17 @@ import { MESSAGING } from './config';
 
 /** Reasons a messaging write is refused; routes map each to a status and message. */
 export type Refusal =
-  | 'not_found' | 'user_not_found' | 'pending' | 'cannot_send' | 'reply' | 'not_owner' | 'not_friends' | 'blocked' | 'full'
-  | 'member' | 'not_member';
+  | 'not_found'
+  | 'user_not_found'
+  | 'pending'
+  | 'cannot_send'
+  | 'reply'
+  | 'not_owner'
+  | 'not_friends'
+  | 'blocked'
+  | 'full'
+  | 'member'
+  | 'not_member';
 
 export interface MessageInput {
   body: string;
@@ -17,7 +26,8 @@ export interface MessageInput {
 }
 
 /** SQL: user u can take part in a chat with $1: an active or restricted account in no block with $1 (D49). */
-const REACHABLE = (u: string) => `(${u}.usr_status IN ('active', 'restricted') AND NOT ${blockedWith('$1', `${u}.usr_id`)})`;
+const REACHABLE = (u: string) =>
+  `(${u}.usr_status IN ('active', 'restricted') AND NOT ${blockedWith('$1', `${u}.usr_id`)})`;
 
 /** SQL (alias c = CONVERSATION_T, $1 = viewer): $1 is a member and, in a direct chat, in no block with the other member. */
 const OPEN = `(EXISTS (SELECT 1 FROM "CONV_MEMBER_T" mm WHERE mm.cmb_cnv_id = c.cnv_id AND mm.cmb_usr_id = $1)
@@ -57,7 +67,9 @@ export interface Message {
 }
 
 /** A message's note card as each member of its conversation sees it, in one query (VISIBLE's viewer is the member). */
-export async function noteCardsFor(messageId: number): Promise<{ viewerId: number; note: Message['note']; noteUnavailable: boolean }[]> {
+export async function noteCardsFor(
+  messageId: number,
+): Promise<{ viewerId: number; note: Message['note']; noteUnavailable: boolean }[]> {
   const { rows } = await pool.query<{ viewerId: number; note: Message['note']; noteUnavailable: boolean }>(
     `SELECT mem.cmb_usr_id AS "viewerId", ${NOTE_CARD.replaceAll('$1', 'mem.cmb_usr_id')}
      FROM "MESSAGE_T" m JOIN "CONV_MEMBER_T" mem ON mem.cmb_cnv_id = m.msg_cnv_id
@@ -70,13 +82,18 @@ export async function noteCardsFor(messageId: number): Promise<{ viewerId: numbe
 
 /** One message as `viewerId` sees it (note card checked for them); undefined when unknown. */
 export async function getMessage(id: number, viewerId: number): Promise<Message | undefined> {
-  const { rows } = await pool.query<Message>(`SELECT ${MESSAGE_COLS} ${MESSAGE_FROM} WHERE m.msg_id = $2`, [viewerId, id]);
+  const { rows } = await pool.query<Message>(`SELECT ${MESSAGE_COLS} ${MESSAGE_FROM} WHERE m.msg_id = $2`, [
+    viewerId,
+    id,
+  ]);
   return rows[0];
 }
 
 /** One history page of an OPEN conversation, newest first; keyset on msg_id (D40). Undefined when not OPEN to the viewer. */
 export async function listMessages(
-  conversationId: number, viewerId: number, { cursor, limit }: KeysetPage,
+  conversationId: number,
+  viewerId: number,
+  { cursor, limit }: KeysetPage,
 ): Promise<{ items: Message[]; nextCursor: string | null } | undefined> {
   if (!(await isOpen(conversationId, viewerId))) return undefined;
   const { rows } = await pool.query<Message & { cursor: string }>(
@@ -90,7 +107,10 @@ export async function listMessages(
 }
 
 async function isOpen(conversationId: number, viewerId: number): Promise<boolean> {
-  const { rowCount } = await pool.query(`SELECT 1 FROM "CONVERSATION_T" c WHERE c.cnv_id = $2 AND ${OPEN}`, [viewerId, conversationId]);
+  const { rowCount } = await pool.query(`SELECT 1 FROM "CONVERSATION_T" c WHERE c.cnv_id = $2 AND ${OPEN}`, [
+    viewerId,
+    conversationId,
+  ]);
   return rowCount === 1;
 }
 
@@ -123,7 +143,10 @@ const CONVERSATION_SELECT = `SELECT c.cnv_id AS "id", c.cnv_type AS "type", c.cn
 /** The user's conversation list, most recent activity first; keyset on (last activity, id), D40. */
 // shortcut: every conversation of the user is built (members, last message, unread count) before the keyset filter and
 // LIMIT; keep a last-activity column on CONVERSATION_T, indexed per member, if users reach hundreds of chats.
-export async function listConversations(userId: number, { cursor, limit }: KeysetPage): Promise<{ items: Conversation[]; nextCursor: string | null }> {
+export async function listConversations(
+  userId: number,
+  { cursor, limit }: KeysetPage,
+): Promise<{ items: Conversation[]; nextCursor: string | null }> {
   const { rows } = await pool.query<Conversation & { cursor: string }>(
     `SELECT x.*, ${micros('x."lastActivityAt"')} || '_' || x.id AS "cursor" FROM (${CONVERSATION_SELECT}) x
      WHERE ($2::BIGINT IS NULL OR (x."lastActivityAt", x.id) < (${fromMicros('$2')}, $3::INT))
@@ -141,7 +164,10 @@ export async function getConversation(id: number, userId: number): Promise<Conve
 
 /** Every conversation the user belongs to (their socket rooms). */
 export async function conversationIds(userId: number): Promise<number[]> {
-  const { rows } = await pool.query<{ id: number }>(`SELECT cmb_cnv_id AS "id" FROM "CONV_MEMBER_T" WHERE cmb_usr_id = $1`, [userId]);
+  const { rows } = await pool.query<{ id: number }>(
+    `SELECT cmb_cnv_id AS "id" FROM "CONV_MEMBER_T" WHERE cmb_usr_id = $1`,
+    [userId],
+  );
   return rows.map((r) => r.id);
 }
 
@@ -159,7 +185,10 @@ export async function directPeer(conversationId: number, userId: number): Promis
 
 /** True when the note exists and the user may see it, so only such a note can be attached to a message (FR7). */
 export async function noteVisibleTo(noteId: number, userId: number): Promise<boolean> {
-  const { rowCount } = await pool.query(`SELECT 1 FROM "POST_T" p WHERE p.pst_id = $2 AND ${VISIBLE}`, [userId, noteId]);
+  const { rowCount } = await pool.query(`SELECT 1 FROM "POST_T" p WHERE p.pst_id = $2 AND ${VISIBLE}`, [
+    userId,
+    noteId,
+  ]);
   return rowCount === 1;
 }
 
@@ -169,7 +198,11 @@ export async function noteVisibleTo(noteId: number, userId: number): Promise<boo
  * request's original time.
  */
 async function insertMessage(
-  q: PoolClient, conversationId: number, senderId: number, m: MessageInput, createdAt: Date | null = null,
+  q: PoolClient,
+  conversationId: number,
+  senderId: number,
+  m: MessageInput,
+  createdAt: Date | null = null,
 ): Promise<number | undefined> {
   const { rows } = await q.query<{ id: number }>(
     `INSERT INTO "MESSAGE_T" (msg_cnv_id, msg_sender_id, msg_body, msg_pst_id, msg_reply_to_id, msg_created_at)
@@ -191,24 +224,40 @@ class Rollback extends Error {}
  * pending request between the pair is accepted here, its held message inserted first at its original time, so history
  * stays in order whichever path opens the chat. Throws Rollback when the held message is refused.
  */
-async function openDirect(q: PoolClient, a: number, b: number): Promise<{ id: number; created: boolean; heldMessageId: number | null }> {
+async function openDirect(
+  q: PoolClient,
+  a: number,
+  b: number,
+): Promise<{ id: number; created: boolean; heldMessageId: number | null }> {
   const pair = `${Math.min(a, b)}_${Math.max(a, b)}`;
   const ins = await q.query<{ id: number }>(
     `INSERT INTO "CONVERSATION_T" (cnv_type, cnv_pair) VALUES ('direct', $1) ON CONFLICT (cnv_pair) DO NOTHING RETURNING cnv_id AS "id"`,
     [pair],
   );
-  const id = ins.rows[0]?.id ?? (await q.query<{ id: number }>(`SELECT cnv_id AS "id" FROM "CONVERSATION_T" WHERE cnv_pair = $1`, [pair])).rows[0].id;
+  const id =
+    ins.rows[0]?.id ??
+    (await q.query<{ id: number }>(`SELECT cnv_id AS "id" FROM "CONVERSATION_T" WHERE cnv_pair = $1`, [pair])).rows[0]
+      .id;
   await q.query(
-    `INSERT INTO "CONV_MEMBER_T" (cmb_cnv_id, cmb_usr_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING`, [id, a, b],
+    `INSERT INTO "CONV_MEMBER_T" (cmb_cnv_id, cmb_usr_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING`,
+    [id, a, b],
   );
-  const { rows: [held] } = await q.query<{ senderId: number; body: string; noteId: number | null; createdAt: Date }>(
+  const {
+    rows: [held],
+  } = await q.query<{ senderId: number; body: string; noteId: number | null; createdAt: Date }>(
     `UPDATE "MESSAGE_REQUEST_T" SET mrq_status = 'accepted', mrq_responded_at = NOW()
      WHERE mrq_status = 'pending' AND LEAST(mrq_sender_id, mrq_recipient_id) = $1 AND GREATEST(mrq_sender_id, mrq_recipient_id) = $2
      RETURNING mrq_sender_id AS "senderId", mrq_body AS "body", mrq_pst_id AS "noteId", mrq_created_at AS "createdAt"`,
     [Math.min(a, b), Math.max(a, b)],
   );
   if (!held) return { id, created: ins.rowCount === 1, heldMessageId: null };
-  const heldMessageId = await insertMessage(q, id, held.senderId, { body: held.body, noteId: held.noteId, replyToId: null }, held.createdAt);
+  const heldMessageId = await insertMessage(
+    q,
+    id,
+    held.senderId,
+    { body: held.body, noteId: held.noteId, replyToId: null },
+    held.createdAt,
+  );
   if (heldMessageId === undefined) throw new Rollback();
   return { id, created: ins.rowCount === 1, heldMessageId };
 }
@@ -222,10 +271,16 @@ export type DirectResult =
  * otherwise a pending request holding the text and note card. 'user_not_found' for an unknown, suspended or deleted user
  * or a block either way; 'pending' when a request between them already waits.
  */
-export async function sendToUser(senderId: number, toUserId: number, m: Omit<MessageInput, 'replyToId'>): Promise<DirectResult | Refusal> {
+export async function sendToUser(
+  senderId: number,
+  toUserId: number,
+  m: Omit<MessageInput, 'replyToId'>,
+): Promise<DirectResult | Refusal> {
   try {
     return await inTransaction(async (q) => {
-      const { rows: [t] } = await q.query<{ friends: boolean; conversationId: number | null }>(
+      const {
+        rows: [t],
+      } = await q.query<{ friends: boolean; conversationId: number | null }>(
         `SELECT ${friends('$1', 'u.usr_id')} AS "friends",
                 (SELECT cnv_id FROM "CONVERSATION_T" WHERE cnv_pair = $3) AS "conversationId"
          FROM "USER_T" u WHERE u.usr_id = $2 AND ${REACHABLE('u')}`,
@@ -238,7 +293,9 @@ export async function sendToUser(senderId: number, toUserId: number, m: Omit<Mes
         if (messageId === undefined) return 'user_not_found';
         return { kind: 'message', conversationId: conv.id, messageId, created: conv.created };
       }
-      const { rows: [r] } = await q.query<{ id: number }>(
+      const {
+        rows: [r],
+      } = await q.query<{ id: number }>(
         `INSERT INTO "MESSAGE_REQUEST_T" (mrq_sender_id, mrq_recipient_id, mrq_body, mrq_pst_id)
          SELECT $1, u.usr_id, $3, $4 FROM "USER_T" u WHERE u.usr_id = $2 AND ${REACHABLE('u')}
          RETURNING mrq_id AS "id"`,
@@ -254,10 +311,17 @@ export async function sendToUser(senderId: number, toUserId: number, m: Omit<Mes
 }
 
 /** A message in an existing conversation: 'not_found' unless OPEN, 'cannot_send' when the other side left NotaLah, 'reply' for a bad reply target. */
-export async function sendToConversation(conversationId: number, senderId: number, m: MessageInput): Promise<number | Refusal> {
+export async function sendToConversation(
+  conversationId: number,
+  senderId: number,
+  m: MessageInput,
+): Promise<number | Refusal> {
   return inTransaction(async (q) => {
-    const { rows: [s] } = await q.query<{ open: boolean; sendable: boolean }>(
-      `SELECT ${OPEN} AS "open", ${SENDABLE} AS "sendable" FROM "CONVERSATION_T" c WHERE c.cnv_id = $2`, [senderId, conversationId],
+    const {
+      rows: [s],
+    } = await q.query<{ open: boolean; sendable: boolean }>(
+      `SELECT ${OPEN} AS "open", ${SENDABLE} AS "sendable" FROM "CONVERSATION_T" c WHERE c.cnv_id = $2`,
+      [senderId, conversationId],
     );
     if (!s?.open) return 'not_found';
     if (!s.sendable) return 'cannot_send';
@@ -278,7 +342,11 @@ export async function deleteMessage(id: number, senderId: number): Promise<numbe
 }
 
 /** Moves the member's read receipt forward to `messageId` (or the latest message); the receipt, or undefined when not OPEN. */
-export async function markRead(conversationId: number, userId: number, messageId: number | null): Promise<number | null | undefined> {
+export async function markRead(
+  conversationId: number,
+  userId: number,
+  messageId: number | null,
+): Promise<number | null | undefined> {
   const { rows } = await pool.query<{ lastRead: number | null }>(
     `UPDATE "CONV_MEMBER_T" me SET cmb_last_read_msg_id = GREATEST(me.cmb_last_read_msg_id, (
          SELECT MAX(msg_id) FROM "MESSAGE_T" WHERE msg_cnv_id = $2 AND ($3::BIGINT IS NULL OR msg_id <= $3)))
@@ -307,7 +375,10 @@ const REQUEST_FROM = `FROM "MESSAGE_REQUEST_T" q JOIN "USER_T" u ON u.usr_id = q
   WHERE q.mrq_recipient_id = $1 AND q.mrq_status = 'pending' AND ${REACHABLE('u')}`;
 
 /** The request inbox, newest first; keyset on (created at, id), D40. */
-export async function listRequests(userId: number, { cursor, limit }: KeysetPage): Promise<{ items: MessageRequest[]; nextCursor: string | null }> {
+export async function listRequests(
+  userId: number,
+  { cursor, limit }: KeysetPage,
+): Promise<{ items: MessageRequest[]; nextCursor: string | null }> {
   const { rows } = await pool.query<MessageRequest & { cursor: string }>(
     `SELECT ${REQUEST_COLS}, ${micros('q.mrq_created_at')} || '_' || q.mrq_id AS "cursor" ${REQUEST_FROM}
        AND ($2::BIGINT IS NULL OR (q.mrq_created_at, q.mrq_id) < (${fromMicros('$2')}, $3::INT))
@@ -319,7 +390,10 @@ export async function listRequests(userId: number, { cursor, limit }: KeysetPage
 }
 
 export async function getRequest(id: number, recipientId: number): Promise<MessageRequest | undefined> {
-  const { rows } = await pool.query<MessageRequest>(`SELECT ${REQUEST_COLS} ${REQUEST_FROM} AND q.mrq_id = $2`, [recipientId, id]);
+  const { rows } = await pool.query<MessageRequest>(`SELECT ${REQUEST_COLS} ${REQUEST_FROM} AND q.mrq_id = $2`, [
+    recipientId,
+    id,
+  ]);
   return rows[0];
 }
 
@@ -328,10 +402,15 @@ export async function getRequest(id: number, recipientId: number): Promise<Messa
  * held message (its original time and note) through the block-checked insert, and marks it read for the recipient. Creates
  * no follow (D9 review, D38). Undefined when there is no such request or that insert is refused (rolled back).
  */
-export async function acceptRequest(id: number, recipientId: number): Promise<{ senderId: number; conversationId: number; messageId: number } | undefined> {
+export async function acceptRequest(
+  id: number,
+  recipientId: number,
+): Promise<{ senderId: number; conversationId: number; messageId: number } | undefined> {
   try {
     return await inTransaction(async (q) => {
-      const { rows: [r] } = await q.query<{ senderId: number }>(
+      const {
+        rows: [r],
+      } = await q.query<{ senderId: number }>(
         `SELECT q.mrq_sender_id AS "senderId" FROM "MESSAGE_REQUEST_T" q JOIN "USER_T" u ON u.usr_id = q.mrq_sender_id
          WHERE q.mrq_id = $2 AND q.mrq_recipient_id = $1 AND q.mrq_status = 'pending' AND ${REACHABLE('u')}
          FOR UPDATE OF q`,
@@ -340,10 +419,11 @@ export async function acceptRequest(id: number, recipientId: number): Promise<{ 
       if (!r) return undefined;
       const conv = await openDirect(q, recipientId, r.senderId);
       if (conv.heldMessageId === null) throw new Rollback();
-      await q.query(
-        `UPDATE "CONV_MEMBER_T" SET cmb_last_read_msg_id = $3 WHERE cmb_cnv_id = $1 AND cmb_usr_id = $2`,
-        [conv.id, recipientId, conv.heldMessageId],
-      );
+      await q.query(`UPDATE "CONV_MEMBER_T" SET cmb_last_read_msg_id = $3 WHERE cmb_cnv_id = $1 AND cmb_usr_id = $2`, [
+        conv.id,
+        recipientId,
+        conv.heldMessageId,
+      ]);
       return { senderId: r.senderId, conversationId: conv.id, messageId: conv.heldMessageId };
     });
   } catch (err) {
@@ -377,13 +457,19 @@ const FRIEND_COUNT = (ids: string) =>
 export function createGroup(ownerId: number, name: string, members: number[]): Promise<number | Refusal> {
   const all = [ownerId, ...members];
   return inTransaction(async (q) => {
-    const { rows: [chk] } = await q.query<{ friends: number; free: boolean }>(
-      `SELECT ${FRIEND_COUNT('$2::INT[]')} AS "friends", ${NO_BLOCK_AMONG('$3::INT[]')} AS "free"`, [ownerId, members, all],
+    const {
+      rows: [chk],
+    } = await q.query<{ friends: number; free: boolean }>(
+      `SELECT ${FRIEND_COUNT('$2::INT[]')} AS "friends", ${NO_BLOCK_AMONG('$3::INT[]')} AS "free"`,
+      [ownerId, members, all],
     );
     if (chk.friends !== members.length) return 'not_friends';
     if (!chk.free) return 'blocked';
-    const { rows: [c] } = await q.query<{ id: number }>(
-      `INSERT INTO "CONVERSATION_T" (cnv_type, cnv_name, cnv_owner_id) VALUES ('group', $1, $2) RETURNING cnv_id AS "id"`, [name, ownerId],
+    const {
+      rows: [c],
+    } = await q.query<{ id: number }>(
+      `INSERT INTO "CONVERSATION_T" (cnv_type, cnv_name, cnv_owner_id) VALUES ('group', $1, $2) RETURNING cnv_id AS "id"`,
+      [name, ownerId],
     );
     await q.query(`INSERT INTO "CONV_MEMBER_T" (cmb_cnv_id, cmb_usr_id) SELECT $1, UNNEST($2::INT[])`, [c.id, all]);
     return c.id;
@@ -394,12 +480,21 @@ export function createGroup(ownerId: number, name: string, members: number[]): P
  * Locks a group row for a membership change; undefined when it is not a group the user belongs to. Size and membership
  * are read in a second statement once the lock is held, so a change committed while this waited is counted.
  */
-async function lockGroup(q: PoolClient, conversationId: number, userId: number): Promise<{ ownerId: number; size: number } | undefined> {
-  const { rows: [g] } = await q.query<{ ownerId: number }>(
-    `SELECT cnv_owner_id AS "ownerId" FROM "CONVERSATION_T" WHERE cnv_id = $1 AND cnv_type = 'group' FOR UPDATE`, [conversationId],
+async function lockGroup(
+  q: PoolClient,
+  conversationId: number,
+  userId: number,
+): Promise<{ ownerId: number; size: number } | undefined> {
+  const {
+    rows: [g],
+  } = await q.query<{ ownerId: number }>(
+    `SELECT cnv_owner_id AS "ownerId" FROM "CONVERSATION_T" WHERE cnv_id = $1 AND cnv_type = 'group' FOR UPDATE`,
+    [conversationId],
   );
   if (!g) return undefined;
-  const { rows: [m] } = await q.query<{ size: number; member: boolean }>(
+  const {
+    rows: [m],
+  } = await q.query<{ size: number; member: boolean }>(
     `SELECT COUNT(*)::INT AS "size", COALESCE(BOOL_OR(cmb_usr_id = $2), FALSE) AS "member" FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1`,
     [conversationId, userId],
   );
@@ -411,7 +506,9 @@ export function addMember(conversationId: number, adderId: number, userId: numbe
   return inTransaction(async (q) => {
     const group = await lockGroup(q, conversationId, adderId);
     if (!group) return 'not_found';
-    const { rows: [chk] } = await q.query<{ member: boolean; friends: number; free: boolean }>(
+    const {
+      rows: [chk],
+    } = await q.query<{ member: boolean; friends: number; free: boolean }>(
       `SELECT EXISTS (SELECT 1 FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $2 AND cmb_usr_id = $3) AS "member",
               ${FRIEND_COUNT('ARRAY[$3::INT]')} AS "friends",
               NOT EXISTS (SELECT 1 FROM "CONV_MEMBER_T" m WHERE m.cmb_cnv_id = $2 AND ${blockedWith('$3::INT', 'm.cmb_usr_id')}) AS "free"`,
@@ -435,15 +532,25 @@ export function addMember(conversationId: number, adderId: number, userId: numbe
  * earliest-joined remaining member becomes owner (D50); when nobody is left the group is deleted. The owner after the
  * change, or null when the group was deleted.
  */
-export function removeMember(conversationId: number, actorId: number, userId: number): Promise<{ ownerId: number | null } | Refusal> {
+export function removeMember(
+  conversationId: number,
+  actorId: number,
+  userId: number,
+): Promise<{ ownerId: number | null } | Refusal> {
   return inTransaction(async (q) => {
     const group = await lockGroup(q, conversationId, actorId);
     if (!group) return 'not_found';
     if (userId !== actorId && group.ownerId !== actorId) return 'not_owner';
-    const { rowCount } = await q.query(`DELETE FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1 AND cmb_usr_id = $2`, [conversationId, userId]);
+    const { rowCount } = await q.query(`DELETE FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1 AND cmb_usr_id = $2`, [
+      conversationId,
+      userId,
+    ]);
     if (rowCount === 0) return 'not_member';
-    const { rows: [next] } = await q.query<{ id: number }>(
-      `SELECT cmb_usr_id AS "id" FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1 ORDER BY cmb_joined_at, cmb_usr_id LIMIT 1`, [conversationId],
+    const {
+      rows: [next],
+    } = await q.query<{ id: number }>(
+      `SELECT cmb_usr_id AS "id" FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1 ORDER BY cmb_joined_at, cmb_usr_id LIMIT 1`,
+      [conversationId],
     );
     if (!next) {
       await q.query(`DELETE FROM "CONVERSATION_T" WHERE cnv_id = $1`, [conversationId]);

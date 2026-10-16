@@ -35,7 +35,10 @@ it('OPS-TC3: every response carries an X-Request-Id, reusing a safe incoming one
 it('OPS-TC4: log redaction hides the set-cookie header and password fields', () => {
   const lines: string[] = [];
   const log = pino({ ...loggerOptions, level: 'info' }, { write: (l: string) => void lines.push(l) });
-  log.info({ res: { headers: { 'set-cookie': ['parp_token=secret123; HttpOnly'] } }, body: { password: 'hunter2' } }, 'x');
+  log.info(
+    { res: { headers: { 'set-cookie': ['parp_token=secret123; HttpOnly'] } }, body: { password: 'hunter2' } },
+    'x',
+  );
   const out = lines.join('');
   expect(out).toContain('[redacted]');
   expect(out).not.toContain('parp_token=');

@@ -22,11 +22,14 @@ export async function inTransaction<T>(fn: (c: PoolClient) => Promise<T>): Promi
     await client.query('COMMIT');
     return out;
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => { broken = true; });
+    await client.query('ROLLBACK').catch(() => {
+      broken = true;
+    });
     throw err;
   } finally {
     client.release(broken);
   }
 }
 
-export const isUniqueViolation = (err: unknown): boolean => err instanceof Error && 'code' in err && err.code === '23505';
+export const isUniqueViolation = (err: unknown): boolean =>
+  err instanceof Error && 'code' in err && err.code === '23505';

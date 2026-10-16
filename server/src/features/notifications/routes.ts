@@ -32,7 +32,9 @@ notificationsRouter.get('/unread-count', async (req, res) => {
 
 const readSchema = z.object({
   ids: z
-    .array(z.number({ error: 'Invalid id' }).int('Invalid id').min(1, 'Invalid id').max(2147483647, 'Invalid id'), { error: 'ids must be a list' })
+    .array(z.number({ error: 'Invalid id' }).int('Invalid id').min(1, 'Invalid id').max(2147483647, 'Invalid id'), {
+      error: 'ids must be a list',
+    })
     .min(1, 'ids must not be empty')
     .max(NOTIFICATIONS.markReadMax, `At most ${NOTIFICATIONS.markReadMax} ids`)
     .optional(),

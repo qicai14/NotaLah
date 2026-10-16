@@ -28,9 +28,11 @@ interface Item {
   requestStatus: string | null;
 }
 
-const inbox = async (who: number): Promise<Item[]> => (await api.get(who, '/api/notifications?limit=100').expect(200)).body.notifications;
+const inbox = async (who: number): Promise<Item[]> =>
+  (await api.get(who, '/api/notifications?limit=100').expect(200)).body.notifications;
 const types = async (who: number) => (await inbox(who)).map((n) => n.type);
-const unread = async (who: number) => (await api.get(who, '/api/notifications/unread-count').expect(200)).body.unreadCount;
+const unread = async (who: number) =>
+  (await api.get(who, '/api/notifications/unread-count').expect(200)).body.unreadCount;
 const lecturer = (displayName = 'Dr Lee') =>
   insertUser({ displayName, role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
 const ageAll = (minutes: number) =>
@@ -50,7 +52,7 @@ async function editBody(owner: number, note: number, over: object = {}) {
 }
 
 describe('Notification triggers', () => {
-  it('NTF-TC1: a mention reaches thread participants and the commenter\'s friends only', async () => {
+  it("NTF-TC1: a mention reaches thread participants and the commenter's friends only", async () => {
     const author = await insertUser({ displayName: 'Ann Author' });
     const root = await insertUser({ displayName: 'Ben Root' });
     const replier = await insertUser({ displayName: 'Cat Replier' });
@@ -68,12 +70,19 @@ describe('Notification triggers', () => {
 
     const body = '@Ann Author @Ben Root @Cat Replier @Eve Friend @Fay Stranger @Gus Other @Dan Commenter thanks';
     const mentions = [author, root, replier, friend, stranger, otherThread, unnamed, commenter, 999999];
-    const reply = await api.post(commenter, `/api/notes/${note}/comments`, { body, parentId: top, mentions }).expect(201);
+    const reply = await api
+      .post(commenter, `/api/notes/${note}/comments`, { body, parentId: top, mentions })
+      .expect(201);
 
     for (const who of [author, root, replier, friend]) {
       const [n] = await inbox(who);
-      expect(n).toMatchObject({ type: 'mention', read: false, actor: { id: commenter, displayName: 'Dan Commenter' },
-        note: { id: note, title: 'A note' }, commentId: reply.body.comment.id });
+      expect(n).toMatchObject({
+        type: 'mention',
+        read: false,
+        actor: { id: commenter, displayName: 'Dan Commenter' },
+        note: { id: note, title: 'A note' },
+        commentId: reply.body.comment.id,
+      });
     }
     for (const who of [stranger, otherThread, unnamed, commenter]) expect(await types(who)).toEqual([]);
   });
@@ -88,11 +97,15 @@ describe('Notification triggers', () => {
     await befriend(author, dotted);
     await befriend(commenter, dotted);
     const note = await insertNote(author, { visibility: 'contacts' });
-    await api.post(commenter, `/api/notes/${note}/comments`, { body: '@Ann @Cy look', mentions: [author, outsider] }).expect(201);
+    await api
+      .post(commenter, `/api/notes/${note}/comments`, { body: '@Ann @Cy look', mentions: [author, outsider] })
+      .expect(201);
     expect(await types(author)).toEqual(['mention']);
     expect(await types(outsider)).toEqual([]);
 
-    await api.post(commenter, `/api/notes/${note}/comments`, { body: '@Annabel and @J.R (TA)', mentions: [author, dotted] }).expect(201);
+    await api
+      .post(commenter, `/api/notes/${note}/comments`, { body: '@Annabel and @J.R (TA)', mentions: [author, dotted] })
+      .expect(201);
     expect(await types(author)).toEqual(['mention']); // "@Annabel" does not name Ann
     expect(await types(dotted)).toEqual(['mention']);
 
@@ -148,14 +161,18 @@ describe('Notification triggers', () => {
     for (const n of [hidden, kept]) await api.post(reporter, `/api/notes/${n}/report`, { reason: 'spam' }).expect(201);
     await api.post(admin, `/api/admin/reports/${kept}/resolve`, { outcome: 'dismiss', remark: 'Fine' }).expect(200);
     await api.post(admin, `/api/admin/reports/${hidden}/resolve`, { outcome: 'hide', remark: 'Spam' }).expect(200);
-    expect(await inbox(author)).toMatchObject([{ type: 'note_hidden', actor: null, note: { id: hidden, title: 'Hidden one' } }]);
+    expect(await inbox(author)).toMatchObject([
+      { type: 'note_hidden', actor: null, note: { id: hidden, title: 'Hidden one' } },
+    ]);
   });
 
   it('NTF-TC7: a message request is stored with its id and status', async () => {
     const a = await insertUser();
     const b = await insertUser();
     const sent = await api.post(a, '/api/messages', { toUserId: b, body: 'Hi' }).expect(202);
-    expect(await inbox(b)).toMatchObject([{ type: 'message_request', actor: { id: a }, requestId: sent.body.request.id, requestStatus: 'pending' }]);
+    expect(await inbox(b)).toMatchObject([
+      { type: 'message_request', actor: { id: a }, requestId: sent.body.request.id, requestStatus: 'pending' },
+    ]);
     await api.post(b, `/api/message-requests/${sent.body.request.id}/accept`).expect(200);
     expect((await inbox(b))[0].requestStatus).toBe('accepted');
   });
@@ -173,8 +190,12 @@ describe('Notification triggers', () => {
     ]);
     await api.post(owner, `/api/notes/${note}/requests/${r1}`, { decision: 'approve' }).expect(200);
     await api.post(owner, `/api/notes/${note}/requests/${r2}`, { decision: 'decline' }).expect(200);
-    expect(await inbox(asker)).toMatchObject([{ type: 'collab_approved', actor: { id: owner }, requestId: r1, requestStatus: 'approved' }]);
-    expect(await inbox(second)).toMatchObject([{ type: 'collab_declined', note: { id: note }, requestId: r2, requestStatus: 'declined' }]);
+    expect(await inbox(asker)).toMatchObject([
+      { type: 'collab_approved', actor: { id: owner }, requestId: r1, requestStatus: 'approved' },
+    ]);
+    expect(await inbox(second)).toMatchObject([
+      { type: 'collab_declined', note: { id: note }, requestId: r2, requestStatus: 'declined' },
+    ]);
     await pool.query(`UPDATE "POST_T" SET pst_visibility = 'contacts' WHERE pst_id = $1`, [note]);
     expect(await inbox(second)).toMatchObject([{ type: 'collab_declined', note: null, requestId: r2 }]);
   });
@@ -189,8 +210,14 @@ describe('Notification triggers', () => {
     expect(await types(l1)).toEqual([]); // hashtags are not content (D46)
     await api.put(owner, `/api/notes/${note}`, await editBody(owner, note, { title: 'Edited' })).expect(200);
     await api.put(owner, `/api/notes/${note}`, await editBody(owner, note, { title: 'Edited twice' })).expect(200);
-    for (const l of [l1, l2]) expect(await inbox(l)).toMatchObject([{ type: 'edited_since_verification', actor: { id: owner }, note: { id: note } }]);
-    await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = ntf_created_at - INTERVAL '2 minutes' WHERE ntf_usr_id = $1`, [l1]); // past the 1-minute window
+    for (const l of [l1, l2])
+      expect(await inbox(l)).toMatchObject([
+        { type: 'edited_since_verification', actor: { id: owner }, note: { id: note } },
+      ]);
+    await pool.query(
+      `UPDATE "NOTIFICATION_T" SET ntf_created_at = ntf_created_at - INTERVAL '2 minutes' WHERE ntf_usr_id = $1`,
+      [l1],
+    ); // past the 1-minute window
     await api.post(l1, `/api/notes/${note}/verify`).expect(200); // re-confirms the latest version
     await api.put(owner, `/api/notes/${note}`, await editBody(owner, note, { title: 'Edited again' })).expect(200);
     expect(await types(l1)).toEqual(['edited_since_verification', 'edited_since_verification']);
@@ -236,20 +263,27 @@ describe('Delivery rules', () => {
     expect(await unread(b)).toMatchObject({ total: 2, byType: { follow: 1, message_request: 1 } });
   });
 
-  it('NTF-TC12: suspended and deleted recipients get nothing; a suspended actor\'s notifications are hidden', async () => {
+  it("NTF-TC12: suspended and deleted recipients get nothing; a suspended actor's notifications are hidden", async () => {
     const actor = await insertUser();
     const active = await insertUser();
     const restricted = await insertUser({ status: 'restricted' });
     const suspended = await insertUser({ status: 'suspended' });
     const deleted = await insertUser({ status: 'deleted' });
-    const stored = await insertNotifications({ type: 'follow', actorId: actor }, [active, restricted, suspended, deleted]);
+    const stored = await insertNotifications({ type: 'follow', actorId: actor }, [
+      active,
+      restricted,
+      suspended,
+      deleted,
+    ]);
     expect(stored.map((r) => r.recipientId).sort()).toEqual([active, restricted].sort());
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [actor]);
     expect(await inbox(active)).toEqual([]);
   });
 
   it('NTF-TC13: a failing notification never fails the action that caused it', async () => {
-    await expect(notify({ type: 'follow', actorId: null }, () => Promise.reject(new Error('db down')))).resolves.toBeUndefined();
+    await expect(
+      notify({ type: 'follow', actorId: null }, () => Promise.reject(new Error('db down'))),
+    ).resolves.toBeUndefined();
   });
 });
 
@@ -261,7 +295,10 @@ describe('Inbox endpoints', () => {
     await insertNotifications({ type: 'lecturer_approved', actorId: null }, [me]);
     await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = NOW()`); // same time: the id breaks the tie
 
-    const pages = await walkPages<Item>((cursor) => api.get(me, `/api/notifications?limit=10${cursor ? `&cursor=${cursor}` : ''}`), 'notifications');
+    const pages = await walkPages<Item>(
+      (cursor) => api.get(me, `/api/notifications?limit=10${cursor ? `&cursor=${cursor}` : ''}`),
+      'notifications',
+    );
     expect(pages.map((p) => p.length)).toEqual([10, 10, 6]);
     const ids = pages.flat().map((n) => n.id);
     expect(ids).toEqual([...ids].sort((x, y) => y - x));
@@ -288,10 +325,18 @@ describe('Inbox endpoints', () => {
     expect((await inbox(me)).find((n) => n.id === n1.id)?.read).toBe(true);
     expect((await unread(other)).total).toBe(1);
 
-    for (const body of [{ ids: [] }, { ids: ['1'] }, { ids: 5 }, { ids: Array.from({ length: 101 }, (_, i) => i + 1) }]) {
+    for (const body of [
+      { ids: [] },
+      { ids: ['1'] },
+      { ids: 5 },
+      { ids: Array.from({ length: 101 }, (_, i) => i + 1) },
+    ]) {
       expect((await api.post(me, '/api/notifications/read', body)).status).toBe(400);
     }
-    expect((await api.post(me, '/api/notifications/read').expect(200)).body.unreadCount).toEqual({ total: 0, byType: {} });
+    expect((await api.post(me, '/api/notifications/read').expect(200)).body.unreadCount).toEqual({
+      total: 0,
+      byType: {},
+    });
     expect((await inbox(me)).every((n) => n.read)).toBe(true);
   });
 
@@ -299,8 +344,12 @@ describe('Inbox endpoints', () => {
     const [me, x, y] = await Promise.all([insertUser(), insertUser(), insertUser()]);
     const [old] = await insertNotifications({ type: 'follow', actorId: x }, [me]);
     await insertNotifications({ type: 'follow', actorId: y }, [me]);
-    await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = NOW() - INTERVAL '31 days' WHERE ntf_id = $1`, [old.id]);
-    await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = NOW() - INTERVAL '29 days' WHERE ntf_id <> $1`, [old.id]);
+    await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = NOW() - INTERVAL '31 days' WHERE ntf_id = $1`, [
+      old.id,
+    ]);
+    await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = NOW() - INTERVAL '29 days' WHERE ntf_id <> $1`, [
+      old.id,
+    ]);
     expect((await purgeAll()).notifications).toBe(1);
     expect((await inbox(me)).map((n) => n.actor?.id)).toEqual([y]);
   });

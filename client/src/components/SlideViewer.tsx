@@ -17,7 +17,14 @@ export function SlideViewer({ slides }: { slides: Slide[] }) {
   };
 
   return (
-    <div role="group" aria-roledescription="carousel" aria-label="Slides" tabIndex={0} onKeyDown={onKey} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+    <div
+      role="group"
+      aria-roledescription="carousel"
+      aria-label="Slides"
+      tabIndex={0}
+      onKeyDown={onKey}
+      className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+    >
       <div
         onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
         onTouchEnd={(e) => {
@@ -31,13 +38,25 @@ export function SlideViewer({ slides }: { slides: Slide[] }) {
         dangerouslySetInnerHTML={{ __html: slides[cur].content }}
       />
       <div className="mt-2 flex items-center justify-between text-sm">
-        <button type="button" aria-label="Previous slide" disabled={cur === 0} onClick={() => go(cur - 1)} className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40">
+        <button
+          type="button"
+          aria-label="Previous slide"
+          disabled={cur === 0}
+          onClick={() => go(cur - 1)}
+          className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40"
+        >
           Prev
         </button>
         <span>
           {cur + 1} of {slides.length}
         </span>
-        <button type="button" aria-label="Next slide" disabled={cur === slides.length - 1} onClick={() => go(cur + 1)} className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40">
+        <button
+          type="button"
+          aria-label="Next slide"
+          disabled={cur === slides.length - 1}
+          onClick={() => go(cur + 1)}
+          className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-40"
+        >
           Next
         </button>
       </div>

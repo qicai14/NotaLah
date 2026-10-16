@@ -30,7 +30,14 @@ async function kernelNote(author: number): Promise<number> {
 async function blockedPair() {
   const [a, b] = [await insertUser({ displayName: 'Kernel Alice' }), await insertUser({ displayName: 'Kernel Bob' })];
   expect((await block(a, b)).status).toBe(201);
-  return { a, b, pairs: [[a, b], [b, a]] as const };
+  return {
+    a,
+    b,
+    pairs: [
+      [a, b],
+      [b, a],
+    ] as const,
+  };
 }
 
 describe('Blocking', () => {
@@ -87,11 +94,13 @@ describe('Blocking', () => {
   it('BLK-TC4: the block list pages newest first with a keyset cursor; guests get 401', async () => {
     const a = await insertUser();
     const targets = [await insertUser(), await insertUser(), await insertUser()];
-    await pool.query(
-      `INSERT INTO "BLOCK_T" (blk_blocker_id, blk_blocked_id) SELECT $1, unnest($2::INT[])`, [a, targets],
-    );
+    await pool.query(`INSERT INTO "BLOCK_T" (blk_blocker_id, blk_blocked_id) SELECT $1, unnest($2::INT[])`, [
+      a,
+      targets,
+    ]);
     const pages = await walkPages<{ id: number }>(
-      (cursor) => api.get(a, `/api/users/me/blocks?limit=2${cursor ? `&cursor=${cursor}` : ''}`), 'users',
+      (cursor) => api.get(a, `/api/users/me/blocks?limit=2${cursor ? `&cursor=${cursor}` : ''}`),
+      'users',
     );
     expect(pages.map(ids)).toEqual([[targets[2], targets[1]], [targets[0]]]);
     expect((await api.get(null, '/api/users/me/blocks')).status).toBe(401);
@@ -102,7 +111,10 @@ describe('Blocking', () => {
     const mine = await api.get(a, `/api/users/${b}`);
     expect(mine.status).toBe(200);
     expect(mine.body).toEqual({ user: { id: b, displayName: 'Kernel Bob', blockedByMe: true } });
-    for (const [viewer, target] of [[b, a], [a, b]]) {
+    for (const [viewer, target] of [
+      [b, a],
+      [a, b],
+    ]) {
       for (const path of ['notes', 'followers', 'following']) {
         expect((await api.get(viewer, `/api/users/${target}/${path}`)).status).toBe(404);
       }
@@ -110,8 +122,12 @@ describe('Blocking', () => {
     expect((await api.get(b, `/api/users/${a}`)).status).toBe(404);
     // mutual block: each side gets the minimal payload so either can unblock
     expect((await block(b, a)).status).toBe(201);
-    expect((await api.get(a, `/api/users/${b}`)).body).toEqual({ user: { id: b, displayName: 'Kernel Bob', blockedByMe: true } });
-    expect((await api.get(b, `/api/users/${a}`)).body).toEqual({ user: { id: a, displayName: 'Kernel Alice', blockedByMe: true } });
+    expect((await api.get(a, `/api/users/${b}`)).body).toEqual({
+      user: { id: b, displayName: 'Kernel Bob', blockedByMe: true },
+    });
+    expect((await api.get(b, `/api/users/${a}`)).body).toEqual({
+      user: { id: a, displayName: 'Kernel Alice', blockedByMe: true },
+    });
   });
 
   it('BLK-TC6: neither side can follow the other', async () => {
@@ -127,9 +143,17 @@ describe('Blocking', () => {
     const { a, b, pairs } = await blockedPair();
     const notes = { [a]: await kernelNote(a), [b]: await kernelNote(b) };
     // each side bookmarked the other's note before the block; both notes carry #kernel and the same module
-    await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2), ($3, $4)`, [a, notes[b], b, notes[a]]);
+    await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2), ($3, $4)`, [
+      a,
+      notes[b],
+      b,
+      notes[a],
+    ]);
     await pool.query(`INSERT INTO "HASHTAG_T" (hsh_name) VALUES ('kernel')`);
-    await pool.query(`INSERT INTO "POST_HASHTAG_T" (phs_pst_id, phs_hsh_id) SELECT unnest($1::INT[]), hsh_id FROM "HASHTAG_T"`, [[notes[a], notes[b]]]);
+    await pool.query(
+      `INSERT INTO "POST_HASHTAG_T" (phs_pst_id, phs_hsh_id) SELECT unnest($1::INT[]), hsh_id FROM "HASHTAG_T"`,
+      [[notes[a], notes[b]]],
+    );
     const moduleCode = (await pool.query(`SELECT mod_code FROM "MODULE_T" ORDER BY mod_id LIMIT 1`)).rows[0].mod_code;
     const counts = async (who: Who) => [
       (await api.get(who, '/api/search?q=kernel&tab=hashtags')).body.items[0].noteCount,
@@ -156,7 +180,10 @@ describe('Blocking', () => {
 
   it('BLK-TC8: like, comment, Super Like and bookmark are refused both ways; reporting stays allowed', async () => {
     const { a, b, pairs } = await blockedPair();
-    await pool.query(`UPDATE "USER_T" SET usr_role = 'lecturer', usr_lecturer_status = 'approved', usr_staff_id = 'S1' WHERE usr_id IN ($1, $2)`, [a, b]);
+    await pool.query(
+      `UPDATE "USER_T" SET usr_role = 'lecturer', usr_lecturer_status = 'approved', usr_staff_id = 'S1' WHERE usr_id IN ($1, $2)`,
+      [a, b],
+    );
     for (const [x, y] of pairs) {
       const note = await insertNote(y);
       expect((await api.post(x, `/api/notes/${note}/like`)).status).toBe(404);
@@ -169,7 +196,7 @@ describe('Blocking', () => {
     expect((await pool.query(`SELECT 1 FROM "REPORT_T"`)).rowCount).toBe(2);
   });
 
-  it('BLK-TC9: on a third user\'s note, each side\'s comments show as unavailable and cannot be replied to or liked', async () => {
+  it("BLK-TC9: on a third user's note, each side's comments show as unavailable and cannot be replied to or liked", async () => {
     const { pairs } = await blockedPair();
     const owner = await insertUser();
     const note = await insertNote(owner);
@@ -217,12 +244,20 @@ describe('Blocking', () => {
       expect((await block(x, y)).status).toBe(201);
 
       expect((await pool.query(`SELECT 1 FROM "COLLAB_REQUEST_T"`)).rowCount).toBe(0);
-      expect((await pool.query(`SELECT pst_lock_usr_id FROM "POST_T" WHERE pst_id = $1`, [editNote])).rows[0].pst_lock_usr_id).toBeNull();
+      expect(
+        (await pool.query(`SELECT pst_lock_usr_id FROM "POST_T" WHERE pst_id = $1`, [editNote])).rows[0]
+          .pst_lock_usr_id,
+      ).toBeNull();
       expect((await api.put(owner, `/api/notes/${note}/collaborators/${other}`, { role: 'edit' })).status).toBe(404);
       expect((await api.get(other, `/api/share/${link}`)).status).toBe(404);
       expect((await api.post(other, `/api/share/${link}`)).status).toBe(404);
       expect((await api.post(other, `/api/notes/${note}/requests`)).status).toBe(404);
-      const stale = (await pool.query(`INSERT INTO "COLLAB_REQUEST_T" (crq_pst_id, crq_usr_id) VALUES ($1, $2) RETURNING crq_id`, [note, other])).rows[0].crq_id;
+      const stale = (
+        await pool.query(`INSERT INTO "COLLAB_REQUEST_T" (crq_pst_id, crq_usr_id) VALUES ($1, $2) RETURNING crq_id`, [
+          note,
+          other,
+        ])
+      ).rows[0].crq_id;
       expect((await api.post(owner, `/api/notes/${note}/requests/${stale}`, { decision: 'approve' })).status).toBe(404);
       await pool.query(`DELETE FROM "COLLAB_REQUEST_T"`);
       expect((await api.get(other, `/api/notes/${viewNote}`)).status).toBe(404);
@@ -255,7 +290,9 @@ describe('Blocking', () => {
     await block(y, x);
     expect((await api.post(y, `/api/notes/${note}/report`, { reason: 'spam' })).status).toBe(201);
     expect((await block(admin, x)).status).toBe(201);
-    expect((await api.get(admin, '/api/admin/users?q=Blocked')).body.users.map((u: { id: number }) => u.id)).toEqual([x]);
+    expect((await api.get(admin, '/api/admin/users?q=Blocked')).body.users.map((u: { id: number }) => u.id)).toEqual([
+      x,
+    ]);
     const report = await api.get(admin, `/api/admin/reports/${note}`);
     expect(report.status).toBe(200);
     expect(report.body.group).toMatchObject({ id: note, reportCount: 1 });

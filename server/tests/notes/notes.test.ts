@@ -21,8 +21,7 @@ const publishBody = async (over: object = {}) => ({
 });
 
 const post = (uid: number, body: object) => request(app).post('/api/notes').set(asUser(uid)).send(body);
-const put = (uid: number, id: number, body: object) =>
-  request(app).put(`/api/notes/${id}`).set(asUser(uid)).send(body);
+const put = (uid: number, id: number, body: object) => request(app).put(`/api/notes/${id}`).set(asUser(uid)).send(body);
 const get = (uid: number, id: number) => request(app).get(`/api/notes/${id}`).set(asUser(uid));
 const count = async () => Number((await pool.query('SELECT COUNT(*) FROM "POST_T"')).rows[0].count);
 
@@ -115,13 +114,21 @@ describe('Notes', () => {
   it('NOTE-TC8: editing own published note stores new title and slide order and bumps updatedAt', async () => {
     const uid = await insertUser();
     const created = (await post(uid, await publishBody())).body.note;
-    const res = await put(uid, created.id, await publishBody({
-      title: 'MVC revised',
-      slides: ['<p>two</p>', '<p>one</p>', '<p>three</p>'],
-    }));
+    const res = await put(
+      uid,
+      created.id,
+      await publishBody({
+        title: 'MVC revised',
+        slides: ['<p>two</p>', '<p>one</p>', '<p>three</p>'],
+      }),
+    );
     expect(res.status).toBe(200);
     expect(res.body.note.title).toBe('MVC revised');
-    expect(res.body.note.slides.map((s: { content: string }) => s.content)).toEqual(['<p>two</p>', '<p>one</p>', '<p>three</p>']);
+    expect(res.body.note.slides.map((s: { content: string }) => s.content)).toEqual([
+      '<p>two</p>',
+      '<p>one</p>',
+      '<p>three</p>',
+    ]);
     expect(new Date(res.body.note.updatedAt).getTime()).toBeGreaterThan(new Date(created.updatedAt).getTime());
     expect(res.body.note.publishedAt).toBe(created.publishedAt);
   });
@@ -148,7 +155,9 @@ describe('Notes', () => {
     const res = await post(await insertUser(), {
       title: 'x',
       status: 'draft',
-      slides: ['<p onclick="x()" style="color:red">hi <a href="javascript:alert(1)">link</a><img src=x onerror=alert(1)></p>'],
+      slides: [
+        '<p onclick="x()" style="color:red">hi <a href="javascript:alert(1)">link</a><img src=x onerror=alert(1)></p>',
+      ],
     });
     expect(res.body.note.slides[0].content).toBe('<p>hi link</p>');
   });
@@ -251,7 +260,13 @@ describe('Notes', () => {
     for (let i = 0; i < 5; i++) drafts.push((await post(uid, { title: `Draft ${i}`, status: 'draft' })).body.note.id);
     await pool.query(`UPDATE "POST_T" SET pst_updated_at = '2026-10-01T00:00:00.123456Z'`);
     const pages = await walkPages<{ id: number }>(
-      (cursor) => request(app).get('/api/notes/drafts').query({ limit: 2, ...(cursor && { cursor }) }).set(asUser(uid)), 'notes');
+      (cursor) =>
+        request(app)
+          .get('/api/notes/drafts')
+          .query({ limit: 2, ...(cursor && { cursor }) })
+          .set(asUser(uid)),
+      'notes',
+    );
     expect(pages.map((pg) => pg.length)).toEqual([2, 2, 1]);
     expect(pages.flat().map((n) => n.id)).toEqual([...drafts].reverse());
     expect((await request(app).get('/api/notes/drafts?limit=101').set(asUser(uid))).status).toBe(400);

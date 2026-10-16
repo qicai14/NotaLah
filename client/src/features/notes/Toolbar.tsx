@@ -9,11 +9,39 @@ const ITEMS: Item[] = [
   { label: 'Italic', text: 'I', active: 'italic', run: (e) => e.chain().focus().toggleItalic().run() },
   { label: 'Strikethrough', text: 'S', active: 'strike', run: (e) => e.chain().focus().toggleStrike().run() },
   { label: 'Inline code', text: '</>', active: 'code', run: (e) => e.chain().focus().toggleCode().run() },
-  { label: 'Heading 1', text: 'H1', active: 'heading', attrs: { level: 1 }, run: (e) => e.chain().focus().toggleHeading({ level: 1 }).run() },
-  { label: 'Heading 2', text: 'H2', active: 'heading', attrs: { level: 2 }, run: (e) => e.chain().focus().toggleHeading({ level: 2 }).run() },
-  { label: 'Heading 3', text: 'H3', active: 'heading', attrs: { level: 3 }, run: (e) => e.chain().focus().toggleHeading({ level: 3 }).run() },
-  { label: 'Bullet list', text: '• List', active: 'bulletList', run: (e) => e.chain().focus().toggleBulletList().run() },
-  { label: 'Numbered list', text: '1. List', active: 'orderedList', run: (e) => e.chain().focus().toggleOrderedList().run() },
+  {
+    label: 'Heading 1',
+    text: 'H1',
+    active: 'heading',
+    attrs: { level: 1 },
+    run: (e) => e.chain().focus().toggleHeading({ level: 1 }).run(),
+  },
+  {
+    label: 'Heading 2',
+    text: 'H2',
+    active: 'heading',
+    attrs: { level: 2 },
+    run: (e) => e.chain().focus().toggleHeading({ level: 2 }).run(),
+  },
+  {
+    label: 'Heading 3',
+    text: 'H3',
+    active: 'heading',
+    attrs: { level: 3 },
+    run: (e) => e.chain().focus().toggleHeading({ level: 3 }).run(),
+  },
+  {
+    label: 'Bullet list',
+    text: '• List',
+    active: 'bulletList',
+    run: (e) => e.chain().focus().toggleBulletList().run(),
+  },
+  {
+    label: 'Numbered list',
+    text: '1. List',
+    active: 'orderedList',
+    run: (e) => e.chain().focus().toggleOrderedList().run(),
+  },
   { label: 'Quote', text: '“ ”', active: 'blockquote', run: (e) => e.chain().focus().toggleBlockquote().run() },
   { label: 'Code block', text: '{ }', active: 'codeBlock', run: (e) => e.chain().focus().toggleCodeBlock().run() },
   { label: 'Line break', text: '↵', run: (e) => e.chain().focus().setHardBreak().run() },
@@ -27,7 +55,11 @@ export function Toolbar({ editor }: { editor: Editor }) {
     selector: ({ editor: e }) => ITEMS.map((i) => (i.active ? e.isActive(i.active, i.attrs) : false)),
   });
   return (
-    <div role="toolbar" aria-label="Formatting" className="flex flex-wrap gap-1 rounded-t-md border border-slate-300 bg-slate-50 p-1">
+    <div
+      role="toolbar"
+      aria-label="Formatting"
+      className="flex flex-wrap gap-1 rounded-t-md border border-slate-300 bg-slate-50 p-1"
+    >
       {ITEMS.map((i, n) => (
         <button
           key={i.label}

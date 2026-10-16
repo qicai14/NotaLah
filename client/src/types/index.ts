@@ -92,14 +92,20 @@ export interface Comment extends CommentReply {
   replies: CommentReply[];
 }
 
-export interface ReportGroup extends Omit<Note, 'counts' | 'liked' | 'bookmarked' | 'verified' | 'verifiedBy' | 'verifiedByMe'> {
+export interface ReportGroup extends Omit<
+  Note,
+  'counts' | 'liked' | 'bookmarked' | 'verified' | 'verifiedBy' | 'verifiedByMe'
+> {
   reportCount: number;
   oldestReportAt: string;
   reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: string }[];
 }
 
 /** A row of the report queue: the review panel fetches the full ReportGroup on open. */
-export type ReportSummary = Pick<ReportGroup, 'id' | 'title' | 'status' | 'module' | 'reportCount' | 'oldestReportAt' | 'reports'> & {
+export type ReportSummary = Pick<
+  ReportGroup,
+  'id' | 'title' | 'status' | 'module' | 'reportCount' | 'oldestReportAt' | 'reports'
+> & {
   author: Pick<ReportGroup['author'], 'id' | 'displayName'>;
 };
 

@@ -4,7 +4,14 @@ import { buildInterestVector, scoreCandidate, type Components } from '../ranking
 import type { NoteWithEngagement } from '../notes/repository';
 import { GUEST_ID } from '../users/repository';
 import { RANKING } from '../ranking/config';
-import { getCutoff, getFollowingNotes, getNotesByIds, readSnapshot, saveSnapshot, type RankedEntry } from './repository';
+import {
+  getCutoff,
+  getFollowingNotes,
+  getNotesByIds,
+  readSnapshot,
+  saveSnapshot,
+  type RankedEntry,
+} from './repository';
 
 const PAGE_SIZE = 10;
 
@@ -12,7 +19,10 @@ type FeedItem = NoteWithEngagement & { score: number; components: Components };
 
 /** Scores every candidate at the cutoff and sorts by score, then newest, then id (IR 2.3.4, D24). */
 async function rank(viewerId: number, cutoff: Date): Promise<RankedEntry[]> {
-  const [candidates, interactions] = await Promise.all([getCandidates(viewerId, cutoff), getInteractionRows(viewerId, cutoff)]);
+  const [candidates, interactions] = await Promise.all([
+    getCandidates(viewerId, cutoff),
+    getInteractionRows(viewerId, cutoff),
+  ]);
   const interest = buildInterestVector(interactions, cutoff);
   return candidates
     .map((c) => ({ id: c.id, publishedAt: c.publishedAt, ...scoreCandidate(c, interest, cutoff) }))
@@ -37,7 +47,9 @@ function rememberGuestRanking(cutoff: Date, ranked: RankedEntry[]): void {
  * ranking for one asOf, so guests share an in-memory copy instead of a snapshot row (D45).
  */
 export async function getFeedPage(
-  viewerId: number, page: number, asOf: Date | null,
+  viewerId: number,
+  page: number,
+  asOf: Date | null,
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
   const cutoff = await getCutoff(asOf);
   const from = (page - 1) * PAGE_SIZE;
@@ -45,7 +57,9 @@ export async function getFeedPage(
   const cached = guest && asOf ? guestRankings.get(cutoff.getTime()) : undefined;
   let stored = cached
     ? { entries: cached.slice(from, from + PAGE_SIZE), total: cached.length }
-    : asOf && !guest ? await readSnapshot(viewerId, cutoff, from, from + PAGE_SIZE) : undefined;
+    : asOf && !guest
+      ? await readSnapshot(viewerId, cutoff, from, from + PAGE_SIZE)
+      : undefined;
   if (!stored) {
     const ranked = await rank(viewerId, cutoff);
     if (guest) rememberGuestRanking(cutoff, ranked);
@@ -53,7 +67,13 @@ export async function getFeedPage(
     stored = { entries: ranked.slice(from, from + PAGE_SIZE), total: ranked.length };
   }
   const { entries, total } = stored;
-  const rows = entries.length === 0 ? [] : await getNotesByIds(viewerId, entries.map((r) => r.id));
+  const rows =
+    entries.length === 0
+      ? []
+      : await getNotesByIds(
+          viewerId,
+          entries.map((r) => r.id),
+        );
   const notes = new Map(rows.map((n) => [n.id, n]));
   const items = entries.flatMap(({ id, score, components }) => {
     const note = notes.get(id); // gone only if hidden or deleted since the ranking was stored
@@ -64,7 +84,9 @@ export async function getFeedPage(
 
 /** One page of the Following feed: chronological, not ranked, so items carry no score; keyset cursor with the same `asOf` cutoff (D38). */
 export async function getFollowingPage(
-  viewerId: number, keyset: KeysetPage, asOf: Date | null,
+  viewerId: number,
+  keyset: KeysetPage,
+  asOf: Date | null,
 ): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null; asOf: Date }> {
   const cutoff = await getCutoff(asOf);
   return { ...(await getFollowingNotes(viewerId, cutoff, keyset)), asOf: cutoff };

@@ -26,14 +26,22 @@ const student = {
 };
 
 const register = (body: object) => request(app).post('/api/auth/register').set(CSRF).send(body);
-const login = (email: string, password: string) => request(app).post('/api/auth/login').set(CSRF).send({ email, password });
+const login = (email: string, password: string) =>
+  request(app).post('/api/auth/login').set(CSRF).send({ email, password });
 const setCookies = (res: request.Response): string[] => ([] as string[]).concat(res.headers['set-cookie'] ?? []);
 const tokenFrom = (res: request.Response): string => setCookies(res)[0].match(/^parp_token=([^;]+)/)![1];
 const userCount = async () => Number((await pool.query('SELECT COUNT(*) FROM "USER_T"')).rows[0].count);
 
 describe('POST /api/auth/register', () => {
   it('AUTH-TC1: returns an error for each blank required field and creates no account', async () => {
-    const res = await register({ displayName: '', email: '', password: '', confirmPassword: '', programme: '', role: 'student' });
+    const res = await register({
+      displayName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      programme: '',
+      role: 'student',
+    });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation failed');
     expect(res.body.errors).toMatchObject({
@@ -112,7 +120,9 @@ describe('POST /api/auth/register', () => {
   });
 
   it('AUTH-TC17: GET /api/programmes needs no login and lists the distinct catalogue programmes, sorted', async () => {
-    await pool.query(`INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('TST-ZZ1', 'Extra', 'BSc (Hons) Computer Science')`);
+    await pool.query(
+      `INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme) VALUES ('TST-ZZ1', 'Extra', 'BSc (Hons) Computer Science')`,
+    );
     const res = await request(app).get('/api/programmes');
     expect(res.status).toBe(200);
     expect(res.body.items).toEqual([
@@ -159,7 +169,9 @@ describe('POST /api/auth/login', () => {
     expect(claims.role).toBe('student');
     expect(claims.exp! - claims.iat!).toBe(3600);
 
-    const me = await request(app).get('/api/auth/me').set('Cookie', `parp_token=${tokenFrom(res)}`);
+    const me = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', `parp_token=${tokenFrom(res)}`);
     expect(me.status).toBe(200);
     expect(me.body.user).toMatchObject({ email: 'test1@mail.apu.edu.my', displayName: 'Test Student' });
   });
@@ -176,7 +188,9 @@ describe('protected routes', () => {
 
     expect((await me()).status).toBe(401);
     const [h, p, s] = token.split('.');
-    const forgedPayload = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(p, 'base64url').toString()), role: 'admin' })).toString('base64url');
+    const forgedPayload = Buffer.from(
+      JSON.stringify({ ...JSON.parse(Buffer.from(p, 'base64url').toString()), role: 'admin' }),
+    ).toString('base64url');
     expect((await me(`${h}.${forgedPayload}.${s}`)).status).toBe(401);
     expect((await me(jwt.sign({ sub: '1' }, 'not-the-server-secret-at-all'))).status).toBe(401);
     expect((await me(token)).status).toBe(200);
@@ -241,12 +255,16 @@ describe('auth cookie and CSRF (D35)', () => {
     for (const cookie of [valid, 'parp_token=garbage']) {
       const res = await request(app).post('/api/auth/logout').set(CSRF).set('Cookie', cookie);
       expect(res.status).toBe(204);
-      expect(setCookies(res)[0]).toBe('parp_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax');
+      expect(setCookies(res)[0]).toBe(
+        'parp_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax',
+      );
     }
   });
 
   it('AUTH-TC14: a state-changing request without X-Requested-With: parp gets 403', async () => {
-    const res = await request(app).post('/api/auth/login').send({ email: 'test1@mail.apu.edu.my', password: 'Passw0rd!' });
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test1@mail.apu.edu.my', password: 'Passw0rd!' });
     expect(res.status).toBe(403);
     expect(res.body).toEqual({ error: 'Forbidden' });
     expect(res.headers['set-cookie']).toBeUndefined();
@@ -255,7 +273,10 @@ describe('auth cookie and CSRF (D35)', () => {
     const { Cookie } = asUser(id);
     const note = await insertNote(id);
     expect((await request(app).post(`/api/notes/${note}/like`).set('Cookie', Cookie)).status).toBe(403);
-    expect((await request(app).delete(`/api/notes/${note}`).set('Cookie', Cookie).set('X-Requested-With', 'XMLHttpRequest')).status).toBe(403);
+    expect(
+      (await request(app).delete(`/api/notes/${note}`).set('Cookie', Cookie).set('X-Requested-With', 'XMLHttpRequest'))
+        .status,
+    ).toBe(403);
     expect((await request(app).get('/api/auth/me').set('Cookie', Cookie)).status).toBe(200);
   });
 
@@ -309,16 +330,20 @@ describe('Shared rate-limit store (D40)', () => {
     expect((await a.increment('other')).totalHits).toBe(1);
     await b.decrement('k');
     expect(await hits('test:k')).toBe(1);
-    await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_window_start = NOW() - INTERVAL '61 seconds' WHERE rlt_key = 'test:k'`);
+    await pool.query(
+      `UPDATE "RATE_LIMIT_T" SET rlt_window_start = NOW() - INTERVAL '61 seconds' WHERE rlt_key = 'test:k'`,
+    );
     expect((await a.increment('k')).totalHits).toBe(1); // a new window
     await a.resetKey('k');
     expect(await hits('test:k')).toBeUndefined();
     await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_window_start = NOW() - INTERVAL '2 minutes'`);
     expect(await purgeOldRateLimits()).toBe(1);
 
-    const limited = express().use(rateLimit({ windowMs: 60_000, limit: 2, store: new PgStore('e2e:') })).post('/', (_req, res) => {
-      res.status(204).end();
-    });
+    const limited = express()
+      .use(rateLimit({ windowMs: 60_000, limit: 2, store: new PgStore('e2e:') }))
+      .post('/', (_req, res) => {
+        res.status(204).end();
+      });
     const statuses: number[] = [];
     for (let i = 0; i < 3; i++) statuses.push((await request(limited).post('/')).status);
     expect(statuses).toEqual([204, 204, 429]);

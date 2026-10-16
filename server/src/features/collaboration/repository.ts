@@ -56,7 +56,13 @@ export async function releaseLock(q: Queryable, noteId: number, userId: number):
  * Adds the user as a collaborator or changes their role, keeping any credit already earned; a move to view frees their
  * lock. False when no active or restricted account has that id, or a block lies between it and `addedBy`, the owner (D49).
  */
-async function upsertCollaborator(q: Queryable, noteId: number, userId: number, role: CollabRole, addedBy: number): Promise<boolean> {
+async function upsertCollaborator(
+  q: Queryable,
+  noteId: number,
+  userId: number,
+  role: CollabRole,
+  addedBy: number,
+): Promise<boolean> {
   const { rowCount } = await q.query(
     `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by)
      SELECT $1, usr_id, $3, $4 FROM "USER_T" WHERE usr_id = $2 AND usr_status IN ('active', 'restricted') AND NOT ${blockedWith('$4', 'usr_id')}
@@ -87,7 +93,11 @@ export function replaceLink(noteId: number, role: CollabRole, tokenHash: string)
       `UPDATE "SHARE_LINK_T" SET shl_revoked_at = NOW() WHERE shl_pst_id = $1 AND shl_role = $2 AND shl_revoked_at IS NULL`,
       [noteId, role],
     );
-    await c.query(`INSERT INTO "SHARE_LINK_T" (shl_pst_id, shl_role, shl_token_hash) VALUES ($1, $2, $3)`, [noteId, role, tokenHash]);
+    await c.query(`INSERT INTO "SHARE_LINK_T" (shl_pst_id, shl_role, shl_token_hash) VALUES ($1, $2, $3)`, [
+      noteId,
+      role,
+      tokenHash,
+    ]);
   });
 }
 
@@ -131,7 +141,11 @@ export async function createRequest(noteId: number, userId: number, message: str
  * 'decided' when it is no longer pending.
  */
 export function decideRequest(
-  noteId: number, requestId: number, approve: boolean, role: CollabRole, ownerId: number,
+  noteId: number,
+  requestId: number,
+  approve: boolean,
+  role: CollabRole,
+  ownerId: number,
 ): Promise<{ requesterId: number } | 'not_found' | 'decided'> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ userId: number; status: string }>(
@@ -142,10 +156,10 @@ export function decideRequest(
     if (!rows[0]) return 'not_found';
     if (rows[0].status !== 'pending') return 'decided';
     if (approve && !(await upsertCollaborator(c, noteId, rows[0].userId, role, ownerId))) return 'not_found';
-    await c.query(
-      `UPDATE "COLLAB_REQUEST_T" SET crq_status = $2, crq_decided_at = NOW() WHERE crq_id = $1`,
-      [requestId, approve ? 'approved' : 'declined'],
-    );
+    await c.query(`UPDATE "COLLAB_REQUEST_T" SET crq_status = $2, crq_decided_at = NOW() WHERE crq_id = $1`, [
+      requestId,
+      approve ? 'approved' : 'declined',
+    ]);
     return { requesterId: rows[0].userId };
   });
 }
@@ -160,7 +174,10 @@ export interface SharedNote {
 }
 
 /** One page of the SHAREABLE notes the user collaborates on, owned by nobody in a block with them (D49), last edited first; keyset on (updated_at, id), D40. */
-export async function listShared(userId: number, { cursor, limit }: KeysetPage): Promise<{ items: SharedNote[]; nextCursor: string | null }> {
+export async function listShared(
+  userId: number,
+  { cursor, limit }: KeysetPage,
+): Promise<{ items: SharedNote[]; nextCursor: string | null }> {
   const { rows } = await pool.query<SharedNote & { cursor: string }>(
     `SELECT p.pst_id AS "id", p.pst_title AS "title", p.pst_status AS "status", c.clb_role AS "role", ${person('u')} AS "owner",
             p.pst_updated_at AS "updatedAt", ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
@@ -181,7 +198,8 @@ export async function listShared(userId: number, { cursor, limit }: KeysetPage):
  * new expiry, or the current holder when someone else has it.
  */
 export async function takeLock(
-  noteId: number, userId: number,
+  noteId: number,
+  userId: number,
 ): Promise<{ ok: true; expiresAt: Date } | { ok: false; holder: Person | null }> {
   const taken = await pool.query<{ expiresAt: Date }>(
     `UPDATE "POST_T" SET pst_lock_usr_id = $2, pst_lock_expires_at = NOW() + make_interval(secs => $3)
@@ -195,5 +213,4 @@ export async function takeLock(
     [noteId],
   );
   return { ok: false, holder: rows[0]?.holder ?? null }; // null: the holder released it between the two statements
-
 }

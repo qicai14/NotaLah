@@ -15,10 +15,15 @@ const io = attachSocket(server);
 let url = '';
 const open: Socket[] = [];
 
-beforeAll(() => new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => {
-  url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  resolve();
-})));
+beforeAll(
+  () =>
+    new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', () => {
+        url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        resolve();
+      }),
+    ),
+);
 beforeEach(truncateAll);
 afterEach(() => open.splice(0).forEach((s) => s.disconnect()));
 afterAll(async () => {
@@ -54,14 +59,21 @@ const next = <T = Record<string, unknown>>(s: Socket, event: string, ms = 1000) 
 
 /** True when no `event` arrives on the socket within `ms`. */
 const silent = (s: Socket, event: string, ms = 300) =>
-  next(s, event, ms).then(() => false, () => true);
+  next(s, event, ms).then(
+    () => false,
+    () => true,
+  );
 
 const post = (who: number, path: string, body: object = {}) => request(app).post(path).set(asUser(who)).send(body);
 
 describe('Socket.io gateway', () => {
   it('MSG-TC1: a connection without a valid cookie is refused', async () => {
     const id = await insertUser();
-    const expired = jwt.sign({ role: 'student' }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(id), expiresIn: -10 });
+    const expired = jwt.sign({ role: 'student' }, env.JWT_SECRET, {
+      algorithm: 'HS256',
+      subject: String(id),
+      expiresIn: -10,
+    });
     const forged = jwt.sign({ role: 'student' }, 'not-the-secret-at-all', { algorithm: 'HS256', subject: String(id) });
     for (const cookie of [null, `parp_token=${expired}`, `parp_token=${forged}`]) {
       await expect(socketAs(cookie)).rejects.toThrow('Unauthorized');
@@ -95,7 +107,10 @@ describe('Socket.io gateway', () => {
     const res = await post(a, '/api/messages', { toUserId: b, body: 'About your post', noteId: note });
     expect(res.status).toBe(202);
     expect((await live).request).toMatchObject({
-      id: res.body.request.id, sender: { id: a, displayName: 'Alice' }, body: 'About your post', note: { id: note, title: 'Kernels' },
+      id: res.body.request.id,
+      sender: { id: a, displayName: 'Alice' },
+      body: 'About your post',
+      note: { id: note, title: 'Kernels' },
     });
     const rows = (await pool.query(`SELECT mrq_status, mrq_pst_id FROM "MESSAGE_REQUEST_T"`)).rows;
     expect(rows).toEqual([{ mrq_status: 'pending', mrq_pst_id: note }]);
@@ -112,11 +127,19 @@ describe('Socket.io gateway', () => {
     expect(res.status).toBe(200);
     expect(await notified).toEqual({ requestId: body.request.id, conversationId: res.body.conversationId });
     const hist = await request(app).get(`/api/conversations/${res.body.conversationId}/messages`).set(asUser(b));
-    expect(hist.body.messages).toEqual([expect.objectContaining({ body: 'Held', sender: expect.objectContaining({ id: a }), note: expect.objectContaining({ id: note }) })]);
+    expect(hist.body.messages).toEqual([
+      expect.objectContaining({
+        body: 'Held',
+        sender: expect.objectContaining({ id: a }),
+        note: expect.objectContaining({ id: note }),
+      }),
+    ]);
     expect((await pool.query(`SELECT 1 FROM "FOLLOW_T"`)).rowCount).toBe(0);
     // the open conversation now takes messages both ways, live, without a new request
     const live = next<{ message: { body: string } }>(sa, 'message:new');
-    expect((await post(b, `/api/conversations/${res.body.conversationId}/messages`, { body: 'Reply' })).status).toBe(201);
+    expect((await post(b, `/api/conversations/${res.body.conversationId}/messages`, { body: 'Reply' })).status).toBe(
+      201,
+    );
     expect((await live).message.body).toBe('Reply');
     expect((await post(a, '/api/messages', { toUserId: b, body: 'Again' })).status).toBe(201);
   });

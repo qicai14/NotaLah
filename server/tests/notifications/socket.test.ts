@@ -14,10 +14,15 @@ const io = attachSocket(server);
 let url = '';
 const open: Socket[] = [];
 
-beforeAll(() => new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => {
-  url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  resolve();
-})));
+beforeAll(
+  () =>
+    new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', () => {
+        url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        resolve();
+      }),
+    ),
+);
 beforeEach(truncateAll);
 afterEach(() => open.splice(0).forEach((s) => s.disconnect()));
 afterAll(async () => {
@@ -26,7 +31,12 @@ afterAll(async () => {
 });
 
 function socketAs(id: number): Promise<Socket> {
-  const s = connect(url, { transports: ['websocket'], extraHeaders: { Cookie: asUser(id).Cookie, Origin: env.CLIENT_ORIGIN }, reconnection: false, forceNew: true });
+  const s = connect(url, {
+    transports: ['websocket'],
+    extraHeaders: { Cookie: asUser(id).Cookie, Origin: env.CLIENT_ORIGIN },
+    reconnection: false,
+    forceNew: true,
+  });
   open.push(s);
   return new Promise((resolve, reject) => {
     s.once('connect', () => setTimeout(() => resolve(s), 50));
@@ -50,9 +60,14 @@ describe('Live notifications', () => {
     const bSocket = await socketAs(b);
     const aSocket = await socketAs(a);
     let aGot = false;
-    aSocket.on('notification:new', () => { aGot = true; });
+    aSocket.on('notification:new', () => {
+      aGot = true;
+    });
 
-    const live = next<{ notification: { type: string; actor: { id: number } }; unreadCount: { total: number } }>(bSocket, 'notification:new');
+    const live = next<{ notification: { type: string; actor: { id: number } }; unreadCount: { total: number } }>(
+      bSocket,
+      'notification:new',
+    );
     await request(app).post(`/api/users/${b}/follow`).set(asUser(a)).expect(201);
     const payload = await live;
     expect(payload.notification).toMatchObject({ type: 'follow', actor: { id: a, displayName: 'Ann' }, read: false });

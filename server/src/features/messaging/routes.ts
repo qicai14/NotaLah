@@ -36,11 +36,20 @@ const id = (message: string) => z.number({ error: message }).int(message).positi
 const text = z
   .string({ error: 'Message is required' })
   .transform((s) => s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim())
-  .pipe(z.string().min(1, 'Message is required').max(MESSAGING.bodyMax, `Message must be at most ${MESSAGING.bodyMax} characters`));
+  .pipe(
+    z
+      .string()
+      .min(1, 'Message is required')
+      .max(MESSAGING.bodyMax, `Message must be at most ${MESSAGING.bodyMax} characters`),
+  );
 const messageSchema = z.object({
   body: text,
-  noteId: id('Invalid note').nullish().transform((v) => v ?? null),
-  replyToId: id('Invalid reply').nullish().transform((v) => v ?? null),
+  noteId: id('Invalid note')
+    .nullish()
+    .transform((v) => v ?? null),
+  replyToId: id('Invalid reply')
+    .nullish()
+    .transform((v) => v ?? null),
 });
 const groupName = z
   .string({ error: 'Name is required' })
@@ -51,14 +60,16 @@ const groupName = z
 /** Parses a body with `schema`; sends 400 with the field map and returns undefined when it fails. */
 function parse<T extends z.ZodType>(schema: T, body: unknown, res: Response): z.infer<T> | undefined {
   const parsed = schema.safeParse(body);
-  if (!parsed.success) return void res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return void res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   return parsed.data;
 }
 
 /** Live delivery of a new message (as its sender sees it): one payload for the room, or with a note card one per member, each card checked for that reader. */
 async function deliver(message: repo.Message): Promise<void> {
   const { conversationId } = message;
-  if (message.note === null && !message.noteUnavailable) return emit(convRoom(conversationId), 'message:new', { conversationId, message });
+  if (message.note === null && !message.noteUnavailable)
+    return emit(convRoom(conversationId), 'message:new', { conversationId, message });
   for (const { viewerId, note, noteUnavailable } of await repo.noteCardsFor(message.id)) {
     emit(userRoom(viewerId), 'message:new', { conversationId, message: { ...message, note, noteUnavailable } });
   }
@@ -94,11 +105,16 @@ messagingRouter.get('/conversations/:id/messages', requireAuth, async (req, res)
 
 /** Sends to a user: into their conversation (201) or, from a non-friend with none yet, as a message request (202). */
 messagingRouter.post('/messages', requireAuth, requireActive, async (req, res) => {
-  const input = parse(messageSchema.omit({ replyToId: true }).extend({ toUserId: id('User not found') }), bodyOrEmpty(req), res);
+  const input = parse(
+    messageSchema.omit({ replyToId: true }).extend({ toUserId: id('User not found') }),
+    bodyOrEmpty(req),
+    res,
+  );
   if (!input) return;
   const sender = me(req).id;
   if (input.toUserId === sender) return res.status(400).json({ error: 'You cannot message yourself' });
-  if (input.noteId !== null && !(await repo.noteVisibleTo(input.noteId, sender))) return res.status(400).json({ error: 'Note not found' });
+  if (input.noteId !== null && !(await repo.noteVisibleTo(input.noteId, sender)))
+    return res.status(400).json({ error: 'Note not found' });
   const out = await repo.sendToUser(sender, input.toUserId, input);
   if (typeof out === 'string') return refuse(res, out);
   if (out.kind === 'request') {
@@ -117,7 +133,8 @@ messagingRouter.post('/conversations/:id/messages', requireAuth, requireActive, 
   if (!input) return;
   const conversationId = Number(req.params.id);
   const sender = me(req).id;
-  if (input.noteId !== null && !(await repo.noteVisibleTo(input.noteId, sender))) return res.status(400).json({ error: 'Note not found' });
+  if (input.noteId !== null && !(await repo.noteVisibleTo(input.noteId, sender)))
+    return res.status(400).json({ error: 'Note not found' });
   const out = await repo.sendToConversation(conversationId, sender, input);
   if (typeof out === 'string') return refuse(res, out);
   const message = await sent(out, sender);
@@ -135,7 +152,15 @@ messagingRouter.delete('/messages/:messageId', requireAuth, async (req, res) => 
 });
 
 messagingRouter.post('/conversations/:id/read', requireAuth, async (req, res) => {
-  const input = parse(z.object({ messageId: id('Message not found').nullish().transform((v) => v ?? null) }), bodyOrEmpty(req), res);
+  const input = parse(
+    z.object({
+      messageId: id('Message not found')
+        .nullish()
+        .transform((v) => v ?? null),
+    }),
+    bodyOrEmpty(req),
+    res,
+  );
   if (!input) return;
   const conversationId = Number(req.params.id);
   const userId = me(req).id;
@@ -158,12 +183,16 @@ messagingRouter.post('/message-requests/:requestId/accept', requireAuth, async (
   const out = await repo.acceptRequest(Number(req.params.requestId), recipient);
   if (!out) return res.status(404).json({ error: 'Request not found' });
   joinConversation([recipient, out.senderId], out.conversationId);
-  emit(userRoom(out.senderId), 'request:accepted', { requestId: Number(req.params.requestId), conversationId: out.conversationId });
+  emit(userRoom(out.senderId), 'request:accepted', {
+    requestId: Number(req.params.requestId),
+    conversationId: out.conversationId,
+  });
   res.json({ conversationId: out.conversationId });
 });
 
 messagingRouter.post('/message-requests/:requestId/decline', requireAuth, async (req, res) => {
-  if (!(await repo.declineRequest(Number(req.params.requestId), me(req).id))) return res.status(404).json({ error: 'Request not found' });
+  if (!(await repo.declineRequest(Number(req.params.requestId), me(req).id)))
+    return res.status(404).json({ error: 'Request not found' });
   res.status(204).end();
 });
 
@@ -180,7 +209,8 @@ messagingRouter.post('/conversations', requireAuth, requireActive, async (req, r
   const input = parse(groupSchema, bodyOrEmpty(req), res);
   if (!input) return;
   const owner = me(req).id;
-  if (input.memberIds.includes(owner)) return res.status(400).json({ error: 'Validation failed', errors: { memberIds: 'You are already in the group' } });
+  if (input.memberIds.includes(owner))
+    return res.status(400).json({ error: 'Validation failed', errors: { memberIds: 'You are already in the group' } });
   const out = await repo.createGroup(owner, input.name, input.memberIds);
   if (typeof out === 'string') return refuse(res, out);
   joinConversation([owner, ...input.memberIds], out);

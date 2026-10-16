@@ -7,11 +7,14 @@ import { asUser, truncateAll } from '../helpers';
 
 // SRCH-TC10 (NFR1). Seeds 10,000 notes, so it runs only on request: SEARCH_PERF=1 npx vitest run tests/search/perf.test.ts
 const NOTES = 10_000;
-const WORDS = `database normalisation third normal form index query join transaction deadlock kernel thread process scheduler
+const WORDS =
+  `database normalisation third normal form index query join transaction deadlock kernel thread process scheduler
 memory paging cache network routing subnet protocol packet security encryption hashing algorithm sorting graph tree heap
 stack queue recursion complexity requirement stakeholder agile scrum sprint testing unit integration react component state
 server client socket latency throughput compiler parser grammar lexer neural learning model dataset regression cluster
-project management risk budget schedule ethics privacy cloud container virtual machine storage backup recovery`.split(/\s+/);
+project management risk budget schedule ethics privacy cloud container virtual machine storage backup recovery`.split(
+    /\s+/,
+  );
 
 async function seed(): Promise<void> {
   await truncateAll();
@@ -86,7 +89,9 @@ async function seed(): Promise<void> {
                         FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
                         WHERE ph.phs_pst_id = p.pst_id), ''))`,
   );
-  await pool.query(`INSERT INTO "TERM_T" (trm_name, trm_start_date, trm_end_date) VALUES ('Perf term', CURRENT_DATE - 60, CURRENT_DATE)`);
+  await pool.query(
+    `INSERT INTO "TERM_T" (trm_name, trm_start_date, trm_end_date) VALUES ('Perf term', CURRENT_DATE - 60, CURRENT_DATE)`,
+  );
   await pool.query(`ANALYZE`);
 }
 
@@ -96,13 +101,31 @@ const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 1
 /** 50 mixed queries: keywords, phrases, hashtags, module codes, programmes, people, filters, tabs, guests and users. */
 function queries(termId: number): Record<string, string>[] {
   const base: Record<string, string>[] = [
-    { q: 'database' }, { q: 'third normal form' }, { q: '"normal form"' }, { q: '#deadlock' }, { q: 'CT030-3-2' },
-    { q: 'Software Engineering' }, { q: 'tan', tab: 'people' }, { q: 'net', tab: 'hashtags' }, { q: 'ct0', tab: 'modules' },
-    { q: 'kernel thread' }, { q: 'agile scrum', lecturer: 'any' }, { q: 'network', lecturer: '3' },
-    { q: 'cache', from: monthAgo, to: today }, { q: 'routing', term: String(termId) }, { q: 'algorithm', module: '5' },
-    { q: 'react component', tab: 'notes' }, { q: 'Computer Science', tab: 'notes', lecturer: 'any' }, { q: 'lim' },
-    { q: 'security encryption hashing' }, { q: 'zzzz no match' }, { q: 'the' }, { q: '#security', lecturer: 'any' },
-    { q: 'query', tab: 'notes', from: monthAgo }, { q: 'Database Systems' }, { q: 'testing' },
+    { q: 'database' },
+    { q: 'third normal form' },
+    { q: '"normal form"' },
+    { q: '#deadlock' },
+    { q: 'CT030-3-2' },
+    { q: 'Software Engineering' },
+    { q: 'tan', tab: 'people' },
+    { q: 'net', tab: 'hashtags' },
+    { q: 'ct0', tab: 'modules' },
+    { q: 'kernel thread' },
+    { q: 'agile scrum', lecturer: 'any' },
+    { q: 'network', lecturer: '3' },
+    { q: 'cache', from: monthAgo, to: today },
+    { q: 'routing', term: String(termId) },
+    { q: 'algorithm', module: '5' },
+    { q: 'react component', tab: 'notes' },
+    { q: 'Computer Science', tab: 'notes', lecturer: 'any' },
+    { q: 'lim' },
+    { q: 'security encryption hashing' },
+    { q: 'zzzz no match' },
+    { q: 'the' },
+    { q: '#security', lecturer: 'any' },
+    { q: 'query', tab: 'notes', from: monthAgo },
+    { q: 'Database Systems' },
+    { q: 'testing' },
   ];
   return [...base, ...base.map((q) => ({ ...q, signedIn: '1' }))];
 }
@@ -121,15 +144,24 @@ describe.skipIf(!process.env.SEARCH_PERF)('Search latency (NFR1)', () => {
     const times: { query: string; ms: number; count: number }[] = [];
     for (const { signedIn, ...query } of queries(termId)) {
       const start = performance.now();
-      const res = await request(app).get('/api/search').query(query).set(signedIn ? user : {});
+      const res = await request(app)
+        .get('/api/search')
+        .query(query)
+        .set(signedIn ? user : {});
       const ms = performance.now() - start;
       expect(res.status).toBe(200);
-      times.push({ query: `${signedIn ? 'user ' : 'guest'} ${new URLSearchParams(query)}`, ms, count: res.body.items.length });
+      times.push({
+        query: `${signedIn ? 'user ' : 'guest'} ${new URLSearchParams(query)}`,
+        ms,
+        count: res.body.items.length,
+      });
     }
     const sorted = times.map((t) => t.ms).sort((a, b) => a - b);
     const median = (sorted[24] + sorted[25]) / 2;
     console.table(times.map((t) => ({ ...t, ms: Math.round(t.ms) })));
-    console.log(`SRCH-TC10 n=${times.length} median=${median.toFixed(0)} ms max=${sorted[sorted.length - 1].toFixed(0)} ms`);
+    console.log(
+      `SRCH-TC10 n=${times.length} median=${median.toFixed(0)} ms max=${sorted[sorted.length - 1].toFixed(0)} ms`,
+    );
     expect(times).toHaveLength(50);
     expect(sorted[sorted.length - 1]).toBeLessThan(3000);
   }, 600_000);

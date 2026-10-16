@@ -36,13 +36,24 @@ export default function NoteDetail() {
         {n.verified && <span className="font-medium text-indigo-700">· Verified by {n.verifiedBy}</span>}
       </p>
       <SlideViewer slides={n.slides} />
-      {n.hashtags.length > 0 && <p className="mt-2 text-sm text-indigo-700">{n.hashtags.map((h) => `#${h}`).join(' ')}</p>}
+      {n.hashtags.length > 0 && (
+        <p className="mt-2 text-sm text-indigo-700">{n.hashtags.map((h) => `#${h}`).join(' ')}</p>
+      )}
       {n.author.id === user?.id && (
-        <Link to={`/notes/${n.id}/edit`} className="mt-3 inline-block rounded-md border border-slate-300 px-3 py-1 text-sm">
+        <Link
+          to={`/notes/${n.id}/edit`}
+          className="mt-3 inline-block rounded-md border border-slate-300 px-3 py-1 text-sm"
+        >
           Edit
         </Link>
       )}
-      {n.status === 'published' && <NoteActions note={n} commentsLink={false} onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })} />}
+      {n.status === 'published' && (
+        <NoteActions
+          note={n}
+          commentsLink={false}
+          onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })}
+        />
+      )}
       {n.status === 'published' && <CommentPanel noteId={n.id} slideCount={n.slides.length} />}
     </article>
   );

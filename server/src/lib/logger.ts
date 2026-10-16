@@ -14,7 +14,8 @@ export const loggerOptions: pino.LoggerOptions = {
 export const logger = pino(loggerOptions);
 
 /** The logged request path: no query string, and share-link tokens replaced, since a token grants access (R30, D46). */
-export const logPath = (url: string | undefined) => url?.split('?')[0].replace(/^\/api\/share\/[^/]+/, '/api/share/[token]');
+export const logPath = (url: string | undefined) =>
+  url?.split('?')[0].replace(/^\/api\/share\/[^/]+/, '/api/share/[token]');
 
 const SAFE_REQUEST_ID = /^[A-Za-z0-9._-]{1,64}$/;
 
@@ -27,7 +28,8 @@ export const requestLogger = pinoHttp({
     return id;
   },
   autoLogging: { ignore: (req) => req.url?.startsWith('/api/health') ?? false },
-  customProps: (req) => ('user' in req && typeof req.user === 'object' && req.user && 'id' in req.user ? { userId: req.user.id } : {}),
+  customProps: (req) =>
+    'user' in req && typeof req.user === 'object' && req.user && 'id' in req.user ? { userId: req.user.id } : {},
   serializers: {
     req: (req) => ({ id: req.id, method: req.method, path: logPath(req.url) }),
   },

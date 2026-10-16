@@ -7,12 +7,19 @@ import { type AuthUser, upsertAdmin } from '../features/users/repository';
 
 // Admins are never self-registered (D6); this is the only way to create one.
 const adminSchema = z.object({
-  ADMIN_EMAIL: z.string({ error: 'ADMIN_EMAIL is required' }).trim().toLowerCase().pipe(z.email({ error: 'ADMIN_EMAIL must be a valid email' })),
+  ADMIN_EMAIL: z
+    .string({ error: 'ADMIN_EMAIL is required' })
+    .trim()
+    .toLowerCase()
+    .pipe(z.email({ error: 'ADMIN_EMAIL must be a valid email' })),
   ADMIN_PASSWORD: z
     .string({ error: 'ADMIN_PASSWORD is required' })
     .min(12, 'ADMIN_PASSWORD must be at least 12 characters')
     .refine((p) => Buffer.byteLength(p, 'utf8') <= 72, 'ADMIN_PASSWORD must be at most 72 bytes')
-    .refine((p) => /[a-z]/.test(p) && /[A-Z]/.test(p) && /\d/.test(p), 'ADMIN_PASSWORD needs upper, lower case and a digit'),
+    .refine(
+      (p) => /[a-z]/.test(p) && /[A-Z]/.test(p) && /\d/.test(p),
+      'ADMIN_PASSWORD needs upper, lower case and a digit',
+    ),
   ADMIN_NAME: z.string({ error: 'ADMIN_NAME is required' }).trim().min(1, 'ADMIN_NAME is required').max(50),
 });
 

@@ -66,9 +66,20 @@ export async function matchNotes(viewerId: number, q: string, f: NoteFilters, cu
      SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", c."textRank",
             ${countsCol('$11::TIMESTAMPTZ')}, ${verifiedAtCutoff()} AS "verified", ${countingLecturer('u')} AS "lecturerAuthor"
      FROM candidates c JOIN "POST_T" p ON p.pst_id = c.pst_id JOIN "USER_T" u ON u.usr_id = p.pst_usr_id`,
-    [viewerId, text, literal(text), RANKING.searchRankNormalization, f.lecturer === 'any',
-     typeof f.lecturer === 'number' ? f.lecturer : null, f.from, f.to, CAMPUS_TIME_ZONE, f.moduleId, cutoff,
-     RANKING.searchCandidateLimit],
+    [
+      viewerId,
+      text,
+      literal(text),
+      RANKING.searchRankNormalization,
+      f.lecturer === 'any',
+      typeof f.lecturer === 'number' ? f.lecturer : null,
+      f.from,
+      f.to,
+      CAMPUS_TIME_ZONE,
+      f.moduleId,
+      cutoff,
+      RANKING.searchCandidateLimit,
+    ],
   );
   return rows;
 }
@@ -114,7 +125,8 @@ export function searchPeople(viewerId: number, text: string, page: KeysetPage): 
             ${matchClass('u.usr_display_name')} AS "match"
      FROM "USER_T" u
      WHERE u.usr_status IN ('active', 'restricted') AND u.usr_display_name ILIKE '%' || $3 || '%' AND NOT ${blockedWith('$1', 'u.usr_id')}`,
-    [viewerId, ...textParams(text)], page,
+    [viewerId, ...textParams(text)],
+    page,
   );
 }
 
@@ -133,7 +145,8 @@ export function searchHashtags(viewerId: number, text: string, page: KeysetPage)
      JOIN "POST_T" p ON p.pst_id = ph.phs_pst_id
      WHERE h.hsh_name ILIKE '%' || $3 || '%' AND p.pst_status = 'published' AND ${VISIBLE}
      GROUP BY h.hsh_id`,
-    [viewerId, ...textParams(text)], page,
+    [viewerId, ...textParams(text)],
+    page,
   );
 }
 
@@ -153,6 +166,7 @@ export function searchModules(viewerId: number, text: string, page: KeysetPage):
             ${matchClass('m.mod_code')} AS "match"
      FROM "MODULE_T" m
      WHERE m.mod_code ILIKE '%' || $3 || '%' OR m.mod_name ILIKE '%' || $3 || '%' OR m.mod_programme ILIKE '%' || $3 || '%'`,
-    [viewerId, ...textParams(text)], page,
+    [viewerId, ...textParams(text)],
+    page,
   );
 }

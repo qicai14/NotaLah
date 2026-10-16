@@ -65,7 +65,10 @@ export async function createModule(m: { code: string; name: string; programme: s
 }
 
 /** Renames a module; omitted fields keep their value. Undefined when the id is unknown. */
-export async function updateModule(id: number, p: { name?: string; programme?: string }): Promise<AdminModule | undefined> {
+export async function updateModule(
+  id: number,
+  p: { name?: string; programme?: string },
+): Promise<AdminModule | undefined> {
   const { rowCount } = await pool.query(
     `UPDATE "MODULE_T" SET mod_name = COALESCE($2, mod_name), mod_programme = COALESCE($3, mod_programme)
      WHERE mod_id = $1`,
@@ -91,7 +94,9 @@ const TERM_COLS = `trm_id AS "id", trm_name AS "name", to_char(trm_start_date, '
 
 /** Academic terms, newest first (FR15). */
 export async function listTerms(): Promise<Term[]> {
-  const { rows } = await pool.query<Term>(`SELECT ${TERM_COLS} FROM "TERM_T" ORDER BY trm_start_date DESC, trm_id DESC`);
+  const { rows } = await pool.query<Term>(
+    `SELECT ${TERM_COLS} FROM "TERM_T" ORDER BY trm_start_date DESC, trm_id DESC`,
+  );
   return rows;
 }
 

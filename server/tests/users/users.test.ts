@@ -21,7 +21,11 @@ async function addNote(uid: number, title: string, status: string, visibility: s
 
 describe('Profiles', () => {
   it('USR-TC1: blank display name is rejected', async () => {
-    const res = await putMe(await insertUser(), { displayName: '  ', programme: 'BSc (Hons) Computer Science', bio: '' });
+    const res = await putMe(await insertUser(), {
+      displayName: '  ',
+      programme: 'BSc (Hons) Computer Science',
+      bio: '',
+    });
     expect(res.status).toBe(400);
     expect(res.body.errors.displayName).toBe('Display name is required');
   });
@@ -50,7 +54,8 @@ describe('Profiles', () => {
     await addNote(owner, 'Private circle', 'published', 'contacts');
     await addNote(owner, 'Secret draft', 'draft', null);
 
-    const titles = async (viewer: number) => (await getUser(viewer, owner)).body.user.notes.map((n: { title: string }) => n.title).sort();
+    const titles = async (viewer: number) =>
+      (await getUser(viewer, owner)).body.user.notes.map((n: { title: string }) => n.title).sort();
     expect(await titles(stranger)).toEqual(['Public']);
     expect(await titles(contact)).toEqual(['Private circle', 'Public']);
     expect((await getUser(stranger, owner)).body.user).not.toHaveProperty('draftCount');
@@ -139,7 +144,10 @@ describe('Profiles', () => {
     await pool.query(`UPDATE "POST_T" SET pst_published_at = '2026-10-01T00:00:00.123456Z'`);
     const profile = (await getUser(viewer, author)).body.user;
     expect(profile.notes).toHaveLength(50);
-    const rest = await request(app).get(`/api/users/${author}/notes`).query({ cursor: profile.notesNextCursor }).set(asUser(viewer));
+    const rest = await request(app)
+      .get(`/api/users/${author}/notes`)
+      .query({ cursor: profile.notesNextCursor })
+      .set(asUser(viewer));
     expect(rest.body.nextCursor).toBeNull();
     expect([...profile.notes, ...rest.body.notes].map((n: { id: number }) => n.id)).toEqual([...notes].reverse());
     expect((await request(app).get(`/api/users/99999/notes`).set(asUser(viewer))).status).toBe(404);

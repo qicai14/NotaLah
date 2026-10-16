@@ -35,10 +35,15 @@ export default function Drafts() {
           {error ?? actionError}
         </p>
       )}
-      {data?.notes.length === 0 && <p className="text-slate-600">No drafts. Start a note and use Save Draft to keep it here.</p>}
+      {data?.notes.length === 0 && (
+        <p className="text-slate-600">No drafts. Start a note and use Save Draft to keep it here.</p>
+      )}
       <ul className="flex flex-col gap-3">
         {data?.notes.map((n) => (
-          <li key={n.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
+          <li
+            key={n.id}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
+          >
             <div>
               <p className="font-medium">{n.title}</p>
               <p className="text-sm text-slate-600">

@@ -32,16 +32,31 @@ export default function Saved() {
       {data?.notes.length === 0 && <p className="text-slate-600">Nothing saved yet. Use Save on a note in the feed.</p>}
       <ul className="flex flex-col gap-3">
         {data?.notes.map((n) => (
-          <li key={n.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
+          <li
+            key={n.id}
+            className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
+          >
             <div>
               <Link to={`/notes/${n.id}`} className="font-medium text-indigo-700">
                 {n.title}
               </Link>
               <p className="text-sm text-slate-600">
-                {[n.moduleCode, `saved ${timeAgo(n.savedAt ?? null)}`, n.verifiedBy && `Verified by ${n.verifiedBy}`, n.hashtags.map((h) => `#${h}`).join(' ')].filter(Boolean).join(' · ')}
+                {[
+                  n.moduleCode,
+                  `saved ${timeAgo(n.savedAt ?? null)}`,
+                  n.verifiedBy && `Verified by ${n.verifiedBy}`,
+                  n.hashtags.map((h) => `#${h}`).join(' '),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
               </p>
             </div>
-            <button type="button" onClick={() => remove(n.id)} aria-label={`Remove ${n.title} from saved`} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
+            <button
+              type="button"
+              onClick={() => remove(n.id)}
+              aria-label={`Remove ${n.title} from saved`}
+              className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+            >
               Remove
             </button>
           </li>

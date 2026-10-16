@@ -47,15 +47,18 @@ export function relevance(hashtags: string[], interest: InterestVector): number 
 }
 
 /******************************************************************
-* Student Programmer: Mr Lim Qi Cai
-* Position: Student Programmer
-* Program Name: service.ts
-* Description: Combines the four normalised ranking components into the
-*   composite feed score S = w1·E + w2·R + w3·V + w4·M using the
-*   weights held in the ranking configuration module.
-* Date Created: 13/10/2026 | Date Modified: 13/10/2026
-******************************************************************/
-export function score(components: Components, weights: Record<keyof typeof RANKING.weights, number> = RANKING.weights): number {
+ * Student Programmer: Mr Lim Qi Cai
+ * Position: Student Programmer
+ * Program Name: service.ts
+ * Description: Combines the four normalised ranking components into the
+ *   composite feed score S = w1·E + w2·R + w3·V + w4·M using the
+ *   weights held in the ranking configuration module.
+ * Date Created: 13/10/2026 | Date Modified: 13/10/2026
+ ******************************************************************/
+export function score(
+  components: Components,
+  weights: Record<keyof typeof RANKING.weights, number> = RANKING.weights,
+): number {
   return (
     weights.engagement * components.E +
     weights.recency * components.R +
@@ -65,14 +68,14 @@ export function score(components: Components, weights: Record<keyof typeof RANKI
 }
 
 /******************************************************************
-* Student Programmer: Mr Lim Qi Cai
-* Position: Student Programmer
-* Program Name: service.ts
-* Description: Builds the viewer's hashtag interest vector from past views,
-*   likes and comments, decaying each by its age relative to asOf and
-*   normalising so that the strongest interest equals 1.0.
-* Date Created: 13/10/2026 | Date Modified: 13/10/2026
-******************************************************************/
+ * Student Programmer: Mr Lim Qi Cai
+ * Position: Student Programmer
+ * Program Name: service.ts
+ * Description: Builds the viewer's hashtag interest vector from past views,
+ *   likes and comments, decaying each by its age relative to asOf and
+ *   normalising so that the strongest interest equals 1.0.
+ * Date Created: 13/10/2026 | Date Modified: 13/10/2026
+ ******************************************************************/
 export function buildInterestVector(rows: InteractionRow[], asOf: Date): InterestVector {
   const totals: InterestVector = new Map();
   for (const row of rows) {
@@ -95,7 +98,11 @@ export interface Candidate {
 }
 
 /** The score and its components for one candidate; age is measured against the feed's asOf, not NOW() (D22). */
-export function scoreCandidate(post: Candidate, interest: InterestVector, asOf: Date): { score: number; components: Components } {
+export function scoreCandidate(
+  post: Candidate,
+  interest: InterestVector,
+  asOf: Date,
+): { score: number; components: Components } {
   const components = {
     E: engagement(post.counts.likes, post.counts.comments),
     R: recency((asOf.getTime() - post.publishedAt.getTime()) / HOUR_MS),

@@ -3,7 +3,13 @@ import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/
 import { idParam } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import {
-  createNote, getNoteMeta, getVisibleNote, listDrafts, NOT_EDITABLE, replaceNote, softDeleteNote,
+  createNote,
+  getNoteMeta,
+  getVisibleNote,
+  listDrafts,
+  NOT_EDITABLE,
+  replaceNote,
+  softDeleteNote,
 } from './repository';
 import { moduleExists } from '../modules/repository';
 import { parseBaseUpdatedAt, parseNoteBody } from './service';
@@ -46,11 +52,17 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
   const parsed = parseNoteBody(req.body);
   const base = parseBaseUpdatedAt(req.body, meta.role === 'edit');
   if (!parsed.ok || !base.ok) {
-    return res.status(400).json({ error: 'Validation failed', errors: { ...(parsed.ok ? {} : parsed.errors), ...(base.ok ? {} : base.errors) } });
+    return res.status(400).json({
+      error: 'Validation failed',
+      errors: { ...(parsed.ok ? {} : parsed.errors), ...(base.ok ? {} : base.errors) },
+    });
   }
   const n = parsed.data;
   // Co-authors edit content only (D44): publishing, visibility and module stay with the owner.
-  if (meta.role === 'edit' && (n.status !== meta.status || n.visibility !== meta.visibility || n.moduleId !== meta.moduleId)) {
+  if (
+    meta.role === 'edit' &&
+    (n.status !== meta.status || n.visibility !== meta.visibility || n.moduleId !== meta.moduleId)
+  ) {
     return res.status(403).json({ error: 'Only the owner can change status, visibility or module' });
   }
   if (meta.status === 'published' && n.status === 'draft') {
@@ -67,7 +79,8 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
   if (result === 'gone') return res.status(404).json({ error: 'Note not found' });
   if (result === 'forbidden') return res.status(403).json({ error: 'Forbidden' });
   if (result === 'locked') return res.status(423).json({ error: 'Another collaborator is editing this note' });
-  if (result === 'stale') return res.status(409).json({ error: 'This note changed since you opened it. Reload to see the latest version' });
+  if (result === 'stale')
+    return res.status(409).json({ error: 'This note changed since you opened it. Reload to see the latest version' });
   await notifyVoidedVerifiers(id, me(req).id);
   res.json({ note: await getVisibleNote(id, me(req).id) });
 });

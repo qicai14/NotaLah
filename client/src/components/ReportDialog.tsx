@@ -46,7 +46,12 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
       {done ? (
         <div>
           <p role="status">Thanks. Your report was sent to the moderators.</p>
-          <button type="button" autoFocus onClick={onClose} className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-white">
+          <button
+            type="button"
+            autoFocus
+            onClick={onClose}
+            className="mt-4 rounded-md bg-indigo-600 px-4 py-2 text-white"
+          >
             Close
           </button>
         </div>
@@ -65,8 +70,16 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
             <label htmlFor="report-details" className="text-sm font-medium">
               Details (optional)
             </label>
-            <textarea id="report-details" value={details} onChange={(e) => setDetails(e.target.value)} rows={3} className="rounded-md border border-slate-300 px-3 py-2" />
-            <span className={`text-xs ${details.length > 500 ? 'text-red-600' : 'text-slate-500'}`}>{details.length}/500</span>
+            <textarea
+              id="report-details"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              rows={3}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+            <span className={`text-xs ${details.length > 500 ? 'text-red-600' : 'text-slate-500'}`}>
+              {details.length}/500
+            </span>
           </div>
           {error && (
             <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -77,7 +90,11 @@ export function ReportDialog({ noteId, onClose }: { noteId: number; onClose(): v
             <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-4 py-2">
               Cancel
             </button>
-            <button type="submit" disabled={busy} className="rounded-md bg-red-600 px-4 py-2 text-white disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={busy}
+              className="rounded-md bg-red-600 px-4 py-2 text-white disabled:opacity-60"
+            >
               {busy ? 'Sending…' : 'Send report'}
             </button>
           </div>

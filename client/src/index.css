@@ -1,20 +1,63 @@
 @import 'tailwindcss';
 
 /* Slide content (viewer and editor share it): Tailwind's reset strips these element styles. */
-.slide-content > * + * { margin-top: 0.6em; }
-.slide-content h1 { font-size: 1.5rem; font-weight: 700; }
-.slide-content h2 { font-size: 1.25rem; font-weight: 700; }
-.slide-content h3 { font-size: 1.1rem; font-weight: 600; }
-.slide-content ul { list-style: disc; padding-left: 1.4rem; }
-.slide-content ol { list-style: decimal; padding-left: 1.4rem; }
-.slide-content blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.8rem; color: #475569; }
-.slide-content code { background: #f1f5f9; border-radius: 4px; padding: 0 0.25em; font-family: ui-monospace, monospace; }
-.slide-content pre { background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 0.7rem; overflow-x: auto; }
-.slide-content pre code { background: none; padding: 0; }
-.slide-content hr { border-color: #cbd5e1; }
-.slide-content.ProseMirror { outline: none; min-height: 12rem; }
+.slide-content > * + * {
+  margin-top: 0.6em;
+}
+.slide-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.slide-content h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.slide-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.slide-content ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+}
+.slide-content ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+}
+.slide-content blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.8rem;
+  color: #475569;
+}
+.slide-content code {
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 0 0.25em;
+  font-family: ui-monospace, monospace;
+}
+.slide-content pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  padding: 0.7rem;
+  overflow-x: auto;
+}
+.slide-content pre code {
+  background: none;
+  padding: 0;
+}
+.slide-content hr {
+  border-color: #cbd5e1;
+}
+.slide-content.ProseMirror {
+  outline: none;
+  min-height: 12rem;
+}
 
 /* Mobile feed: vertical snap, one card per screen. Desktop scrolls freely. */
 @media (max-width: 767px) {
-  html.feed-snap { scroll-snap-type: y mandatory; scroll-padding-top: 4rem; }
+  html.feed-snap {
+    scroll-snap-type: y mandatory;
+    scroll-padding-top: 4rem;
+  }
 }

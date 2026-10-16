@@ -1,13 +1,21 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { pool } from '../../lib/pool';
-import { CREDITED_EDITOR, ENGAGEMENT_COLS, NOTE_COLS, NOTE_FROM, VISIBLE, type NoteWithEngagement } from '../notes/repository';
+import {
+  CREDITED_EDITOR,
+  ENGAGEMENT_COLS,
+  NOTE_COLS,
+  NOTE_FROM,
+  VISIBLE,
+  type NoteWithEngagement,
+} from '../notes/repository';
 import { follows } from '../users/repository';
 import { RANKING } from '../ranking/config';
 import type { Components } from '../ranking/service';
 
 /** The feed cutoff comes from the database clock, the same one that stamps pst_published_at (D22); a future asOf is capped at now (D30). */
 export async function getCutoff(asOf: Date | null): Promise<Date> {
-  return (await pool.query<{ t: Date }>(`SELECT LEAST(COALESCE($1::TIMESTAMPTZ, NOW()), NOW()) AS "t"`, [asOf])).rows[0].t;
+  return (await pool.query<{ t: Date }>(`SELECT LEAST(COALESCE($1::TIMESTAMPTZ, NOW()), NOW()) AS "t"`, [asOf])).rows[0]
+    .t;
 }
 
 /** Published notes only: VISIBLE lets an author see their own hidden note, which a later page must not show. */
@@ -21,7 +29,9 @@ export async function getNotesByIds(viewerId: number, ids: number[]): Promise<No
 
 /** One page of visible published notes by authors the viewer follows or co-authored by them (an edit collaborator who has saved it, R30, D46), published by the cutoff, newest first; keyset on (published_at, id), D38. */
 export async function getFollowingNotes(
-  viewerId: number, cutoff: Date, { cursor, limit }: KeysetPage,
+  viewerId: number,
+  cutoff: Date,
+  { cursor, limit }: KeysetPage,
 ): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null }> {
   const { rows } = await pool.query<NoteWithEngagement & { cursor: string }>(
     `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor" ${NOTE_FROM}
@@ -54,14 +64,23 @@ export async function saveSnapshot(viewerId: number, asOf: Date, ranked: RankedE
                                ORDER BY fsn_created_at DESC, fsn_as_of DESC OFFSET $6)))
      INSERT INTO "FEED_SNAPSHOT_T" (fsn_usr_id, fsn_as_of, fsn_pst_ids, fsn_scores) VALUES ($1, $2, $3, $4)
      ON CONFLICT DO NOTHING`,
-    [viewerId, asOf, ranked.map((r) => r.id), ranked.map(({ score, components: c }) => [score, c.E, c.R, c.V, c.M]),
-     RANKING.snapshotTtlHours, RANKING.snapshotsPerViewer - 1],
+    [
+      viewerId,
+      asOf,
+      ranked.map((r) => r.id),
+      ranked.map(({ score, components: c }) => [score, c.E, c.R, c.V, c.M]),
+      RANKING.snapshotTtlHours,
+      RANKING.snapshotsPerViewer - 1,
+    ],
   );
 }
 
 /** Entries from..to-1 (0-based) of the stored ranking and its length; undefined when no snapshot exists for this asOf. */
 export async function readSnapshot(
-  viewerId: number, asOf: Date, from: number, to: number,
+  viewerId: number,
+  asOf: Date,
+  from: number,
+  to: number,
 ): Promise<{ entries: RankedEntry[]; total: number } | undefined> {
   const { rows } = await pool.query<{ ids: number[]; scores: number[][]; total: number }>(
     `SELECT fsn_pst_ids[$3:$4] AS "ids", fsn_scores[$3:$4][1:5] AS "scores", cardinality(fsn_pst_ids) AS "total"

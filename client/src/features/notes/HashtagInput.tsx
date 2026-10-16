@@ -3,7 +3,15 @@ import { type KeyboardEvent, useState } from 'react';
 import { addHashtags, MAX_HASHTAGS } from '../../lib/hashtags';
 
 /** Chip input: Enter or comma adds a tag, '#' is stripped, tags are lowercased and unique. */
-export function HashtagInput({ value, onChange, error }: { value: string[]; onChange(v: string[]): void; error?: string }) {
+export function HashtagInput({
+  value,
+  onChange,
+  error,
+}: {
+  value: string[];
+  onChange(v: string[]): void;
+  error?: string;
+}) {
   const [text, setText] = useState('');
   const [local, setLocal] = useState<string | null>(null);
 
@@ -27,11 +35,20 @@ export function HashtagInput({ value, onChange, error }: { value: string[]; onCh
       <label htmlFor="hashtag-input" className="text-sm font-medium">
         Hashtags ({value.length}/{MAX_HASHTAGS})
       </label>
-      <div className={`flex flex-wrap items-center gap-2 rounded-md border bg-white px-2 py-1.5 ${shown ? 'border-red-500' : 'border-slate-300'}`}>
+      <div
+        className={`flex flex-wrap items-center gap-2 rounded-md border bg-white px-2 py-1.5 ${shown ? 'border-red-500' : 'border-slate-300'}`}
+      >
         {value.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-sm text-indigo-800">
+          <span
+            key={t}
+            className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-sm text-indigo-800"
+          >
             #{t}
-            <button type="button" aria-label={`Remove hashtag ${t}`} onClick={() => onChange(value.filter((x) => x !== t))}>
+            <button
+              type="button"
+              aria-label={`Remove hashtag ${t}`}
+              onClick={() => onChange(value.filter((x) => x !== t))}
+            >
               ×
             </button>
           </span>

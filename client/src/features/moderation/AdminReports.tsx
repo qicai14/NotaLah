@@ -9,7 +9,9 @@ import type { ReportGroup, ReportSummary } from '../../types';
 /** Reported content queue (UC20, wireframe 23): open reports grouped by note, oldest first; resolve with a remark. */
 export default function AdminReports() {
   // shortcut: shows the first page (20) only; the redesign adds "load more" with nextCursor
-  const { data, setData, error, loading, reload } = useFetch<{ groups: ReportSummary[]; nextCursor: string | null }>('/admin/reports');
+  const { data, setData, error, loading, reload } = useFetch<{ groups: ReportSummary[]; nextCursor: string | null }>(
+    '/admin/reports',
+  );
   const [openId, setOpenId] = useState<number | null>(null);
   const detail = useFetch<{ group: ReportGroup }>(openId === null ? null : `/admin/reports/${openId}`);
   const [remark, setRemark] = useState('');
@@ -29,7 +31,9 @@ export default function AdminReports() {
       await api(`/admin/reports/${open.id}/resolve`, { method: 'POST', body: { outcome, remark: remark.trim() } });
       setData((d) => d && { ...d, groups: d.groups.filter((g) => g.id !== open.id) });
       if (data?.nextCursor && data.groups.every((g) => g.id === open.id)) reload(); // page emptied: fetch the next groups
-      setStatus(`"${open.title}" ${outcome === 'hide' ? 'hidden' : 'kept visible'}; ${open.reportCount} report(s) resolved.`);
+      setStatus(
+        `"${open.title}" ${outcome === 'hide' ? 'hidden' : 'kept visible'}; ${open.reportCount} report(s) resolved.`,
+      );
       setHidden(outcome === 'hide' ? { id: open.author.id, name: open.author.displayName } : null);
       setOpenId(null);
       setRemark('');
@@ -63,17 +67,32 @@ export default function AdminReports() {
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-300">
-                <th scope="col" className="py-2 pr-3">Note</th>
-                <th scope="col" className="py-2 pr-3">Author</th>
-                <th scope="col" className="py-2 pr-3">Reports</th>
-                <th scope="col" className="py-2 pr-3">Reasons</th>
-                <th scope="col" className="py-2 pr-3">Oldest</th>
-                <th scope="col" className="py-2">Action</th>
+                <th scope="col" className="py-2 pr-3">
+                  Note
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Author
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Reports
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Reasons
+                </th>
+                <th scope="col" className="py-2 pr-3">
+                  Oldest
+                </th>
+                <th scope="col" className="py-2">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody>
               {data.groups.map((g) => (
-                <tr key={g.id} className={`border-b border-slate-200 align-top ${g.id === openId ? 'bg-indigo-50' : ''}`}>
+                <tr
+                  key={g.id}
+                  className={`border-b border-slate-200 align-top ${g.id === openId ? 'bg-indigo-50' : ''}`}
+                >
                   <td className="py-2 pr-3">{g.title}</td>
                   <td className="py-2 pr-3">{g.author.displayName}</td>
                   <td className="py-2 pr-3">{g.reportCount}</td>
@@ -134,10 +153,19 @@ export default function AdminReports() {
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              <button type="submit" disabled={busy} className="rounded-md border border-slate-400 px-3 py-1 disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-md border border-slate-400 px-3 py-1 disabled:opacity-60"
+              >
                 Dismiss
               </button>
-              <button type="button" disabled={busy} onClick={(e) => resolve(e, 'hide')} className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={(e) => resolve(e, 'hide')}
+                className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+              >
                 Hide note
               </button>
               <button type="button" onClick={() => setOpenId(null)} className="rounded-md px-3 py-1 text-slate-600">

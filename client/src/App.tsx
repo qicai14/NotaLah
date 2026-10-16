@@ -41,7 +41,8 @@ const ADMIN_NAV = [
   ['/admin/reports', 'Reports'],
   ['/admin/users', 'Users'],
 ];
-const linkClass = ({ isActive }: { isActive: boolean }) => (isActive ? 'font-semibold text-indigo-700' : 'text-slate-700');
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  isActive ? 'font-semibold text-indigo-700' : 'text-slate-700';
 
 function SideNav() {
   return (
@@ -92,7 +93,11 @@ function Header() {
             {user.role === 'admin' && (
               <nav aria-label="Administration" className="flex gap-3">
                 {ADMIN_NAV.map(([to, label]) => (
-                  <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'font-semibold text-indigo-700' : 'text-indigo-600')}>
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) => (isActive ? 'font-semibold text-indigo-700' : 'text-indigo-600')}
+                  >
                     {label}
                   </NavLink>
                 ))}
@@ -139,20 +144,104 @@ export default function App() {
         {user && <SideNav />}
         <main id="main" tabIndex={-1} className="min-w-0 outline-none max-w-2xl flex-1">
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Feed />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/notes/new" element={<ProtectedRoute><EditorRoute /></ProtectedRoute>} />
-            <Route path="/notes/:id/edit" element={<ProtectedRoute><EditorRoute /></ProtectedRoute>} />
-            <Route path="/notes/:id" element={<ProtectedRoute><NoteDetail /></ProtectedRoute>} />
-            <Route path="/drafts" element={<ProtectedRoute><Drafts /></ProtectedRoute>} />
-            <Route path="/saved" element={<ProtectedRoute><Saved /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
-            <Route path="/users/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/admin/lecturers" element={<ProtectedRoute roles={['admin']}><AdminLecturers /></ProtectedRoute>} />
-            <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><AdminReports /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminUsers /></ProtectedRoute>} />
+            <Route
+              path="/notes/new"
+              element={
+                <ProtectedRoute>
+                  <EditorRoute />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notes/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditorRoute />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notes/:id"
+              element={
+                <ProtectedRoute>
+                  <NoteDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/drafts"
+              element={
+                <ProtectedRoute>
+                  <Drafts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/saved"
+              element={
+                <ProtectedRoute>
+                  <Saved />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/edit"
+              element={
+                <ProtectedRoute>
+                  <EditProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users/:id"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/lecturers"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminLecturers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminReports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminUsers />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
       </div>

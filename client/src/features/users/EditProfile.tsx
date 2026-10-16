@@ -60,7 +60,13 @@ export default function EditProfile() {
       <h1 className="mb-4 text-xl font-semibold">Edit profile</h1>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <div>
-          <Field label="Display name" name="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} error={errors.displayName} />
+          <Field
+            label="Display name"
+            name="displayName"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            error={errors.displayName}
+          />
           {count(displayName, 50)}
         </div>
         <ProgrammeSelect value={programme} onChange={(e) => setProgramme(e.target.value)} error={errors.programme} />
@@ -90,10 +96,18 @@ export default function EditProfile() {
           </p>
         )}
         <div className="flex gap-2">
-          <button type="submit" disabled={busy} className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={busy}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60"
+          >
             {busy ? 'Saving…' : 'Save'}
           </button>
-          <button type="button" onClick={() => navigate('/profile')} className="rounded-md border border-slate-300 px-4 py-2">
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            className="rounded-md border border-slate-300 px-4 py-2"
+          >
             Cancel
           </button>
         </div>

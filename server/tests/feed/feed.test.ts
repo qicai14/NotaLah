@@ -11,7 +11,8 @@ const auth = asUser;
 const post = (uid: number, url: string, body?: object) => request(app).post(url).set(auth(uid)).send(body);
 const get = (uid: number, url: string) => request(app).get(url).set(auth(uid));
 const comment = (uid: number, noteId: number, body: object) => post(uid, `/api/notes/${noteId}/comments`, body);
-const lecturer = () => insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
+const lecturer = () =>
+  insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12) });
 
 describe('Feed', () => {
   it('RANK-TC9: feed excludes drafts, hidden, deleted and non-visible posts', async () => {
@@ -45,12 +46,19 @@ describe('Feed', () => {
     await post(viewer, `/api/notes/${newest}/like`);
     await post(viewer, `/api/notes/${newest}/bookmark`);
     await comment(viewer, newest, { body: 'hi' });
-    await pool.query(`INSERT INTO "VERIFICATION_T" (ver_pst_id, ver_usr_id) VALUES ($1, $2)`, [newest, await lecturer()]);
+    await pool.query(`INSERT INTO "VERIFICATION_T" (ver_pst_id, ver_usr_id) VALUES ($1, $2)`, [
+      newest,
+      await lecturer(),
+    ]);
     const p1 = await get(viewer, '/api/feed');
     expect(p1.body.items).toHaveLength(10);
     expect(p1.body.nextPage).toBe(2);
     expect(p1.body.items[0]).toMatchObject({
-      id: newest, counts: { likes: 1, comments: 1 }, liked: true, bookmarked: true, verified: true,
+      id: newest,
+      counts: { likes: 1, comments: 1 },
+      liked: true,
+      bookmarked: true,
+      verified: true,
     });
     expect(p1.body.items[0].slides).toHaveLength(2);
     expect(p1.body.items[1]).toMatchObject({ liked: false, bookmarked: false, verified: false });

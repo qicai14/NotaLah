@@ -15,8 +15,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
 
 const sanitizeSlide = (html: string) => sanitizeHtml(html, OPTIONS);
 
-const plainText = (html: string) =>
-  sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
+const plainText = (html: string) => sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
 
 const baseSchema = z.object({
   title: z
@@ -51,17 +50,20 @@ const baseUpdatedAtSchema = z.iso.datetime({ offset: true, error: 'Invalid baseU
  * owner, whose existing editor does not send it yet, so a missing value skips the check (D46).
  */
 export function parseBaseUpdatedAt(
-  body: unknown, required: boolean,
+  body: unknown,
+  required: boolean,
 ): { ok: true; data: Date | null } | { ok: false; errors: Record<string, string> } {
   const raw = body && typeof body === 'object' ? (body as Record<string, unknown>).baseUpdatedAt : undefined;
   if (raw === undefined || raw === null) {
     return required ? { ok: false, errors: { baseUpdatedAt: 'baseUpdatedAt is required' } } : { ok: true, data: null };
   }
   const parsed = baseUpdatedAtSchema.safeParse(raw);
-  return parsed.success ? { ok: true, data: new Date(parsed.data) } : { ok: false, errors: { baseUpdatedAt: 'Invalid baseUpdatedAt' } };
+  return parsed.success
+    ? { ok: true, data: new Date(parsed.data) }
+    : { ok: false, errors: { baseUpdatedAt: 'Invalid baseUpdatedAt' } };
 }
 
-type Parsed ={ ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
+type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
 
 /** Validates and sanitises a create/replace body. Module existence is checked by the route. */
 export function parseNoteBody(body: unknown): Parsed {

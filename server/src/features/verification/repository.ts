@@ -12,7 +12,9 @@ export interface Verification {
  * except that a Super Like older than the note's last content edit is re-confirmed by moving its time to now (R30).
  */
 export async function addVerification(
-  noteId: number, lecturerId: number, remark: string | null,
+  noteId: number,
+  lecturerId: number,
+  remark: string | null,
 ): Promise<{ added: boolean; verification: Verification }> {
   const inserted = await pool.query(
     `INSERT INTO "VERIFICATION_T" (ver_pst_id, ver_usr_id, ver_remark) VALUES ($1, $2, $3)
@@ -37,7 +39,10 @@ export async function addVerification(
 }
 
 /** Removes the lecturer's own Super Like and returns the note's verification state afterwards (another lecturer may still verify it); a note the lecturer can no longer see reports unverified so nothing leaks. */
-export async function removeVerification(noteId: number, lecturerId: number): Promise<{ verified: boolean; verifiedBy: string | null }> {
+export async function removeVerification(
+  noteId: number,
+  lecturerId: number,
+): Promise<{ verified: boolean; verifiedBy: string | null }> {
   await pool.query(`DELETE FROM "VERIFICATION_T" WHERE ver_pst_id = $1 AND ver_usr_id = $2`, [noteId, lecturerId]);
   const { rows } = await pool.query<{ verified: boolean; verifiedBy: string | null }>(
     `SELECT ${VERIFIED} AS "verified", ${VERIFIED_BY} AS "verifiedBy" FROM "POST_T" p WHERE p.pst_id = $2 AND ${VISIBLE}`,

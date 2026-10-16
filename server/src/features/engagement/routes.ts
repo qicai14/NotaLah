@@ -48,12 +48,30 @@ engagementRouter.get('/notes/:noteId/comments', optionalAuth, async (req, res) =
 });
 
 const commentSchema = z.object({
-  body: z.string({ error: 'Comment is required' }).trim().min(1, 'Comment is required').max(1000, 'Comment must be at most 1000 characters'),
-  slideNo: z.number({ error: 'Invalid slide number' }).int('Invalid slide number').min(1, 'Invalid slide number').nullish(),
-  parentId: z.number({ error: 'Invalid parent comment' }).int('Invalid parent comment').min(1, 'Invalid parent comment').nullish(),
+  body: z
+    .string({ error: 'Comment is required' })
+    .trim()
+    .min(1, 'Comment is required')
+    .max(1000, 'Comment must be at most 1000 characters'),
+  slideNo: z
+    .number({ error: 'Invalid slide number' })
+    .int('Invalid slide number')
+    .min(1, 'Invalid slide number')
+    .nullish(),
+  parentId: z
+    .number({ error: 'Invalid parent comment' })
+    .int('Invalid parent comment')
+    .min(1, 'Invalid parent comment')
+    .nullish(),
   mentions: z
-    .array(z.number({ error: 'Invalid mention' }).int('Invalid mention').min(1, 'Invalid mention').max(2147483647, 'Invalid mention'),
-      { error: 'Mentions must be a list' })
+    .array(
+      z
+        .number({ error: 'Invalid mention' })
+        .int('Invalid mention')
+        .min(1, 'Invalid mention')
+        .max(2147483647, 'Invalid mention'),
+      { error: 'Mentions must be a list' },
+    )
     .max(NOTIFICATIONS.mentionMax, `At most ${NOTIFICATIONS.mentionMax} mentions`)
     .nullish(),
 });
@@ -62,20 +80,32 @@ engagementRouter.post('/notes/:noteId/comments', requireAuth, requireActive, asy
   const t = await target(req, res);
   if (!t) return;
   const parsed = commentSchema.safeParse(req.body ?? {});
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { body, slideNo = null, parentId = null, mentions } = parsed.data;
   if (slideNo !== null && slideNo > t.slideCount) {
-    return res.status(400).json({ error: 'Validation failed', errors: { slideNo: 'Slide number is beyond the last slide' } });
+    return res
+      .status(400)
+      .json({ error: 'Validation failed', errors: { slideNo: 'Slide number is beyond the last slide' } });
   }
   if (parentId !== null) {
     const parent = await repo.getParent(parentId, me(req).id);
     if (!parent || parent.noteId !== t.id) {
-      return res.status(400).json({ error: 'Validation failed', errors: { parentId: 'Parent comment not found on this note' } });
+      return res
+        .status(400)
+        .json({ error: 'Validation failed', errors: { parentId: 'Parent comment not found on this note' } });
     }
     if (parent.parentId !== null) return res.status(400).json({ error: 'Replies are limited to one level' });
   }
   const comment = await repo.addComment(t.id, me(req).id, { body, slideNo, parentId });
-  await notifyMentions({ noteId: t.id, commentId: comment.id, parentId, actorId: me(req).id, body, mentions: mentions ?? [] });
+  await notifyMentions({
+    noteId: t.id,
+    commentId: comment.id,
+    parentId,
+    actorId: me(req).id,
+    body,
+    mentions: mentions ?? [],
+  });
   res.status(201).json({ comment: { ...comment, body, slideNo, parentId } });
 });
 
@@ -120,7 +150,8 @@ engagementRouter.post('/notes/:noteId/report', requireAuth, requireActive, async
   const t = await target(req, res, true);
   if (!t) return;
   const parsed = reportSchema.safeParse(req.body ?? {});
-  if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
   const { reason, details } = parsed.data;
   const u = me(req);
   if (t.authorId === u.id) return res.status(400).json({ error: 'You cannot report your own note' });

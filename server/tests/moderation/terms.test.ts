@@ -18,7 +18,10 @@ const put = (id: number | string, body: object) => request(app).put(`/api/admin/
 
 describe('academic terms (FR15)', () => {
   it('ADM-TC31: non-admins get 403 on every admin term endpoint; GET /api/terms is public', async () => {
-    for (const h of [asUser(await insertUser()), asUser(await insertUser({ role: 'lecturer', lecturerStatus: 'approved' }))]) {
+    for (const h of [
+      asUser(await insertUser()),
+      asUser(await insertUser({ role: 'lecturer', lecturerStatus: 'approved' })),
+    ]) {
       expect((await request(app).get('/api/admin/terms').set(h)).status).toBe(403);
       expect((await post(SEM, h)).status).toBe(403);
       expect((await request(app).put('/api/admin/terms/1').set(h).send(SEM)).status).toBe(403);
@@ -44,7 +47,9 @@ describe('academic terms (FR15)', () => {
     expect((await post({ ...SEM, name: 'x'.repeat(51) })).status).toBe(400);
     expect((await post({ ...SEM, startDate: '2026-02-30' })).body.errors.startDate).toBeDefined();
     expect((await post({ ...SEM, endDate: '01/12/2026' })).body.errors.endDate).toBeDefined();
-    expect((await post({ ...SEM, endDate: SEM.startDate })).body.errors).toEqual({ endDate: 'End date must be after the start date' });
+    expect((await post({ ...SEM, endDate: SEM.startDate })).body.errors).toEqual({
+      endDate: 'End date must be after the start date',
+    });
     expect((await post({})).status).toBe(400);
     expect((await post(SEM)).status).toBe(201);
     const dup = await post({ ...SEM, startDate: '2027-01-01', endDate: '2027-04-01' });

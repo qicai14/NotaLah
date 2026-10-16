@@ -27,7 +27,14 @@ app.set('trust proxy', 'loopback');
 
 app.use(requestLogger);
 app.use(helmet());
-app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true, allowedHeaders: ['Content-Type', 'X-Requested-With'], exposedHeaders: ['X-Viewer'] }));
+app.use(
+  cors({
+    origin: env.CLIENT_ORIGIN,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'X-Requested-With'],
+    exposedHeaders: ['X-Viewer'],
+  }),
+);
 
 // CSRF (D35): a cross-site page cannot add this header without a preflight, which CORS refuses for other origins.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

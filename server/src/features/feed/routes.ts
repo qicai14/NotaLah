@@ -16,9 +16,11 @@ feedRouter.get('/', optionalAuth, async (req, res) => {
   if (asOf !== null && (typeof rawAsOf !== 'string' || Number.isNaN(asOf.getTime()))) {
     return res.status(400).json({ error: 'Invalid asOf' });
   }
-  const raw = keyset ? '1' : req.query.page ?? '1';
+  const raw = keyset ? '1' : (req.query.page ?? '1');
   if (typeof raw !== 'string' || !/^\d+$/.test(raw) || Number(raw) < 1 || Number(raw) > 1_000_000) {
     return res.status(400).json({ error: 'Invalid page' });
   }
-  res.json(keyset ? await getFollowingPage(viewerId(req), keyset, asOf) : await getFeedPage(viewerId(req), Number(raw), asOf));
+  res.json(
+    keyset ? await getFollowingPage(viewerId(req), keyset, asOf) : await getFeedPage(viewerId(req), Number(raw), asOf),
+  );
 });
