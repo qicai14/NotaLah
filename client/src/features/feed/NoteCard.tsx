@@ -9,13 +9,13 @@ import { timeAgo, visibilityLabel } from '../../lib/format';
 import type { FeedNote, Note } from '../../types';
 import { WhyThisNote } from './WhyThisNote';
 
-/** Logs one view when at least half the card has been visible for a second. */
-function useViewLogger(noteId: number) {
+/** Logs one view when at least half the card has been visible for a second. Guests log none (D45). */
+function useViewLogger(noteId: number, guest: boolean) {
   const el = useRef<HTMLElement>(null);
   const logged = useRef(false); // a ref survives StrictMode's second effect run, so a card is logged once
   useEffect(() => {
     const node = el.current;
-    if (!node || logged.current || typeof IntersectionObserver === 'undefined') return;
+    if (guest || !node || logged.current || typeof IntersectionObserver === 'undefined') return;
     let timer: number | undefined;
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -35,7 +35,7 @@ function useViewLogger(noteId: number) {
       window.clearTimeout(timer);
       io.disconnect();
     };
-  }, [noteId]);
+  }, [noteId, guest]);
   return el;
 }
 
@@ -53,7 +53,7 @@ export const NoteCard = memo(function NoteCard({
   onOpenComments(note: Note): void;
 }) {
   const [item, setItem] = useState(initial);
-  const ref = useViewLogger(item.id);
+  const ref = useViewLogger(item.id, guest);
   const titleId = `note-${item.id}-title`;
 
   return (
