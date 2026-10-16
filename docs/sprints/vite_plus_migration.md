@@ -9,7 +9,7 @@ Branch `chore/vite-plus`. Moves the workspace from Vite 8.3.1 + Vitest 5.0.2 to 
   `overrides` alias `vite` the same way and pin `vitest` to 5.0.5 (the version vite-plus 1.3.0 bundles). New scripts:
   `lint` (`vp lint`), `format:check` (`vp fmt --check`), `check` (`vp check --no-fmt && npm run typecheck`).
 - `client/package.json`: `vite` removed, `vite-plus` 1.3.0 added, `vitest` 5.0.5; scripts `dev`/`build`/`preview`/`test` run through `vp`.
-- `server/package.json`: `vite-plus` 1.3.0, `vitest` 5.0.1, `test` runs `vp test run`.
+- `server/package.json`: `vite-plus` 1.3.0, `vitest` 5.0.5, `test` runs `vp test run`.
 - `client/vite.config.ts` and `server/vitest.config.ts` import `defineConfig` from `vite-plus`.
 - New root `vite.config.ts`: Oxlint and Oxfmt settings (single quotes, print width 120).
 - `.github/workflows/ci.yml`: added a Lint step before Typecheck. `npm run typecheck`, `npm test`, `npm run build` keep their names.
