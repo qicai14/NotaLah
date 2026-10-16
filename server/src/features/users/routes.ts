@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
-import { countDrafts, listNotesByAuthor } from '../notes/repository';
+import { countDrafts, countLikesReceived, listNotesByAuthor } from '../notes/repository';
 import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { programmeExists } from '../modules/repository';
@@ -128,12 +128,13 @@ usersRouter.get('/:id', optionalAuth, async (req, res) => {
   if (profile.blockedByMe)
     return res.json({ user: { id: profile.id, displayName: profile.displayName, blockedByMe: true } });
   const own = profile.id === viewerId(req);
-  const [notes, draftCount] = await Promise.all([
+  const [notes, likeCount, draftCount] = await Promise.all([
     listNotesByAuthor(profile.id, viewerId(req), { cursor: null, limit: PROFILE_NOTES }),
+    countLikesReceived(profile.id),
     own ? countDrafts(profile.id) : undefined,
   ]);
   // the first page is embedded; GET /:id/notes?cursor=<notesNextCursor> continues it (D40)
   res.json({
-    user: { ...profile, notes: notes.items, notesNextCursor: notes.nextCursor, ...(own ? { draftCount } : {}) },
+    user: { ...profile, likeCount, notes: notes.items, notesNextCursor: notes.nextCursor, ...(own ? { draftCount } : {}) },
   });
 });
