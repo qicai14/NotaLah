@@ -980,16 +980,33 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
-| MSG-TC1 | Socket connection without valid token | no token; expired token | Connection refused | | |
-| MSG-TC2 | Send blank or over-length message | body ""; body of 2,001 characters | Error acknowledgement; nothing stored | | |
-| MSG-TC3 | Message to self | toUserId = own ID | Error acknowledgement | | |
-| MSG-TC4 | Non-friend sends post-anchored message | A (not a friend of B: no mutual follow) messages B from post P | Request stored as pending with post P; B receives "request:new"; no conversation created | | |
-| MSG-TC5 | Second request while one is pending | repeat MSG-TC4 | Rejected as already pending; one pending request exists | | |
-| MSG-TC6 | Recipient accepts request | B accepts A's request | Direct conversation created containing the held message with note card; A notified; no follow rows created, so A and B are still not friends | | |
-| MSG-TC7 | Recipient declines request | B declines | Status declined; no conversation and no follow rows created; A not notified | | |
-| MSG-TC8 | Friends exchange messages in real time | A and B follow each other; A sends "hello" to B (no request needed) | Stored; B receives "message:new" within 1 s | | |
-| MSG-TC9 | Create group with invalid input | name ""; one member; a non-friend member | Rejected with a message for each case | | |
-| MSG-TC10 | Create group and leave | name "FYP Team", two friends; one member leaves | Group created with owner and members; leaver no longer receives group messages | | |
+| MSG-TC1 | Socket connection without valid token | no cookie; expired token; token signed with another secret | Connection refused with "Unauthorized"; a valid cookie connects | | |
+| MSG-TC2 | Send blank or over-length message | body ""; spaces only; control characters only; body of 2,001 characters | 400 "Message is required" or "Message must be at most 2000 characters"; nothing stored; 2,000 characters accepted | | |
+| MSG-TC3 | Message to self | toUserId = own ID | 400 "You cannot message yourself"; nothing stored | | |
+| MSG-TC4 | Non-friend sends post-anchored message | A (not a friend of B: no mutual follow) messages B from post P | 202; request stored as pending with post P; B receives "request:new" with the note card; no conversation created | | |
+| MSG-TC5 | Second request while one is pending | repeat MSG-TC4; then B messages A | 409 "A message request between you is already pending" both ways; one pending request exists | | |
+| MSG-TC6 | Recipient accepts request | B accepts A's request | Direct conversation created containing the held message with note card; A receives "request:accepted"; no follow rows created; both can then message without a new request | | |
+| MSG-TC7 | Recipient declines request | B declines; A tries to decline; B accepts afterwards | 204; status declined; no conversation and no follow rows; A not notified; A's decline and the later accept 404 | | |
+| MSG-TC8 | Friends exchange messages in real time | A and B follow each other; A sends "hello" to B (no request needed) | 201; stored; B receives "message:new" within 1 s; no request created | | |
+| MSG-TC9 | Create group with invalid input | name ""; one member; a repeated member; self as member; a non-friend member | 400 with a message for each case; no group created | | |
+| MSG-TC10 | Create group and leave | name "FYP Team", two friends; one member leaves | Group created with owner and members; both receive the first message; the leaver gets "conversation:removed" and no later group messages | | |
+| MSG-TC11 | Socket handshake Origin check | valid cookie with Origin https://evil.example; with no Origin | Connection refused | | |
+| MSG-TC12 | Messaging a suspended or deleted user | direct message to a suspended and to a deleted friend; send in a chat whose other member is later suspended | 404 "User not found"; 403 in the existing chat, whose history stays readable | | |
+| MSG-TC13 | Blocked pair | A and B friends with a chat; C has a pending request to A; B blocks A, A blocks C; then B unblocks | Messages and requests 404 both ways; the chat leaves both lists and its history 404s; C's request leaves A's inbox and cannot be accepted; a member cannot add a user in a block with any member; unblocking restores the chat | | |
+| MSG-TC14 | Restricted user | restricted R tries to send, start a chat, create a group, add a member; then reads, marks read, accepts a request, leaves a group | 403 "Your account is restricted and cannot perform this action" for the four writes; the rest succeed; others can still message R | | |
+| MSG-TC15 | Note card visibility | attach a draft and an unknown note; attach a friends-only note seen by the sender only; delete it later | 400 "Note not found"; the card shows for the sender and is null with noteUnavailable for a reader who cannot see it, and for everyone after deletion | | |
+| MSG-TC16 | Reply to a message | reply to a message in another chat; reply to a message in this chat; reply to it after it is deleted | 400; 201 with replyTo {id, senderId, body}; 400, and history shows the reply's quote with a null body | | |
+| MSG-TC17 | Soft delete | B deletes A's message; A deletes it twice | 404; 204 then 404; history and the conversation list show it deleted with no body or note; the row keeps an empty body | | |
+| MSG-TC18 | Conversation list and read receipts | two chats; B sends two messages to A; A marks read up to the first, then to the latest, then tries to move back | List ordered by last activity with last message and unread 2; unread 1 then 0; the receipt never moves back; a non-member gets 404 | | |
+| MSG-TC19 | History paging | 120 messages | Pages of 50, 50, 20, newest first, each message once; bad cursor 400 | | |
+| MSG-TC20 | Add group members | add a non-friend; a non-member adds; add a friend; add again; fill to 30; add a 31st; add to a direct chat | 400 "You can only add your friends"; 404; 201 with nothing unread; 409; 201s; 409 "A group has at most 30 members"; 404 | | |
+| MSG-TC21 | Rename, remove and owner hand-over | member renames or removes; owner renames to "  Study Group "; owner leaves; last member leaves | 403 "Only the group owner can do this"; name trimmed; earliest-joined member becomes owner; the group is deleted when empty | | |
+| MSG-TC22 | Suspended user's sockets | suspended and deleted users connect; an admin suspends a connected user | Connection refused; the open socket is disconnected by the server | | |
+| MSG-TC23 | Typing indicator | A types in a chat with B; types again at once; types in a chat A is not in; B blocks A and A types | B receives "typing" once; the repeat is throttled and A never gets its own; nothing for non-members or across the block; nothing stored | | |
+| MSG-TC24 | Live receipts and deletions | B marks a chat read; A deletes a message | A receives "conversation:read" with B's last-read id; B receives "message:deleted" | | |
+| MSG-TC25 | Live note card per reader | group of A, B (author's friend) and C; A sends a friends-only note | B's "message:new" carries the card; C's has note null and noteUnavailable true | | |
+| MSG-TC26 | Concurrent adds at the size cap | group of 29; two friends added at the same moment while the group row is held | Exactly one 201 and one 409; the group ends with 30 members | | |
+| MSG-TC27 | Pending request when the pair become friends | A's request with a note waits; A and B follow each other; B messages A | 201; the request is accepted; history holds A's held message (with its note, original time) before B's; B's inbox is empty | | |
 
 *Table 4.33: Administration module test cases (ADM)*
 

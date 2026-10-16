@@ -1,14 +1,20 @@
 # server feature: messaging
 
-Will hold: Post-anchored private messages, message requests and named group chats over Socket.io. Friends (a mutual follow, `friends()` in `users/repository.ts`, D38) message directly; a non-friend's first message is a request, and approving it opens that conversation without making them friends. Blocked pairs cannot message or send requests: reuse
-`isBlocked(a, b)` or the `blockedWith` SQL fragment from `users/repository.ts` (D49).
+Post-anchored private messages, message requests and named group chats (FR6, FR7, FR13, FR16; UC15-UC18; D50).
+Friends (a mutual follow, `friends()` in `users/repository.ts`, D38) message directly. A non-friend's first message is
+a request, and accepting it opens that conversation without making them friends. Blocked pairs cannot message or send
+requests (`blockedWith` / `isBlocked` from `users/repository.ts`, D49).
 
-Contents: conversation repositories, routes and the Socket.io gateway.
+Contents: `config.ts` (limits), `repository.ts` (all SQL), `routes.ts` (REST under /api; every write goes here, so it
+gets the CSRF check, the shared write limiter and `requireActive`), `socket.ts` (the Socket.io gateway: handshake,
+rooms, typing relay, and the `emit`/`joinConversation` helpers routes use for live delivery).
 
-Serves: FR6, FR7, FR13. Test table: `MSG-TC*` in `docs/chapter4/4.5_test_cases.md`.
+Auth (D35): `allowRequest` refuses any engine request whose `Origin` is not `CLIENT_ORIGIN`, because WebSockets are not
+covered by CORS or the CSRF header check. The handshake then runs passport-jwt on the `parp_token` cookie and reloads
+the user, so suspended and deleted accounts are refused. Sockets close when the token expires, and an admin suspension
+or deletion disconnects them at once. `io.close()` runs on shutdown before the HTTP server closes (D41).
 
-Filled in: Sprint 4. See `docs/ARCHITECTURE.md` for the layering rules.
+Rooms: `user:<id>` and `conv:<id>`. Server events: `message:new`, `message:deleted`, `request:new`, `request:accepted`,
+`conversation:read`, `conversation:updated`, `conversation:removed`, `typing`. Client event: `typing {conversationId}`.
 
-Auth note (D35): the Socket.io handshake must authenticate from the same httpOnly `parp_token` cookie (parse
-`socket.request.headers.cookie`, verify with passport-jwt's rules and reload the user from the DB), and must reject a
-handshake whose `Origin` is not `CLIENT_ORIGIN`, since WebSockets are not covered by CORS or the CSRF header check.
+Tests: `MSG-TC*` in `docs/chapter4/4.5_test_cases.md`; `server/tests/messaging/`.
