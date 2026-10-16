@@ -112,21 +112,16 @@ export function ModuleRow({ module }: { module: ModuleResult }) {
 
 /** A note result: the first slide as a thumbnail, then the title, author and the marks that matter when searching. */
 export function NoteResult({ note }: { note: Note }) {
-  const titleId = `result-${note.id}`;
   const first = note.slides[0];
   return (
     <li className="relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-(--shadow-card) transition-colors duration-(--duration-fast) hover:bg-accent/50">
-      <div className="h-40 bg-surface p-2" aria-hidden="true">
+      <div className="h-40 bg-surface p-2" inert>
         {first && <SlideBoard slide={first} aspect={note.aspect} assets={note.assets} label="First slide" />}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         {note.verified && <VerifiedPill by={note.verifiedBy} className="self-start" />}
         <h3 className="line-clamp-2 text-title-sm font-semibold">
-          <Link
-            id={titleId}
-            to={`/notes/${note.id}`}
-            className="hover:underline after:absolute after:inset-0 after:z-0"
-          >
+          <Link to={`/notes/${note.id}`} className="hover:underline after:absolute after:inset-0 after:z-0">
             {note.title}
           </Link>
         </h3>

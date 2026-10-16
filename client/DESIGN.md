@@ -117,8 +117,9 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   `MobileTopBar` (menu, logo, Log in for guests) on ordinary pages. The feed (`/`) and a note (`/notes/:id`) are
   full-bleed and draw their own header; add a path to `isFullBleed` in `AppShell.tsx` only for screens like them.
 - **Navigation lists.** Add a screen to `RAIL` (and `TABS` if it belongs in the phone bar) in `components/shell/nav.ts`.
-  When Explore, Messages and Notifications land, they go in `RAIL` after Following, and Discover and Inbox replace
-  Saved and Drafts in `TABS` (wireframe 13). Badges: a `size-5 rounded-full bg-foreground text-background text-caption`
+  `RAIL` is Feed, Search, Following, Create, Drafts, Saved, Profile; `TABS` is Home, Search, Create, Drafts, Profile
+  (Saved moved to the phone More menu, D55). When Explore, Messages and Notifications land, they go in `RAIL` after
+  Following, and Discover and Inbox replace Search and Drafts in `TABS` (wireframe 13). Badges: a `size-5 rounded-full bg-foreground text-background text-caption`
   count at the row's right edge.
 - **Feed card.** Full height, `snap-start`, card `aspect-[9/16]` on desktop, rail to its right aligned to the bottom.
   Top row: `VerifiedPill` left, "Why this note?" right. Bottom: author, time, title, module chip, hashtags on `bg-surface`.

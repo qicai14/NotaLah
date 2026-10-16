@@ -40,6 +40,7 @@ describe('search query string', () => {
     expect(s.module).toBeNull();
     expect(s.from).toBeNull();
     expect(s.to).toBeNull();
+    expect(parse('from=2026-02-30').from).toBeNull();
     expect(parse('lecturer=12&term=3').lecturer).toBe('12');
     expect(parse(`q=${'a'.repeat(150)}`).q).toHaveLength(100);
   });

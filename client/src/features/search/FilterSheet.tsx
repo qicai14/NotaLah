@@ -50,7 +50,7 @@ export function FilterSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side={desktop ? 'right' : 'bottom'}
-        className={cn('gap-0 p-0', desktop ? 'w-[24rem] sm:max-w-[24rem]' : 'max-h-[88dvh] rounded-t-2xl border-t-0')}
+        className={cn('gap-0 p-0', desktop ? 'w-[26rem] sm:max-w-[26rem]' : 'max-h-[88dvh] rounded-t-2xl border-t-0')}
       >
         <div className="flex items-center justify-between border-b px-5 py-4 pr-14">
           <SheetTitle className="text-title-sm font-bold">Filters</SheetTitle>

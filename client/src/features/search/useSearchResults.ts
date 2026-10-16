@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, errorText } from '@/lib/api';
+import { api, ApiError, errorText } from '@/lib/api';
 import { type SearchState, searchApiPath } from './searchParams';
 
 export interface PersonResult {
@@ -39,6 +39,8 @@ export interface Results {
   next: string | null;
   asOf: string | null;
   error: string | null;
+  /** HTTP status of the failed request, when it reached the server. */
+  status: number | null;
   loading: boolean;
   loaded: boolean;
 }
@@ -54,15 +56,13 @@ export function useSearchResults(state: SearchState) {
   const live = useRef<string | null>(null);
   const busy = useRef(false);
   const latest = useRef<Results | null>(null);
-  const stateRef = useRef(state);
   latest.current = res;
-  stateRef.current = state;
 
   const fetchPage = useCallback(async (k: string, cursor: string | null, asOf: string | null) => {
     busy.current = true;
-    setRes((r) => (r && r.key === k ? { ...r, loading: true, error: null } : r));
+    setRes((r) => (r && r.key === k ? { ...r, loading: true, error: null, status: null } : r));
     try {
-      const page = await api<Page>(searchApiPath(stateRef.current, { cursor, asOf })!);
+      const page = await api<Page>(withPage(k, cursor, asOf));
       if (live.current !== k) return;
       setRes((r) => {
         const prev = r && r.key === k ? r : null;
@@ -74,13 +74,18 @@ export function useSearchResults(state: SearchState) {
           next: page.nextCursor,
           asOf: prev?.asOf ?? page.asOf ?? null,
           error: null,
+          status: null,
           loading: false,
           loaded: true,
         };
       });
     } catch (e) {
       if (live.current !== k) return;
-      setRes((r) => (r && r.key === k ? { ...r, loading: false, error: errorText(e) } : r));
+      setRes((r) =>
+        r && r.key === k
+          ? { ...r, loading: false, error: errorText(e), status: e instanceof ApiError ? e.status : null }
+          : r,
+      );
     } finally {
       if (live.current === k) busy.current = false;
     }
@@ -90,7 +95,17 @@ export function useSearchResults(state: SearchState) {
     live.current = key;
     busy.current = false;
     if (key === null) return setRes(null);
-    setRes({ key, items: [], extras: {}, next: null, asOf: null, error: null, loading: true, loaded: false });
+    setRes({
+      key,
+      items: [],
+      extras: {},
+      next: null,
+      asOf: null,
+      error: null,
+      status: null,
+      loading: true,
+      loaded: false,
+    });
     void fetchPage(key, null, null);
   }, [key, fetchPage]);
 
@@ -107,4 +122,12 @@ export function useSearchResults(state: SearchState) {
   }, [fetchPage]);
 
   return { results: res && res.key === key ? res : null, loadMore, retry };
+}
+
+/** The first-page path `k` with a later page's cursor and asOf added. */
+function withPage(k: string, cursor: string | null, asOf: string | null): string {
+  const p = new URLSearchParams(k.slice(k.indexOf('?') + 1));
+  if (cursor) p.set('cursor', cursor);
+  if (asOf) p.set('asOf', asOf);
+  return `/search?${p.toString()}`;
 }

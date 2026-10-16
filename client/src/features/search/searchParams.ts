@@ -36,7 +36,11 @@ export const emptySearch: SearchState = {
 const ID = /^[1-9]\d{0,9}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const id = (v: string | null) => (v && ID.test(v) && Number(v) <= 2147483647 ? v : null);
-const date = (v: string | null) => (v && DATE.test(v) && !Number.isNaN(Date.parse(v)) ? v : null);
+const date = (v: string | null) => {
+  if (!v || !DATE.test(v)) return null;
+  const d = new Date(v);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v ? v : null;
+};
 
 /** Reads the URL leniently: anything the API would refuse is dropped, and a term wins over a date range (D48). */
 export function parseSearch(params: URLSearchParams): SearchState {

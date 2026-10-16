@@ -1,5 +1,5 @@
 import { Search as SearchIcon, SlidersHorizontal, X } from 'lucide-react';
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { inputClass } from '@/components/Field';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   activeFilterCount,
   filtersApply,
   parseSearch,
+  searchHref,
   SEARCH_TABS,
   type SearchState,
   type SearchTab,
@@ -48,7 +49,7 @@ function Tabs({ tab, onChange }: { tab: SearchTab; onChange(tab: SearchTab): voi
     <div
       role="tablist"
       aria-label="Result type"
-      className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 md:mx-0 md:px-0"
+      className="scrollbar-none -mx-4 flex border-b gap-1 overflow-x-auto px-4 md:mx-0 md:px-0"
     >
       {SEARCH_TABS.map((t, i) => (
         <button
@@ -86,7 +87,7 @@ function Chip({ children, onRemove, name }: { children: string; onRemove(): void
         type="button"
         onClick={onRemove}
         aria-label={`Remove filter: ${name}`}
-        className="mr-1 grid size-6 place-items-center rounded-full hover:bg-accent"
+        className="mr-1 relative grid size-6 place-items-center rounded-full hover:bg-accent after:absolute after:-inset-2 after:content-['']"
       >
         <X className="size-3.5" aria-hidden="true" />
       </button>
@@ -118,13 +119,14 @@ function Skeleton() {
 export default function Search() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
-  const state = parseSearch(params);
+  const state = useMemo(() => parseSearch(params), [params]);
   const [text, setText] = useState(state.q);
   const debounced = useDebouncedValue(text, DEBOUNCE_MS);
   const pushed = useRef(state.q);
   const stateRef = useRef(state);
   stateRef.current = state;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
 
   const go = (next: SearchState, replace = false) => setParams(toSearchParams(next), { replace });
 
@@ -164,7 +166,7 @@ export default function Search() {
     pushed.current = text;
     go({ ...state, q: text });
   };
-  const setTab = (tab: SearchTab) => go({ ...state, tab });
+  const setTab = (tab: SearchTab) => go({ ...state, tab }, true);
   const items = results?.items ?? [];
   const extras = results?.extras ?? {};
 
@@ -201,6 +203,7 @@ export default function Search() {
           aria-hidden="true"
         />
         <input
+          ref={input}
           id="search-q"
           type="search"
           enterKeyHint="search"
@@ -216,19 +219,17 @@ export default function Search() {
             type="button"
             onClick={() => {
               setText('');
-              document.getElementById('search-q')?.focus();
+              input.current?.focus();
             }}
             aria-label="Clear search"
-            className="absolute top-1/2 right-2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="absolute top-1/2 right-1.5 grid size-10 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <X className="size-5" aria-hidden="true" />
           </button>
         )}
       </form>
 
-      <div className="flex items-end justify-between gap-2 border-b">
-        <Tabs tab={state.tab} onChange={setTab} />
-      </div>
+      <Tabs tab={state.tab} onChange={setTab} />
 
       {filtersApply(state.tab) && (
         <div className="flex flex-wrap items-center gap-2">
@@ -283,12 +284,22 @@ export default function Search() {
         {results?.error && (
           <div
             role="alert"
-            className="rounded-md bg-destructive/10 px-4 py-3 text-body-sm font-medium text-destructive"
+            className="rounded-md bg-destructive/10 px-3 py-2 text-body-sm font-medium text-destructive"
           >
             {results.error}{' '}
-            <button type="button" onClick={retry} className="font-semibold underline underline-offset-2">
-              Try again
-            </button>
+            {results.status === 400 && filterCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => go({ ...state, lecturer: null, term: null, from: null, to: null, module: null })}
+                className="font-semibold underline underline-offset-2"
+              >
+                Clear filters
+              </button>
+            ) : (
+              <button type="button" onClick={retry} className="font-semibold underline underline-offset-2">
+                Try again
+              </button>
+            )}
           </div>
         )}
 
@@ -311,7 +322,7 @@ export default function Search() {
                 </Button>
               ) : state.tab !== 'top' ? (
                 <Button asChild variant="secondary">
-                  <Link to={toHref({ ...state, tab: 'top' })}>Search everything</Link>
+                  <Link to={searchHref({ ...state, tab: 'top' })}>Search everything</Link>
                 </Button>
               ) : undefined
             }
@@ -365,8 +376,6 @@ export default function Search() {
     go({ ...state, tab: 'notes', lecturer: id });
   }
 }
-
-const toHref = (s: SearchState) => `/search?${toSearchParams(s).toString()}`;
 
 function Rows({ tab, items, onLecturer }: { tab: SearchTab; items: { id: number }[]; onLecturer(id: string): void }) {
   if (tab === 'notes' || tab === 'top')
