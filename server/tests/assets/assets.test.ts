@@ -14,7 +14,11 @@ beforeEach(async () => {
   await truncateAll();
   clearUnsplashCache();
 });
-afterEach(() => vi.unstubAllGlobals());
+const unsplashKey = env.UNSPLASH_ACCESS_KEY;
+afterEach(() => {
+  vi.unstubAllGlobals();
+  env.UNSPLASH_ACCESS_KEY = unsplashKey;
+});
 afterAll(async () => {
   await rm(env.STORAGE_DIR, { recursive: true, force: true });
   await pool.end();
@@ -131,7 +135,7 @@ describe('Image upload (R22)', () => {
     expect(res.body.asset).toMatchObject({ mime: 'image/webp', width: 2560, height: 85 });
   });
 
-  it('requires a signed-in active user and the CSRF header', async () => {
+  it('NOTE-TC53: upload requires a signed-in active user and the CSRF header', async () => {
     const body = await png();
     expect((await request(app).post('/api/assets/images').set(CSRF).attach('file', body, 'a.png')).status).toBe(401);
     const restricted = await insertUser({ status: 'restricted' });
@@ -141,7 +145,7 @@ describe('Image upload (R22)', () => {
     expect(noCsrf.status).toBe(403);
   });
 
-  it('answers 400 when no file is sent', async () => {
+  it('NOTE-TC53: upload answers 400 when no file is sent', async () => {
     const res = await request(app)
       .post('/api/assets/images')
       .set(asUser(await insertUser()))
@@ -184,7 +188,7 @@ describe('Assets in notes (R22)', () => {
     expect((await saveDraft(b, [imageEl(999999)])).status).toBe(400);
   });
 
-  it('accepts an image element or background, returns the assets map and links it to the note', async () => {
+  it('NOTE-TC54: an image element or background is accepted, linked to the note and listed in its assets map', async () => {
     const uid = await insertUser();
     const a = await uploadOk(uid);
     const res = await request(app)
@@ -219,7 +223,7 @@ describe('Assets in notes (R22)', () => {
     expect((await saveDraft(a, [imageEl(asset)])).status).toBe(201);
   });
 
-  it('lets an edit collaborator keep the owner asset and add their own', async () => {
+  it('NOTE-TC55: an edit collaborator keeps the owner asset and adds their own, then the owner saves again', async () => {
     const owner = await insertUser();
     const editor = await insertUser();
     const ownerAsset = await uploadOk(owner);
@@ -241,6 +245,33 @@ describe('Assets in notes (R22)', () => {
     expect(res.status).toBe(200);
     expect(Object.keys(res.body.note.assets).sort()).toEqual([String(ownerAsset), String(own)].sort());
     expect((await getAsset(own, owner)).status).toBe(200);
+
+    const ownerSave = await request(app)
+      .put(`/api/notes/${note.id}`)
+      .set(asUser(owner))
+      .send({
+        title: 'Deck',
+        status: 'draft',
+        slides: [slide([imageEl(ownerAsset), imageEl(own, 9)])],
+      });
+    expect(ownerSave.status).toBe(200);
+  });
+
+  it('NOTE-TC55: an edit collaborator cannot add an owner asset that is not linked to this note', async () => {
+    const owner = await insertUser();
+    const editor = await insertUser();
+    const unrelated = await uploadOk(owner);
+    const note = (await saveDraft(owner, [])).body.note;
+    await pool.query(
+      `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by) VALUES ($1, $2, 'edit', $3)`,
+      [note.id, editor, owner],
+    );
+    const res = await request(app)
+      .put(`/api/notes/${note.id}`)
+      .set(asUser(editor))
+      .send({ title: 'Deck', status: 'draft', baseUpdatedAt: note.updatedAt, slides: [slide([imageEl(unrelated)])] });
+    expect(res.status).toBe(400);
+    expect(res.body.errors.slides).toBe('Slide 1, element 1: Image not found');
   });
 
   it('NOTE-TC37: a hidden note hides its assets from others, but not from its author', async () => {
@@ -272,13 +303,13 @@ describe('Asset file access (R22)', () => {
     expect((await getAsset(asset, await insertUser())).status).toBe(200);
   });
 
-  it('hides a deleted note image from others', async () => {
+  it('NOTE-TC50: hides a deleted note image from others', async () => {
     const { author, asset, noteId } = await noteWithImage();
     await request(app).delete(`/api/notes/${noteId}`).set(asUser(author));
     expect((await getAsset(asset, await insertUser())).status).toBe(404);
   });
 
-  it('shows a friends-only note image to friends only, never to guests', async () => {
+  it('NOTE-TC50: shows a friends-only note image to friends only, never to guests', async () => {
     const { author, asset } = await noteWithImage('contacts');
     const friend = await insertUser();
     await befriend(author, friend);
@@ -287,7 +318,7 @@ describe('Asset file access (R22)', () => {
     expect((await getAsset(asset)).status).toBe(404);
   });
 
-  it('hides the image from a user in a block with the author, in either direction', async () => {
+  it('NOTE-TC50: hides the image from a user in a block with the author, in either direction', async () => {
     const { author, asset } = await noteWithImage();
     const blocker = await insertUser();
     const blocked = await insertUser();
@@ -301,7 +332,7 @@ describe('Asset file access (R22)', () => {
     expect((await getAsset(asset, blocked)).status).toBe(404);
   });
 
-  it('hides a draft image from everyone but the owner and its collaborators', async () => {
+  it('NOTE-TC50: hides a draft image from everyone but the owner and its collaborators', async () => {
     const owner = await insertUser();
     const asset = await uploadOk(owner);
     const note = (await saveDraft(owner, [imageEl(asset)])).body.note;
@@ -315,12 +346,30 @@ describe('Asset file access (R22)', () => {
     expect((await getAsset(asset)).status).toBe(404);
   });
 
-  it('answers 404 for a malformed id', async () => {
+  it('NOTE-TC50: a view link serves its note images to a guest, and nothing outside that note', async () => {
+    const owner = await insertUser();
+    const asset = await uploadOk(owner);
+    const other = await uploadOk(owner);
+    const note = (await saveDraft(owner, [imageEl(asset)])).body.note;
+    const link = await request(app).post(`/api/notes/${note.id}/links`).set(asUser(owner)).send({ role: 'view' });
+    expect(link.status).toBe(201);
+
+    const shared = await request(app).get(`/api/share/${link.body.token}`);
+    expect(shared.status).toBe(200);
+    const url = shared.body.note.assets[asset];
+    expect(url).toBe(`/api/share/${link.body.token}/assets/${asset}`);
+    expect((await request(app).get(url)).status).toBe(200);
+    expect((await getAsset(asset)).status).toBe(404);
+    expect((await request(app).get(`/api/share/${link.body.token}/assets/${other}`)).status).toBe(404);
+    expect((await request(app).get(`/api/share/${link.body.token}/assets/abc`)).status).toBe(404);
+  });
+
+  it('NOTE-TC53: asset file answers 404 for a malformed id', async () => {
     expect((await getAsset(0)).status).toBe(404);
     expect((await request(app).get('/api/assets/abc/file')).status).toBe(404);
   });
 
-  it('purges old assets no live note references and keeps linked ones', async () => {
+  it('NOTE-TC52: purges old assets no live note references and keeps linked ones', async () => {
     const { asset: linked } = await noteWithImage();
     const orphan = await uploadOk(await insertUser());
     const fresh = await uploadOk(await insertUser());
@@ -345,34 +394,28 @@ describe('Unsplash proxy (R22)', () => {
     ...over,
   });
   const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
-  const withKey = (key: string | undefined) => {
-    const before = env.UNSPLASH_ACCESS_KEY;
-    env.UNSPLASH_ACCESS_KEY = key;
-    return () => void (env.UNSPLASH_ACCESS_KEY = before);
-  };
+  const withKey = (key: string | undefined) => void (env.UNSPLASH_ACCESS_KEY = key);
 
-  it('NOTE-TC34: answers 503 "not configured" without a key', async () => {
-    const restore = withKey(undefined);
+  it('NOTE-TC51: answers 503 "not configured" without a key', async () => {
+    withKey(undefined);
     const uid = await insertUser();
     const search = await request(app).get('/api/unsplash/search?q=desk').set(asUser(uid));
     expect(search.status).toBe(503);
     expect(search.body.error).toMatch(/not configured/);
     expect((await request(app).post('/api/unsplash/abc_123/download').set(asUser(uid))).status).toBe(503);
-    restore();
   });
 
-  it('requires sign-in and a search term', async () => {
-    const restore = withKey('k');
+  it('NOTE-TC51: the Unsplash proxy requires sign-in and a search term', async () => {
+    withKey('k');
     expect((await request(app).get('/api/unsplash/search?q=x')).status).toBe(401);
     const blank = await request(app)
       .get('/api/unsplash/search?q=%20')
       .set(asUser(await insertUser()));
     expect(blank.status).toBe(400);
-    restore();
   });
 
-  it('NOTE-TC34: returns trimmed results with attribution, drops spoofed ones and caches the page', async () => {
-    const restore = withKey('secret-key');
+  it('NOTE-TC51: returns trimmed results with attribution, drops spoofed ones and caches the page', async () => {
+    withKey('secret-key');
     const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
       json({
         total_pages: 3,
@@ -405,11 +448,10 @@ describe('Unsplash proxy (R22)', () => {
     expect(((init as RequestInit).headers as Record<string, string>).Authorization).toBe('Client-ID secret-key');
     await request(app).get('/api/unsplash/search?q=DESK&page=2').set(asUser(uid));
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    restore();
   });
 
-  it('answers 503 when Unsplash fails', async () => {
-    const restore = withKey('k');
+  it('NOTE-TC51: the Unsplash proxy answers 503 when Unsplash fails', async () => {
+    withKey('k');
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => json({}, 500)),
@@ -418,11 +460,10 @@ describe('Unsplash proxy (R22)', () => {
       .get('/api/unsplash/search?q=fail')
       .set(asUser(await insertUser()));
     expect(res.status).toBe(503);
-    restore();
   });
 
-  it('records a download through the photo own download_location, never a client URL', async () => {
-    const restore = withKey('k');
+  it('NOTE-TC51: a download goes through the photo own download_location, never a client URL', async () => {
+    withKey('k');
     const fetchMock = vi.fn(async (url: string) =>
       url.endsWith('/photos/abc_123')
         ? json({ links: { download_location: 'https://api.unsplash.com/photos/abc_123/download?ixid=1' } })
@@ -443,6 +484,5 @@ describe('Unsplash proxy (R22)', () => {
     );
     expect((await request(app).post('/api/unsplash/abc_123/download').set(asUser(uid))).status).toBe(503);
     expect((await request(app).post('/api/unsplash/..%2Fme/download').set(asUser(uid))).status).toBe(404);
-    restore();
   });
 });

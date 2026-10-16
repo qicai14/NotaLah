@@ -1188,18 +1188,20 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Dependencies:** `sharp` 0.35.5 (27 Sep 2026), `multer` 2.4.0 (14 Sep 2026) and `@types/multer` 2.3.0 (28 Sep 2026), all
   pinned and over two weeks old. multer rather than hand-written busboy handling: it already caps size and file count, and its memory storage is fine at 5 MB.
 - **Notes:** saving checks every upload id (image element, video element, image background) is `ready`, the right kind and owned by
-  the saver, or by the note's author when a co-author saves (400 "Slide 1, element 2: Image not found"). `POST_ASSET_T` is rebuilt on every save. Note
+  the saver or already linked to that note in `POST_ASSET_T`, so a co-author keeps the owner's images and the owner keeps a co-author's, but neither can pull in the other's unrelated uploads (400 "Slide 1, element 2: Image not found"). `POST_ASSET_T` is rebuilt on every save. Note
   detail and feed carry `assets: {id: "/api/assets/:id/file"}`.
 - **Access:** `GET /api/assets/:id/file` (optionalAuth) serves a ready asset to its owner, or to anyone who may read a note that
   references it (READABLE or VISIBLE_OR_ADMIN, the note detail's own rule: blocks, friends-only, hidden, deleted, collaborators).
   Everything else is 404. `Cache-Control: private, max-age=300`, so a hide takes effect within five minutes in a browser cache.
+- **Share links:** `GET /api/share/:token/assets/:assetId` (same limits as the link's note route) serves only assets that the link's note references; the link's `assets` map points there, because a link holder may not pass the asset route's note checks.
+  The link and upload inserts re-check `ready` under `FOR SHARE`, so a purge cannot slip between check and link (400 "Image not found").
 - **Unsplash:** `GET /api/unsplash/search?q=&page=` and `POST /api/unsplash/:photoId/download` (signed-in), 503 "Unsplash is not configured"
   while `UNSPLASH_ACCESS_KEY` is unset. Results are checked against the deck's image-source schema (images.unsplash.com image, unsplash.com credit),
-  the credit link gets `utm_source=notalah&utm_medium=referral`, pages are cached for an hour (200 entries). The download route reads
+  the credit link gets `utm_source=notalah&utm_medium=referral`, pages are cached for an hour (200 entries); searches are limited to 20 an hour per user. The download route reads
   `download_location` from Unsplash's own photo response and only calls it when it starts with `https://api.unsplash.com/`.
 - **Cleanup:** the daily purge marks assets older than 24 h that no non-deleted note references as `deleted` and removes their files.
   shortcut: age is measured from upload, not from when the asset was unlinked, so an image removed from a note long after upload is purged at the next run.
 - **Known limits:** a guest loading a public note's images counts against the 120 reads a minute guest limit, one request per image; R2 presigned URLs
   would remove that. Video (R29) adds its own routes and the poster key.
-- **Test IDs:** NOTE-TC33, 34, 37, 38, 40 as in the R21 spec (TC34 here is the Unsplash proxy; its URL-spoofing part was R21a), plus NOTE-TC49 (quota) and NOTE-TC50 (file access).
+- **Test IDs:** NOTE-TC33, 34, 37, 38, 40 as in the R21 spec (TC34 stays R21a's URL spoofing; the proxy is NOTE-TC51), plus NOTE-TC49 (quota), TC50 (file access incl. share links), TC52 (purge), TC53 (request checks), TC54 (asset links) and TC55 (co-author assets). The quota lock is `pg_advisory_xact_lock(hashtext('asset_quota'), user)`.
 - **Reversibility:** Easy: the down step drops both tables; uploaded files stay on disk.

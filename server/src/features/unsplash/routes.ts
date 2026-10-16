@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { env } from '../../lib/env';
 import { issueMap } from '../../lib/validation';
 import { requireActive, requireAuth } from '../auth/middleware';
+import { unsplashLimiter } from '../auth/rateLimit';
 import { searchPhotos, trackDownload, UnsplashNotFound, UnsplashUnavailable } from './service';
 
 export const unsplashRouter = Router();
@@ -32,7 +33,7 @@ const unavailable = (err: unknown, res: import('express').Response) => {
   throw err;
 };
 
-unsplashRouter.get('/search', async (req, res) => {
+unsplashRouter.get('/search', unsplashLimiter, async (req, res) => {
   const parsed = searchQuery.safeParse(req.query);
   if (!parsed.success)
     return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });

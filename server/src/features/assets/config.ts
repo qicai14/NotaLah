@@ -11,6 +11,8 @@ export const ASSETS = Object.freeze({
   quotaBytes: 500 * 1024 * 1024,
   /** Image uploads per user per hour. */
   uploadsPerHour: 30,
+  /** Unsplash searches per user per hour. */
+  unsplashSearchesPerHour: 20,
   /** An asset no note references is removed once it is this old. */
   unlinkedAgeHours: 24,
 });

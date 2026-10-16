@@ -81,6 +81,18 @@ export const uploadLimiter = rateLimit({
   message: { error: 'Too many uploads. Try again later.' },
 });
 
+/** Unsplash searches per signed-in user per hour (R22); the demo tier allows 50 an hour for the whole app. */
+export const unsplashLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: ASSETS.unsplashSearchesPerHour,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('unsplash:'),
+  keyGenerator: (req: Request) => `user:${req.user?.id ?? ''}`,
+  skip: testing,
+  message: { error: 'Too many searches. Try again later.' },
+});
+
 /** Applied by optionalAuth to signed-out requests only. */
 export const guestReadLimiter = rateLimit({
   windowMs: RATE_LIMITS.windowMs,

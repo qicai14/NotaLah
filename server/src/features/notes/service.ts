@@ -194,11 +194,12 @@ export function assetRefs(slides: Slide[]): AssetRef[] {
 
 /**
  * The first asset the deck cannot use, as a message for `errors.slides`, or null. An asset must be ready, of the kind the
- * element needs, and owned by one of `ownerIds` (the saver, plus the note's author when a co-author saves).
+ * element needs, and owned by the saver or already linked to this note (so a co-author's save keeps the owner's images
+ * and an owner's save keeps a co-author's, but neither can pull in the other's unrelated uploads).
  */
-export async function findBadAsset(slides: Slide[], ownerIds: number[]): Promise<string | null> {
+export async function findBadAsset(slides: Slide[], saverId: number, postId: number | null): Promise<string | null> {
   const refs = assetRefs(slides);
-  const kinds = await usableAssetKinds([...new Set(refs.map((r) => r.id))], ownerIds);
+  const kinds = await usableAssetKinds([...new Set(refs.map((r) => r.id))], saverId, postId);
   const bad = refs.find((r) => kinds.get(r.id) !== r.kind);
   return bad ? `${bad.where}: ${bad.kind === 'image' ? 'Image' : 'Video'} not found` : null;
 }

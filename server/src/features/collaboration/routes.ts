@@ -4,7 +4,9 @@ import { z } from 'zod';
 import { env } from '../../lib/env';
 import { parseKeyset } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
-import { bodyOrEmpty, idParam } from '../../lib/validation';
+import { bodyOrEmpty, idParam, invalidId } from '../../lib/validation';
+import { getLinkedAsset } from '../assets/repository';
+import { sendAsset } from '../assets/service';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { guestReadLimiter } from '../auth/rateLimit';
 import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
@@ -107,7 +109,26 @@ collaborationRouter.get(
     const found = await link(req, res);
     if (!found) return;
     if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
-    res.json({ role: found.role, note: await getVisibleNote(found.noteId, viewerId(req), true) });
+    const note = await getVisibleNote(found.noteId, viewerId(req), true);
+    // The link's holder may not pass the asset route's note checks, so images come through this link too.
+    if (note)
+      for (const id of Object.keys(note.assets)) note.assets[id] = `/api/share/${req.params.token}/assets/${id}`;
+    res.json({ role: found.role, note });
+  },
+);
+
+collaborationRouter.get(
+  '/share/:token/assets/:assetId',
+  optionalAuth,
+  (req, res, next) => (req.user ? guestReadLimiter(req, res, next) : next()),
+  async (req, res) => {
+    const found = await link(req, res);
+    if (!found) return;
+    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
+    const assetId = String(req.params.assetId);
+    const asset = invalidId(assetId) ? undefined : await getLinkedAsset(found.noteId, Number(assetId));
+    if (!asset) return res.status(404).json({ error: 'Asset not found' });
+    await sendAsset(res, asset);
   },
 );
 

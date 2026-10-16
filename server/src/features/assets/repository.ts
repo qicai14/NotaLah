@@ -1,5 +1,5 @@
 import { inTransaction, pool } from '../../lib/pool';
-import { READABLE, VISIBLE_OR_ADMIN } from '../notes/repository';
+import { READABLE, SHAREABLE, VISIBLE_OR_ADMIN } from '../notes/repository';
 import { ASSETS } from './config';
 
 export interface Asset {
@@ -27,7 +27,7 @@ export function insertImage(
   height: number,
 ): Promise<Asset | 'quota'> {
   return inTransaction(async (c) => {
-    await c.query(`SELECT pg_advisory_xact_lock($1)`, [userId]);
+    await c.query(`SELECT pg_advisory_xact_lock(hashtext('asset_quota'), $1)`, [userId]);
     const { rows: used } = await c.query<{ used: string }>(USED_BYTES, [userId]);
     if (Number(used[0].used) + bytes > ASSETS.quotaBytes) return 'quota';
     const { rows } = await c.query<Asset>(
@@ -38,11 +38,6 @@ export function insertImage(
     );
     return rows[0];
   });
-}
-
-export async function usedBytes(userId: number): Promise<number> {
-  const { rows } = await pool.query<{ used: string }>(USED_BYTES, [userId]);
-  return Number(rows[0].used);
 }
 
 /**
@@ -64,15 +59,34 @@ export async function getReadableAsset(
   return rows[0];
 }
 
-/** The kind of each given asset that is ready and owned by one of `ownerIds`; others are absent from the map. */
-export async function usableAssetKinds(ids: number[], ownerIds: number[]): Promise<Map<number, string>> {
+/** The kind of each given asset that is ready and either owned by `userId` or already linked to note `postId`; others are absent from the map. */
+export async function usableAssetKinds(
+  ids: number[],
+  userId: number,
+  postId: number | null,
+): Promise<Map<number, string>> {
   if (ids.length === 0) return new Map();
   const { rows } = await pool.query<{ id: number; kind: string }>(
-    `SELECT ast_id AS "id", ast_kind AS "kind" FROM "ASSET_T"
-     WHERE ast_id = ANY($1::INT[]) AND ast_usr_id = ANY($2::INT[]) AND ast_status = 'ready'`,
-    [ids, ownerIds],
+    `SELECT ast_id AS "id", ast_kind AS "kind" FROM "ASSET_T" a
+     WHERE ast_id = ANY($1::INT[]) AND ast_status = 'ready'
+       AND (ast_usr_id = $2 OR EXISTS (SELECT 1 FROM "POST_ASSET_T" pa WHERE pa.pas_pst_id = $3 AND pa.pas_ast_id = a.ast_id))`,
+    [ids, userId, postId],
   );
   return new Map(rows.map((r) => [r.id, r.kind]));
+}
+
+/** The stored file of a ready asset that note `noteId` references and that a share link may reach (the note is SHAREABLE). */
+export async function getLinkedAsset(
+  noteId: number,
+  assetId: number,
+): Promise<{ key: string; mime: string } | undefined> {
+  const { rows } = await pool.query<{ key: string; mime: string }>(
+    `SELECT a.ast_key AS "key", a.ast_mime AS "mime"
+     FROM "ASSET_T" a JOIN "POST_ASSET_T" pa ON pa.pas_ast_id = a.ast_id JOIN "POST_T" p ON p.pst_id = pa.pas_pst_id
+     WHERE pa.pas_pst_id = $1 AND a.ast_id = $2 AND a.ast_status = 'ready' AND ${SHAREABLE}`,
+    [noteId, assetId],
+  );
+  return rows[0];
 }
 
 /** Marks old assets that no live note references as deleted and returns their storage keys, for the caller to remove. */

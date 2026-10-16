@@ -8,6 +8,7 @@ import { uploadLimiter } from '../auth/rateLimit';
 import { ASSETS, assetUrl } from './config';
 import { reencodeImage } from './image';
 import { getReadableAsset, insertImage } from './repository';
+import { sendAsset } from './service';
 
 export const assetsRouter = Router();
 assetsRouter.param('id', idParam('Asset not found'));
@@ -53,16 +54,5 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
 assetsRouter.get('/:id/file', optionalAuth, async (req, res) => {
   const asset = await getReadableAsset(Number(req.params.id), viewerId(req));
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
-  const url = await storage.signedUrl(asset.key);
-  if (url) return res.redirect(302, url);
-  const body = await storage.read(asset.key);
-  if (!body) return res.status(404).json({ error: 'Asset not found' });
-  // Readability depends on who asks, so shared caches must not keep it; the owner's browser may for a few minutes.
-  res
-    .set({
-      'Content-Type': asset.mime,
-      'Cache-Control': 'private, max-age=300',
-      'Cross-Origin-Resource-Policy': 'same-site',
-    })
-    .send(body);
+  await sendAsset(res, asset);
 });
