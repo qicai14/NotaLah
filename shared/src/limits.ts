@@ -37,7 +37,7 @@ export const LIMITS = {
   elementsPerSlide: 60,
   imagesPerSlide: 10,
   videosPerSlide: 1,
-  textHtml: 5_000,
+  textHtml: 20_000,
   textPerSlide: 20_000,
   code: 5_000,
   pageNotes: 2_000,

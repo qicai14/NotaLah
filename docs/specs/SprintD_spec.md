@@ -28,7 +28,7 @@ with R22 images and R29 video, following `docs/specs/R21_editor_data_model.md` (
 | Lane | Branch | Agent | Depends on |
 |---|---|---|---|
 | A | `feat/r19-design-system` (tokens, shadcn, shell, feed, note detail, welcome/auth, guest sheet, lazy routes, `useAction`, memoised cards, Vite proxy `/socket.io` `ws: true`) | frontend-designer | — |
-| B | `feat/r21a-slide-elements` (`shared/` workspace, zod deck schema, migration, notes API, search doc; NOTE-TC26-36, 41-42) | implementer | — |
+| B | `feat/r21a-slide-elements` (`shared/` workspace, zod deck schema, migration, notes API, search doc; NOTE-TC28-36, 41-42, 45-48) | implementer | — |
 | B | `feat/r22-uploads-server` (storage interface + local driver, upload/re-encode/EXIF strip, quota, asset table, hidden-note rule, Unsplash proxy; NOTE-TC33/34/37/38/40) | implementer → `/security-review` | R21a |
 | B | `feat/r29-video-server` (ffprobe validation, poster, limits; NOTE-TC39) | implementer → `/security-review` | R22 server |
 | C | `feat/r21b-slideboard` (read-only `SlideBoard` in feed, note, thumbnails, publish preview, moderation) | frontend | R19, R21a |

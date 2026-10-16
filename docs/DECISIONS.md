@@ -1166,6 +1166,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Deferred:** asset-existence and ownership checks and the `assets` URL map (R22; the map is empty), Deezer title, artist
   and cover (R9; stored NULL), geometry rounding to 0.1 (editor's job). The old editor and viewer go through
   `client/src/lib/slides.ts`, which keeps only text elements until R21b/R21c replace them.
-- **Test IDs:** the spec's NOTE-TC26 and NOTE-TC27 clash with the existing drafts and guest tests (`tests/notes/elements.test.ts`
-  reuses the numbers); the Chapter 4 table needs renumbering before these are added to it.
+- **Test IDs:** the spec's NOTE-TC26 and NOTE-TC27 clashed with the drafts and guest tests, so those two are NOTE-TC45 and
+  NOTE-TC46, and the client adapter tests are NOTE-TC47 and NOTE-TC48 (rows in `docs/chapter4/4.5_test_cases.md`).
+- **Review fixes:** migrated and resaved text elements get position-based ids (`text-001`), so an unchanged resave is not a
+  content edit; page notes are read in the same SELECT as the slides; `textHtml` is 20,000 (a migrated slide can be that
+  long); Unsplash image URLs are limited to URL-safe characters; an aspect change counts as a content edit; a slide with an
+  image or gradient background is not empty.
 - **Reversibility:** Moderate: the down migration drops non-text elements, page notes and music.

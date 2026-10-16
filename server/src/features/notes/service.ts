@@ -12,9 +12,6 @@ import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
 
-export const MAX_SLIDES = LIMITS.slides;
-export const MAX_HASHTAGS = LIMITS.hashtags;
-
 // Mirrors the TipTap nodes the editor can produce (D20) plus underline and a text colour span. Box-level font, size and
 // alignment are typed element props, so colour is the only CSS allowed inside the HTML (R21 spec 2.5).
 const OPTIONS: sanitizeHtml.IOptions = {
@@ -44,8 +41,9 @@ const OPTIONS: sanitizeHtml.IOptions = {
 
 const plainText = (html: string) => sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
 
-/** A slide with nothing to show: no element, or only text boxes with no text. */
-const isBlank = (slide: Slide) => slide.elements.every((e) => e.type === 'text' && plainText(e.html) === '');
+/** A slide with nothing to show: a plain colour background and no element, or only text boxes with no text. */
+const isBlank = (slide: Slide) =>
+  slide.background.kind === 'color' && slide.elements.every((e) => e.type === 'text' && plainText(e.html) === '');
 
 const textChars = (e: Slide['elements'][number]) =>
   e.type === 'text'
@@ -140,7 +138,7 @@ export function parseNoteBody(body: unknown): Parsed {
       errors.hashtags ??= `Invalid hashtag: ${typeof raw === 'string' ? raw : String(raw)}`;
     } else if (!tags.includes(name)) tags.push(name);
   }
-  if (!errors.hashtags && tags.length > MAX_HASHTAGS) errors.hashtags = `Maximum ${MAX_HASHTAGS} hashtags`;
+  if (!errors.hashtags && tags.length > LIMITS.hashtags) errors.hashtags = `Maximum ${LIMITS.hashtags} hashtags`;
   if (publishing && !errors.hashtags && tags.length === 0) errors.hashtags = 'At least one hashtag is required';
 
   // Slides: sanitise first, then measure; empty slides are dropped when publishing.

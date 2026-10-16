@@ -152,19 +152,18 @@ export async function getVisibleNote(
   viewerId: number,
   viaLink = false,
 ): Promise<(NoteWithEngagement & { myRole: NoteRole | null }) | undefined> {
-  const { rows } = await pool.query<NoteWithEngagement & { myRole: NoteRole | null }>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole" ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : `(${READABLE} OR ${VISIBLE_OR_ADMIN})`}`,
+  // Page notes are private (NOTE-TC36). Edit collaborators get them too, or their full-replace save would wipe them.
+  // They come in the same SELECT as the slides, so a concurrent save cannot leave the two out of step.
+  const { rows } = await pool.query<NoteWithEngagement & { myRole: NoteRole | null; pageNotes: string[] | null }>(
+    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${MY_ROLE} AS "myRole",
+            CASE WHEN ${MY_ROLE} IN ('owner', 'edit')
+                 THEN (SELECT json_agg(sld_notes ORDER BY sld_position) FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id) END AS "pageNotes"
+            ${NOTE_FROM} WHERE p.pst_id = $2 AND ${viaLink ? SHAREABLE : `(${READABLE} OR ${VISIBLE_OR_ADMIN})`}`,
     [viewerId, id],
   );
-  const note = rows[0];
-  // Page notes are private (NOTE-TC36). Edit collaborators get them too, or their full-replace save would wipe them.
-  if (note && (note.myRole === 'owner' || note.myRole === 'edit')) {
-    const { rows: notes } = await pool.query<{ notes: string }>(
-      `SELECT sld_notes AS "notes" FROM "SLIDE_T" WHERE sld_pst_id = $1 ORDER BY sld_position`,
-      [id],
-    );
-    note.slides.forEach((s, i) => (s.notes = notes[i].notes));
-  }
+  if (!rows[0]) return undefined;
+  const { pageNotes, ...note } = rows[0];
+  pageNotes?.forEach((notes, i) => (note.slides[i].notes = notes));
   return note;
 }
 
@@ -310,12 +309,13 @@ export function replaceNote(
     const { rows } = await c.query<{
       status: string;
       title: string;
+      aspect: string;
       updatedAt: Date;
       role: NoteRole | null;
       lockedByOther: boolean;
       slides: unknown[];
     }>(
-      `SELECT p.pst_status AS "status", p.pst_title AS "title", p.pst_updated_at AS "updatedAt", ${MY_ROLE} AS "role",
+      `SELECT p.pst_status AS "status", p.pst_title AS "title", p.pst_aspect AS "aspect", p.pst_updated_at AS "updatedAt", ${MY_ROLE} AS "role",
               COALESCE(p.pst_lock_usr_id <> $1 AND p.pst_lock_expires_at > NOW(), FALSE) AS "lockedByOther",
               COALESCE((SELECT json_agg(sld_doc ORDER BY sld_position) FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id), '[]'::JSON) AS "slides"
        FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status IN ('draft', 'published')
@@ -329,7 +329,8 @@ export function replaceNote(
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
     const contentEdited =
-      cur.status === 'published' && (cur.title !== n.title || !isDeepStrictEqual(cur.slides, n.slides.map(slideDoc)));
+      cur.status === 'published' &&
+      (cur.title !== n.title || cur.aspect !== n.aspect || !isDeepStrictEqual(cur.slides, n.slides.map(slideDoc)));
     await c.query(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_aspect = $5, pst_status = $6, pst_visibility = $7,

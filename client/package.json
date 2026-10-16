@@ -10,8 +10,7 @@
     "preview": "vp preview",
     "test": "vp test run",
     "pretest": "tsc -p ../shared",
-    "pretypecheck": "tsc -p ../shared",
-    "prebuild": "tsc -p ../shared"
+    "pretypecheck": "tsc -p ../shared"
   },
   "dependencies": {
     "@parp/shared": "0.1.0",

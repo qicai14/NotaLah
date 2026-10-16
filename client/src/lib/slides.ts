@@ -7,13 +7,16 @@ import type { Slide as DeckSlide, SlideElement } from '@parp/shared';
 export const slideToHtml = (slide: { elements: SlideElement[] }): string =>
   slide.elements.map((e) => (e.type === 'text' ? e.html : '')).join('');
 
-/** A white slide holding `html` in one full-board text element; an empty string gives an empty slide. */
-export const htmlToSlide = (html: string): DeckSlide => ({
+/**
+ * A white slide holding `html` in one full-board text element; an empty string gives an empty slide. The id comes from
+ * the slide's position, as in the migration, so resaving unchanged text is not a content edit (it would void Super Likes).
+ */
+export const htmlToSlide = (html: string, index: number, notes = ''): DeckSlide => ({
   background: { kind: 'color', color: '#ffffff' },
   elements: html
     ? [
         {
-          id: crypto.randomUUID(),
+          id: `text-${String(index + 1).padStart(3, '0')}`,
           type: 'text',
           x: 60,
           y: 60,
@@ -34,5 +37,5 @@ export const htmlToSlide = (html: string): DeckSlide => ({
         },
       ]
     : [],
-  notes: '',
+  notes,
 });

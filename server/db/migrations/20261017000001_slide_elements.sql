@@ -13,11 +13,12 @@ ALTER TABLE "SLIDE_T"
     ADD COLUMN sld_doc   JSONB,
     ADD COLUMN sld_notes VARCHAR(2000) NOT NULL DEFAULT '';
 
--- Each old HTML slide becomes one text element filling the board; the old allow-list is a subset of the new one.
+-- Each old HTML slide becomes one text element filling the board, with an id from its position that the editor adapter
+-- reproduces, so a resave of unchanged text is not a content edit; the old allow-list is a subset of the new one.
 UPDATE "SLIDE_T" s SET sld_doc = jsonb_build_object(
     'background', jsonb_build_object('kind', 'color', 'color', '#ffffff'),
     'elements', jsonb_build_array(jsonb_build_object(
-        'id', gen_random_uuid()::TEXT, 'type', 'text', 'x', 60, 'y', 60, 'w', 880, 'h', 1130, 'rotation', 0,
+        'id', 'text-' || LPAD(s.sld_position::TEXT, 3, '0'), 'type', 'text', 'x', 60, 'y', 60, 'w', 880, 'h', 1130, 'rotation', 0,
         'opacity', 1, 'locked', FALSE, 'html', s.sld_content, 'font', 'source-sans-3', 'size', 32,
         'weight', 400, 'color', '#111827', 'align', 'left', 'lineHeight', 1.4, 'letterSpacing', 0, 'padding', 0)));
 

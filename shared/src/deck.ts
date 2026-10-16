@@ -26,7 +26,7 @@ export const themeSchema = oneOf(THEME_IDS, 'theme');
 const unsplashUrl = z
   .string({ error: 'Invalid image URL' })
   .max(500, 'Invalid image URL')
-  .regex(/^https:\/\/images\.unsplash\.com\//, 'Image URL must come from images.unsplash.com');
+  .regex(/^https:\/\/images\.unsplash\.com\/[A-Za-z0-9\-._~/?&=%+]*$/, 'Invalid Unsplash image URL');
 const unsplashAuthorUrl = z
   .string({ error: 'Invalid author URL' })
   .max(500, 'Invalid author URL')

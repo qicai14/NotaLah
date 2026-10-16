@@ -4,12 +4,12 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, CSRF, insertUser, slideHtml, textEl, truncateAll } from '../helpers';
+import { asUser, CSRF, insertUser, slideHtml, slidesOf, textEl, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-// The spec numbers these NOTE-TC26 to NOTE-TC42, but TC26 and TC27 already name the drafts and guest tests.
+// The R21 spec's NOTE-TC26 and NOTE-TC27 clashed with the drafts and guest tests, so they are NOTE-TC45 and NOTE-TC46.
 const post = (uid: number, body: object) => request(app).post('/api/notes').set(asUser(uid)).send(body);
 const put = (uid: number, id: number, body: object) => request(app).put(`/api/notes/${id}`).set(asUser(uid)).send(body);
 const get = (uid: number, id: number) => request(app).get(`/api/notes/${id}`).set(asUser(uid));
@@ -56,7 +56,7 @@ const rejected = async (body: object) => {
 };
 
 describe('Slide elements (R21a)', () => {
-  it('NOTE-TC26: a deck with every element type is stored and returned unchanged', async () => {
+  it('NOTE-TC45: a deck with every element type is stored and returned unchanged', async () => {
     const uid = await insertUser();
     const elements = [
       text('<p>Hello</p>'),
@@ -79,7 +79,7 @@ describe('Slide elements (R21a)', () => {
     expect(got.slides).toEqual([{ position: 1, background, elements, notes: 'say hi' }]);
   });
 
-  it('NOTE-TC27: an unknown element type or an extra key is a 400 naming the slide and element', async () => {
+  it('NOTE-TC46: an unknown element type or an extra key is a 400 naming the slide and element', async () => {
     const unknown = await rejected(oneSlide([text('<p>a</p>'), el(2, 'iframe', {})]));
     expect(unknown.slides).toMatch(/^Slide 1, element 2: /);
     const extra = await rejected(oneSlide([text('<p>a</p>', { style: 'x' })]));
@@ -121,7 +121,7 @@ describe('Slide elements (R21a)', () => {
     expect((await rejected(oneSlide([video(1), video(2)]))).slides).toBe('Slide 1: Maximum 1 video per slide');
     const long = [code(1, 5000), code(2, 5000), code(3, 5000), code(4, 5000), code(5, 1)];
     expect((await rejected(oneSlide(long))).slides).toBe('Slide 1: Text must be at most 20,000 characters');
-    const big = oneSlide([text(`<p>${'a'.repeat(5000)}</p>`)]);
+    const big = oneSlide([text(`<p>${'a'.repeat(20000)}</p>`)]);
     expect((await rejected(big)).slides).toBe('Slide 1, element 1: Text is too long');
     const notes = { slides: [deck([], { notes: 'n'.repeat(2001) })] };
     expect((await rejected(notes)).slides).toBe('Slide 1: Notes must be at most 2000 characters');
@@ -130,6 +130,27 @@ describe('Slide elements (R21a)', () => {
       draft({ slides: [deck(long.slice(0, 4), { notes: 'n'.repeat(2000) })] }),
     );
     expect(exact.status).toBe(201);
+  });
+
+  it('NOTE-TC34: an Unsplash image URL must stay on images.unsplash.com and carry no CSS-breaking characters', async () => {
+    const source = (url: string) => ({
+      kind: 'unsplash',
+      photoId: 'abc_123',
+      url,
+      authorName: 'A B',
+      authorUrl: 'https://unsplash.com/@ab',
+    });
+    const withUrl = (url: string) => oneSlide([{ ...image(1, 'x'), source: source(url) }]);
+    for (const url of [
+      'https://evil.example/x.jpg',
+      'https://images.unsplash.com.evil.example/x.jpg',
+      'https://images.unsplash.com/x.jpg)"; background: url(https://evil.example/a',
+      'https://images.unsplash.com/x y.jpg',
+    ]) {
+      expect((await rejected(withUrl(url))).slides).toMatch(/^Slide 1, element 1: Invalid Unsplash image URL/);
+    }
+    const ok = await post(await insertUser(), draft(withUrl('https://images.unsplash.com/photo-1?w=800&q=80')));
+    expect(ok.status).toBe(201);
   });
 
   it('NOTE-TC35: search finds words in text, code, table and alt text but not in page notes', async () => {
@@ -153,9 +174,11 @@ describe('Slide elements (R21a)', () => {
     expect(await hit('platypus')).toBe(false);
   });
 
-  it('NOTE-TC36: page notes reach the author, not other readers or guests', async () => {
+  it('NOTE-TC36: page notes reach the author and edit collaborators, not viewers, other readers or guests', async () => {
     const author = await insertUser();
     const reader = await insertUser();
+    const editor = await insertUser();
+    const viewer = await insertUser();
     const body = {
       ...draft({ status: 'published', visibility: 'public', hashtags: ['x'] }),
       moduleId: (await pool.query(`SELECT mod_id FROM "MODULE_T" ORDER BY mod_id LIMIT 1`)).rows[0].mod_id,
@@ -169,6 +192,30 @@ describe('Slide elements (R21a)', () => {
     expect((await get(reader, noteId)).body.note.slides[0]).not.toHaveProperty('notes');
     const guest = await request(app).get(`/api/notes/${noteId}`).set(CSRF);
     expect(guest.body.note.slides[0]).not.toHaveProperty('notes');
+
+    for (const [user, role] of [
+      [editor, 'edit'],
+      [viewer, 'view'],
+    ] as const) {
+      await pool.query(
+        `INSERT INTO "COLLABORATOR_T" (clb_pst_id, clb_usr_id, clb_role, clb_added_by) VALUES ($1, $2, $3, $4)`,
+        [noteId, user, role, author],
+      );
+    }
+    const asEditor = (await get(editor, noteId)).body.note;
+    expect(asEditor.slides[0].notes).toBe('secret');
+    expect((await get(viewer, noteId)).body.note.slides[0]).not.toHaveProperty('notes');
+    const resave = {
+      title: asEditor.title,
+      slides: slidesOf(asEditor.slides),
+      moduleId: asEditor.module.id,
+      hashtags: asEditor.hashtags,
+      status: asEditor.status,
+      visibility: asEditor.visibility,
+      baseUpdatedAt: asEditor.updatedAt,
+    };
+    expect((await put(editor, noteId, resave)).status).toBe(200);
+    expect((await get(author, noteId)).body.note.slides[0].notes).toBe('secret');
   });
 
   it('NOTE-TC41: a save with an old baseUpdatedAt is a 409 and changes nothing', async () => {
@@ -186,11 +233,23 @@ describe('Slide elements (R21a)', () => {
     const htmls = ['<p>one</p>', '<p>two</p>', '<p>three</p>'];
     const slides = htmls.map((h, i) => deck([text(h, { id: id(i + 1) })]));
     const created = (await post(uid, draft({ slides }))).body.note;
-    const searchDoc = async (c: { query: typeof pool.query }) =>
-      (await c.query(`SELECT pst_search_doc::TEXT AS d FROM "POST_T" WHERE pst_id = $1`, [created.id])).rows[0].d;
+    // The tsvector a save would build from the slide text in the given shape (the SQL of writeChildren, text part only).
+    const searchOf = async (c: { query: typeof pool.query }, text: string) =>
+      (
+        await c.query(
+          `SELECT to_tsvector('english', p.pst_title || ' ' || ${text})::TEXT AS d FROM "POST_T" p WHERE p.pst_id = $1`,
+          [created.id],
+        )
+      ).rows[0].d;
+    const oldText = `(SELECT string_agg(regexp_replace(sld_content, '<[^>]*>', ' ', 'g'), ' ' ORDER BY sld_position)
+                      FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id)`;
+    const newText = `(SELECT string_agg(regexp_replace(e ->> 'html', '<[^>]*>', ' ', 'g'), ' ' ORDER BY s.sld_position)
+                      FROM "SLIDE_T" s, jsonb_array_elements(s.sld_doc -> 'elements') e
+                      WHERE s.sld_pst_id = p.pst_id AND e ->> 'type' = 'text')`;
+    const stored = (await pool.query(`SELECT pst_search_doc::TEXT AS d FROM "POST_T" WHERE pst_id = $1`, [created.id]))
+      .rows[0].d;
     const file = readFileSync(path.resolve(__dirname, '../../db/migrations/20261017000001_slide_elements.sql'), 'utf8');
     const [up, down] = file.replace('-- migrate:up', '').split('-- migrate:down');
-    const before = await searchDoc(pool);
     const c = await pool.connect();
     try {
       await c.query('BEGIN');
@@ -199,6 +258,7 @@ describe('Slide elements (R21a)', () => {
         created.id,
       ]);
       expect(old.rows.map((r) => r.sld_content)).toEqual(htmls);
+      expect(await searchOf(c, oldText)).toBe(stored);
       await c.query(up);
       const now = await c.query(`SELECT sld_doc FROM "SLIDE_T" WHERE sld_pst_id = $1 ORDER BY sld_position`, [
         created.id,
@@ -207,7 +267,8 @@ describe('Slide elements (R21a)', () => {
         r.sld_doc.elements.map((e: { type: string; html: string }) => [e.type, e.html]),
       );
       expect(texts).toEqual(htmls.map((h) => [['text', h]]));
-      expect(await searchDoc(c)).toBe(before);
+      expect(now.rows.map((r) => r.sld_doc.elements[0].id)).toEqual(['text-001', 'text-002', 'text-003']);
+      expect(await searchOf(c, newText)).toBe(stored);
     } finally {
       await c.query('ROLLBACK');
       c.release();

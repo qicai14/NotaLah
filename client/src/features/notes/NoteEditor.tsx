@@ -1,3 +1,4 @@
+import { LIMITS } from '@parp/shared';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useRef, useState } from 'react';
@@ -12,7 +13,7 @@ import { HashtagInput } from './HashtagInput';
 import { type PublishChoice, PublishDialog } from './PublishDialog';
 import { Toolbar } from './Toolbar';
 
-const MAX_SLIDES = 30; // mirrors the server limit
+const MAX_SLIDES = LIMITS.slides;
 const TEMPLATES = [
   ['plain', 'Plain'],
   ['lecture', 'Lecture summary'],
@@ -67,6 +68,8 @@ export default function NoteEditor() {
 
   // Refs mirror state so editor callbacks never read a stale slide list.
   const slidesRef = useRef(slides);
+  // Page notes per slide, kept in step with the slide list and sent back unchanged (no UI edits them yet).
+  const notesRef = useRef<string[]>(['']);
   const activeRef = useRef(0);
   const setSlides = (next: string[]) => ((slidesRef.current = next), setSlidesState(next));
   const setActive = (n: number) => ((activeRef.current = n), setActiveState(n));
@@ -101,6 +104,7 @@ export default function NoteEditor() {
     setHashtags(note.hashtags);
     setStatus(note.status === 'published' ? 'published' : 'draft');
     setVisibility(note.visibility);
+    notesRef.current = note.slides.map((x) => x.notes ?? '');
     const s = note.slides.length ? note.slides.map(slideToHtml) : [''];
     setSlides(s);
     setActive(0);
@@ -114,11 +118,14 @@ export default function NoteEditor() {
   function addSlide() {
     if (slides.length >= MAX_SLIDES) return;
     const next = [...slides, ''];
+    notesRef.current = [...notesRef.current, ''];
     setSlides(next);
     show(next.length - 1, next);
   }
   function removeSlide() {
+    notesRef.current = notesRef.current.filter((_, i) => i !== active);
     if (slides.length === 1) {
+      notesRef.current = [''];
       setSlides(['']);
       return show(0, ['']);
     }
@@ -131,6 +138,8 @@ export default function NoteEditor() {
     if (to < 0 || to >= slides.length) return;
     const next = [...slides];
     [next[active], next[to]] = [next[to], next[active]];
+    const kept = notesRef.current;
+    [kept[active], kept[to]] = [kept[to], kept[active]];
     setSlides(next);
     setActive(to); // the editor already shows this slide's content
   }
@@ -151,7 +160,7 @@ export default function NoteEditor() {
       },
       moduleId: moduleId ? Number(moduleId) : null,
       hashtags,
-      slides: slidesRef.current.map(htmlToSlide),
+      slides: slidesRef.current.map((html, i) => htmlToSlide(html, i, notesRef.current[i] ?? '')),
       status: publishing ? 'published' : 'draft',
       visibility: publishing ? choice : null,
     };
