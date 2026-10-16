@@ -1,7 +1,7 @@
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
 import { approvedLecturer, blockedWith, viewerIsAdmin } from '../users/repository';
-import { VISIBLE, VISIBLE_IGNORING_BLOCKS, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
+import { VISIBLE, VISIBLE_IGNORING_BLOCKS, VISIBLE_OR_ADMIN, SUMMARY_COLS, type NoteSummary } from '../notes/repository';
 
 /** SQL: comment c (author alias u) shows as unavailable: deleted, by a suspended author and the viewer $1 is not an admin (D47), or by someone in a block with the viewer (D49). */
 const GONE = (c: string, u: string) =>
@@ -17,13 +17,13 @@ export interface Target {
   isEditor: boolean;
 }
 
-/** Engagement needs a published note the viewer may see; undefined otherwise (callers answer 404). Reporting passes `ignoreBlocks` (D49). */
-export async function getTarget(noteId: number, viewerId: number, ignoreBlocks = false): Promise<Target | undefined> {
+/** Engagement needs a published note the viewer may see; undefined otherwise (callers answer 404). Reporting passes `ignoreBlocks` (D49); reading comments passes `adminRead`, so an admin also sees a suspended author's note (D47). */
+export async function getTarget(noteId: number, viewerId: number, ignoreBlocks = false, adminRead = false): Promise<Target | undefined> {
   const { rows } = await pool.query<Target>(
     `SELECT p.pst_usr_id AS "authorId",
             (SELECT COUNT(*)::INT FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id) AS "slideCount",
             EXISTS (SELECT 1 FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND c.clb_role = 'edit') AS "isEditor"
-     FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status = 'published' AND ${ignoreBlocks ? VISIBLE_IGNORING_BLOCKS : VISIBLE}`,
+     FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status = 'published' AND ${ignoreBlocks ? VISIBLE_IGNORING_BLOCKS : adminRead ? VISIBLE_OR_ADMIN : VISIBLE}`,
     [viewerId, noteId],
   );
   return rows[0];

@@ -13,9 +13,9 @@ export const engagementRouter = Router();
 
 engagementRouter.param('noteId', idParam('Note not found'));
 engagementRouter.param('commentId', idParam('Comment not found'));
-async function target(req: Request, res: Response, ignoreBlocks = false) {
+async function target(req: Request, res: Response, ignoreBlocks = false, adminRead = false) {
   const id = Number(req.params.noteId);
-  const t = await repo.getTarget(id, viewerId(req), ignoreBlocks);
+  const t = await repo.getTarget(id, viewerId(req), ignoreBlocks, adminRead);
   if (!t) return void res.status(404).json({ error: 'Note not found' });
   return { id, ...t };
 }
@@ -39,7 +39,7 @@ engagementRouter.delete('/notes/:noteId/like', requireAuth, async (req, res) => 
 });
 
 engagementRouter.get('/notes/:noteId/comments', optionalAuth, async (req, res) => {
-  const t = await target(req, res);
+  const t = await target(req, res, false, true);
   if (!t) return;
   const page = parseKeyset(req, res, 4);
   if (!page) return;
