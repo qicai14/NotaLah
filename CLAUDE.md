@@ -1,4 +1,4 @@
-# PARP code (FYP_Project)
+# NotaLah code (FYP_Project, formerly PARP)
 
 npm workspaces: `client/` (React, Vite, TS, Tailwind v4) and `server/` (Express 5, TS strict, pg, zod).
 Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Config in root `.env`
