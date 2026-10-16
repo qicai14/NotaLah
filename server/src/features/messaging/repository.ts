@@ -253,7 +253,7 @@ export async function sendToUser(senderId: number, toUserId: number, m: Omit<Mes
   }
 }
 
-/** A message in an existing conversation: 'not_found' unless OPEN, 'cannot_send' when the other side left PARP, 'reply' for a bad reply target. */
+/** A message in an existing conversation: 'not_found' unless OPEN, 'cannot_send' when the other side left NotaLah, 'reply' for a bad reply target. */
 export async function sendToConversation(conversationId: number, senderId: number, m: MessageInput): Promise<number | Refusal> {
   return inTransaction(async (q) => {
     const { rows: [s] } = await q.query<{ open: boolean; sendable: boolean }>(

@@ -1,4 +1,4 @@
-# PARP — Peer-to-peer Academic Resource Platform
+# NotaLah (formerly PARP) — Peer-to-peer Academic Resource Platform
 
 React + Vite + Tailwind client, Express 5 + TypeScript server, PostgreSQL 17 (Docker), dbmate migrations.
 
