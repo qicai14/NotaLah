@@ -2,7 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
-import { SlideViewer } from '../../components/SlideViewer';
+import { SlideCarousel } from '../../components/board/SlideCarousel';
 import { VerifiedPill } from '../../components/VerifiedPill';
 import { api } from '../../lib/api';
 import { timeAgo, visibilityLabel } from '../../lib/format';
@@ -80,14 +80,16 @@ export const NoteCard = memo(function NoteCard({
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col justify-center px-4 py-2 md:px-6 max-md:[&_.slide-content]:h-[40dvh] md:[&_.slide-content]:h-[min(30rem,50dvh)] [&_.slide-content]:rounded-lg">
+        <div className="flex min-h-0 flex-1 flex-col justify-center px-4 py-2 md:px-6">
           {item.module && (
             <p className="mb-2 text-caption font-semibold text-muted-foreground">
               {item.module.code}
               <span className="sr-only">, {item.module.name}</span>
             </p>
           )}
-          <SlideViewer slides={item.slides} />
+          <div className="min-h-0 flex-1">
+            <SlideCarousel slides={item.slides} aspect={item.aspect} assets={item.assets} />
+          </div>
         </div>
 
         <footer className="border-t bg-surface px-4 py-3.5 md:px-5 md:py-4">

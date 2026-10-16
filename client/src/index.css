@@ -45,6 +45,12 @@
   --slide-rule: #d5d8df;
   --code-block: #15171c;
   --code-block-foreground: #e9ebf2;
+  --board-code-light: #f1f2f5;
+  --board-code-light-foreground: #15171c;
+  --board-code-dark: #15171c;
+  --board-code-dark-foreground: #e9ebf2;
+  --board-credit: rgb(0 0 0 / 0.6);
+  --board-credit-foreground: #ffffff;
   --shadow-color: 220 20% 10%;
   color-scheme: light;
 }
@@ -84,6 +90,12 @@
   --slide-rule: #3a3e4b;
   --code-block: #0a0b0f;
   --code-block-foreground: #e9ebf2;
+  --board-code-light: #f1f2f5;
+  --board-code-light-foreground: #15171c;
+  --board-code-dark: #15171c;
+  --board-code-dark-foreground: #e9ebf2;
+  --board-credit: rgb(0 0 0 / 0.6);
+  --board-credit-foreground: #ffffff;
   --shadow-color: 0 0% 0%;
   color-scheme: dark;
 }
@@ -118,6 +130,8 @@
   --color-rail: var(--rail);
   --color-slide: var(--slide);
   --color-slide-foreground: var(--slide-foreground);
+  --color-board-credit: var(--board-credit);
+  --color-board-credit-foreground: var(--board-credit-foreground);
 }
 
 @theme {
@@ -231,8 +245,7 @@
   box-decoration-break: clone;
 }
 
-/* Slide content (viewer and editor share it): Tailwind's reset strips these element styles. Unlayered, so the
- * surface colours here also override the viewer's fixed utilities until R21b's SlideBoard replaces it. */
+/* Slide content in the old editor (R21c replaces it): Tailwind's reset strips these element styles. */
 .slide-content {
   background-color: var(--slide);
   border-color: var(--border);
@@ -291,6 +304,59 @@
 .slide-content.ProseMirror {
   outline: none;
   min-height: 12rem;
+}
+
+/* Server-sanitised text inside a SlideBoard. Sizes are em, so they follow the element's font size in board units;
+ * colours come from the deck (currentColor), never from the app theme. */
+.board-text > * + * {
+  margin-top: 0.5em;
+}
+.board-text h1 {
+  font-size: 1.6em;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.board-text h2 {
+  font-size: 1.3em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.board-text h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+}
+.board-text ul {
+  list-style: disc;
+  padding-left: 1.4em;
+}
+.board-text ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+.board-text blockquote {
+  border-left: 0.15em solid color-mix(in srgb, currentColor 35%, transparent);
+  padding-left: 0.8em;
+  opacity: 0.85;
+}
+.board-text code {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-radius: 0.2em;
+  padding: 0 0.25em;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.board-text pre {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-radius: 0.3em;
+  padding: 0.6em;
+  white-space: pre-wrap;
+}
+.board-text pre code {
+  background: none;
+  padding: 0;
+}
+.board-text hr {
+  border-color: color-mix(in srgb, currentColor 35%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

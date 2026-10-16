@@ -6,7 +6,7 @@ import { VerifiedPill } from '@/components/VerifiedPill';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
-import { SlideViewer } from '../../components/SlideViewer';
+import { SlideCarousel } from '../../components/board/SlideCarousel';
 import { timeAgo, visibilityLabel } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 import type { Note } from '../../types';
@@ -101,9 +101,11 @@ export default function NoteDetail() {
           </header>
 
           <div className="flex items-end gap-4">
-            <div className="min-w-0 flex-1 rounded-2xl border bg-card p-4 shadow-(--shadow-card) md:p-6 [&_.slide-content]:rounded-lg md:[&_.slide-content]:h-[min(32rem,58dvh)]">
+            <div className="min-w-0 flex-1 rounded-2xl border bg-card p-4 shadow-(--shadow-card) md:p-6">
               {n.module && <p className="mb-3 text-caption font-semibold text-muted-foreground">{n.module.code}</p>}
-              <SlideViewer slides={n.slides} />
+              <div className="h-[min(36rem,64dvh)]">
+                <SlideCarousel slides={n.slides} aspect={n.aspect} assets={n.assets} />
+              </div>
             </div>
             {published && desktop && <div className="relative">{actions}</div>}
           </div>

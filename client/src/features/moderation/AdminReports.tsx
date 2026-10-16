@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SlideViewer } from '../../components/SlideViewer';
+import { SlideCarousel } from '../../components/board/SlideCarousel';
 import { api, errorText } from '../../lib/api';
 import { timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
@@ -9,9 +9,10 @@ import type { ReportGroup, ReportSummary } from '../../types';
 /** Reported content queue (UC20, wireframe 23): open reports grouped by note, oldest first; resolve with a remark. */
 export default function AdminReports() {
   // shortcut: shows the first page (20) only; the redesign adds "load more" with nextCursor
-  const { data, setData, error, loading, reload } = useFetch<{ groups: ReportSummary[]; nextCursor: string | null }>(
-    '/admin/reports',
-  );
+  const { data, setData, error, loading, reload } = useFetch<{
+    groups: ReportSummary[];
+    nextCursor: string | null;
+  }>('/admin/reports');
   const [openId, setOpenId] = useState<number | null>(null);
   const detail = useFetch<{ group: ReportGroup }>(openId === null ? null : `/admin/reports/${openId}`);
   const [remark, setRemark] = useState('');
@@ -28,7 +29,10 @@ export default function AdminReports() {
     setBusy(true);
     setFormError(null);
     try {
-      await api(`/admin/reports/${open.id}/resolve`, { method: 'POST', body: { outcome, remark: remark.trim() } });
+      await api(`/admin/reports/${open.id}/resolve`, {
+        method: 'POST',
+        body: { outcome, remark: remark.trim() },
+      });
       setData((d) => d && { ...d, groups: d.groups.filter((g) => g.id !== open.id) });
       if (data?.nextCursor && data.groups.every((g) => g.id === open.id)) reload(); // page emptied: fetch the next groups
       setStatus(
@@ -121,7 +125,9 @@ export default function AdminReports() {
               Open note
             </Link>
           </p>
-          <SlideViewer slides={open.slides} />
+          <div className="h-[min(30rem,60dvh)]">
+            <SlideCarousel slides={open.slides} aspect={open.aspect} assets={open.assets} />
+          </div>
           <h3 className="mt-4 font-medium">Reports</h3>
           <ul className="mb-4 flex flex-col gap-1 text-sm">
             {open.reports.map((r) => (
