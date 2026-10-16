@@ -3,11 +3,13 @@
 ## Tiers
 ```
 Browser (React + Vite)  --HTTP /api, JWT cookie-->  Express API  --pg, parameterised SQL-->  PostgreSQL 17
-                        <--Socket.io (Sprint 4)-->  (same process)
+                        <--Socket.io, same cookie-->  (same process and port)
 ```
 The client never talks to the database. In development Vite serves the client on :5173 and proxies `/api`
 to Express on :4000 (with `X-Forwarded-For`, so rate limits are per client). Socket.io attaches to the same
-HTTP server in Sprint 4 for post-anchored messaging.
+HTTP server for live messaging (D50): REST does every write, and the socket delivers events and relays typing. Its
+handshake checks `Origin` and authenticates the `parp_token` cookie with passport-jwt (D35). The client's Vite proxy
+will need a `/socket.io` entry with `ws: true` when the messaging UI is built.
 
 ## Request flow (server)
 middleware (`features/auth/middleware.ts`: `requireAuth`, `requireRole`, role/status read from the DB on every
@@ -37,7 +39,8 @@ server/src/features/feed/         ranked For You feed and chronological Followin
                                   per-asOf ranking snapshot "FEED_SNAPSHOT_T", D40)
 server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
 server/src/features/search/       GET /api/search: notes (text rank blended with E and V), people, hashtags, modules; filters (D48)
-server/src/features/messaging/    post-anchored messages, message requests from non-friends, groups, Socket.io (Sprint 4)
+server/src/features/messaging/    direct messages, message requests from non-friends, groups, receipts (routes.ts, repository.ts),
+                                  Socket.io gateway (socket.ts: handshake, rooms, typing), limits (config.ts), D50
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
 client/src/App.tsx, main.tsx      routes and bootstrap

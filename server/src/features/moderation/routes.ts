@@ -7,6 +7,7 @@ import { parseKeyset } from '../../lib/keyset';
 import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import * as repo from './repository';
+import { disconnectUser } from '../messaging/socket';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
@@ -83,6 +84,7 @@ adminRouter.post('/users/:userId/:action', async (req, res) => {
   if (out === 'not_found') return res.status(404).json({ error: 'User not found' });
   if (out === 'admin') return res.status(403).json({ error: 'Administrator accounts cannot be changed here' });
   if (out === 'deleted') return res.status(409).json({ error: 'This account has been deleted' });
+  if (action === 'suspend' || action === 'delete') disconnectUser(out.id);
   res.json({ user: out });
 });
 

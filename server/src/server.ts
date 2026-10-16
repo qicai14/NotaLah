@@ -1,4 +1,5 @@
 import { app } from './app';
+import { attachSocket } from './features/messaging/socket';
 import { RANKING, assertWeightsSumToOne } from './features/ranking/config';
 import { env } from './lib/env';
 import { initErrorReporting } from './lib/errorReporting';
@@ -13,6 +14,7 @@ assertWeightsSumToOne();
 assertWeightsSumToOne(RANKING.searchWeights);
 void initErrorReporting().catch((err) => logger.error({ err }, 'error reporting failed to start'));
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, 'server listening'));
+const io = attachSocket(server);
 
 const purge = () =>
   purgeAll().then(
@@ -40,8 +42,8 @@ function shutdown(signal: string): void {
     logger.error({ timeoutMs: SHUTDOWN_TIMEOUT_MS }, 'shutdown timed out, forcing exit');
     process.exit(1);
   }, SHUTDOWN_TIMEOUT_MS).unref();
-  // Sprint 4: call io.close() (Socket.io) before server.close, or open sockets keep it from draining.
-  server.close(() => {
+  // io.close() disconnects every socket (open ones would keep the server from draining), then closes the HTTP server (D41).
+  void io.close(() => {
     logger.info('in-flight requests drained, closing database pool');
     pool.end().then(
       () => {
