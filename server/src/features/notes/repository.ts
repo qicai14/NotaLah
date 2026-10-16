@@ -4,7 +4,7 @@ import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { approvedLecturer, blockedWith, countingLecturer, friends, userRef, viewerIsAdmin } from '../users/repository';
-import type { NoteInput } from './service';
+import { assetRefs, type NoteInput } from './service';
 
 /** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
 export const MODULE_COL = `CASE WHEN m.mod_id IS NULL THEN NULL
@@ -65,14 +65,15 @@ export interface Note {
 
 /**
  * Note columns (contract: alias p = POST_T; use with NOTE_FROM).
- * shortcut: `assets` (presigned asset URLs) is an empty map until R22 adds the asset table and storage.
  */
 export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "theme", p.pst_aspect AS "aspect", p.pst_status AS "status",
          CASE WHEN p.pst_music_track_id IS NULL THEN NULL
               ELSE json_build_object('trackId', p.pst_music_track_id, 'title', p.pst_music_title,
                                      'artist', p.pst_music_artist, 'cover', p.pst_music_cover,
                                      'volume', p.pst_music_volume) END AS "music",
-         '{}'::JSON AS "assets",
+         COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/api/assets/' || a.ast_id || '/file')
+                   FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
+                   WHERE pa.pas_pst_id = p.pst_id AND a.ast_status = 'ready'), '{}'::JSON) AS "assets",
          p.pst_visibility AS "visibility",
          ${MODULE_COL},
          ${HASHTAGS_COL},
@@ -232,6 +233,14 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   const tags = [...n.hashtags].sort(); // fixed order avoids deadlocks between concurrent upserts
   await client.query(`DELETE FROM "SLIDE_T" WHERE sld_pst_id = $1`, [postId]);
   await client.query(`DELETE FROM "POST_HASHTAG_T" WHERE phs_pst_id = $1`, [postId]);
+  await client.query(`DELETE FROM "POST_ASSET_T" WHERE pas_pst_id = $1`, [postId]);
+  const assetIds = [...new Set(assetRefs(n.slides).map((r) => r.id))].sort((a, b) => a - b);
+  if (assetIds.length > 0) {
+    await client.query(`INSERT INTO "POST_ASSET_T" (pas_pst_id, pas_ast_id) SELECT $1, unnest($2::INT[])`, [
+      postId,
+      assetIds,
+    ]);
+  }
   if (n.slides.length > 0) {
     await client.query(
       `INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_doc, sld_notes)

@@ -11,6 +11,7 @@ import {
 import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
+import { usableAssetKinds } from '../assets/repository';
 
 // Mirrors the TipTap nodes the editor can produce (D20) plus underline and a text colour span. Box-level font, size and
 // alignment are typed element props, so colour is the only CSS allowed inside the HTML (R21 spec 2.5).
@@ -142,7 +143,6 @@ export function parseNoteBody(body: unknown): Parsed {
   if (publishing && !errors.hashtags && tags.length === 0) errors.hashtags = 'At least one hashtag is required';
 
   // Slides: sanitise first, then measure; empty slides are dropped when publishing.
-  // shortcut: image and video asset ids are not checked against ASSET_T (owner, ready, kind), which arrives with R22.
   let slides = (d?.slides ?? []).map((slide, i) => cleanSlide(slide, errors, i + 1));
   if (publishing) {
     slides = slides.filter((s) => !isBlank(s));
@@ -166,4 +166,39 @@ export function parseNoteBody(body: unknown): Parsed {
       visibility: d.visibility ?? null,
     },
   };
+}
+
+export interface AssetRef {
+  id: number;
+  kind: 'image' | 'video';
+  /** "Slide 2, element 1" or "Slide 2" for a background, for error messages. */
+  where: string;
+}
+
+/** Every uploaded asset a deck points at: image elements, video elements and image backgrounds. */
+export function assetRefs(slides: Slide[]): AssetRef[] {
+  const refs: AssetRef[] = [];
+  slides.forEach((slide, i) => {
+    const bg = slide.background;
+    if (bg.kind === 'image' && bg.image.kind === 'upload') {
+      refs.push({ id: bg.image.assetId, kind: 'image', where: `Slide ${i + 1}` });
+    }
+    slide.elements.forEach((e, j) => {
+      const where = `Slide ${i + 1}, element ${j + 1}`;
+      if (e.type === 'image' && e.source.kind === 'upload') refs.push({ id: e.source.assetId, kind: 'image', where });
+      if (e.type === 'video') refs.push({ id: e.assetId, kind: 'video', where });
+    });
+  });
+  return refs;
+}
+
+/**
+ * The first asset the deck cannot use, as a message for `errors.slides`, or null. An asset must be ready, of the kind the
+ * element needs, and owned by one of `ownerIds` (the saver, plus the note's author when a co-author saves).
+ */
+export async function findBadAsset(slides: Slide[], ownerIds: number[]): Promise<string | null> {
+  const refs = assetRefs(slides);
+  const kinds = await usableAssetKinds([...new Set(refs.map((r) => r.id))], ownerIds);
+  const bad = refs.find((r) => kinds.get(r.id) !== r.kind);
+  return bad ? `${bad.where}: ${bad.kind === 'image' ? 'Image' : 'Video'} not found` : null;
 }

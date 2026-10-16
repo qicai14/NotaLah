@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import { type ClientRateLimitInfo, ipKeyGenerator, type Options, rateLimit, type Store } from 'express-rate-limit';
+import { ASSETS } from '../assets/config';
 import { tokenSubject } from './passport';
 import { hitRateLimit, purgeRateLimits, resetRateLimit, unhitRateLimit } from './repository';
 
@@ -66,6 +67,18 @@ export const writeLimiter = rateLimit({
   },
   skip: testing,
   message: { error: 'Too many requests. Try again in a minute.' },
+});
+
+/** Image uploads per signed-in user per hour (R22); mounted after requireAuth. */
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: ASSETS.uploadsPerHour,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('upload:'),
+  keyGenerator: (req: Request) => `user:${req.user?.id ?? ''}`,
+  skip: testing,
+  message: { error: 'Too many uploads. Try again later.' },
 });
 
 /** Applied by optionalAuth to signed-out requests only. */

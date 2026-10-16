@@ -6,6 +6,7 @@ import { reportError } from './lib/errorReporting';
 import { requestLogger } from './lib/logger';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
+import { assetsRouter } from './features/assets/routes';
 import { authRouter } from './features/auth/routes';
 import { collaborationRouter } from './features/collaboration/routes';
 import { writeLimiter } from './features/auth/rateLimit';
@@ -17,6 +18,7 @@ import { modulesRouter, programmesRouter, termsRouter } from './features/modules
 import { notesRouter } from './features/notes/routes';
 import { notificationsRouter } from './features/notifications/routes';
 import { searchRouter } from './features/search/routes';
+import { unsplashRouter } from './features/unsplash/routes';
 import { usersRouter } from './features/users/routes';
 import { verificationRouter } from './features/verification/routes';
 
@@ -62,7 +64,9 @@ app.use('/api', verificationRouter);
 app.use('/api', collaborationRouter); // before notesRouter so /notes/shared is not read as a note id
 app.use('/api', messagingRouter);
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
+app.use('/api/assets', assetsRouter);
 app.use('/api/notes', notesRouter);
+app.use('/api/unsplash', unsplashRouter);
 app.use('/api/users', usersRouter);
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });

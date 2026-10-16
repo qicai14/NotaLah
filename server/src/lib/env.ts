@@ -19,6 +19,10 @@ const schema = z.object({
   // Optional error tracking (D41); empty means off.
   SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
   CLIENT_ORIGIN: z.string().min(1).default('http://localhost:5173'),
+  // Where the local-disk storage driver keeps uploads (D54); the default is gitignored.
+  STORAGE_DIR: z.string().min(1).default(path.resolve(__dirname, '../../../uploads')),
+  // Unsplash search proxy (R22); empty means the routes answer 503.
+  UNSPLASH_ACCESS_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
   // Secure auth cookie (D35); defaults to on in production only, since local http would drop it.
   COOKIE_SECURE: z
     .enum(['true', 'false'])
