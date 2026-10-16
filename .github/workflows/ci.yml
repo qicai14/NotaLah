@@ -48,6 +48,8 @@ jobs:
         run: touch .env
       - name: Create test database
         run: psql -h localhost -U parp -d postgres -c "CREATE DATABASE parp_test"
+      - name: Lint
+        run: npm run lint
       - name: Typecheck
         run: npm run typecheck
       - name: Test

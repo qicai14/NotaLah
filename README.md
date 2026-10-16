@@ -27,6 +27,7 @@ email. Clear the password from `.env` afterwards.
 | `npm test` | server tests (migrates `parp_test` first), then client tests |
 | `npm test -w client` | client tests only (no database needed) |
 | `npm run build` / `npm run typecheck` | both workspaces |
+| `npm run lint` | Oxlint over both workspaces (via Vite+) |
 | `npm run db:down` | stop Postgres (data kept in the `parp_pgdata` volume) |
 | `npm run db:rollback -w server` | undo the last migration |
 | `npm run db:status -w server` | list applied migrations |
@@ -50,7 +51,7 @@ survive restyling.
   a second signal or the timeout exits 1.
 
 ## CI
-`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `npm ci`, typecheck, `npm test` (against a
+`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `npm ci`, lint, typecheck, `npm test` (against a
 `postgres:17-alpine` service with a fresh `parp_test`), `npm run build`, then `npm audit --audit-level=high --omit=dev`.
 Open the failing step in the Actions run: typecheck errors show the file and line, test failures show the Vitest diff,
 and an audit failure lists the vulnerable package and advisory. Reproduce locally with `npm run db:up` and the same
