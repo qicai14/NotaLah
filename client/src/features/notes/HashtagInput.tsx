@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useState } from 'react';
 
-import { addHashtags, MAX_HASHTAGS } from '../../lib/hashtags';
+import { LIMITS } from '@parp/shared';
+import { addHashtags } from '../../lib/hashtags';
 
 /** Chip input: Enter or comma adds a tag, '#' is stripped, tags are lowercased and unique. */
 export function HashtagInput({
@@ -33,7 +34,7 @@ export function HashtagInput({
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor="hashtag-input" className="text-sm font-medium">
-        Hashtags ({value.length}/{MAX_HASHTAGS})
+        Hashtags ({value.length}/{LIMITS.hashtags})
       </label>
       <div
         className={`flex flex-wrap items-center gap-2 rounded-md border bg-white px-2 py-1.5 ${shown ? 'border-red-500' : 'border-slate-300'}`}

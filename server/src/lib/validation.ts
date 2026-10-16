@@ -1,10 +1,17 @@
 import type { Request, RequestParamHandler } from 'express';
 import type { z } from 'zod';
 
+/** "Slide 3, element 2: " for an issue inside `slides`, so a deck error says where it is; empty elsewhere. */
+function slidePrefix(path: PropertyKey[]): string {
+  if (path[0] !== 'slides' || typeof path[1] !== 'number') return '';
+  const element = path[2] === 'elements' && typeof path[3] === 'number' ? `, element ${path[3] + 1}` : '';
+  return `Slide ${path[1] + 1}${element}: `;
+}
+
 /** Collapses zod issues into the API's `{ field: message }` map (first message per field wins). */
 export function issueMap(issues: z.core.$ZodIssue[]): Record<string, string> {
   const errors: Record<string, string> = {};
-  for (const issue of issues) errors[String(issue.path[0] ?? 'form')] ??= issue.message;
+  for (const issue of issues) errors[String(issue.path[0] ?? 'form')] ??= slidePrefix(issue.path) + issue.message;
   return errors;
 }
 

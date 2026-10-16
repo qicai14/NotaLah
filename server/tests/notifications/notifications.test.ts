@@ -5,7 +5,7 @@ import { insertNotifications } from '../../src/features/notifications/repository
 import { notify } from '../../src/features/notifications/service';
 import { purgeAll } from '../../src/lib/purge';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, insertNote, insertUser, truncateAll, walkPages } from '../helpers';
+import { asUser, befriend, insertNote, insertUser, slidesOf, truncateAll, walkPages } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -42,7 +42,7 @@ async function editBody(owner: number, note: number, over: object = {}) {
   const n = (await api.get(owner, `/api/notes/${note}`)).body.note;
   return {
     title: n.title,
-    slides: n.slides.map((s: { content: string }) => s.content),
+    slides: slidesOf(n.slides),
     moduleId: n.module?.id ?? null,
     hashtags: n.hashtags.length ? n.hashtags : ['notes'],
     status: n.status,

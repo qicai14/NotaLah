@@ -1,3 +1,5 @@
+import type { Slide, TextElement } from '@parp/shared';
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { signToken } from '../src/features/auth/passport';
 import type { AuthUser } from '../src/features/users/repository';
@@ -53,6 +55,44 @@ export function asUser(id: number): Record<string, string> {
   return { Cookie: `parp_token=${signToken({ id, role: 'student' } as AuthUser)}`, ...CSRF };
 }
 
+/** A full-board text element, as the notes API stores one. */
+export const textEl = (html: string, over: Partial<TextElement> = {}): TextElement => ({
+  id: randomUUID(),
+  type: 'text',
+  x: 60,
+  y: 60,
+  w: 880,
+  h: 1130,
+  rotation: 0,
+  opacity: 1,
+  locked: false,
+  html,
+  font: 'source-sans-3',
+  size: 32,
+  weight: 400,
+  color: '#111827',
+  align: 'left',
+  lineHeight: 1.4,
+  letterSpacing: 0,
+  padding: 0,
+  ...over,
+});
+
+/** A white slide holding one text element. */
+export const textSlide = (html: string): Slide => ({
+  background: { kind: 'color', color: '#ffffff' },
+  elements: [textEl(html)],
+  notes: '',
+});
+
+/** The text elements' HTML of each slide in a note read back from the API, one string per slide. */
+export const slideHtml = (slides: { elements: { type: string; html?: string }[] }[]) =>
+  slides.map((s) => s.elements.map((e) => e.html ?? '').join(''));
+
+/** A GET response turned back into slides a PUT accepts. */
+export const slidesOf = (slides: { background: unknown; elements: unknown[]; notes?: string }[]) =>
+  slides.map(({ background, elements, notes }) => ({ background, elements, notes: notes ?? '' }));
+
 export interface NoteOpts {
   status?: string;
   visibility?: string;
@@ -72,9 +112,11 @@ export async function insertNote(authorId: number, o: NoteOpts = {}): Promise<nu
   );
   const id = rows[0].pst_id;
   for (let i = 1; i <= (o.slides ?? 3); i++) {
-    await pool.query(`INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content) VALUES ($1, $2, '<p>x</p>')`, [
+    const { background, elements } = textSlide('<p>x</p>');
+    await pool.query(`INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_doc) VALUES ($1, $2, $3)`, [
       id,
       i,
+      JSON.stringify({ background, elements }),
     ]);
   }
   return id;
