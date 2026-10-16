@@ -550,167 +550,267 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 # 4.4 Interface Design
 
-	The wireframes below were produced before implementation to fix the layout and navigation of PARP. They are deliberately low fidelity and greyscale, so that review concentrates on content, hierarchy and flow rather than visual styling. Twenty-four screens use a desktop layout of 1280 by 800 pixels with a persistent top bar for search and a left navigation column; one screen shows the mobile layout of the feed, which is the screen most affected by NFR2. Every screen is traceable to the use cases in Section 4.2.2. Wireframes are generated from a single source file (`docs/chapter4/wireframes/build.mjs`) so that changes agreed with the supervisor can be applied consistently across all screens.
+	The wireframes below were produced before implementation to fix the layout and navigation of NotaLah. There are 57 screens: 49 desktop screens at 1440 by 900 pixels and 8 mobile screens at 390 by 844 pixels for the views most affected by NFR2. They are deliberately low fidelity and greyscale: avatars, slides and images are crossed placeholders, descriptive copy is lorem ipsum, and only navigation icons remain, so that review concentrates on layout, hierarchy and flow rather than visual styling. The layout follows TikTok on the web and on phones, because the target users already know where the feed, the action buttons, the comments and the inbox sit, and the slide editor follows Canva for the same reason. Every screen is generated from one source (`docs/chapter4/wireframes/screens.mjs`, rendered by `build.mjs`) as an editable vector SVG that imports into Figma, with a PNG copy used for the figures below, so a change agreed with the supervisor is applied consistently everywhere. Each screen is traced to the use cases in Section 4.2 and to the functional requirements and later additions (R-items) it covers; the full mapping is listed in `docs/chapter4/wireframes/INDEX.md`.
 
-## 4.4.1 Account screens
+## 4.4.1 Guest and account screens
 
-![Landing page](wireframes/png/01_landing.png)
+	The Welcome page offers Browse as guest, Log in and Register, and the registration and login dialogs open over it (UC01, UC02). A guest can read public notes, comments, search results and profiles (R31); any action that needs an account, such as liking or following, opens a log in sheet and returns the visitor to the same note afterwards.
 
-*Figure 4.14: Landing page*
+![Welcome page](wireframes/png/01_welcome.png)
 
-	The landing page is the only screen a guest sees before authenticating. It states the three benefits that the survey supported most strongly, namely lecturer-verified notes, search by module code and messaging about a specific note, rather than describing the ranking algorithm, following the recommendation in Section 3.3.3.3 that the feed be presented through its visible effects. The two calls to action lead to registration and login.
+*Figure 4.14: Welcome page*
 
-![Registration page](wireframes/png/02_register.png)
+![Register dialog](wireframes/png/02_register.png)
 
-*Figure 4.15: Registration page*
+*Figure 4.15: Register dialog*
 
-	The registration form implements UC01. Display name, email, password with confirmation and programme are mandatory, and the role choice is presented as two buttons with Student selected by default. Selecting Lecturer reveals a staff ID field and an explanation that lecturer features become available only after administrator approval, which sets the user's expectation for the approval step introduced in UC22.
+![Log in dialog (error state)](wireframes/png/03_login.png)
 
-![Login page](wireframes/png/03_login.png)
+*Figure 4.16: Log in dialog (error state)*
 
-*Figure 4.16: Login page*
+![Guest feed](wireframes/png/04_guest-feed.png)
 
-	The login page implements UC02 and is shown in its error state. A single generic message is displayed for an incorrect email or password so that the form does not reveal which accounts exist. Suspended accounts receive a distinct message, as specified in the exception flow of UC02.
+*Figure 4.17: Guest feed*
+
+![Guest note view with comments](wireframes/png/05_guest-note.png)
+
+*Figure 4.18: Guest note view with comments*
+
+![Log in / Register sheet (mobile)](wireframes/png/06_guest-auth-sheet-mobile.png)
+
+*Figure 4.19: Log in / Register sheet (mobile)*
+
+![Guest search results](wireframes/png/07_guest-search.png)
+
+*Figure 4.20: Guest search results*
+
+![Guest view of a public profile](wireframes/png/08_guest-profile.png)
+
+*Figure 4.21: Guest view of a public profile*
 
 ## 4.4.2 Feed and note screens
 
-![Ranked feed, desktop](wireframes/png/04_feed.png)
+	The ranked Feed shows one note per vertical card with the action rail beside it, a dot indicator at the bottom of each slide and a "Why this note?" panel that breaks the score into its four weighted parts (UC09, FR3, FR11). Comments, annotations, saving, reporting and the lecturer Super Like are reached from the same card, on desktop as side panels and dialogs and on the phone as bottom sheets (UC10 to UC13, UC19).
 
-*Figure 4.17: Ranked feed (desktop)*
+![Ranked feed (desktop)](wireframes/png/09_feed.png)
 
-	The feed is the home screen after login (UC09). Each note occupies the centre column with its author, module, age and visibility, the slide viewer, its hashtags and an action bar for like, comment, Super Like, save and message author. A verified note carries a double frame and a "Verified by" label (FR2). The right column explains why the note is shown in plain terms, presenting the ranking through its effects as recommended in Section 3.3.3.3.
+*Figure 4.22: Ranked feed (desktop)*
 
-![Ranked feed, mobile](wireframes/png/05_feed_mobile.png)
+![Feed, collapsed nav, lecturer view](wireframes/png/10_feed-collapsed.png)
 
-*Figure 4.18: Ranked feed (mobile)*
+*Figure 4.23: Feed, collapsed nav, lecturer view*
 
-	The mobile feed shows the same content in a single column for a 390-pixel screen (NFR2). One note fills the viewport, the user swipes horizontally between slides and vertically to the next note, and the left navigation is replaced by a bottom tab bar. The Super Like action is omitted from this student view because it appears only for approved lecturers.
+![Feed with comments panel](wireframes/png/11_feed-comments.png)
 
-![Note detail with comments](wireframes/png/06_note_detail.png)
+*Figure 4.24: Feed with comments panel*
 
-*Figure 4.19: Note detail with comments*
+!["Why this note?" ranking panel](wireframes/png/12_feed-ranking.png)
 
-	Opening a note shows its slides beside the comment panel (UC11). The lecturer's comment is pinned at the top with the lecturer badge and refers to a specific slide, which is how lecturer feedback is attached to part of a note after annotation (FR18) was removed from scope. Student comments follow in order of likes, each with a Reply action that creates one level of replies (FR16).
+*Figure 4.25: "Why this note?" ranking panel*
 
-![Slide note editor](wireframes/png/07_editor.png)
+![Ranked feed (mobile)](wireframes/png/13_feed-mobile.png)
 
-*Figure 4.20: Slide note editor*
+*Figure 4.26: Ranked feed (mobile)*
 
-	The editor implements UC05 and FR8. The left strip lists slides as thumbnails that can be reordered or extended, the formatting toolbar offers headings, emphasis, lists and code blocks, and a template selector sets the slide layout. Module selection and hashtag entry sit below the canvas, so that the two pieces of information required for ranking and search are visible before the author reaches the Publish button.
+![Comments sheet (mobile)](wireframes/png/14_comments-mobile.png)
 
-![Publish visibility dialog](wireframes/png/08_publish_dialog.png)
+*Figure 4.27: Comments sheet (mobile)*
 
-*Figure 4.21: Publish visibility dialog*
+![Note detail with annotations](wireframes/png/15_note-detail.png)
 
-	Publishing opens a dialog with the three visibility options of FR10 presented as equally sized choices with one-line consequences. Equal prominence responds to the survey result in which no option exceeded 40.6 percent, so the interface does not steer authors toward public sharing. Choosing the private option performs a draft save instead of publishing.
+*Figure 4.28: Note detail with annotations*
 
-![Drafts list](wireframes/png/09_drafts.png)
+![Saved notes](wireframes/png/40_saved.png)
 
-*Figure 4.22: Drafts list*
+*Figure 4.29: Saved notes*
 
-	The Drafts screen implements the retrieval part of UC06. It lists each unfinished note with its module, slide count and last saved time, with actions to resume editing or delete. A short notice reminds the author that drafts never appear in the feed or in search.
+![Report note dialog](wireframes/png/41_report-dialog.png)
 
-## 4.4.3 Profile, search and saved screens
+*Figure 4.30: Report note dialog*
 
-![Own profile](wireframes/png/10_my_profile.png)
+![Super Like (verify) dialog](wireframes/png/42_superlike-dialog.png)
 
-*Figure 4.23: Own profile*
+*Figure 4.31: Super Like (verify) dialog*
 
-	The profile page (UC04) shows the user's name, programme and counts of notes and contacts above a grid of their notes. A Verified tab collects the notes a lecturer has Super Liked, which gives students visible recognition for validated work. The Edit Profile button leads to Figure 4.25.
+## 4.4.3 Collaboration screens
 
-![Another user's profile](wireframes/png/11_user_profile.png)
+	A co-authored note credits its owner and co-authors on the card, and any viewer can ask the owner to collaborate; the owner approves or declines the request from notifications with a role (R30). The owner shares a note by invitation or by view and edit links, a soft lock shows who is editing, only the owner can publish, and a content edit turns the verified badge into "Edited since verification" until the lecturer re-confirms it.
 
-*Figure 4.24: Another user's profile*
+![Co-authored note card](wireframes/png/16_coauthor-note.png)
 
-	Viewing another user's profile shows only the notes the viewer is permitted to see, as specified in the alternative process of UC04. A lecturer profile carries the checkmark badge. The Message button starts a conversation, which becomes a message request if the two users are not yet contacts.
+*Figure 4.32: Co-authored note card*
 
-![Edit profile](wireframes/png/12_edit_profile.png)
+![Request to collaborate](wireframes/png/17_request-collab.png)
 
-*Figure 4.25: Edit profile*
+*Figure 4.33: Request to collaborate*
 
-	The edit form allows the user to change their picture, display name, programme and biography. The programme field is a selection list rather than free text because programme name is one of the search keys in FR4, and consistent values are required for that search to work. The picture size limit is stated next to the control.
+!["Edited since verification" state](wireframes/png/18_edited-since-verification.png)
 
-![Search results, notes](wireframes/png/13_search_notes.png)
+*Figure 4.34: "Edited since verification" state*
 
-*Figure 4.26: Search results (notes, with filters)*
+![Share dialog (owner)](wireframes/png/27_share-dialog.png)
 
-	Search results (UC14) appear in two tabs. The Notes tab shows a filter bar with the reworked FR15 filters, lecturer content only and a published date range, and displays the result count with the measured response time, which keeps the three-second target of NFR1 visible during testing. Verified results carry the same verified label as in the feed.
+*Figure 4.35: Share dialog (owner)*
 
-![Search results, people](wireframes/png/14_search_people.png)
+![Editor soft lock (co-author view)](wireframes/png/28_editor-locked.png)
 
-*Figure 4.27: Search results (people)*
+*Figure 4.36: Editor soft lock (co-author view)*
 
-	The People tab lists matching users with their role and programme so that a student can find a lecturer or classmate by name, as required by the IR deliverable to search for user profiles. Each row links to the profile screen in Figure 4.24.
+![Editor soft lock (owner publishes)](wireframes/png/29_editor-locked-owner.png)
 
-![Saved notes](wireframes/png/15_saved.png)
+*Figure 4.37: Editor soft lock (owner publishes)*
 
-*Figure 4.28: Saved notes*
+![Owner approves or declines a request](wireframes/png/44_collab-request-notification.png)
 
-	The Saved screen implements UC13 and FR14. Bookmarked notes are shown as cards in the order they were saved, each with a control to remove it. Notes that have since been deleted or made private are omitted, as specified in the exception flow of UC13.
+*Figure 4.38: Owner approves or declines a request*
 
-![Report dialog](wireframes/png/16_report_dialog.png)
+## 4.4.4 Slide editor screens
 
-*Figure 4.29: Report note dialog*
+	The editor follows the Canva layout: a tool rail, a panel for templates, elements, text, uploads, photos and music, the slide on a workspace, and thumbnails with page notes below (UC05, FR8, FR17). Publishing asks for visibility (Public, Friends only or Private draft), module and hashtags, and drafts can be continued, published, shared, duplicated or deleted (UC06, UC07).
 
-	The report dialog (UC12) lists the reasons available to the reporter and an optional details field. Plagiarism and copyright violation appear only for lecturers, reflecting the lecturer deliverable in Section 1.6.4; the wireframe shows them labelled for review purposes. Submission places the report in the administrator queue in Figure 4.36.
+![Editor: templates on an empty note](wireframes/png/19_editor-templates.png)
 
-![Super Like confirmation](wireframes/png/17_superlike_dialog.png)
+*Figure 4.39: Editor: templates on an empty note*
 
-*Figure 4.30: Super Like confirmation (lecturer)*
+![Editor: text selected, curated fonts](wireframes/png/20_editor-text.png)
 
-	Super Like requires confirmation because it is the most influential action in the ranking formula (UC19). The dialog explains its consequences in one sentence, namely the verified frame, the lecturer's name and a higher position in feeds, and accepts an optional review remark that is shown with the verification.
+*Figure 4.40: Editor: text selected, curated fonts*
 
-## 4.4.4 Messaging screens
+![Editor: photos and image tools](wireframes/png/21_editor-photos.png)
 
-![Messages](wireframes/png/18_messages.png)
+*Figure 4.41: Editor: photos and image tools*
 
-*Figure 4.31: Messages (conversation)*
+![Editor: background music](wireframes/png/22_editor-music.png)
 
-	The Messages screen (UC17) lists conversations on the left and the selected conversation on the right. The first item in this conversation is the note card attached when the conversation started from a note, which is the visible form of post-anchored messaging (FR7). The Attach note control lets either participant add further notes as the discussion continues.
+*Figure 4.42: Editor: background music*
 
-![Message author dialog](wireframes/png/19_message_author.png)
+![Editor: elements, shapes and slide size](wireframes/png/23_editor-elements.png)
 
-*Figure 4.32: Message author from a note*
+*Figure 4.43: Editor: elements, shapes and slide size*
 
-	Selecting Message author on a note opens this dialog (UC15). The note card is attached automatically, and when the users are not contacts the dialog states that the message will be delivered as a request once accepted, so that the approval rule of FR6 is explained at the moment it applies rather than discovered afterwards.
+![Editor: uploads and page notes](wireframes/png/24_editor-uploads.png)
 
-![Message requests](wireframes/png/20_message_requests.png)
+*Figure 4.44: Editor: uploads and page notes*
 
-*Figure 4.33: Message requests*
+![Slide editor (mobile)](wireframes/png/25_editor-mobile.png)
 
-	Pending requests from non-contacts are listed separately from conversations (UC16). Each shows the sender, the attached note and the first message, so the recipient can judge the request from its academic context. Accept and Decline are given equal weight, and the screen states that senders cannot see whether their request has been read.
+*Figure 4.45: Slide editor (mobile)*
 
-![New group chat](wireframes/png/21_new_group.png)
+![Publish dialog](wireframes/png/26_publish-dialog.png)
 
-*Figure 4.34: Create group chat*
+*Figure 4.46: Publish dialog*
 
-	The group creation dialog (UC18, FR13) requires a group name and at least two contacts selected from a searchable list. Restricting membership to contacts keeps the approval rule of FR6 intact, since a user cannot be added to a conversation with someone who has not accepted them.
+![Drafts](wireframes/png/30_drafts.png)
 
-![Group chat](wireframes/png/22_group_chat.png)
+*Figure 4.47: Drafts*
 
-*Figure 4.35: Group chat with settings*
+## 4.4.5 Profile and blocking screens
 
-	A group conversation behaves like a direct conversation, including attached note cards. The settings panel lets the owner rename the group and add or remove members, and lets any member leave, matching the alternative processes of UC18.
+	Profiles show counts, a pinned note, visibility labels on tiles and a Friends state between mutual followers (UC04, UC17). Blocking starts from a profile's More menu with a confirmation that lists its effects, and a blocked profile hides its notes and offers Unblock.
 
-## 4.4.5 Administration screens
+![My profile](wireframes/png/31_my-profile.png)
 
-![Admin reports](wireframes/png/23_admin_reports.png)
+*Figure 4.48: My profile*
 
-*Figure 4.36: Administrator — reported content*
+![Another user's profile (friends)](wireframes/png/32_user-profile.png)
 
-	The reports queue (UC20) groups open reports by note, with reasons, report count and age, oldest first. Reviewing a report shows the note and reporter details, and every resolution requires a remark. The three outcomes, dismiss, hide note, and hide with account action, correspond to the standard and alternative processes of UC20.
+*Figure 4.49: Another user's profile (friends)*
 
-![Admin users](wireframes/png/24_admin_users.png)
+![Block a user (More menu and confirm)](wireframes/png/33_block-user.png)
 
-*Figure 4.37: Administrator — user management*
+*Figure 4.50: Block a user (More menu and confirm)*
 
-	The users screen (UC21) lists accounts with role, status and number of upheld reports, which gives the administrator the evidence for a decision on the same row. Restrict, suspend, reinstate and delete each require a recorded reason, which is stored in ACCOUNT_ACTION_T.
+![Blocked profile state](wireframes/png/34_blocked-profile.png)
 
-![Lecturer applications](wireframes/png/25_admin_lecturers.png)
+*Figure 4.51: Blocked profile state*
 
-*Figure 4.38: Administrator — lecturer applications*
+![Edit profile dialog](wireframes/png/35_edit-profile.png)
 
-	Lecturer applications (UC22) list each pending account with its email and staff ID for checking against the staff directory. Approving changes the role to lecturer and enables the Super Like action and badge; rejecting keeps a student account. This screen is the control that protects the integrity of the lecturer validation signal in the ranking formula.
+*Figure 4.52: Edit profile dialog*
+
+![Profile (mobile)](wireframes/png/36_profile-mobile.png)
+
+*Figure 4.53: Profile (mobile)*
+
+## 4.4.6 Search screens
+
+	Search mixes people, hashtags, modules and notes under result tabs (UC14, FR4, FR5, FR12). The filter panel narrows notes to lecturer content, a named lecturer, an academic term (shown only once terms exist), a date range and a module (FR15).
+
+![Search results (Top)](wireframes/png/37_search.png)
+
+*Figure 4.54: Search results (Top)*
+
+![Search filters](wireframes/png/38_search-filters.png)
+
+*Figure 4.55: Search filters*
+
+![Search (mobile)](wireframes/png/39_search-mobile.png)
+
+*Figure 4.56: Search (mobile)*
+
+## 4.4.7 Notification and messaging screens
+
+	Notifications group Super Likes, mentions, collaboration requests, follows, "edited since verification" alerts and system notices, and the phone inbox combines them with chats (UC16, R8). Chat starts from a shared note card (FR7); it supports message requests from non-friends, groups, quoted replies, deleting one's own messages, read receipts, a typing indicator and image messages (UC15 to UC18, FR6, FR13).
+
+![Notifications drawer](wireframes/png/43_notifications.png)
+
+*Figure 4.57: Notifications drawer*
+
+![Inbox (mobile)](wireframes/png/45_inbox-mobile.png)
+
+*Figure 4.58: Inbox (mobile)*
+
+![Post-anchored chat](wireframes/png/46_messages.png)
+
+*Figure 4.59: Post-anchored chat*
+
+![Chat: reply, delete, Seen, typing, image](wireframes/png/47_chat-details.png)
+
+*Figure 4.60: Chat: reply, delete, Seen, typing, image*
+
+![Message request (recipient)](wireframes/png/48_message-request.png)
+
+*Figure 4.61: Message request (recipient)*
+
+![New group dialog](wireframes/png/49_new-group.png)
+
+*Figure 4.62: New group dialog*
+
+![Group chat with details](wireframes/png/50_group-chat.png)
+
+*Figure 4.63: Group chat with details*
+
+![Chat (mobile)](wireframes/png/51_chat-mobile.png)
+
+*Figure 4.64: Chat (mobile)*
+
+## 4.4.8 Administration screens
+
+	Administrators work through the report queue with a required resolution remark, suspend or restrict users, approve or reject lecturer applications, and maintain the module catalogue (UC20 to UC22). The Terms page adds academic terms with start and end dates; its empty state explains that the search term filter appears once a term exists (FR15).
+
+![Admin: report queue](wireframes/png/52_admin-reports.png)
+
+*Figure 4.65: Admin: report queue*
+
+![Admin: users and suspension](wireframes/png/53_admin-users.png)
+
+*Figure 4.66: Admin: users and suspension*
+
+![Admin: lecturer applications](wireframes/png/54_admin-lecturers.png)
+
+*Figure 4.67: Admin: lecturer applications*
+
+![Admin: module catalogue](wireframes/png/55_admin-modules.png)
+
+*Figure 4.68: Admin: module catalogue*
+
+![Admin: academic terms](wireframes/png/56_admin-terms.png)
+
+*Figure 4.69: Admin: academic terms*
+
+![Admin: terms, empty state](wireframes/png/57_admin-terms-empty.png)
+
+*Figure 4.70: Admin: terms, empty state*
 
 # 4.5 Test Case Preparation
 
