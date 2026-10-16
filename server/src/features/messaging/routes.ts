@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { parseKeyset } from '../../lib/keyset';
 import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { me, requireActive, requireAuth } from '../auth/middleware';
+import { notify } from '../notifications/service';
 import { MESSAGING } from './config';
 import * as repo from './repository';
 import { convRoom, emit, joinConversation, leaveConversation, userRoom } from './socket';
@@ -102,6 +103,7 @@ messagingRouter.post('/messages', requireAuth, requireActive, async (req, res) =
   if (typeof out === 'string') return refuse(res, out);
   if (out.kind === 'request') {
     emit(userRoom(input.toUserId), 'request:new', { request: await repo.getRequest(out.requestId, input.toUserId) });
+    await notify({ type: 'message_request', actorId: sender, messageRequestId: out.requestId }, [input.toUserId]);
     return res.status(202).json({ request: { id: out.requestId, status: 'pending' } });
   }
   if (out.created) joinConversation([sender, input.toUserId], out.conversationId);

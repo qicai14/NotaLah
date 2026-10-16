@@ -5,6 +5,7 @@ import { countDrafts, listNotesByAuthor } from '../notes/repository';
 import { bodyOrEmpty, idParam, issueMap } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { programmeExists } from '../modules/repository';
+import { notify } from '../notifications/service';
 import { block, findProfile, follow, getFollowState, listBlocks, listFollows, unblock, unfollow, updateProfile } from './repository';
 
 export const usersRouter = Router();
@@ -71,6 +72,7 @@ usersRouter.post('/:id/follow', requireAuth, requireActive, async (req, res) => 
   if (target === me(req).id) return res.status(400).json({ error: 'You cannot follow yourself' });
   const out = await follow(me(req).id, target);
   if (out === 'not_found') return res.status(404).json({ error: 'User not found' });
+  if (out === 'created') await notify({ type: 'follow', actorId: me(req).id }, [target]);
   res.status(out === 'created' ? 201 : 200).json(await getFollowState(me(req).id, target));
 });
 

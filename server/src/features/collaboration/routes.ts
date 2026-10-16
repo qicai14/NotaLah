@@ -9,6 +9,7 @@ import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/
 import { guestReadLimiter } from '../auth/rateLimit';
 import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
 import { isBlocked } from '../users/repository';
+import { notify } from '../notifications/service';
 import { COLLABORATION } from './config';
 import * as repo from './repository';
 
@@ -122,6 +123,7 @@ collaborationRouter.post('/notes/:id/requests', requireAuth, requireActive, asyn
   if (!message.success) return res.status(400).json({ error: 'Validation failed', errors: { message: message.error.issues[0].message } });
   try {
     const id = await repo.createRequest(Number(req.params.id), me(req).id, message.data || null);
+    await notify({ type: 'collab_request', actorId: me(req).id, noteId: Number(req.params.id), collabRequestId: id }, [meta.authorId]);
     res.status(201).json({ id, status: 'pending' });
   } catch (err) {
     if (isUniqueViolation(err)) return res.status(409).json({ error: 'You already asked to collaborate on this note' });
@@ -142,9 +144,12 @@ collaborationRouter.post('/notes/:id/requests/:requestId', requireAuth, requireA
     return res.status(400).json({ error: 'Validation failed', errors: { [String(parsed.error.issues[0].path[0])]: parsed.error.issues[0].message } });
   }
   const { decision, role } = parsed.data;
-  const out = await repo.decideRequest(Number(req.params.id), Number(req.params.requestId), decision === 'approve', role, meta.authorId);
+  const [noteId, requestId] = [Number(req.params.id), Number(req.params.requestId)];
+  const out = await repo.decideRequest(noteId, requestId, decision === 'approve', role, meta.authorId);
   if (out === 'not_found') return res.status(404).json({ error: 'Request not found' });
   if (out === 'decided') return res.status(409).json({ error: 'This request was already decided' });
+  const type = decision === 'approve' ? 'collab_approved' : 'collab_declined';
+  await notify({ type, actorId: me(req).id, noteId, collabRequestId: requestId }, [out.requesterId]);
   res.json({ status: decision === 'approve' ? 'approved' : 'declined', ...(decision === 'approve' ? { role } : {}) });
 });
 

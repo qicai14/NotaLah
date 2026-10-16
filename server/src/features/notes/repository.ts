@@ -31,7 +31,7 @@ export const CREDITED_EDITOR = `(c.clb_role = 'edit' AND c.clb_edited_at IS NOT 
 const MY_ROLE = `CASE WHEN p.pst_usr_id = $1 THEN 'owner' ELSE ${COLLAB_ROLE} END`;
 
 /** SQL: viewer $1 may read post p, as anyone it is VISIBLE to or as a collaborator (R30). */
-const READABLE = `(${VISIBLE} OR ${COLLAB_ROLE} IS NOT NULL)`;
+export const READABLE = `(${VISIBLE} OR ${COLLAB_ROLE} IS NOT NULL)`;
 
 /** VISIBLE, or any published post for an admin, so a suspended author's notes stay reviewable on their profile and detail (D47); the feed keeps plain VISIBLE. */
 const VISIBLE_OR_ADMIN = `(${VISIBLE} OR (p.pst_status = 'published' AND ${viewerIsAdmin('$1')}))`;

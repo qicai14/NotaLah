@@ -8,6 +8,8 @@ import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import * as repo from './repository';
 import { disconnectUser } from '../messaging/socket';
+import { noteAuthor } from '../notifications/repository';
+import { notify } from '../notifications/service';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
@@ -30,6 +32,7 @@ async function decide(req: Request<{ userId: string }>, res: Response, approve: 
     res.status(404).json({ error: 'No pending lecturer application for this user' });
     return;
   }
+  await notify({ type: approve ? 'lecturer_approved' : 'lecturer_rejected', actorId: null }, [userId]);
   res.json({ user });
 }
 
@@ -66,6 +69,8 @@ adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   if (remark === undefined) return;
   const resolved = await repo.resolveReports(Number(req.params.noteId), me(req).id, outcome, remark);
   if (resolved === 0) return res.status(404).json({ error: 'No open reports for this note' });
+  const noteId = Number(req.params.noteId);
+  if (outcome === 'hide') await notify({ type: 'note_hidden', actorId: null, noteId }, () => noteAuthor(noteId));
   res.json({ outcome, resolved });
 });
 

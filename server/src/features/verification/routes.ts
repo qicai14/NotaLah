@@ -4,6 +4,7 @@ import { idParam } from '../../lib/validation';
 import { requireActive, requireAuth, requireRole, me } from '../auth/middleware';
 import { getTarget } from '../engagement/repository';
 import { isApprovedLecturer } from '../users/repository';
+import { notify } from '../notifications/service';
 import * as repo from './repository';
 
 /** Mounted at /api before the notes router. Lecturer-only, never admin (D19). */
@@ -28,6 +29,7 @@ verificationRouter.post('/notes/:id/verify', ...lecturerOnly, requireActive, asy
   if (!parsed.success) return res.status(400).json({ error: 'Validation failed', errors: { remark: parsed.error.issues[0].message } });
   if (t.authorId === me(req).id || t.isEditor) return res.status(409).json({ error: 'Cannot verify own note' });
   const { added, verification } = await repo.addVerification(id, me(req).id, parsed.data || null);
+  if (added) await notify({ type: 'super_like', actorId: me(req).id, noteId: id }, [t.authorId]);
   res.status(added ? 201 : 200).json(verification);
 });
 
