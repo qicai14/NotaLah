@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
@@ -21,9 +22,16 @@ function MobileTopBar() {
       {user ? (
         <span className="size-10" aria-hidden="true" />
       ) : (
-        <Button asChild size="sm">
-          <Link to="/login">Log in</Link>
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/search" aria-label="Search">
+              <Search aria-hidden="true" className="size-5" />
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/login">Log in</Link>
+          </Button>
+        </div>
       )}
     </header>
   );
