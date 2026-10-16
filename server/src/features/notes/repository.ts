@@ -34,7 +34,7 @@ const MY_ROLE = `CASE WHEN p.pst_usr_id = $1 THEN 'owner' ELSE ${COLLAB_ROLE} EN
 export const READABLE = `(${VISIBLE} OR ${COLLAB_ROLE} IS NOT NULL)`;
 
 /** VISIBLE, or any published post for an admin, so a suspended author's notes stay reviewable on their profile and detail (D47); the feed keeps plain VISIBLE. */
-const VISIBLE_OR_ADMIN = `(${VISIBLE} OR (p.pst_status = 'published' AND ${viewerIsAdmin('$1')}))`;
+export const VISIBLE_OR_ADMIN = `(${VISIBLE} OR (p.pst_status = 'published' AND ${viewerIsAdmin('$1')}))`;
 
 /** The note's hashtag names, alphabetical (alias p = POST_T). */
 export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh_name)

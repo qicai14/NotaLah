@@ -117,6 +117,20 @@ describe('Engagement', () => {
     const all: Shown[] = (await get(admin, url)).body.comments;
     expect(all.map((c) => [c.body, c.pinned])).toEqual([['lecturer note', true], ['lonely', true], ['reader top', false]]);
     expect(all[2].replies.map((r) => r.body)).toEqual(['suspended reply']);
+
+    const owner = await insertUser();
+    const q = await insertNote(owner);
+    await comment(reader, q, { body: 'on a suspended note' });
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [owner]);
+    const qUrl = `/api/notes/${q}/comments`;
+    const seen = await get(admin, qUrl);
+    expect(seen.status).toBe(200);
+    expect(seen.body.comments.map((c: Shown) => [c.body, c.author])).toEqual([['on a suspended note', expect.anything()]]);
+    expect((await get(reader, qUrl)).status).toBe(404);
+    expect((await request(app).get(qUrl)).status).toBe(404);
+    expect((await post(admin, `/api/notes/${q}/like`)).status).toBe(404);
+    expect((await comment(admin, q, { body: 'x' })).status).toBe(404);
+    expect((await comment(admin, q, { body: 'x', parentId: seen.body.comments[0].id })).status).toBe(404);
   });
 
   it('ENG-TC16: the author may like their own note; own comments are not counted in engagement', async () => {
