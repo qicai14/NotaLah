@@ -28,6 +28,16 @@ export async function pushUnreadCount(userId: number) {
   return unreadCount;
 }
 
+/** Of `ids`, the users who can see the published note now (`getTarget`: visibility, friends-only, blocks). */
+async function canSee(noteId: number, ids: number[]): Promise<number[]> {
+  const seen = await Promise.all(ids.map(async (id) => ((await getTarget(noteId, id)) ? id : null)));
+  return seen.filter((id) => id !== null);
+}
+
+/** Lecturers to tell that an edit voided their Super Like: `voidedVerifiers` who can still see the note. */
+export const notifyVoidedVerifiers = (noteId: number, editorId: number) =>
+  notify({ type: 'edited_since_verification', actorId: editorId, noteId }, async () => canSee(noteId, await repo.voidedVerifiers(noteId)));
+
 /**
  * Mentions in a new comment (PLAN R8): the ids the client's mention picker sent, kept only when the text names them and
  * they are in the allowed set (`mentionable`) and can see the note.
@@ -37,9 +47,7 @@ export const notifyMentions = (
 ) =>
   notify({ type: 'mention', actorId: c.actorId, noteId: c.noteId, commentId: c.commentId }, async () => {
     if (c.mentions.length === 0) return [];
-    const allowed = await repo.mentionable({
+    return canSee(c.noteId, await repo.mentionable({
       noteId: c.noteId, rootId: c.parentId ?? c.commentId, actorId: c.actorId, body: c.body, candidates: c.mentions,
-    });
-    const seen = await Promise.all(allowed.map(async (id) => ((await getTarget(c.noteId, id)) ? id : null)));
-    return seen.filter((id) => id !== null);
+    }));
   });

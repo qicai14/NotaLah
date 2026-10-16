@@ -316,7 +316,8 @@ export async function updateProfile(
 }
 
 /**
- * Blocks a user who is not deleted and not an admin (D49), and in the same transaction removes follows both ways, pending
+ * Blocks a user who is not deleted and not an admin (D49), and in the same transaction removes follows both ways and
+ * their follow notifications (D51), pending
  * collaboration requests either user made on the other's notes, and edit locks either holds on the other's notes.
  * 'exists' when already blocked. Both users are locked in id order, which serialises it against follow().
  */
@@ -335,6 +336,11 @@ export function block(blockerId: number, blockedId: number): Promise<'created' |
     );
     await c.query(
       `DELETE FROM "FOLLOW_T" WHERE (fol_follower_id = $1 AND fol_followee_id = $2) OR (fol_follower_id = $2 AND fol_followee_id = $1)`,
+      [blockerId, blockedId],
+    );
+    await c.query(
+      `DELETE FROM "NOTIFICATION_T" WHERE ntf_type = 'follow'
+         AND ((ntf_usr_id = $1 AND ntf_actor_id = $2) OR (ntf_usr_id = $2 AND ntf_actor_id = $1))`,
       [blockerId, blockedId],
     );
     await c.query(

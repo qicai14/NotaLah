@@ -46,15 +46,17 @@ export async function insertNotifications(n: NewNotification, recipientIds: numb
 
 /**
  * Of the `candidates` a comment names, those it may notify (PLAN R8): the comment's text must contain "@" plus their
- * display name, and they must be the note's author, have commented in the same thread (root comment or its replies) or
+ * display name followed by a non-word character, and they must be the note's author, have commented in the same thread (root comment or its replies) or
  * be a friend of the commenter (D38). Visibility of the note is checked by the caller.
  */
 export async function mentionable(
   { noteId, rootId, actorId, body, candidates }: { noteId: number; rootId: number; actorId: number; body: string; candidates: number[] },
 ): Promise<number[]> {
   const { rows } = await pool.query<{ id: number }>(
-    `SELECT u.usr_id AS "id" FROM "USER_T" u JOIN "POST_T" p ON p.pst_id = $1
-     WHERE u.usr_id = ANY($4::INT[]) AND POSITION('@' || u.usr_display_name IN $5) > 0
+    // The name's punctuation is escaped for the regex; a letter, digit or _ right after it means a longer name.
+    String.raw`SELECT u.usr_id AS "id" FROM "USER_T" u JOIN "POST_T" p ON p.pst_id = $1
+     WHERE u.usr_id = ANY($4::INT[])
+       AND ($5 || ' ') ~ ('@' || regexp_replace(u.usr_display_name, '([^[:alnum:][:space:]])', '\\\1', 'g') || '[^[:alnum:]_]')
        AND (u.usr_id = p.pst_usr_id
             OR EXISTS (SELECT 1 FROM "COMMENT_T" t
                        WHERE t.cmt_pst_id = $1 AND t.cmt_usr_id = u.usr_id AND NOT t.cmt_is_deleted
@@ -65,14 +67,10 @@ export async function mentionable(
   return rows.map((r) => r.id);
 }
 
-export async function noteAuthor(noteId: number): Promise<number[]> {
-  const { rows } = await pool.query<{ id: number }>(`SELECT pst_usr_id AS "id" FROM "POST_T" WHERE pst_id = $1`, [noteId]);
-  return rows.map((r) => r.id);
-}
-
 /**
  * Lecturers whose Super Like on the note is voided by a content edit (D46) and who have not been told since they last
  * verified it. Calling it after every save is idempotent: a lecturer is told once per voiding until they re-confirm.
+ * Whether they can still see the note is checked by the caller.
  */
 export async function voidedVerifiers(noteId: number): Promise<number[]> {
   const { rows } = await pool.query<{ id: number }>(

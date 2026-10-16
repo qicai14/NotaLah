@@ -13,7 +13,7 @@ Types and where they are raised:
 
 | Type | Raised by | Recipient |
 | --- | --- | --- |
-| `mention` | `POST /api/notes/:id/comments` with `mentions` | named users who are the note's author, in the same thread, or the commenter's friends, and can see the note |
+| `mention` | `POST /api/notes/:id/comments` with `mentions` | users named as "@" + display name (whole name) who are the note's author, in the same thread, or the commenter's friends, and can see the note |
 | `super_like` | `POST /api/notes/:id/verify` (new Super Like) | note author |
 | `follow` | `POST /api/users/:id/follow` (new follow) | followee |
 | `lecturer_approved`, `lecturer_rejected` | admin decision (UC22) | applicant; no actor |
@@ -21,10 +21,10 @@ Types and where they are raised:
 | `message_request` | `POST /api/messages` that becomes a request | recipient |
 | `collab_request` | `POST /api/notes/:id/requests` | note owner |
 | `collab_approved`, `collab_declined` | owner decides a request | requester |
-| `edited_since_verification` | `PUT /api/notes/:id` that voids Super Likes (D46) | each voided lecturer, once until they re-confirm |
+| `edited_since_verification` | `PUT /api/notes/:id` that voids Super Likes (D46) | each voided lecturer who can still see the note, once until they re-confirm |
 
 Delivery rules (in one INSERT): never the actor, only active or restricted recipients, nobody in a block with the actor,
-and no repeat of an identical notification inside its type's dedupe window. Listing and counts also hide notifications
+and no repeat of an identical notification inside its type's dedupe window. A block deletes follow notifications between the pair. Listing and counts also hide notifications
 whose actor is now suspended, deleted or in a block with the recipient.
 
 Endpoints:

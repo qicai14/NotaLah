@@ -67,9 +67,12 @@ export async function getOpenReportGroup(noteId: number): Promise<ReportGroup | 
 
 /**
  * Resolves every open report on the note in one transaction: 'dismiss' marks them dismissed, 'hide' marks them upheld
- * and hides the note if it is published. Returns the number resolved (0 = the note had no open reports or was deleted).
+ * and hides the note if it is published. Returns the number resolved (0 = the note had no open reports or was deleted)
+ * and, when this call hid the note, its author.
  */
-export async function resolveReports(noteId: number, adminId: number, outcome: 'dismiss' | 'hide', remark: string): Promise<number> {
+export async function resolveReports(
+  noteId: number, adminId: number, outcome: 'dismiss' | 'hide', remark: string,
+): Promise<{ resolved: number; hiddenAuthorId: number | null }> {
   return inTransaction(async (client) => {
     const { rowCount } = await client.query(
       `UPDATE "REPORT_T"
@@ -78,10 +81,12 @@ export async function resolveReports(noteId: number, adminId: number, outcome: '
          AND EXISTS (SELECT 1 FROM "POST_T" WHERE pst_id = $1 AND pst_status <> 'deleted')`,
       [noteId, outcome === 'hide' ? 'upheld' : 'dismissed', adminId, remark],
     );
-    if (rowCount && outcome === 'hide') {
-      await client.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1 AND pst_status = 'published'`, [noteId]);
-    }
-    return rowCount ?? 0;
+    if (!rowCount || outcome !== 'hide') return { resolved: rowCount ?? 0, hiddenAuthorId: null };
+    const { rows } = await client.query<{ authorId: number }>(
+      `UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1 AND pst_status = 'published' RETURNING pst_usr_id AS "authorId"`,
+      [noteId],
+    );
+    return { resolved: rowCount, hiddenAuthorId: rows[0]?.authorId ?? null };
   });
 }
 

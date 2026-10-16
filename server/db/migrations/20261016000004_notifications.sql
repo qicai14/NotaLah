@@ -16,6 +16,7 @@ CREATE TABLE "NOTIFICATION_T" (
 );
 CREATE INDEX notification_recipient_idx ON "NOTIFICATION_T" (ntf_usr_id, ntf_created_at DESC, ntf_id DESC);
 CREATE INDEX notification_unread_idx ON "NOTIFICATION_T" (ntf_usr_id) WHERE ntf_read_at IS NULL;
+CREATE INDEX notification_collab_request_idx ON "NOTIFICATION_T" (ntf_crq_id) WHERE ntf_crq_id IS NOT NULL;
 
 -- migrate:down
 DROP TABLE "NOTIFICATION_T";

@@ -8,7 +8,6 @@ import * as modules from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import * as repo from './repository';
 import { disconnectUser } from '../messaging/socket';
-import { noteAuthor } from '../notifications/repository';
 import { notify } from '../notifications/service';
 
 export const adminRouter = Router();
@@ -67,10 +66,10 @@ adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   if (outcome !== 'dismiss' && outcome !== 'hide') return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
   const remark = requiredText(res, req.body?.remark, 'Remark');
   if (remark === undefined) return;
-  const resolved = await repo.resolveReports(Number(req.params.noteId), me(req).id, outcome, remark);
-  if (resolved === 0) return res.status(404).json({ error: 'No open reports for this note' });
   const noteId = Number(req.params.noteId);
-  if (outcome === 'hide') await notify({ type: 'note_hidden', actorId: null, noteId }, () => noteAuthor(noteId));
+  const { resolved, hiddenAuthorId } = await repo.resolveReports(noteId, me(req).id, outcome, remark);
+  if (resolved === 0) return res.status(404).json({ error: 'No open reports for this note' });
+  if (hiddenAuthorId !== null) await notify({ type: 'note_hidden', actorId: null, noteId }, [hiddenAuthorId]);
   res.json({ outcome, resolved });
 });
 

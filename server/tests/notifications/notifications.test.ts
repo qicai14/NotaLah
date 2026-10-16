@@ -78,16 +78,23 @@ describe('Notification triggers', () => {
     for (const who of [stranger, otherThread, unnamed, commenter]) expect(await types(who)).toEqual([]);
   });
 
-  it('NTF-TC2: mentions skip users who cannot see the note, and bad mention lists are refused', async () => {
+  it('NTF-TC2: mentions skip users who cannot see the note or whose name is only a prefix; bad lists are refused', async () => {
     const author = await insertUser({ displayName: 'Ann' });
     const commenter = await insertUser({ displayName: 'Ben' });
     const outsider = await insertUser({ displayName: 'Cy' });
+    const dotted = await insertUser({ displayName: 'J.R (TA)' });
     await befriend(author, commenter);
     await befriend(commenter, outsider); // a friend of the commenter, not of the author
+    await befriend(author, dotted);
+    await befriend(commenter, dotted);
     const note = await insertNote(author, { visibility: 'contacts' });
     await api.post(commenter, `/api/notes/${note}/comments`, { body: '@Ann @Cy look', mentions: [author, outsider] }).expect(201);
     expect(await types(author)).toEqual(['mention']);
     expect(await types(outsider)).toEqual([]);
+
+    await api.post(commenter, `/api/notes/${note}/comments`, { body: '@Annabel and @J.R (TA)', mentions: [author, dotted] }).expect(201);
+    expect(await types(author)).toEqual(['mention']); // "@Annabel" does not name Ann
+    expect(await types(dotted)).toEqual(['mention']);
 
     for (const mentions of ['1', [0], [1.5], Array.from({ length: 11 }, (_, i) => i + 1)]) {
       expect((await api.post(commenter, `/api/notes/${note}/comments`, { body: 'x', mentions })).status).toBe(400);
@@ -167,7 +174,9 @@ describe('Notification triggers', () => {
     await api.post(owner, `/api/notes/${note}/requests/${r1}`, { decision: 'approve' }).expect(200);
     await api.post(owner, `/api/notes/${note}/requests/${r2}`, { decision: 'decline' }).expect(200);
     expect(await inbox(asker)).toMatchObject([{ type: 'collab_approved', actor: { id: owner }, requestId: r1, requestStatus: 'approved' }]);
-    expect(await inbox(second)).toMatchObject([{ type: 'collab_declined', requestId: r2, requestStatus: 'declined' }]);
+    expect(await inbox(second)).toMatchObject([{ type: 'collab_declined', note: { id: note }, requestId: r2, requestStatus: 'declined' }]);
+    await pool.query(`UPDATE "POST_T" SET pst_visibility = 'contacts' WHERE pst_id = $1`, [note]);
+    expect(await inbox(second)).toMatchObject([{ type: 'collab_declined', note: null, requestId: r2 }]);
   });
 
   it('NTF-TC9: a content edit tells each voided verifier once until they re-confirm', async () => {
@@ -181,10 +190,24 @@ describe('Notification triggers', () => {
     await api.put(owner, `/api/notes/${note}`, await editBody(owner, note, { title: 'Edited' })).expect(200);
     await api.put(owner, `/api/notes/${note}`, await editBody(owner, note, { title: 'Edited twice' })).expect(200);
     for (const l of [l1, l2]) expect(await inbox(l)).toMatchObject([{ type: 'edited_since_verification', actor: { id: owner }, note: { id: note } }]);
+    await pool.query(`UPDATE "NOTIFICATION_T" SET ntf_created_at = ntf_created_at - INTERVAL '2 minutes' WHERE ntf_usr_id = $1`, [l1]); // past the 1-minute window
     await api.post(l1, `/api/notes/${note}/verify`).expect(200); // re-confirms the latest version
     await api.put(owner, `/api/notes/${note}`, await editBody(owner, note, { title: 'Edited again' })).expect(200);
     expect(await types(l1)).toEqual(['edited_since_verification', 'edited_since_verification']);
     expect(await types(l2)).toEqual(['edited_since_verification']);
+  });
+
+  it('NTF-TC18: no edit notice to a lecturer who can no longer see the note', async () => {
+    const owner = await insertUser();
+    const blocked = await lecturer();
+    const outside = await lecturer();
+    const note = await insertNote(owner);
+    for (const l of [blocked, outside]) await api.post(l, `/api/notes/${note}/verify`).expect(201);
+    await api.post(owner, `/api/users/${blocked}/block`).expect(201);
+    const body = await editBody(owner, note, { title: 'Edited', visibility: 'contacts' });
+    await api.put(owner, `/api/notes/${note}`, body).expect(200);
+    expect(await types(blocked)).toEqual([]);
+    expect(await types(outside)).toEqual([]);
   });
 });
 
@@ -197,20 +220,20 @@ describe('Delivery rules', () => {
     expect(await types(a)).toEqual([]);
   });
 
-  it('NTF-TC11: blocks stop new notifications and hide earlier ones', async () => {
+  it('NTF-TC11: blocks stop new notifications, delete follow ones and hide the rest', async () => {
     const a = await insertUser({ displayName: 'Ann' });
     const b = await insertUser({ displayName: 'Ben' });
     const c = await insertUser({ displayName: 'Cy' });
     await api.post(a, `/api/users/${b}/follow`).expect(201);
     await api.post(c, `/api/users/${b}/follow`).expect(201);
-    expect(await unread(b)).toMatchObject({ total: 2, byType: { follow: 2 } });
+    await insertNotifications({ type: 'message_request', actorId: a }, [b]);
+    expect(await unread(b)).toMatchObject({ total: 3, byType: { follow: 2, message_request: 1 } });
     await api.post(b, `/api/users/${a}/block`).expect(201);
     expect((await inbox(b)).map((n) => n.actor?.id)).toEqual([c]);
-    expect((await unread(b)).total).toBe(1);
     expect(await insertNotifications({ type: 'follow', actorId: a }, [b])).toEqual([]);
     expect(await insertNotifications({ type: 'follow', actorId: b }, [a])).toEqual([]);
     await api.del(b, `/api/users/${a}/block`).expect(200);
-    expect((await unread(b)).total).toBe(2);
+    expect(await unread(b)).toMatchObject({ total: 2, byType: { follow: 1, message_request: 1 } });
   });
 
   it('NTF-TC12: suspended and deleted recipients get nothing; a suspended actor\'s notifications are hidden', async () => {
