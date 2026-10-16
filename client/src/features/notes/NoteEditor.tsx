@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Field } from '../../components/Field';
 import { api, ApiError, errorText } from '../../lib/api';
+import { htmlToSlide, slideToHtml } from '../../lib/slides';
 import { useFetch } from '../../lib/useFetch';
 import type { ModuleRef, Note } from '../../types';
 import { useAuth } from '../auth/AuthContext';
@@ -50,7 +51,9 @@ export default function NoteEditor() {
   const modules = useFetch<{ modules: ModuleRef[] }>('/modules');
 
   const [title, setTitle] = useState('');
-  const [template, setTemplate] = useState('plain');
+  const [theme, setTheme] = useState('plain');
+  // shortcut: the aspect and music of a loaded note are resent untouched, as this editor cannot change them; R21c can.
+  const kept = useRef<Pick<Note, 'aspect' | 'music'>>({ aspect: '4:5', music: null });
   const [moduleId, setModuleId] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [slides, setSlidesState] = useState<string[]>(['']);
@@ -92,12 +95,13 @@ export default function NoteEditor() {
     loaded.current = true;
     if (seed) navigate(location.pathname, { replace: true, state: null }); // a reload or Back must refetch, not reseed from this first save
     setTitle(note.title);
-    setTemplate(note.template);
+    setTheme(note.theme);
+    kept.current = { aspect: note.aspect, music: note.music };
     setModuleId(note.module ? String(note.module.id) : '');
     setHashtags(note.hashtags);
     setStatus(note.status === 'published' ? 'published' : 'draft');
     setVisibility(note.visibility);
-    const s = note.slides.length ? note.slides.map((x) => x.content) : [''];
+    const s = note.slides.length ? note.slides.map(slideToHtml) : [''];
     setSlides(s);
     setActive(0);
     editor.commands.setContent(s[0], { emitUpdate: false });
@@ -138,10 +142,16 @@ export default function NoteEditor() {
     setMessage(null);
     const body = {
       title,
-      template,
+      theme,
+      aspect: kept.current.aspect,
+      music: kept.current.music && {
+        provider: 'deezer',
+        trackId: kept.current.music.trackId,
+        volume: kept.current.music.volume,
+      },
       moduleId: moduleId ? Number(moduleId) : null,
       hashtags,
-      slides: slidesRef.current,
+      slides: slidesRef.current.map(htmlToSlide),
       status: publishing ? 'published' : 'draft',
       visibility: publishing ? choice : null,
     };
@@ -223,13 +233,13 @@ export default function NoteEditor() {
             )}
           </div>
           <div className={card}>
-            <label htmlFor="template" className="text-sm font-medium">
+            <label htmlFor="theme" className="text-sm font-medium">
               Template
             </label>
             <select
-              id="template"
-              value={template}
-              onChange={(e) => setTemplate(e.target.value)}
+              id="theme"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
               className="rounded-md border border-slate-300 bg-white px-3 py-2"
             >
               {TEMPLATES.map(([v, l]) => (

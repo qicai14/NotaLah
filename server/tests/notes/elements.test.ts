@@ -65,7 +65,10 @@ describe('Slide elements (R21a)', () => {
       image(4, 'A diagram'),
       el(5, 'code', { code: 'SELECT 1;', language: 'sql', theme: 'dark', size: 28 }),
       el(6, 'video', { assetId: 7, loop: true }),
-      table([['a', 'b'], ['c', 'd']]),
+      table([
+        ['a', 'b'],
+        ['c', 'd'],
+      ]),
     ];
     const background = { kind: 'gradient', from: '#112233', to: '#445566', angle: 90 };
     const body = draft({ aspect: '9:16', theme: 'lecture', slides: [deck(elements, { background, notes: 'say hi' })] });
@@ -122,7 +125,10 @@ describe('Slide elements (R21a)', () => {
     expect((await rejected(big)).slides).toBe('Slide 1, element 1: Text is too long');
     const notes = { slides: [deck([], { notes: 'n'.repeat(2001) })] };
     expect((await rejected(notes)).slides).toBe('Slide 1: Notes must be at most 2000 characters');
-    const exact = await post(await insertUser(), draft({ slides: [deck(long.slice(0, 4), { notes: 'n'.repeat(2000) })] }));
+    const exact = await post(
+      await insertUser(),
+      draft({ slides: [deck(long.slice(0, 4), { notes: 'n'.repeat(2000) })] }),
+    );
     expect(exact.status).toBe(201);
   });
 
@@ -197,7 +203,9 @@ describe('Slide elements (R21a)', () => {
       const now = await c.query(`SELECT sld_doc FROM "SLIDE_T" WHERE sld_pst_id = $1 ORDER BY sld_position`, [
         created.id,
       ]);
-      const texts = now.rows.map((r) => r.sld_doc.elements.map((e: { type: string; html: string }) => [e.type, e.html]));
+      const texts = now.rows.map((r) =>
+        r.sld_doc.elements.map((e: { type: string; html: string }) => [e.type, e.html]),
+      );
       expect(texts).toEqual(htmls.map((h) => [['text', h]]));
       expect(await searchDoc(c)).toBe(before);
     } finally {

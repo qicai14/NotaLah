@@ -1,6 +1,8 @@
 # NotaLah code (FYP_Project, formerly PARP)
 
-npm workspaces: `client/` (React, Vite, TS, Tailwind v4) and `server/` (Express 5, TS strict, pg, zod).
+npm workspaces: `client/` (React, Vite, TS, Tailwind v4), `server/` (Express 5, TS strict, pg, zod) and `shared/`
+(`@parp/shared`: the zod deck schema, types and limits; ESM, compiled to `shared/dist` by `tsc` before server and client
+typecheck, test and build, and on `npm install`).
 Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Config in root `.env`
 (copy `.env.example`).
 

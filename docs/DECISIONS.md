@@ -1151,3 +1151,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   locally and apt-get in CI and Docker.
 - **Merging:** as on 16 Oct, a PR merges when CI is green and the reviewer reports no blockers; PRs touching uploads
   also get `/security-review`.
+
+## D53 - Slide element schema and notes API (R21a, 17 Oct 2026)
+- **Built:** `shared/` workspace (`@parp/shared`) with the zod deck schema, element types (text, shape, line, image, code, video and
+  the table/text-grid from D43), board and limit constants; migration `20261017000001_slide_elements` (POST_T aspect and music
+  columns, SLIDE_T `sld_doc` JSONB and `sld_notes`, down step rebuilds `sld_content`); notes API takes `theme`, `aspect`,
+  `music` and element slides, sanitises text (adds `u` and a `color: #hex` span), enforces the per-slide limits, builds the
+  search document from text, code, table and alt text, and has a 2 MB body limit on `/api/notes`.
+- **Choices the spec left open:** `Shadow` is `{x, y, blur, color}`; `CodeLang` is a 13-language list; the table element is
+  `{cells: string[][] (1-20 rows, 1-8 columns, 200 characters a cell, equal row length), font, size, color, borderColor, headerRow}`
+  and its text counts towards the 20,000-character slide limit and the search document. A slide is empty (dropped on
+  publish) when it has no element other than blank text boxes. Page notes are returned to the author and to edit
+  collaborators, not only the author, because a co-author's full-replace save would otherwise wipe them.
+- **Deferred:** asset-existence and ownership checks and the `assets` URL map (R22; the map is empty), Deezer title, artist
+  and cover (R9; stored NULL), geometry rounding to 0.1 (editor's job). The old editor and viewer go through
+  `client/src/lib/slides.ts`, which keeps only text elements until R21b/R21c replace them.
+- **Test IDs:** the spec's NOTE-TC26 and NOTE-TC27 clash with the existing drafts and guest tests (`tests/notes/elements.test.ts`
+  reuses the numbers); the Chapter 4 table needs renumbering before these are added to it.
+- **Reversibility:** Moderate: the down migration drops non-text elements, page notes and music.

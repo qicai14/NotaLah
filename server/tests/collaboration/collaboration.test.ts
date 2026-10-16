@@ -361,7 +361,11 @@ describe('Collaboration (R30)', () => {
     expect(await verifiedIn()).toBe(true);
 
     await api
-      .put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { slides: [textSlide('<p>new content</p>')] }))
+      .put(
+        c.editor,
+        `/api/notes/${c.note}`,
+        await editBody(c.owner, c.note, { slides: [textSlide('<p>new content</p>')] }),
+      )
       .expect(200);
     const after = (await api.get(c.stranger, `/api/notes/${c.note}`)).body.note;
     expect(after).toMatchObject({ verified: false, verifiedBy: null, editedSinceVerification: true });

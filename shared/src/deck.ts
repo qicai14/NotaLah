@@ -51,7 +51,12 @@ export const fillSchema = z.discriminatedUnion(
   'kind',
   [
     z.strictObject({ kind: z.literal('color'), color: hexSchema }),
-    z.strictObject({ kind: z.literal('gradient'), from: hexSchema, to: hexSchema, angle: num(0, 360, 'Gradient angle') }),
+    z.strictObject({
+      kind: z.literal('gradient'),
+      from: hexSchema,
+      to: hexSchema,
+      angle: num(0, 360, 'Gradient angle'),
+    }),
     z.strictObject({ kind: z.literal('image'), image: imageSourceSchema, overlay: hexSchema.optional() }),
   ],
   { error: 'Unknown background type' },
@@ -144,9 +149,15 @@ const tableEl = z.strictObject({
   ...base,
   type: z.literal('table'),
   cells: z
-    .array(z.array(text(LIMITS.tableCell, 'Cell')).min(1, 'Table needs a column').max(LIMITS.tableCols, `Maximum ${LIMITS.tableCols} columns`), {
-      error: 'Table cells must be a list of rows',
-    })
+    .array(
+      z
+        .array(text(LIMITS.tableCell, 'Cell'))
+        .min(1, 'Table needs a column')
+        .max(LIMITS.tableCols, `Maximum ${LIMITS.tableCols} columns`),
+      {
+        error: 'Table cells must be a list of rows',
+      },
+    )
     .min(1, 'Table needs a row')
     .max(LIMITS.tableRows, `Maximum ${LIMITS.tableRows} rows`)
     .refine((rows) => rows.every((r) => r.length === rows[0].length), 'Table rows must have the same number of cells'),
@@ -176,7 +187,11 @@ export const slideSchema = z
   })
   .superRefine((s, ctx) => {
     if (count(s.elements, 'image') > LIMITS.imagesPerSlide) {
-      ctx.addIssue({ code: 'custom', path: ['elements'], message: `Maximum ${LIMITS.imagesPerSlide} images per slide` });
+      ctx.addIssue({
+        code: 'custom',
+        path: ['elements'],
+        message: `Maximum ${LIMITS.imagesPerSlide} images per slide`,
+      });
     }
     if (count(s.elements, 'video') > LIMITS.videosPerSlide) {
       ctx.addIssue({ code: 'custom', path: ['elements'], message: `Maximum ${LIMITS.videosPerSlide} video per slide` });

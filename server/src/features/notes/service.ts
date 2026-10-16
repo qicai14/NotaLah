@@ -1,4 +1,13 @@
-import { aspectSchema, LIMITS, musicSchema, slidesSchema, themeSchema, type Aspect, type MusicRef, type Slide } from '@parp/shared';
+import {
+  aspectSchema,
+  LIMITS,
+  musicSchema,
+  slidesSchema,
+  themeSchema,
+  type Aspect,
+  type MusicRef,
+  type Slide,
+} from '@parp/shared';
 import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
@@ -9,7 +18,25 @@ export const MAX_HASHTAGS = LIMITS.hashtags;
 // Mirrors the TipTap nodes the editor can produce (D20) plus underline and a text colour span. Box-level font, size and
 // alignment are typed element props, so colour is the only CSS allowed inside the HTML (R21 spec 2.5).
 const OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ['p', 'h1', 'h2', 'h3', 'strong', 'em', 's', 'u', 'span', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'br', 'hr'],
+  allowedTags: [
+    'p',
+    'h1',
+    'h2',
+    'h3',
+    'strong',
+    'em',
+    's',
+    'u',
+    'span',
+    'code',
+    'pre',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'br',
+    'hr',
+  ],
   allowedAttributes: { ol: ['start'], span: ['style'] }, // TipTap writes start on a continued numbered list
   allowedStyles: { span: { color: [/^#(?:[0-9a-f]{6}|[0-9a-f]{8})$/i] } },
   transformTags: { b: 'strong', i: 'em', strike: 's', del: 's' },
@@ -21,7 +48,13 @@ const plainText = (html: string) => sanitizeHtml(html, { allowedTags: [], allowe
 const isBlank = (slide: Slide) => slide.elements.every((e) => e.type === 'text' && plainText(e.html) === '');
 
 const textChars = (e: Slide['elements'][number]) =>
-  e.type === 'text' ? e.html.length : e.type === 'code' ? e.code.length : e.type === 'table' ? e.cells.flat().join('').length : 0;
+  e.type === 'text'
+    ? e.html.length
+    : e.type === 'code'
+      ? e.code.length
+      : e.type === 'table'
+        ? e.cells.flat().join('').length
+        : 0;
 
 /**
  * Sanitises a slide's text and measures it afterwards (limits apply to what is stored, R21 spec 1.4). Problems are added

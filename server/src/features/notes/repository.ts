@@ -329,8 +329,7 @@ export function replaceNote(
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
     const contentEdited =
-      cur.status === 'published' &&
-      (cur.title !== n.title || !isDeepStrictEqual(cur.slides, n.slides.map(slideDoc)));
+      cur.status === 'published' && (cur.title !== n.title || !isDeepStrictEqual(cur.slides, n.slides.map(slideDoc)));
     await c.query(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_aspect = $5, pst_status = $6, pst_visibility = $7,

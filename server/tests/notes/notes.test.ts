@@ -194,7 +194,11 @@ describe('Notes', () => {
   });
 
   it('NOTE-TC13: more than 30 slides is rejected', async () => {
-    const res = await post(await insertUser(), { title: 'x', status: 'draft', slides: Array(31).fill(textSlide('<p>a</p>')) });
+    const res = await post(await insertUser(), {
+      title: 'x',
+      status: 'draft',
+      slides: Array(31).fill(textSlide('<p>a</p>')),
+    });
     expect(res.status).toBe(400);
     expect(res.body.errors.slides).toBe('Maximum 30 slides');
   });
