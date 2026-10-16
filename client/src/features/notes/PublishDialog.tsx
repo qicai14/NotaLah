@@ -4,7 +4,7 @@ import { Dialog } from '../../components/Dialog';
 export type PublishChoice = 'public' | 'contacts' | 'draft';
 
 const OPTIONS: { value: PublishChoice; title: string; text: string }[] = [
-  { value: 'public', title: 'Public', text: 'Everyone on PARP can see this note.' },
+  { value: 'public', title: 'Public', text: 'Everyone on NotaLah can see this note.' },
   { value: 'contacts', title: 'Contacts only', text: 'Only people in your contacts can see it.' },
   { value: 'draft', title: 'Keep as private draft', text: 'Only you can see it. Publish later.' },
 ];
