@@ -1,5 +1,5 @@
 import { Bookmark, Flag, Heart, type LucideIcon, MessageCircle } from 'lucide-react';
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -70,7 +70,7 @@ export function GuestPromptProvider({ children }: { children: ReactNode }) {
   const onOpenChange = (o: boolean) => !o && setAsk(null);
 
   return (
-    <GuestPromptContext.Provider value={useMemo(() => open, [open])}>
+    <GuestPromptContext.Provider value={open}>
       {children}
       {desktop ? (
         <Dialog open={ask !== null} onOpenChange={onOpenChange}>

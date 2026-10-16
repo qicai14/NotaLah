@@ -10,7 +10,7 @@ import { LeftRail } from './LeftRail';
 import { MoreMenu } from './MoreMenu';
 
 /** Screens that draw edge to edge and bring their own phone header (the feed, a note). */
-export const isFullBleed = (pathname: string) => pathname === '/' || /^\/notes\/\d+$/.test(pathname);
+const isFullBleed = (pathname: string) => pathname === '/' || /^\/notes\/\d+$/.test(pathname);
 
 function MobileTopBar() {
   const { user } = useAuth();
