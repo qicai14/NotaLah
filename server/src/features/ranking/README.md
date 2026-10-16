@@ -12,7 +12,7 @@ Heuristic feed ranking (IR 2.3.4): S = w1·E + w2·R + w3·V + w4·M, scored in 
   fragments) and `getInteractionRows` (the viewer's
   interactions joined to post hashtags inside the interest window).
 
-The feed (`feed/repository.ts` `getFeedPage`) runs four queries per request: the `asOf` cutoff, candidates and
+The feed (`feed/service.ts` `getFeedPage`) runs four queries per request: the `asOf` cutoff, candidates and
 interactions (in parallel), then the full notes of the requested page. Each item carries `score` and
 `components {E, R, V, M}`.
 

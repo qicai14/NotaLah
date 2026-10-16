@@ -2,13 +2,13 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { bearer, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-const putMe = (uid: number, body: object) => request(app).put('/api/users/me').set('Authorization', bearer(uid)).send(body);
-const getUser = (viewer: number, id: number) => request(app).get(`/api/users/${id}`).set('Authorization', bearer(viewer));
+const putMe = (uid: number, body: object) => request(app).put('/api/users/me').set(asUser(uid)).send(body);
+const getUser = (viewer: number, id: number) => request(app).get(`/api/users/${id}`).set(asUser(viewer));
 
 async function addNote(uid: number, title: string, status: string, visibility: string | null) {
   const mod = (await pool.query<{ mod_id: number }>(`SELECT mod_id FROM "MODULE_T" LIMIT 1`)).rows[0].mod_id;
@@ -21,7 +21,7 @@ async function addNote(uid: number, title: string, status: string, visibility: s
 
 describe('Profiles', () => {
   it('USR-TC1: blank display name is rejected', async () => {
-    const res = await putMe(await insertUser(), { displayName: '  ', programme: 'SE', bio: '' });
+    const res = await putMe(await insertUser(), { displayName: '  ', programme: 'BSc (Hons) Computer Science', bio: '' });
     expect(res.status).toBe(400);
     expect(res.body.errors.displayName).toBe('Display name is required');
   });
@@ -34,18 +34,18 @@ describe('Profiles', () => {
 
   it('USR-TC3: a valid update is stored and shown on the profile', async () => {
     const uid = await insertUser();
-    const res = await putMe(uid, { displayName: 'Ann Lee', programme: 'BSc SE', bio: 'Hello' });
+    const res = await putMe(uid, { displayName: 'Ann Lee', programme: 'BSc (Hons) Computer Science', bio: 'Hello' });
     expect(res.status).toBe(200);
     expect(res.body.user.displayName).toBe('Ann Lee');
     const profile = (await getUser(uid, uid)).body.user;
-    expect(profile).toMatchObject({ displayName: 'Ann Lee', programme: 'BSc SE', bio: 'Hello' });
+    expect(profile).toMatchObject({ displayName: 'Ann Lee', programme: 'BSc (Hons) Computer Science', bio: 'Hello' });
   });
 
   it('USR-TC4: another user sees public notes only; drafts and contacts-only are hidden, draft count is own only', async () => {
     const owner = await insertUser();
     const contact = await insertUser();
     const stranger = await insertUser();
-    await pool.query(`INSERT INTO "CONTACT_T" (con_usr_id, con_contact_id) VALUES ($1, $2)`, [owner, contact]);
+    await befriend(owner, contact);
     await addNote(owner, 'Public', 'published', 'public');
     await addNote(owner, 'Private circle', 'published', 'contacts');
     await addNote(owner, 'Secret draft', 'draft', null);
@@ -57,10 +57,10 @@ describe('Profiles', () => {
     expect((await getUser(owner, owner)).body.user.draftCount).toBe(1);
   });
 
-  it('USR-TC5: unknown user is 404 and unauthenticated is 401', async () => {
+  it('USR-TC5: unknown user is 404 and unauthenticated profile edit is 401', async () => {
     const uid = await insertUser();
     expect((await getUser(uid, 99999)).status).toBe(404);
-    expect((await request(app).get(`/api/users/${uid}`)).status).toBe(401);
+    expect((await request(app).put('/api/users/me').set(CSRF).send({ displayName: 'x' })).status).toBe(401);
   });
 
   it('USR-TC6: display name over 50 and programme over 100 characters are rejected', async () => {
@@ -87,19 +87,19 @@ describe('Profiles', () => {
 
   it('USR-TC9: a non-numeric user id is 404', async () => {
     const uid = await insertUser();
-    expect((await request(app).get('/api/users/abc').set('Authorization', bearer(uid))).status).toBe(404);
+    expect((await request(app).get('/api/users/abc').set(asUser(uid))).status).toBe(404);
   });
 
   it('USR-TC11: omitted programme and bio keep their value; empty string clears', async () => {
     const uid = await insertUser();
-    await putMe(uid, { displayName: 'Ann', programme: 'SE', bio: 'Hi' });
+    await putMe(uid, { displayName: 'Ann', programme: 'BSc (Hons) Computer Science', bio: 'Hi' });
     const kept = await putMe(uid, { displayName: 'Ann B' });
-    expect(kept.body.user).toMatchObject({ displayName: 'Ann B', programme: 'SE' });
+    expect(kept.body.user).toMatchObject({ displayName: 'Ann B', programme: 'BSc (Hons) Computer Science' });
     expect((await getUser(uid, uid)).body.user.bio).toBe('Hi');
     await putMe(uid, { displayName: 'Ann B', bio: '' });
     const profile = (await getUser(uid, uid)).body.user;
     expect(profile.bio).toBeNull();
-    expect(profile.programme).toBe('SE');
+    expect(profile.programme).toBe('BSc (Hons) Computer Science');
   });
 
   it('USR-TC10: hidden and deleted notes are not listed on the profile', async () => {
@@ -110,5 +110,39 @@ describe('Profiles', () => {
     await addNote(owner, 'Deleted', 'deleted', 'public');
     const titles = (await getUser(viewer, owner)).body.user.notes.map((n: { title: string }) => n.title);
     expect(titles).toEqual(['Visible']);
+  });
+
+  it('USR-TC22: a programme outside the catalogue is rejected; a catalogue programme is accepted', async () => {
+    const uid = await insertUser();
+    const bad = await putMe(uid, { displayName: 'Ann', programme: 'Underwater Basket Weaving' });
+    expect(bad.status).toBe(400);
+    expect(bad.body.errors.programme).toBe('Choose a programme from the list');
+    const ok = await putMe(uid, { displayName: 'Ann', programme: 'BSc (Hons) Information Technology' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.user.programme).toBe('BSc (Hons) Information Technology');
+  });
+
+  it('USR-TC23: a user whose stored programme left the catalogue can still save the profile', async () => {
+    const uid = await insertUser();
+    await pool.query(`UPDATE "USER_T" SET usr_programme = 'Legacy Programme' WHERE usr_id = $1`, [uid]);
+    const kept = await putMe(uid, { displayName: 'Ann', programme: 'Legacy Programme', bio: 'New bio' });
+    expect(kept.status).toBe(200);
+    expect(kept.body.user.programme).toBe('Legacy Programme');
+    expect((await putMe(await insertUser(), { displayName: 'Bob', programme: 'Legacy Programme' })).status).toBe(400);
+  });
+
+  it('USR-TC25: the profile embeds the first 50 notes; GET /users/:id/notes continues from notesNextCursor', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const notes: number[] = [];
+    for (let i = 0; i < 52; i++) notes.push(await insertNote(author, { slides: 0 }));
+    await pool.query(`UPDATE "POST_T" SET pst_published_at = '2026-10-01T00:00:00.123456Z'`);
+    const profile = (await getUser(viewer, author)).body.user;
+    expect(profile.notes).toHaveLength(50);
+    const rest = await request(app).get(`/api/users/${author}/notes`).query({ cursor: profile.notesNextCursor }).set(asUser(viewer));
+    expect(rest.body.nextCursor).toBeNull();
+    expect([...profile.notes, ...rest.body.notes].map((n: { id: number }) => n.id)).toEqual([...notes].reverse());
+    expect((await request(app).get(`/api/users/99999/notes`).set(asUser(viewer))).status).toBe(404);
+    expect((await request(app).get(`/api/users/${author}/notes?cursor=x`).set(asUser(viewer))).status).toBe(400);
   });
 });

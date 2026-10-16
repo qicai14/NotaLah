@@ -1,74 +1,50 @@
-# Handover — after the 13 Oct 2026 autopilot run
+# Handover — 16 Oct 2026, evening (Sprint 4 backend done)
 
-Rewritten 14 Oct 2026 in the "Review & realign" session. The autopilot run ended at 23:56 on 13 Oct (last commit
-7130013); nothing is running. Everything is committed and pushed to `origin/main`. Step-by-step log: `docs/PROGRESS.md`.
-Usage limits stopped the run from about 10:30 to 23:04, so roughly 12 hours of the planned window were lost.
+Read with `../PLAN.md` (backlog R0-R33), `docs/DECISIONS.md` (D1-D51), `../AUTOPILOT_2026-10-16.md` (today's run log
+and the decisions to confirm) and `docs/specs/Sprint4_spec.md`. Older run logs are in `../run-logs/`.
 
-**State at HEAD (checked 14 Oct):** server tests 120/120, client tests 1/1. Sprints 0-3 are built; Sprint 4 (search,
-messaging) is not started. Report Chapters 1-4 are in the .docx; Chapters 5-6 are not. **None of the autopilot's work
-has been reviewed by you yet.**
+## State
+- `main` holds everything merged so far (PRs #1-#11): Sprint R hardening, R30 collaboration, R31 guests, R33 dropdown,
+  D47 (self-likes not ranked, suspended users hidden from all but admins), Vite+ 1.3.0 (D47), and the Sprint 4 backend:
+  search + academic terms (D48), blocking (D49), messaging over Socket.io (D50), notifications R8 (D51).
+  Server 288 tests (+1 perf test run on demand), client 21; typecheck, lint (0 errors) and build clean; CI green.
+- **Dev DB is 10 migrations behind.** The user runs, in `FYP_Project`: `npm run db:migrate -w server` (the guard blocks
+  the agent).
+- **Wireframes v3** (R32) on `docs/wireframes-v3` (not merged): 57 screens, SVG per screen + `ALL_SCREENS.svg`, index in
+  `docs/chapter4/wireframes/INDEX.md`. **Waiting for the user's review.** Gate: no frontend work (Sprint D, and the
+  UI halves of R30/R31/Sprint 4), no .docx, no deployment until approved.
+- Worktrees in `FYP/worktrees/`: only `wf3` (wireframes) and this handover's are live; old folders hold leftover
+  `node_modules` the guard would not let the agent delete. Private test DBs `parp_test_<name>` can be dropped.
 
-## What got done
+## Next work, in order
+1. User: run the migrations; review wireframes v3; confirm the decisions in `../AUTOPILOT_2026-10-16.md`.
+2. After wireframe sign-off: Chapter 4.4 text for v3, then Sprint D (R19 design system, R21 editor, R22 images, R29
+   video) and the UI for R30, R31, search, blocking, messaging (Vite proxy needs `/socket.io` with `ws: true`) and R8.
+3. Docs debt: `"TERM_T"`, `"BLOCK_T"`, `"NOTIFICATION_T"` and the messaging columns are not yet in Chapter 4.3's data
+   dictionary/ERD; `erd.png` needs PlantUML. A one-off formatting PR (`vp fmt`, 107 files) before frontend work starts.
+4. Sprint 5: R9 Jamendo (needs `JAMENDO_CLIENT_ID`), R10 annotations (after R21), R11 deploy, R20 audit, R27 scale-out.
+5. Before the first deploy (R11): `trust proxy` = hop count `1` (never `true`, D45), `COOKIE_SECURE=true`,
+   `kill_timeout = 15` (D35, D41), **one Fly machine** until the Socket.io Postgres adapter lands (D50, R27).
 
-### Sprint 0: Chapter 4 design (`docs/chapter4/`)
-| Deliverable | File |
-|---|---|
-| Assembled, numbered Chapter 4 draft | `docs/chapter4/CHAPTER4.md` (rebuild: `python -X utf8 docs/chapter4/build_chapter.py`) |
-| Use case diagram and 22 use case specifications | `4.2.1_use_cases.md` |
-| Class diagram, 5 activity and 5 sequence diagrams with explanatory text | `4.2.3_class_activity_sequence.md` (PlantUML in `diagrams/src/`) |
-| ERD (19 tables), schema table and images | `4.3_database_design.md`, `diagrams/png/` |
-| 25 greyscale wireframes with descriptions | `4.4_interface_design.md`, `wireframes/png/` (generator `wireframes/build.mjs`) |
-| Test case tables (AUTH, NOTE, RANK, ENG, VER, SRCH, MSG, ADM, USR) and UAT template | `4.5_test_cases.md` |
-| Sprint 0 review (FR traceability; why sprints went from 2 weeks to 1) | `docs/sprints/sprint0_review_retrospective.md` |
+## Still-open proposals
+**Local backup for published notes (R21 Q6):** pros — no lost edits when a tab crashes or closes (published notes do
+not autosave), cheap (localStorage, a 30-slide deck is about 1.5 MB, under the ~5 MB quota). Cons — content stays in the
+browser on shared lab PCs (clear on logout and after a successful Update), a stale backup could overwrite newer server
+content (offer "Restore unsaved changes?" only when the backup's base version equals the server's `updatedAt`).
+Recommendation: implement with those two guards.
 
-### Sprint 1: architecture, data and auth (`docs/sprints/sprint1_review_retrospective.md`)
-- npm-workspaces monorepo: `client/` (React, Vite, TS, Tailwind v4), `server/` (Express 5, TS). Postgres 17 in Docker on 127.0.0.1:5433.
-- dbmate migrations in `server/db/migrations/`; feature folders on both sides (`docs/ARCHITECTURE.md`).
-- Register, login and `/me` with Passport (local + JWT) and bcrypt; role and status re-read from the DB on every request.
-- Admin approves lecturer accounts (UC22, D6); `npm run admin:create -w server` creates the first admin.
+**ffmpeg (R21 Q3):** production route = install `ffmpeg` from the OS package manager in the Fly Docker image and in CI
+(`apt-get install ffmpeg`), and locally with `winget install Gyan.FFmpeg`; call `ffprobe`/`ffmpeg` by name. Avoid
+`ffmpeg-static` (downloads binaries from GitHub at install time).
 
-### Sprint 2: notes, feed and engagement (`docs/sprints/sprint2_review_retrospective.md`)
-- **API:** drafts and publishing (public / contacts-only), hashtags, sanitised slide HTML, full-text search document,
-  profiles (UC04); paged feed with `asOf`; views, likes, comments (one reply level, lecturer comments pinned), reports, bookmarks.
-- **Client:** TipTap slide editor, publish dialog, drafts, infinite-scroll feed, note detail with comments, report
-  dialog, saved list, profile and edit-profile pages.
+**AI model (D33):** `openai/gpt-oss-120b` on Groq is a sound choice for restructuring notes into slides (strong
+instruction following; check Groq's console for current free limits, about 30 requests/min). Keep `openai/gpt-oss-20b`
+as a faster fallback; validate output with the shared zod deck schema regardless.
 
-### Sprint 3: ranking, verification and moderation (no sprint review doc yet)
-- **3A ranking** (58e77c0, fixes ea1d8f3): feed ranked by E, R, V, M from `server/src/features/ranking/config.ts`;
-  each item returns `score` and `components`. Details and known limits: D24.
-- **3B verification and moderation** (49a6b44, cbecf64, fixes 85d8cd5): lecturer Super Like with "Verified by <name>",
-  admin report queue (resolve / hide), admin user search with suspend / restrict / reinstate / delete (UC19-UC21).
-  Details: D26, D27. Client pages: `/admin/reports`, `/admin/users`.
-- **Sprint-wide `/code-review high`** fixes (7130013): ranking frozen per `asOf`, suspended authors' notes hidden,
-  report queue skips deleted notes. **Not yet verified by the tester at the time; verified 14 Oct: 120/120.**
-- Missing: `docs/sprints/sprint3_review_retrospective.md`.
+**Jamendo (R9):** needs a free client id from devportal.jamendo.com (`JAMENDO_CLIENT_ID` in `.env`); full-length CC
+tracks, so no 30 s preview limit; credit artist and licence on the note.
 
-### Dissertation .docx (`writer` agent; `FYP_Submissions/`, not in git)
-- **Step 1 (done):** APU formatting, page numbering and full outline (D15, D16).
-- **Step 2 (done 23:28):** Chapters 1-3 and References from the IR, with the supervisor's requested Ch 2 appraisal
-  and Ch 3 survey cross-tabulation added (D25). About 31.5k words of prose.
-- **Step 3 (done 23:47):** Chapter 4 from `docs/chapter4/` (Figures 84-121, Tables 34-70, schema in Appendix H; D28).
-- **Step 4 (Chapters 5-6):** not started; needs Sprint 4, UAT and screenshots first.
-- Latest backup: `FYP_Submissions/backups/…_20261013-2345.docx`.
-- **Report length is now the main writing risk:** about 39k words of prose against an 18-20k standard (open questions 7, 9, 11).
-
-## Decisions (reviewed 14 Oct)
-All of D1-D28 and the open questions were decided with the user on 14 Oct (see the "User review" line under each
-decision, D29, and `docs/OPEN_QUESTIONS.md`). Reversed: D3, D4, D9, D13 token storage. Modified: D2, D5, D7, D17, D24.
-The resulting work is the Realign backlog (R0-R16) in `../PLAN.md`. Deadline is now end Dec 2026 / early Jan 2027.
-
-## Broken or half-done
-- **Dev database `parp` not migrated and no admin exists.** Setup: `npm run db:migrate -w server`, add `ADMIN_EMAIL`,
-  `ADMIN_PASSWORD`, `ADMIN_NAME` to `.env`, then `npm run admin:create -w server`.
-- `parp_test` holds smoke-test data from browser checks; tests truncate it, so harmless.
-- Stray folder `C:\Users\reymy\Code%20Projects\` (duplicate wireframe PNGs from a fixed path bug) is safe to delete.
-- `concurrently` 10.0.5 has a dev-only `npm audit` finding; bump to 10.0.6 after about 22 Oct (D14).
-- Waiting on Socket.io (Sprint 4): socket disconnect on logout (UC03), notify user on lecturer decision (UC22) and on
-  hidden note (UC20 step 5).
-- Public search (Sprint 4) must exclude deleted accounts (D26).
-- Only one client test (hashtag rules); everything else is server-side.
-
-## Next steps
-1. Review & realign (this session): decide D1-D28 and the open questions, add a realign backlog to `PLAN.md`.
-2. Migrate the dev DB, create the admin, click through every built screen.
-3. Write the Sprint 3 review, then Sprint 4 (search FR4-5 with the < 3 s check, messaging FR6-7, FR12-13) plus the realign backlog.
+## Known limits
+`/security-review` cannot run inside subagents here (session root is not a git repo) — reviewers check security by
+hand, or the user runs it from a session opened in `FYP_Project/`. Run logs:
+see `../run-logs/`.

@@ -17,15 +17,15 @@ actor "Recipient" as R
 S -> SC : Click "Message author" on note, type message
 SC -> IO : emit("message:send", {toUserId, postId, body})
 IO -> MS : send(senderId, toUserId, postId, body)
-MS -> DB : SELECT 1 FROM "CONTACT_T"\nWHERE con_usr_id = $1 AND con_contact_id = $2
-alt users are contacts
+MS -> DB : SELECT 1 FROM "FOLLOW_T"\nWHERE each user follows the other (friends)
+alt users are friends
   MS -> DB : find or create direct "CONVERSATION_T" + "CONV_MEMBER_T"
   MS -> DB : INSERT INTO "MESSAGE_T" (msg_cnv_id, msg_sender_id, msg_pst_id, msg_body)
   MS --> IO : message with note card
   IO --> SC : ack {status: delivered}
   IO -> RC : emit to room user:{recipient} ("message:new")
   RC --> R : Show message with note card
-else not contacts
+else not friends (message request required)
   MS -> DB : INSERT INTO "MESSAGE_REQUEST_T"\n(status 'pending', mrq_pst_id)
   alt pending request already exists (unique index)
     MS --> IO : error REQUEST_PENDING
@@ -40,8 +40,7 @@ else not contacts
     IO -> MS : respond(requestId, recipientId, true)
     MS -> DB : BEGIN
     MS -> DB : UPDATE "MESSAGE_REQUEST_T" SET mrq_status = 'accepted'
-    MS -> DB : INSERT INTO "CONTACT_T" (both directions)
-    MS -> DB : create direct conversation;\nINSERT held message into "MESSAGE_T"
+    MS -> DB : create direct conversation (no friendship created);\nINSERT held message into "MESSAGE_T"
     MS -> DB : COMMIT
     IO -> SC : emit("request:accepted")
     IO --> RC : conversation opened

@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { bearer, insertNote, insertUser, truncateAll, type TestUserInput } from '../helpers';
+import { asUser, insertNote, insertUser, truncateAll, type TestUserInput } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -10,11 +10,11 @@ afterAll(() => pool.end());
 const lecturer = (o: TestUserInput = {}) =>
   insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: `S${Math.random()}`.slice(0, 12), ...o });
 const verify = (uid: number, noteId: number | string, body?: object) =>
-  request(app).post(`/api/notes/${noteId}/verify`).set('Authorization', bearer(uid)).send(body);
-const unverify = (uid: number, noteId: number) => request(app).delete(`/api/notes/${noteId}/verify`).set('Authorization', bearer(uid));
+  request(app).post(`/api/notes/${noteId}/verify`).set(asUser(uid)).send(body);
+const unverify = (uid: number, noteId: number) => request(app).delete(`/api/notes/${noteId}/verify`).set(asUser(uid));
 const rows = async () => (await pool.query('SELECT ver_pst_id, ver_usr_id, ver_remark FROM "VERIFICATION_T"')).rows;
 const feedItem = async (viewer: number, id: number) =>
-  (await request(app).get('/api/feed').set('Authorization', bearer(viewer))).body.items.find((i: { id: number }) => i.id === id);
+  (await request(app).get('/api/feed').set(asUser(viewer))).body.items.find((i: { id: number }) => i.id === id);
 
 describe('Lecturer Super Like (UC19)', () => {
   let student: number;
@@ -70,7 +70,7 @@ describe('Lecturer Super Like (UC19)', () => {
     expect(res.body).toMatchObject({ verifiedBy: 'Dr L', remark: 'Accurate' });
     expect(res.body.verifiedAt).toBeDefined();
     expect(await rows()).toEqual([{ ver_pst_id: note, ver_usr_id: l, ver_remark: 'Accurate' }]);
-    const detail = await request(app).get(`/api/notes/${note}`).set('Authorization', bearer(student));
+    const detail = await request(app).get(`/api/notes/${note}`).set(asUser(student));
     expect(detail.body.note).toMatchObject({ verified: true, verifiedBy: 'Dr L', verifiedByMe: false });
   });
 
@@ -89,7 +89,7 @@ describe('Lecturer Super Like (UC19)', () => {
     const viewer = await insertUser();
     expect((await feedItem(viewer, note)).components.V).toBe(0);
     await verify(await lecturer(), note);
-    const items = (await request(app).get('/api/feed').set('Authorization', bearer(viewer))).body.items;
+    const items = (await request(app).get('/api/feed').set(asUser(viewer))).body.items;
     expect(items.map((i: { id: number }) => i.id)).toEqual([note, twin]);
     expect(items[0].components.V).toBe(1);
   });
@@ -113,14 +113,14 @@ describe('Lecturer Super Like (UC19)', () => {
     await verify(second, note);
     await pool.query(`INSERT INTO "BOOKMARK_T" (bmk_usr_id, bmk_pst_id) VALUES ($1, $2)`, [student, note]);
     expect(await feedItem(second, note)).toMatchObject({ verifiedBy: 'Dr First', verifiedByMe: true });
-    const saved = await request(app).get('/api/bookmarks').set('Authorization', bearer(student));
+    const saved = await request(app).get('/api/bookmarks').set(asUser(student));
     expect(saved.body.notes[0].verifiedBy).toBe('Dr First');
-    const before = await request(app).get(`/api/notes/${note}`).set('Authorization', bearer(student));
+    const before = await request(app).get(`/api/notes/${note}`).set(asUser(student));
     expect(before.body.note.verifiedBy).toBe('Dr First');
 
     expect((await unverify(first, note)).body).toEqual({ verified: true, verifiedBy: 'Dr Second' });
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [second]);
-    const detail = await request(app).get(`/api/notes/${note}`).set('Authorization', bearer(student));
+    const detail = await request(app).get(`/api/notes/${note}`).set(asUser(student));
     expect(detail.body.note).toMatchObject({ verified: false, verifiedBy: null }); // a suspended lecturer's Super Like stops counting (D24)
   });
 

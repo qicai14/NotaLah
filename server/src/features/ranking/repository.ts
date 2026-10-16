@@ -4,15 +4,16 @@ import { HASHTAGS_COL, VALID_VERIFICATIONS, VISIBLE, countsCol } from '../notes/
 import { RANKING } from './config';
 import type { Candidate, InteractionRow } from './service';
 
-export interface CandidateRow extends Candidate {
+interface CandidateRow extends Candidate {
   id: number;
 }
 
 /**
  * Published notes the viewer may see, published at or before asOf: the newest `limit` united with every note holding a
- * valid Super Like made by asOf, with only what scoring needs; the page's full notes are loaded afterwards (D24).
+ * valid Super Like made within verifiedCandidateWindowDays before asOf, with only what scoring needs; the page's full notes are loaded afterwards (D24).
  * Likes, comments and Super Likes count only up to asOf, so one asOf always gives the same ranking (pages cannot skip
- * or repeat a note when engagement lands between page requests).
+ * or repeat a note when engagement lands between page requests). OWN_LIKE reads the current collaborators, so re-ranking
+ * the same asOf after a collaborator change can shift E slightly.
  */
 // shortcut: an unverified note older than the newest `limit` is never ranked, however popular; widen if UAT shows misses.
 export async function getCandidates(viewerId: number, asOf: Date, limit: number = RANKING.candidateLimit): Promise<CandidateRow[]> {
@@ -26,11 +27,13 @@ export async function getCandidates(viewerId: number, asOf: Date, limit: number 
      SELECT p.pst_id AS "id", p.pst_published_at AS "publishedAt", ${HASHTAGS_COL},
             ${countingLecturer('u')} AS "lecturerAuthor", ${countsCol('$2::TIMESTAMPTZ')},
             p.pst_id IN (SELECT pst_id FROM verified) AS "verified"
-     FROM (SELECT pst_id FROM newest UNION SELECT pst_id FROM verified) ids
+     FROM (SELECT pst_id FROM newest
+           UNION SELECT v.ver_pst_id ${VALID_VERIFICATIONS} AND v.ver_created_at <= $2::TIMESTAMPTZ
+                                                              AND v.ver_created_at > $2::TIMESTAMPTZ - make_interval(days => $4)) ids
      JOIN "POST_T" p ON p.pst_id = ids.pst_id
      JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}`,
-    [viewerId, asOf, limit],
+    [viewerId, asOf, limit, RANKING.verifiedCandidateWindowDays],
   );
   return rows;
 }
@@ -47,4 +50,13 @@ export async function getInteractionRows(viewerId: number, asOf: Date): Promise<
     [viewerId, asOf, RANKING.interestWindowDays],
   );
   return rows;
+}
+
+/** Deletes interactions older than the interest window plus the purge grace; ranking ignores them already (D24). Idempotent. */
+export async function purgeOldInteractions(): Promise<number> {
+  const { rowCount } = await pool.query(
+    `DELETE FROM "INTERACTION_T" WHERE int_created_at < NOW() - make_interval(days => $1)`,
+    [RANKING.interestWindowDays + RANKING.purgeGraceDays],
+  );
+  return rowCount ?? 0;
 }

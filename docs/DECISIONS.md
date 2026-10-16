@@ -22,7 +22,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** full TERM_T table maintained by admin (rejected: admin workload, no data source);
   cut entirely (rejected: lecturer search had 31.3% support in D5 and filters are cheap once FR4 exists).
 - **Reversibility:** Easy (filters are query parameters).
-- **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR.
+- **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR. Shape confirmed 14 Oct: the lecturer filter also offers one named lecturer.
 
 ## D3 — FR17 background audio on slide notes: **cut (future work)**
 - **Alternatives:** keep as Sprint 4 stretch; rework as a link to external audio.
@@ -263,7 +263,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (the notes `VISIBLE` predicate); anything else is 404, so a draft or contacts-only note is never revealed. Unliking,
   removing a bookmark and deleting your own comment do not re-check the note. Writes use `requireActive`; reads do not.
 - **Views:** logged once per user and note per 30 minutes (query-side `NOT EXISTS`), so reloading cannot inflate the
-  interest history. Window is a constant in `feed/repository.ts`.
+  interest history. Window is a constant in `engagement/repository.ts`.
 - **Status codes:** a new like (note or comment) returns 201, a repeated one 200, both with `{liked, likes}`;
   unlike returns 200 (ENG-TC1/TC3).
 - **Comments:** body is trimmed before the 1-1000 check; `slideNo` must be within the note's slide count; a parent must
@@ -478,3 +478,657 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Why:** the user values end-to-end delivery (DevOps evidence for the report), and testers can use their own devices.
   Beyond the IR, which documented a free-tier host with local fallback (§2.3.9); the report records the change.
 - **Reversibility:** Easy (fallback is local or one origin).
+
+## D30 - Audit quick fixes: verified window and asOf cap (15 Oct 2026)
+- **Decision:** a note older than the newest-N window becomes a ranking candidate through a Super Like only if that Super Like
+  was made within `RANKING.verifiedCandidateWindowDays` (180) before asOf, so the candidate set no longer grows with every
+  Super Like ever given. A future `asOf` on the feed is capped at the database clock (`LEAST(..., NOW())`), because a cutoff
+  ahead of now zeroed recency for every note and let later engagement change a "frozen" page. Also fixed in the same pass: note editor reseeding from stale router state,
+  `inTransaction` masking the original error when ROLLBACK fails, and sequential profile queries.
+- **Alternatives:** reject a future asOf with 400 (rejected: breaks a harmless client clock skew); an index on the Super Like date (out of scope, no migration).
+- **Reversibility:** Easy (one constant, one SQL expression).
+
+## D31 - Canva-style slide editor, author-chosen slide size, images (user decision, 15 Oct 2026)
+- **Decision:** FR8's editor becomes a free-form canvas: each slide is a fixed-size board holding positioned elements
+  (text boxes with rich text, shapes, lines, images, code blocks, later video) with templates, deck themes, a curated
+  font list, colours, alignment, layers and undo, modelled on Canva's editor layout. The author picks the slide size per
+  note: 4:5, 9:16 or 16:9. Images come from uploads (JPEG/PNG/WebP up to 5 MB, re-encoded on the server, stored in
+  Cloudflare R2) or a stock-photo search through the Unsplash API. Slides change from one sanitised HTML block to a
+  validated JSON list of elements; text inside elements is still sanitised against the allow-list, and the search
+  document is built from the text elements. The canvas is DOM-based, not `<canvas>`, so slide text stays selectable for
+  FR18 annotations and readable by screen readers. Plan items R21 and R22.
+- **Alternatives:** structured layouts with rich styling only (smaller, but not the Canva-like authoring the user wants);
+  keeping the flowing TipTap editor with fonts and colours added (smallest, rejected for the same reason); a `<canvas>`
+  renderer such as Konva (rejected: text is not selectable, which breaks annotations and accessibility).
+- **Why:** the editor is the core authoring feature (Objective 3) and the user wants it comparable to tools students
+  already use.
+- **Reversibility:** Hard once notes exist in the new format (needs a data migration); decided before any production data.
+
+## D32 - Short video element on slides (user decision, 15 Oct 2026)
+- **Decision:** a slide may hold one video element: MP4 or WebM, up to 90 seconds and 50 MB, type, size and duration
+  validated on the server, stored in R2 with a poster frame, no transcoding. It autoplays muted in the feed and the
+  viewer taps for sound. Plan item R29, sharing R22's upload pipeline.
+- **Alternatives:** YouTube or Vimeo links only (no storage, less like the TikTok-style feed); no video.
+- **Reversibility:** Medium.
+
+## D33 - Optional AI writing assistant in the editor (user decision, 15 Oct 2026)
+- **Decision:** the editor gets an optional assistant that turns messy text or an imported file (.txt, .md, .docx, .pdf,
+  .pptx) into a draft deck, and rewrites, shortens or makes quiz questions from a selected text box. Calls go from the
+  server to any OpenAI-compatible provider configured by `AI_BASE_URL`, `AI_API_KEY` and `AI_MODEL`; output is
+  validated against the slide element schema and always lands as an editable draft. Notes made with it carry an
+  "AI-assisted" label, and each user has a daily limit. The ranking feed stays a deterministic heuristic. Plan item R28.
+- **Scope note:** this reverses the IR's exclusion of AI components (IR Section 1.6), so the report's scope and
+  limitations sections must record it as an extension added during Part II, with its academic-integrity safeguards
+  (label, author must edit and publish).
+- **Alternatives:** leave it to future work (keeps the IR exclusion); decide after supervisor meeting #2.
+- **Reversibility:** Easy (feature behind configuration; without a key the assistant is hidden).
+
+## D34 - Database tuning: indexes, pool settings, interaction retention (15 Oct 2026)
+- **Decision:** migration `20261015000001_query_indexes.sql` adds four indexes: `comment_like_comment_idx` on
+  `"COMMENT_LIKE_T" (clk_cmt_id)` (like counts per comment; the primary key leads with the user), `interaction_user_post_time_idx` on
+  `"INTERACTION_T" (int_usr_id, int_pst_id, int_created_at DESC)` (the 30-minute view dedupe in `logView`), `report_post_idx` on
+  `"REPORT_T" (rpt_pst_id)` (upheld-report counts per note; the existing partial unique index covers open reports only) and
+  `message_request_recipient_pending_idx`, a partial index on `"MESSAGE_REQUEST_T" (mrq_recipient_id) WHERE mrq_status = 'pending'`
+  (added ahead of the Sprint 4 inbox query, since no code reads `"MESSAGE_REQUEST_T"` yet; re-check it when that query is written). `interaction_user_time_idx` is kept: the ranking interest query filters on user and time range only, which
+  the new index cannot serve as well. EXPLAIN on 200,000 seeded interactions and 400,000 comment likes showed an index scan on the
+  new index for the dedupe query and a bitmap scan on `comment_like_comment_idx`. The pool reads `PG_POOL_MAX` (10),
+  `PG_IDLE_TIMEOUT_MS` (30000) and `PG_CONNECTION_TIMEOUT_MS` (10000, to survive a Neon cold start) from the environment, validated by zod. `"INTERACTION_T"` rows
+  older than `RANKING.interestWindowDays` (90) plus `RANKING.purgeGraceDays` (1) are deleted by `purgeOldInteractions`, run daily by an unref'd timer in `server.ts`
+  (first run 1 minute after start) and on demand with `npm run db:purge-interactions -w server`.
+- **Alternatives:** table partitioning of interactions (rejected: needless at this scale); keeping all history (rejected: ranking
+  ignores rows past the window, D24, so they only slow the table); a cron service outside the process (rejected: one more moving part).
+- **Why:** the first three indexes serve queries the application already runs; the purge keeps the table bounded; pool limits matter on the
+  small Neon and Fly tiers (D29). The delete is idempotent, so several instances running it is harmless. The one-day grace keeps a purge between feed pages from changing the interest vector of later pages, which read a window ending at an earlier asOf.
+- **Reversibility:** Easy (drop the indexes through the down migration; remove the timer).
+
+## D35 - JWT in an httpOnly cookie with a CSRF header (R1, 15 Oct 2026)
+- **Decision:** implements the D13 user review (14 Oct). Login sets cookie `parp_token`: HttpOnly, SameSite=Lax,
+  Path=/, Max-Age 3600 (the JWT lifetime; HS256 unchanged) and Secure when `COOKIE_SECURE` is true (default: only when
+  `NODE_ENV=production`, because browsers drop Secure cookies on local http). The token is no longer in any response body.
+  Register sets no cookie: the client sends new users to the login page, so a cookie there would leave a hidden live
+  session (a risk on shared PCs).
+  passport-jwt reads it from that cookie only, through a small extractor over the `Cookie` header (no cookie-parser or
+  `cookie` dependency); the `Authorization: Bearer` extractor is removed so no page script can ever hold a token.
+  `POST /api/auth/logout` clears the cookie with the same attributes and returns 204 without requiring a valid token.
+  CSRF: one middleware in `app.ts` rejects every /api request other than GET, HEAD and OPTIONS (so POST, PUT, PATCH,
+  DELETE, login and register included) with 403 `{ error: 'Forbidden' }` unless it carries `X-Requested-With: parp`.
+  A cross-site page can only add a custom header through a CORS preflight, and CORS allows only `CLIENT_ORIGIN`
+  (now with `credentials: true` and allowed headers Content-Type and X-Requested-With). SameSite=Lax already keeps the
+  cookie off cross-site subresource and POST requests; the header covers same-site but cross-origin pages and older
+  browsers. The client keeps the user only in React state, learns it from `GET /api/auth/me` on load (a 401 there means
+  logged out, with no redirect) and keeps the 401 -> `/login?expired=1` redirect for calls made while signed in.
+  Socket.io (Sprint 4) must authenticate its handshake from the same cookie and check `Origin` (messaging README).
+- **Alternatives:** double-submit CSRF token (rejected: needs a readable token cookie or an extra endpoint plus client
+  plumbing, and buys nothing over a preflighted custom header while CORS is locked to one origin); SameSite=Strict
+  (rejected: a user following a link to PARP from email or Moodle would arrive logged out, and Strict alone still does not
+  cover same-site subdomains); keeping the bearer header alongside the cookie (rejected: any script that can read a
+  token defeats httpOnly); `cookie-parser` (rejected: one regex over one cookie name does the job).
+- **Why:** matches IR §2.3.6.2 (Dalimunthe et al., 2022): an XSS bug can no longer exfiltrate the token. Test cases
+  AUTH-TC11 to AUTH-TC16.
+- **Deploy notes (D29):** still to do: set `COOKIE_SECURE=true` explicitly on Fly rather than relying on
+  `NODE_ENV`. `trust proxy` must change from `'loopback'` to trust Fly's edge proxy (R11); otherwise every request appears
+  to come from the proxy and all users share one rate-limit bucket. Already done: the client prefixes API calls with `VITE_API_URL` (e.g.
+  `https://api.<domain>`, empty in development so the Vite proxy still applies); the cookie stays host-only (no Domain attribute), and `app.` and `api.` share a
+  registrable domain, so SameSite=Lax still sends it.
+- **Reversibility:** Medium (server extractor, CORS and CSRF middleware, client api wrapper and auth context).
+
+## D36 - Number not used
+- Left unassigned when parallel branches reserved numbers on 15 Oct 2026; nothing refers to it.
+
+## D37 - Programme catalogue endpoint and admin Modules API (R4, R5, 15 Oct 2026)
+
+- **Decision:** (R4, modifies D17) `GET /api/programmes` (no login, register needs it) returns `{ items }`, the distinct
+  `mod_programme` values of `"MODULE_T"` sorted. Register and `PUT /api/users/me` accept a non-empty programme only if
+  one `SELECT EXISTS` finds it in the catalogue, else 400 "Choose a programme from the list"; an empty programme still
+  clears to NULL (D22). No hard-coded list. (R5, modifies D7) Admin Modules API under the admin router:
+  `GET /api/admin/modules` (all modules with `noteCount` of published notes, sorted by code), `POST` (code trimmed and
+  uppercased, `^[A-Z0-9][A-Z0-9-]*$` up to 20 characters, which accepts every seeded code; name 1-150; programme 1-100;
+  409 on a duplicate code) and `PATCH /:id` (name and/or programme; the code is immutable because notes and the
+  dissertation refer to it; 404 unknown id; 400 when nothing changes). Queries live in `features/modules/repository.ts`.
+  No delete, as it was not requested.
+- **Renaming a programme** is allowed (PATCH `programme`). Users keep their old value until they change it, so
+  `PUT /api/users/me` also accepts the programme the user already holds, otherwise a legacy or renamed value would block
+  every profile save. A malformed module id is 404, like the users router; the PATCH body is strict, so a `code` field is 400.
+- **Client:** the registration and Edit Profile dropdowns and the admin Modules page come with the client redesign;
+  this change is backend only.
+- **Why:** consistent programme values for FR4 programme search, and the catalogue stays editable without a migration.
+  Test cases AUTH-TC17, AUTH-TC18, USR-TC22, USR-TC23, ADM-TC21 to ADM-TC28.
+- **Alternatives:** a programmes table (rejected: the catalogue already carries the programme, and a new table adds a
+  migration for no new data); hard-coded list (rejected, drifts from the catalogue).
+- **Reversibility:** High (two small routes and one repository file).
+
+## D38 - Follows replace contacts; friends are mutual follows; Following feed (R2, 15 Oct 2026)
+- **Decision:** implements the D9 user review (14 Oct). Migration `20261015000002_follows.sql` creates `"FOLLOW_T"`
+  (`fol_follower_id`, `fol_followee_id`, `fol_created_at`; primary key on the pair, `CHECK` follower <> followee, index
+  `follow_followee_idx` on the followee), copies every `"CONTACT_T"` row into it in both directions (skipping pairs with a deleted user) and drops
+  `"CONTACT_T"`; the down migration recreates `"CONTACT_T"` from mutual pairs only. Anyone (student or lecturer) may follow
+  anyone, and one-way follows are allowed. Two users who follow each other are **friends**; the `friends(a, b)` SQL helper in
+  `users/repository.ts` (two `EXISTS` on `"FOLLOW_T"`) is the one definition, and the notes `VISIBLE` fragment uses it, so a
+  contacts-only note (`pst_visibility` 'contacts', label unchanged for now) is visible to the author's friends only, in every
+  route that already used `VISIBLE` (feed, note detail, profile lists, engagement, Super Like). This supersedes the D21
+  "Contacts" bullet.
+- **API:** `POST /api/users/:id/follow` (`requireActive`): 201 new, 200 already following, 400 "You cannot follow
+  yourself", 404 "User not found" when the target is unknown or deleted. A suspended user can be followed: the rule is "if you
+  can open the profile, you can follow it", so follow gives no way to probe whether an account is suspended (its notes are
+  already hidden by `VISIBLE`, and counts and lists already leave it out). `DELETE /api/users/:id/follow` is 200 and
+  idempotent, 404 for an unknown or deleted user, without `requireActive` (D22 removal rule). Both answer with the target's follow state
+  `{followerCount, followingCount, followedByMe, followsMe, isFriend}`, which `GET /api/users/:id` now also carries.
+  `GET /api/users/:id/followers` and `/following` return `{items: [{id, displayName, role, isVerifiedLecturer, followedByMe,
+  isFriend}], nextCursor}`, 20 per page, newest follow first; 404 for an unknown or deleted user (the profile rule), 400
+  "Invalid cursor". Counts and lists leave out deleted and suspended accounts. Admin account deletion deletes the user's
+  follow rows in both directions in the same transaction.
+- **Cursor:** keyset on (`fol_created_at`, user id), sent as `<microseconds since epoch>_<id>` and built in SQL, because a
+  JavaScript `Date` holds milliseconds only and a millisecond cursor would skip follows made within the same millisecond.
+- **Following feed:** `GET /api/feed?tab=following` lists visible published notes by followed authors, newest first, with the
+  keyset paging as the other lists (D40, `lib/keyset.ts`) on (`pst_published_at`, id): `?cursor=` and `?limit=` (default 10, 1-100) with the `asOf` cutoff, answering `{items, nextCursor, asOf}` (400 "Invalid cursor" / "Invalid limit"), without `score` and `components`; keyset rather than offset because a note published or deleted between two requests would shift every later offset. It is chronological
+  rather than ranked because a user who opens it has already chosen the authors; the value is "what is new from people I
+  follow", and ranking would hide a followed author's latest note behind older popular ones. The ranked For You feed stays the
+  default; any other `tab` value is 400 "Invalid tab".
+- **Messaging (Sprint 4):** friends message directly; a non-friend's first message is a request (FR6), and approving it opens
+  that conversation only, without making the two users friends.
+- **Not changed:** the client (the UI waits for the redesign); Chapter 4 use cases, activity and sequence diagrams that still say
+  "contact" (UC04, UC10, UC15-UC18, Figures 4.7 and 4.12) and the ERD image.
+- **Alternatives:** keeping `"CONTACT_T"` beside follows (rejected: two relationships for one idea); a friends table maintained
+  on each follow (rejected: a derived fact that can drift; two indexed `EXISTS` are cheap); offset paging for follower lists
+  (rejected: rows shift as people follow and unfollow); offset paging for the Following feed (rejected for the same reason); a ranked Following feed (rejected, see above).
+- **Tests:** USR-TC12 to USR-TC21 and USR-TC24 (cursor tie-break), RANK-TC21 to RANK-TC23; NOTE-TC7 and USR-TC4 fixtures now use follows.
+- **Reversibility:** Medium (one migration with a down step that keeps mutual pairs; one-way follows are lost on rollback).
+
+## D39 — CI pipeline on GitHub Actions (R11/R26)
+- **Decision:** one workflow job runs typecheck, tests (Postgres 17 service, `parp_test` created with psql), build and a production-only `npm audit --audit-level=high` on every push and PR to `main`; it creates an empty `.env` because the dbmate npm scripts require the file (D29 covers deployment).
+
+## D40 - Scale and payload fixes: feed snapshot, paged lists, shared write limit (R25, 15 Oct 2026)
+- **Rank once per asOf (audit #2):** migration `20261015000003_feed_snapshot.sql` adds `"FEED_SNAPSHOT_T"` (`fsn_usr_id`,
+  `fsn_as_of`, `fsn_pst_ids INTEGER[]` in ranked order, `fsn_scores DOUBLE PRECISION[]` holding `[score, E, R, V, M]` per id,
+  `fsn_created_at`; primary key (viewer, asOf), index on `fsn_created_at` for the purge). The first request for an asOf (page 1, or
+  any page whose snapshot is missing) ranks the candidates as in D24 and stores the result; a request that sends an `asOf` reads its
+  slice with array slicing (`fsn_pst_ids[11:20]`) and skips the candidate, interaction and scoring work. The API is unchanged. Snapshots
+  older than `RANKING.snapshotTtlHours` (2) are deleted by the daily purge (D34) and, for one viewer, whenever that viewer stores a new
+  one, and the same write also keeps only that viewer's newest `RANKING.snapshotsPerViewer` (4), so reloading page 1 many times within the TTL cannot grow the table; a page requested after its snapshot expired or was dropped is simply recomputed. The snapshot lives in Postgres, so any instance can serve the
+  next page. It also closes the D24 gap: an unlike, a deleted comment or a suspended verifier between pages no longer reorders later
+  pages for the same asOf (a note hidden or deleted since still drops out, because the page's notes are loaded as published and through `VISIBLE`, so a snapshot cannot leak it, even to the author who still sees a hidden note elsewhere; RANK-TC27, RANK-TC28).
+  Measured on the test database with 500 notes (5 slides each, about 2,500 likes, 167 viewer interactions), mean of 20 requests through
+  Supertest: page 1 30.0 ms, page 2 from the snapshot 10.1 ms, page 2 recomputed 31.5 ms.
+- **Report queue (audit #4):** `GET /api/admin/reports` returns summaries (id, title, status, module, author id and name, report
+  count, oldest report time, the open reports) without slides, 20 per page, keyset on (oldest open report, note id) with `nextCursor`.
+  Keyset rather than offset paging because the queue shrinks while an admin works through it: with offsets, resolving five groups on
+  page 1 would make page 2 skip five. `GET /api/admin/reports/:noteId` returns the full note with its open reports (404 when it has
+  none or was deleted, 400 for a malformed id); `AdminReports.tsx` fetches it when a group is opened and shows only the first page until
+  the redesign adds "load more".
+- **Unbounded lists (audit #5):** comments, `GET /api/bookmarks`, profile notes and `GET /api/notes/drafts` take `?cursor=` and
+  `?limit=` (default 50, 1-100) and answer `nextCursor`; without a cursor they return the first page, so the current client keeps
+  working. Cursors are microseconds since the epoch built in SQL, as in D38: bookmarks on (saved at, note id), drafts on (updated at,
+  id), profile notes on (published at, id). The profile response embeds its first 50 notes plus `notesNextCursor`, and the new
+  `GET /api/users/:id/notes` continues from it (404 for an unknown or deleted user). Comments keep the ENG-TC7 order (approved
+  lecturer first, most liked, oldest), now applied in SQL so it can be paged, with the cursor `<0 pinned|1>_<likes>_<micros>_<id>`;
+  replies come with their top-level comment and are not paged. Likes are live, so a comment liked between two page requests can cross
+  the page boundary (accepted; the client can drop ids it already shows). A malformed cursor or limit is 400 "Invalid cursor" / "Invalid
+  limit". The parsing (zod), the microsecond SQL fragments and the page split are one module, `lib/keyset.ts`, which the D38 follower
+  lists now use too.
+- **Write rate limit (audit #6):** every POST, PUT, PATCH and DELETE under /api passes `writeLimiter`, 120 per minute keyed by the user
+  id in a valid auth cookie (verified with the JWT secret, before `requireAuth` runs) or the client IP when signed out; login and register
+  keep their 10 per minute per IP. Both count in `"RATE_LIMIT_T"` (`rlt_key`, `rlt_window_start`, `rlt_hits`; migration
+  `20261015000004_rate_limit.sql`) through `PgStore`, a small implementation of express-rate-limit's `Store` (one UPSERT per hit that
+  starts a new fixed window when the old one has passed), so the limits hold across instances with no new dependency. Settings are in
+  `RATE_LIMITS` in `features/auth/rateLimit.ts`; the daily purge deletes expired counters. Still skipped under `NODE_ENV=test`; the
+  store itself is tested directly.
+- **Alternatives:** an in-memory snapshot cache (rejected: lost on restart and not shared by instances); storing full feed items
+  (rejected: stale counts, and slide HTML for 500 notes); offset paging for the four lists (rejected: rows shift as users add and remove
+  them); a Redis store or `rate-limit-postgresql` (rejected: a new service or dependency for one UPSERT); a per-route write limit
+  (rejected: one limit for all writes is simpler and still stops a script flooding comments or likes).
+- **Client until the redesign:** CommentPanel asks for `?limit=100` so new comments are not lost past 50 top-level comments; Saved,
+  Drafts and Profile show their first 50; each carries a `shortcut:` comment, and "load more" comes with the redesign. AdminReports
+  reloads the queue when resolving empties the loaded page and more groups exist.
+- **Report follow-up:** the Chapter 4.3 ERD and schema table must gain `"FEED_SNAPSHOT_T"` and `"RATE_LIMIT_T"`; they do not show them yet.
+- **Review fixes:** the comments query filters on `cmt_pst_id` in the outer select and in the reply `EXISTS`, so both scans use
+  `comment_post_idx` (EXPLAIN on 60,000 comments: index scan for the top-level page, bitmap index scan for the rows and replies);
+  `tokenSubject` and the JWT strategy share one verify-options constant (AUTH-TC20 covers forged and expired tokens).
+  The "deleted comment still has live replies" check was an `EXISTS` inside an `OR`, which the planner turned into a hash of every
+  live reply in `"COMMENT_T"` (a full seq scan of 50,000 rows whenever the note had a deleted top-level comment). Migration
+  `20261015000005_comment_parent_index.sql` adds the partial index `comment_parent_idx` on `cmt_parent_id` (non-null only), and the
+  check is now a `LEFT JOIN LATERAL ... LIMIT 1` that probes that index once per deleted comment (a one-time filter skips the rest).
+  EXPLAIN ANALYZE on 60,000 comments, for a note with 50 deleted top-level comments (half with live replies): index scan on
+  `comment_parent_idx` (50 probes), no seq scan of `"COMMENT_T"`, 9.3 ms down to 1.2 ms.
+- **Tests:** RANK-TC24 to RANK-TC27, ADM-TC29, ADM-TC30 (ADM-TC16 now expects no slides), ENG-TC18, ENG-TC19, NOTE-TC26, USR-TC25,
+  AUTH-TC19, AUTH-TC20.
+- **Reversibility:** Easy (two migrations with down steps; the list routes accept the old call unchanged).
+
+## D41 - Observability and graceful shutdown (R18, 15 Oct 2026)
+- **Context:** the server logged with `console.*`, had no way to tie a log line to a request, no error tracking and no clean stop on
+  deploy (Fly sends SIGTERM/SIGINT), so in-flight requests and pool connections were dropped.
+- **Decision:** `lib/logger.ts` holds one pino logger plus `pino-http` middleware mounted first in `app.ts`. It logs JSON, redacts
+  set-cookie and password fields, and is silent under `NODE_ENV=test`. The request id is the caller's
+  `X-Request-Id` when it matches `[A-Za-z0-9._-]{1,64}`, else `crypto.randomUUID()`, and is echoed in the response header. Health checks
+  are not logged. Pretty printing was left out (`pino-pretty` is not a dependency; plain JSON is readable enough in dev).
+- **Sentry:** `lib/errorReporting.ts` imports `@sentry/node` dynamically only when `SENTRY_DSN` is set (zod-validated optional URL), so
+  without it there is no load and no network traffic. The central error handler calls `reportError(err, { requestId })` for 5xx only;
+  Sentry receives 5xx route errors plus uncaught crashes and no request data (`beforeSend` deletes `event.request`, since the URL or query can carry a searched email). The request log serialises only id, method and path, never headers.
+- **Shutdown:** `server.ts` handles SIGTERM/SIGINT once: `server.close`, clear the purge timers, wait up to `SHUTDOWN_TIMEOUT_MS`
+  (10 s), `pool.end()`, exit 0. A second signal or the timeout exits 1. Each step is logged. `fly.toml` needs `kill_timeout = 15` because shutdown waits up to 10 s. When Socket.io arrives (Sprint 4), `io.close()` must run before `server.close`.
+- **Readiness:** `GET /api/health` already ran `SELECT 1` and answered `{ status, db }` with 503 when it failed; kept, and the 503
+  path is now tested (OPS-TC2) by making `pool.query` reject once.
+- **Versions:** pino 10.3.1 (10.4.0 is under two weeks old), pino-http 11.0.0, @sentry/node 10.75.3 (11.x and later 10.76 are under
+  two weeks old; adds 19 packages).
+- **Alternatives:** winston (slower, no request middleware of this quality); always loading Sentry (rejected: breaks the "no network
+  without a DSN" rule); a shutdown helper module (rejected: one caller).
+- **Tests:** OPS-TC1 to OPS-TC4 (TC4 checks log redaction). The signal handling itself is not unit tested.
+- **Reversibility:** Easy (remove the middleware, logger and handlers; no data or schema change).
+
+## D42 - Client test foundation: jsdom and React Testing Library (R26 part 1, 15 Oct 2026)
+- **Context:** the client had one logic test, and none of the auth, API-wrapper or route-guard behaviour added by D35 and the R1/R25 fixes.
+- **Decision:** dev dependencies `jsdom` 30.1.1, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2 (RTL peer) and
+  `@testing-library/user-event` 14.6.7, all exact and over two weeks old (newer patch releases of jsdom and user-event were not).
+  The default Vitest environment stays node; only files that render React start with `// @vitest-environment jsdom`, so pure
+  logic tests (api.ts, roles.ts, hashtags.ts) do not pay for jsdom. `fetch` is stubbed per test; nothing reaches a server.
+  Tests are behaviour-first (visible text, roles, redirects, thrown errors) and avoid class names and DOM structure, because the
+  frontend redesign is pending and should not break them. Cases are CLI-TC1 to CLI-TC14 in Chapter 4.5.
+- **Alternatives:** happy-dom (rejected: less complete, RTL and jsdom are the documented pair); snapshot tests (rejected: break on
+  every redesign); a Vitest workspace or `environmentMatchGlobs` (rejected: a per-file pragma is one line and explicit).
+- **Next:** Playwright end-to-end tests run against the real app after the redesign (R26 part 2).
+- **Reversibility:** Easy (dev dependencies and test files only; no runtime code changed).
+
+## D43 - User decisions after the overnight run (15 Oct 2026, morning)
+- **Wireframes v2 accepted in direction**, with changes (plan R32): lower fidelity (main labels only, descriptive copy as
+  lorem ipsum), produced as SVG for import into a Figma project; keep every designer extra (page notes, duplicate
+  slide/draft, pinned profile notes, follower/following/like counts, curated fonts, Unsplash credit, module rename);
+  the visibility label becomes **"Friends only"**; the **"For You" tab becomes "Feed"**.
+- **Editing:** authors can edit a published note at any time (content, details, music); D21's rule that a published
+  note cannot return to draft still holds.
+- **New features to specify** (interview first): collaboration with view/edit share links, owner-managed access
+  (anyone with the link or invited users), and requests from viewers to collaborate (R30); guest browsing of the feed
+  without an account, with search, comments, messaging and other actions prompting login or registration (R31).
+- **Editor spec (R21) answers:** add a table/text-grid element; whole-box text styling agreed; `shared/` workspace;
+  500 MB per-user quota with automatic compression, GIFs stored as still WebP; assets reusable across notes; local
+  unsaved-changes backup for published notes accepted if its costs stay small (see the R21 spec update); ffmpeg via the
+  production route (system ffmpeg in the Docker image and CI, installed locally), not npm binary downloads.
+- **FR17 music switches from Deezer to Jamendo** (Creative Commons catalogue, free API key): Deezer's terms limit use
+  to private, family-scope use, which a public demo would breach. Supersedes the Deezer parts of D3's review and D31.
+- **UC17 "Chat with Friend"** and **UC18 group chats limited to friends** confirmed.
+- **AI assistant (D33):** provider Groq, model `openai/gpt-oss-120b`, configured by the user in `.env`.
+- The decisions logged without the user overnight (D30-D42) are accepted.
+
+## D44 - Collaboration (R30) and guest browsing (R31) specs (15 Oct 2026, user interview)
+**R30 collaboration**
+- Any note can be shared, draft or published. An edit never resets `pst_published_at`; engagement stays with the note;
+  a content edit after a Super Like marks the note "edited since verification" and removes V until the lecturer
+  re-confirms (lecturer notified through R8); hashtag edits change M at once; the note also appears in the Following
+  feed of each co-author's followers.
+- Owner access options: view link and edit link (random tokens, revocable and regenerable), invite specific users with
+  view or edit, and viewer requests to collaborate that the owner approves or declines from notifications. A view link
+  opens a draft or friends-only note for that token only.
+- Co-authors edit content (slides, hashtags, music) only; the owner alone publishes, deletes, changes visibility and
+  manages access. Co-authors are credited on the card.
+- One editor at a time (soft lock plus the `baseUpdatedAt` 409 check). Real-time co-editing (Yjs over Socket.io) is a
+  stretch goal for the December buffer; if unbuilt it goes to Chapter 7 as future work.
+
+**R31 guest browsing**
+- Signed-out visitors land on a short Welcome page (Browse as guest, Log in, Register).
+- Guests can read the Feed (public notes only, M = 0, snapshot keyed by IP and asOf), open a note with its comments,
+  view public profiles and search public notes. This reverses D43's "search prompts login".
+- Like, save, comment, report, follow, message and create open a Log in / Register sheet that returns the visitor to
+  the same note afterwards. Friends-only and private notes never reach guests; guest endpoints are rate-limited by IP.
+
+## D45 - Guest browsing on the server (R31, 15 Oct 2026)
+- **Context:** D44 lets signed-out visitors read the Feed, a note with its comments, and public profiles; everything else stays signed-in.
+- **Decision:** `optionalAuth` (next to `requireAuth`) attaches the user for a valid cookie and otherwise treats the request
+  as a guest, including an invalid or expired cookie, so a stale session degrades to guest reading instead of a 401. Such
+  responses carry `X-Viewer: guest` (exposed through CORS); the client treats it like a 401 while it believes it is signed
+  in, so an expired session still reaches the session-expired login (CLI-TC19) instead of silently browsing as a guest. A guest
+  is viewer id 0 (`GUEST_ID`), which matches no account, so the existing `VISIBLE` rule passes only published public notes by
+  active or restricted authors and every per-viewer flag (liked, saved, follows) is false; no query was duplicated. Guests
+  have no interest history, so M = 0. Views are only logged by an authenticated endpoint, so guests log nothing.
+- **Snapshot:** every guest gets the same ranking for one asOf, so no IP key is needed (D44 suggested one). Guest rankings
+  are not stored in "FEED_SNAPSHOT_T" (`fsn_usr_id` is a foreign key to "USER_T"); page 1 keeps the ranking in an
+  in-process Map keyed by the cutoff, capped at `RANKING.guestRankingCacheSize` (50) with the oldest dropped, and later
+  guest pages with that asOf read their slice from it. Re-ranking per page was rejected: an unlike deletes the like row,
+  which changes E even at an old asOf, so pages could skip or repeat a note (RANK-TC31). The cache is per process and is
+  not shared across Fly machines (R27); marked as a `shortcut:` in `feed/service.ts`.
+- **Rate limit:** guest reads are limited to 120 per IP per minute (`RATE_LIMITS.guestReads`) on the shared Postgres store
+  (D40); a scrolling reader uses about 20, so several guests behind one campus NAT still fit. Signed-in reads are not
+  counted. The key is `req.ip`, so `trust proxy` must be set for the host before deploy (the D35 pre-deploy item). That
+  change must use the hop count `1` (or read `Fly-Client-IP`), never `true`: with `true` a client can forge
+  `X-Forwarded-For` to bypass the guest limit, and with the current `'loopback'` every guest behind Fly's proxy shares one bucket.
+- **Tests:** AUTH-TC21, NOTE-TC27, ENG-TC20, ENG-TC21, USR-TC26, RANK-TC29 to RANK-TC31, CLI-TC19; RANK-TC10 and USR-TC5 changed
+  because the feed and profile no longer return 401 without a cookie.
+- **Reversibility:** Easy (swap `optionalAuth` back to `requireAuth` on five routes; no schema change).
+
+## D46 - Collaboration on the server (R30, 15 Oct 2026)
+- **Context:** D44 and the R30 backend spec: collaborators, view and edit links, requests, a soft lock, and edits that
+  must not reset publication but must void stale lecturer verification. UI waits for wireframe sign-off.
+- **Schema:** one migration adds "COLLABORATOR_T", "SHARE_LINK_T", "COLLAB_REQUEST_T" and `pst_content_edited_at`,
+  `pst_lock_usr_id`, `pst_lock_expires_at` on "POST_T". Partial unique indexes enforce one active link per note and role and
+  one pending request per note and user; check constraints keep the lock pair and `crq_decided_at` consistent.
+- **Access rule:** the existing `VISIBLE` is unchanged, so likes, comments, bookmarks, search and ranking ignore
+  collaboration. A separate `SHAREABLE` rule (draft or published, author active or restricted) gates every collaborator
+  and link path, so hidden or deleted notes and suspended authors give no access. `GET /api/notes/:id` reads
+  `VISIBLE OR collaborator`; the link route reads any `SHAREABLE` note once the token resolves.
+- **Edit links join by POST:** the spec put joining on `GET /api/share/:token`. A GET that writes would skip the CSRF
+  header check and the write limiter (D35, D40) and could be triggered by a prefetch, so GET only resolves the link (an
+  edit link needs a login) and `POST /api/share/:token` (signed in, active) joins. The owner redeeming their own link
+  gets role `owner` and no row; a view collaborator redeeming an edit link is upgraded.
+- **Tokens:** 32 bytes from `crypto.randomBytes`, base64url (43 characters); only the SHA-256 hex is stored and looked
+  up by equality on a unique index, so no timing-sensitive comparison is needed. The raw token appears only in the create
+  response. Malformed tokens answer 404 without a query. `GET /share/:token` uses the guest IP limiter for signed-in users
+  too, since `optionalAuth` only limits guests.
+- **Optimistic check:** no `baseUpdatedAt` existed before R30. It is required from editors and optional for the owner, so
+  the current editor client keeps working until the frontend sends it. The check, the lock check and the update run in
+  one transaction with `SELECT ... FOR UPDATE`; timestamps compare at millisecond precision because that is what the
+  client receives. An owner's PUT is also refused with 423 while an editor holds a live lock.
+- **Publication time and V:** `replaceNote` keeps `COALESCE(pst_published_at, NOW())`, so an edit never moves it. A title
+  or slide change to an already published note stamps `pst_content_edited_at`; hashtag, template and draft edits do not
+  (publishing a draft is not a content edit). `VALID_VERIFICATIONS` now joins "POST_T" and drops Super Likes older than
+  that stamp, so V, the badge, `verifiedBy` and the ranking candidates all follow one rule. `editedSinceVerification` is
+  true when any counting Super Like predates the edit, even if another lecturer has re-confirmed. A repeat
+  `POST /notes/:id/verify` moves only a stale row's `ver_created_at` to now and still answers 200. Known limit: the rule
+  compares against the latest edit, not the feed's asOf, so an edit after page 1 changes V if the ranking were recomputed
+  for that asOf; stored snapshots (D40) and the guest cache (D45) keep pages stable, and the next page 1 picks it up.
+- **Requests:** a view collaborator may request edit access (the spec said "non-collaborator"; asking for an upgrade is
+  the obvious use). Owners get 400, editors 409. Approving upserts the collaborator with the chosen role (default edit).
+- **Smaller choices:** co-authors are `{id, displayName}` because "USER_T" has no username column; suspended or deleted
+  co-authors are left out of the credit. Music is in the spec's editable fields but no music field exists yet, so there
+  is nothing to guard. Removing a collaborator also releases their lock. The lock TTL (120 s), token size and request
+  message limit live in `collaboration/config.ts`, not the ranking config. R8 notifications will read the pending
+  requests and `editedSinceVerification`; there is no separate list endpoint for lecturers yet.
+- **Review fixes (same day):**
+  - Credit only after the first edit: `clb_edited_at` is set on an editor's first successful save. `coauthors` and the
+    Following-feed reach use only edit collaborators with that stamp, so an owner cannot put someone's name on a note or
+    push it to their followers by inviting them. Access itself is unchanged: an invited editor can read and edit at once.
+  - Edit collaborators count as authors for like (400) and Super Like (409), so a co-author cannot raise E or V of their
+    own work. View collaborators can still like.
+  - The request log replaces `/api/share/<token>` with `/api/share/[token]` (`logPath`), since a token grants access.
+  - `GET /api/notes/:id` (and the share-link GET) add `myRole` (`owner`, `edit`, `view` or null) for the editor UI; the
+    feed does not carry it.
+  - Co-authors may edit, lock or join an edit link only while the author is `active` (UC21); reading is unchanged.
+    `replaceNote` re-checks the editor's role under `FOR UPDATE`, link regeneration locks the note row so concurrent
+    requests cannot break the one-active-link index, a downgrade to view frees that user's lock, and a re-confirmation
+    updates the remark when one is sent.
+- **Tests:** COL-TC1 to COL-TC24, OPS-TC5.
+- **Reversibility:** Medium. The migration has a down step; dropping the feature means reverting the PUT role check,
+  `VALID_VERIFICATIONS` and the Following-feed clause.
+
+## D47 - User decisions, 16 Oct 2026 (early morning): likes, suspension, Vite+, Sprint 4
+- **Confirmed:** D45's shared in-process guest ranking cache; D46's co-author credit only after a first edit; an owner's
+  or co-author's title/slide edit drops V until a lecturer re-verifies the latest version.
+- **Self-likes (reverses part of D46):** an author or co-author may like their own note and the like shows in the count,
+  but the ranking engagement score E ignores likes by the author or any edit collaborator, so nobody boosts their own
+  note. Super Like by a co-author lecturer stays blocked (FR1/FR2 conflict of interest).
+- **Suspension (D26 applied to the public):** a suspended user's profile, notes and comments are hidden from everyone
+  except admins, guests and signed-in users alike (comments show as "comment unavailable", like deleted ones).
+- **Vite+ adopted:** move the workspace from Vite 8 + Vitest 5 to Vite+ (`vite-plus`, MIT), pinned to 1.0.0 (28 Sep,
+  passes the two-week rule). Justification for Chapter 2: Vite+ keeps the same Vite core (Rolldown) and Vitest, so the
+  IR's Vite choice and its rationale stand; it adds what the project lacked, linting (Oxlint) and formatting (Oxfmt),
+  behind one CLI (`vp dev/build/test/check`), which simplifies CI. Build speed is roughly unchanged because Vite 8
+  already bundles with Rolldown; the gain is fewer tools and configs, not raw speed.
+- **Sprint 4 spec:** `docs/specs/Sprint4_spec.md` (interview 16 Oct). Search blends text relevance with feed signals
+  (fallback to text-only if FR5's 3 s fails under the 10,000-note test); academic terms come from an admin-editable
+  `"TERM_T"` that starts empty, and the term filter is hidden until terms exist (FR15 delivered as written); chat
+  supports text, note cards, reply to a message, delete own message, read receipts, typing indicator, images (after
+  R22); groups up to 30, any member adds their friends; notifications in-app only, kept 30 days; users can block users.
+- **Implementation (16 Oct, `fix/d47-likes-suspension`):**
+  - Self-likes: the like route no longer answers 400. E is computed only from `countsCol(asOf)` (ranking candidates), which
+    now skips likes by the author or any edit collaborator (credited or not); the feed snapshot stores that E, so "Why
+    this note" follows. The displayed count (`countsCol()` without asOf) still includes them. Super Like keeps its 409.
+  - Suspension: `SHOWN_USER` (users repository) hides a suspended account from non-admins in the profile, its notes
+    list, its follow lists and follow/unfollow (404, as for a deleted account); the admin check reads the viewer's role
+    from the database. Comments use the deleted-comment path: a suspended author's comment shows as
+    `[comment unavailable]` with no author or pin only while it has visible replies, and their replies are omitted.
+    Co-author credit and `verifiedBy` already dropped suspended users. An admin also sees the published notes on the
+    profile and in the note detail (`VISIBLE_OR_ADMIN`); the shared `VISIBLE` is unchanged, so the feed still withdraws
+    them for everyone (D26). Unfollowing a user who became hidden answers 204. The shown comment count leaves out
+    suspended authors' comments, and replying to or liking such a comment is refused as for a deleted one. The client
+    shows an author-less comment as its body text alone.
+  - Review fixes: a self-like or co-author like logs no `INTERACTION_T` row, so M is not skewed. `OWN_LIKE` reads the
+    current collaborators, so re-ranking the same asOf after a collaborator change can shift E slightly.
+  - Admin comment read (16 Oct, `fix/admin-suspended-comments`): `GET /api/notes/:id/comments` uses `VISIBLE_OR_ADMIN`, so an admin sees the comments list of a suspended author's note, with suspended commenters shown in full (`GONE` already honours `viewerIsAdmin`). Only that read path changed: like, comment and reply still use `VISIBLE` and answer 404 for admins, and search still hides suspended content from everyone. As with note detail and profiles, this covers any published note, including friends-only notes and notes across a block; drafts, hidden and deleted notes stay closed.
+  - Not changed: likes by suspended users, and their comments in E, still count.
+  - **Tests:** ENG-TC16, COL-TC19, USR-TC16 and ADM-TC20 updated; RANK-TC32, USR-TC27, ENG-TC22 added.
+- **Implementation (16 Oct, `chore/vite-plus`):** `vite-plus` 1.0.0 with `vite` aliased to `@voidzero-dev/vite-plus-core` 1.0.0
+  and `vitest` pinned to the bundled 5.0.1 through npm `overrides`; `dev`, `build` and `test` run through `vp`, and `lint`,
+  `format:check` and `check` are new scripts. CI gains a Lint step. Typecheck, 208 server tests, 21 client tests and build pass.
+  Oxlint reports 0 errors and 5 warnings. The format check is not in CI because Oxfmt would change 107 files; a dedicated
+  formatting PR comes first. Measured build and test times were not faster (build 5.94 s to 6.54 s, server tests 32.5 s to 35.8 s).
+  Details in `docs/sprints/vite_plus_migration.md`.
+  Bumped to 1.3.0 on 16 Oct as a user-approved exception to the two-week rule (1.3.0 published that day; vitest pin 5.0.5).
+  Interleaved re-timing, median of 3 plain Vite vs Vite+: build 8.81 s vs 8.41 s, client tests 3.98 s vs 4.40 s, server tests
+  55.90 s vs 54.93 s, so the speed is the same within noise and the earlier 10 percent slowdown does not reproduce.
+
+## D48 - Search and academic terms on the server (Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47): FR4, FR5/NFR1, FR12, FR15 and R7; SRCH-TC1 to SRCH-TC16. UI waits for wireframe sign-off.
+- **Endpoint:** `GET /api/search?q=&tab=top|notes|people|hashtags|modules&lecturer=any|<id>&term=<id>&from=&to=&module=<id>&cursor=&limit=`
+  with `optionalAuth` (guests search public notes, IP limit, D44/D45). zod gives 400 for a blank query, one over 100
+  characters, from after to, a term together with from/to, an unknown term (on every tab), or a malformed `asOf`, filter
+  or cursor. Ids in the query are digits only, 1 to 2147483647 (`invalidId`, so `1e3`, `+1` and `1.0` are refused).
+- **Tabs:** Top returns the notes page plus, on page 1 only, up to 3 people, hashtags and modules; the other tabs page one
+  kind. People, hashtags and modules ignore a leading `#` or `@` and ignore the note filters.
+- **Matching:** a note matches through `pst_search_doc` (`websearch_to_tsquery`, so quoted phrases work) or through its
+  module's code (prefix), name or programme (contains); `#tag` matches that exact hashtag only. People match by display
+  name, hashtags by name, modules by code, name or programme (`ILIKE` with the user's text escaped). Visibility is the
+  shared `VISIBLE` rule plus `published`, so suspended authors' notes never appear; suspended and deleted accounts never
+  appear in people, even for admins; a hashtag appears only while a note the viewer can see carries it.
+- **Note order:** S = 0.5·T + 0.25·E + 0.25·V (`RANKING.searchWeights`, NFR5), ties by newest then id. T is
+  `ts_rank_cd` (normalisation 1, length-damped) divided by the best T among the matches, because raw ranks are tiny
+  (about 0.04 to 0.25) and would be swamped by E and V. E and V are the feed's `engagement()` and `validation()` on the
+  ranking counts (self-likes excluded, D47). No R and no M, so there is no personalisation; the only viewer difference is
+  that a friend's contacts-only notes take part in the "best T". The keyset cursor is the last note's (score scaled to an
+  integer, published time, id).
+- **Stable paging (review fix):** as in the feed (D22, D24), page 1 resolves `asOf` with `getCutoff` and returns it; later
+  pages send it back. Only notes published by the cutoff match, and likes, comments and Super Likes count only up to it,
+  so a like or a new, stronger note between pages cannot make a note skip or repeat (SRCH-TC17). Limit: removals are not
+  time-bound, so an unlike, a withdrawn Super Like, a content edit that voids a Super Like (D46), or a note hidden or
+  deleted between pages can still shift the remaining order by a place or two, and a note that became invisible is
+  dropped from its page.
+- **Candidate cap (review fix):** the query keeps the best `RANKING.searchCandidateLimit` (500) matches by text rank, then
+  newest, then id, and computes counts, Super Likes and lecturer authorship for those only; the best T comes from the
+  capped set. Trade-off: a broad query returns at most 500 notes, and a weak text match with high E or V outside the first
+  500 by text rank is never shown. The filters (lecturer, term, dates, module) apply before the cap, so narrowing the
+  search reaches such notes. Same kind of shortcut as the feed's 500 candidates (D24).
+- **Other tabs order** by text match (exact, then prefix, then contains), then id, keyset on (match, id).
+- **Filters:** `lecturer=any` keeps notes by a counting lecturer (approved, active or restricted) or with a valid Super
+  Like (D24, D46); `lecturer=<id>` keeps that lecturer's own notes and the ones they validly Super Liked, and is empty for
+  a non-lecturer. `term` resolves to its dates. Dates are inclusive Malaysian calendar days (`Asia/Kuala_Lumpur`), since
+  every user is at APU and the database clock is UTC.
+- **Terms:** `"TERM_T"` (name unique, start before end, overlaps allowed because intakes differ per programme), empty until
+  an admin adds terms; public `GET /api/terms`; admin `GET/POST /api/admin/terms`, `PUT/DELETE /api/admin/terms/:id` (PUT
+  replaces all three fields so start before end is checked in one place). Lives in the modules (catalogue) feature.
+- **Performance (SRCH-TC10):** 10,000 notes, 50 mixed queries: median 134 ms, maximum 897 ms after the review fixes
+  (`docs/sprints/search_performance.md`), so the blend stays and the text-only fallback was not used. EXPLAIN showed no
+  need for new indexes; trigram indexes for people and hashtags are deferred until the user table is large.
+- **Tests:** SRCH-TC1 to SRCH-TC17 (TC3, TC8, TC9 and TC13 rows updated for `lecturer=any|<id>` and campus days), ADM-TC31 to
+  ADM-TC34, RANK-TC8 (search weights sum to 1).
+- **Reversibility:** Easy. Weights are config; text-only order is `searchWeights` {1, 0, 0}.
+
+## D49 - User blocking on the server (Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47), "Blocking". Backend only; the UI follows wireframe 34.
+- **Schema:** `"BLOCK_T"` (blk_blocker_id, blk_blocked_id, blk_created_at), primary key on the pair, `block_blocked_idx`
+  on the blocked side, and a check that nobody blocks themself.
+- **Endpoints:** `POST /api/users/:id/block` (201, or 200 when already blocked) and `DELETE /api/users/:id/block` (idempotent)
+  need only a login: a restricted user may still block, since blocking protects them and adds no content (review fix), `GET /api/users/me/blocks` (keyset, 20 per page, newest first, D40).
+  Blocking deletes follows in both directions, pending collaboration requests either user made on the other's notes, and
+  edit locks either holds on the other's notes, in one transaction that first locks both USER_T rows in id order. Follow
+  share-locks its target in a separate statement before checking, so a follow racing a block is either refused or
+  deleted by it (review fix).
+- **One rule:** `blockedWith(v, other)` in `users/repository.ts` is the only SQL for "a block in either direction". It is
+  written as `other IN (v's blocked list UNION ALL v's blockers)`, so with the viewer as `v` Postgres hashes the list once
+  per query instead of probing per row. It is joined into `VISIBLE` (feed, following feed, ranking candidates, search,
+  hashtag and module counts, bookmarks, profile notes, note detail, engagement targets), `COLLAB_ROLE`, the comment `GONE`
+  rule, people search and follow. `isBlocked(a, b)` is its TypeScript form, exported for messaging. A guest (id 0) has
+  no blocks, so guests are unaffected.
+- **What a block stops, both ways:** seeing the other's notes (404 on detail), profile (404 for the blocked side; the
+  blocker gets `{id, displayName, blockedByMe: true}` so the UI can offer Unblock, also when the block is mutual), profile notes and follow lists (404
+  both ways), following, likes, comments, comment lists, replies, comment likes, Super Likes, bookmarks, appearing in
+  people search, collaboration invites, share-link opening and joining, collaboration requests and approvals (`decideRequest` answers 404 when the requester
+  cannot be added), and the shared-notes list. The other's comments
+  on a third user's note follow the suspended-author path: hidden, or "[comment unavailable]" with no author while they
+  have visible replies.
+- **Choices made (safe option, logged for review):**
+  - Reporting ignores blocks (`VISIBLE_IGNORING_BLOCKS`), so a user can still report someone they blocked.
+  - Admins cannot be blocked (403): a moderator must stay able to see and act on content. An admin may block a user;
+    admin routes never read `"BLOCK_T"`, and note detail keeps the admin path (D47), so moderation is unaffected.
+  - Existing collaborator rows are kept but give no access while a block stands (`COLLAB_ROLE`), so an unblock restores
+    them and no co-author credit is lost. The collaborator can still leave (self-removal skips the access check), and the
+    owner can still remove them, but the owner cannot change their role until the block is lifted.
+  - The admin bootstrap (`upsertAdmin`) deletes blocks against the account it promotes, so no admin is ever blocked.
+  - Shown like and comment counts are not adjusted per viewer, so a count can include the other side's comment.
+  - A block does not hide either user from third parties' follower lists; only the pair's own follows are removed.
+  - On a third user's note, the other side's name can still appear as "Verified by" (`VERIFIED_BY`) or as a co-author.
+- **Performance:** SRCH-TC10 now seeds 1,000 blocks plus 20 on the measured user. EXPLAIN ANALYZE on that dataset (10,000
+  notes) showed the block check as one hashed subplan per query (loops=1) using the primary key and `block_blocked_idx`;
+  ranking candidates took 83 ms and the 50-query search median was 152 ms (max 1,053 ms), against 134 ms before (D48).
+  No further index was needed.
+- **Tests:** BLK-TC1 to BLK-TC14.
+- **Reversibility:** Easy; dropping the fragment from `VISIBLE` and the routes restores the old behaviour.
+
+## D50 - Messaging and Socket.io on the server (Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47), "Messaging": FR6, FR7, FR13, FR16, UC15-UC18. Backend only; the UI waits for the wireframes.
+- **Versions:** socket.io 4.8.4 (server) and socket.io-client 4.8.4 (dev, tests only), both released 25 Sep 2026; their
+  transitive packages (engine.io 6.6.11, ws 8.21.3, socket.io-parser 4.2.7 and others) are all older than two weeks.
+- **Schema:** migration `20261016000003_messaging.sql` reuses the initial tables. `"CONVERSATION_T".cnv_pair`
+  ("<lower id>_<higher id>", unique, set only for direct chats) gives one direct conversation per pair, so two first messages
+  racing cannot open two chats. `"CONV_MEMBER_T".cmb_last_read_msg_id` replaces `cmb_last_read_at`, and `cmb_left_at` is
+  dropped because leaving deletes the member row. `"MESSAGE_T"` gains `msg_reply_to_id` and `msg_deleted_at`, and its index
+  becomes (conversation, id) for history paging, plus a partial index on `msg_reply_to_id` for the reply foreign key. The
+  pending-request index now covers the pair in either direction. No
+  attachment column: chat images come with R22's upload pipeline, which will add its own column.
+- **Split of work:** every write goes over REST (so it gets the CSRF header check, the shared Postgres write limiter of
+  D40 and `requireActive`), and Socket.io only delivers. The one client event is `typing`. MSG-TC2 and MSG-TC3 therefore
+  expect a 400 response rather than a socket error acknowledgement; the rest of MSG-TC1-10 keep their meaning.
+- **Handshake (D35):** `allowRequest` refuses every engine request whose `Origin` is not `CLIENT_ORIGIN`, a missing
+  Origin included, because WebSockets bypass CORS and the CSRF header. Then an `io.use` middleware runs
+  `passport.authenticate('jwt')` on the handshake request, so the cookie is read and verified, and the user reloaded, by the
+  same rules as `requireAuth`. Suspended and deleted users are refused. A socket is disconnected when its token expires
+  (at most one hour, so a logout on another tab holds within the token lifetime), and an admin suspension or deletion
+  disconnects the user's sockets at once. Shutdown calls `io.close()`, which disconnects sockets and then closes the HTTP
+  server (D41). `maxHttpBufferSize` is 1,000 bytes, since clients send only typing events.
+- **Deployment:** the app runs on a single Fly machine until the Socket.io Postgres adapter lands (R27): rooms, typing
+  throttles and the kicks done through them (suspension, removal from a group) are in-memory and per process.
+- **Rooms and events:** on connect each socket joins `user:<id>`, then `conv:<id>` for every conversation it belongs to
+  (joins happen after connect, not in the handshake middleware, because before connect the socket is not in the namespace
+  and `socketsJoin`, `socketsLeave` and `disconnectSockets` would miss it). After that, REST changes reach open sockets
+  through `socketsJoin`/`socketsLeave` on the user room. Server events: `message:new`, `message:deleted`,
+  `request:new` (recipient only), `request:accepted` (sender only; a decline notifies nobody), `conversation:read`,
+  `conversation:updated` (group created, renamed, member added or removed), `conversation:removed` (to the removed or
+  leaving member) and `typing`. When a message carries a note card it is sent once per member, each with the card checked
+  for that reader; otherwise one payload goes to the room.
+- **Endpoints (all under /api, login required):** `POST /messages` `{toUserId, body, noteId?}` answers 201
+  `{conversationId, message}` when it goes into a conversation and 202 `{request}` when it becomes a request;
+  `GET /conversations` (keyset, 20, newest activity first, with members and their read receipts, last message and unread
+  count), `GET /conversations/:id`, `GET /conversations/:id/messages` (keyset on message id, 50, newest first),
+  `POST /conversations/:id/messages` `{body, noteId?, replyToId?}`, `DELETE /messages/:id`, `POST /conversations/:id/read`
+  `{messageId?}`, `GET /message-requests` (keyset, 20), `POST /message-requests/:id/accept|decline`, `POST /conversations`
+  `{name, memberIds}` (group), `PATCH /conversations/:id` `{name}`, `POST /conversations/:id/members` `{userId}`,
+  `DELETE /conversations/:id/members/:userId`.
+- **Rules:**
+  - Friends (D38), or a pair that already has a conversation, message directly. Otherwise the first message is a pending
+    request holding the text and note card, one per pair. Accepting opens the conversation with the held message (its
+    original time and note, inserted through the same block-checked INSERT, rolled back if refused), marks it read for the
+    recipient and creates no follow. Whenever a direct conversation opens or takes a message, a pending request between the
+    pair is accepted in the same transaction and its held message inserted first, so a pair who became friends meanwhile
+    keeps its history in order. Declining only sets the status, so the sender may ask again later.
+  - Blocks (D49): the recipient check and the message INSERT ... SELECT both embed `blockedWith`, so a committed block
+    always stops a message. A direct chat across a block disappears from both lists, and its history and sends answer 404
+    until an unblock restores it. Requests from a blocked sender leave the inbox and cannot be accepted. The typing relay
+    checks `isBlocked`. Suspended or deleted users cannot be messaged (404); an existing chat with one stays readable,
+    but sends there answer 403.
+  - Text is 1-2,000 characters of plain text: control characters other than tab and newline are dropped and the rest is
+    trimmed, then stored as typed; the client renders it as text, the same as comments.
+  - A note card must be VISIBLE to the sender when sent and is re-checked against VISIBLE for every reader, in history,
+    the inbox and live events. A reader who cannot see it gets `note: null, noteUnavailable: true`.
+  - A reply must point at an undeleted message in the same conversation. Soft delete is by the sender only; it clears the
+    body and note in the row, so history shows `deleted: true` with a null body.
+  - Read receipts store the last-read message id per member and only move forward. Unread counts leave out the reader's
+    own and deleted messages.
+  - Typing is relayed to the room except the sender, never stored, at most once per conversation per socket every 2 s
+    (`messaging/config.ts`), and only for rooms the socket is in.
+  - Restricted users (requireActive) cannot send, start chats, create groups, add members or rename. They can read, mark
+    read, delete their own messages, answer requests and leave.
+- **Groups (FR13):** the creator plus 2-29 friends, 30 at most. Any member may add one of their own friends; the new
+  member starts with all earlier history marked read. Membership changes lock the group row first and only then read its
+  size and the actor's membership, in a separate statement, so a change committed while waiting for the lock is counted
+  and the cap holds under concurrent adds (MSG-TC26). Anyone may leave; the owner renames and removes members.
+- **Choices made (safe option, logged for review):**
+  - When the owner leaves, the earliest-joined remaining member (ties by user id) becomes owner; the group is deleted
+    with its messages when its last member leaves.
+  - Adding or creating a group is refused (400 "These users cannot be in the same group") when any two members are in a
+    block. The message does not say who blocked whom, but it does tell the adder that some block exists. Blocks made
+    after joining remove nobody, so both stay and see each other's group messages.
+  - New members see the group's full history (marked read for them); there is no per-member history cut-off.
+  - A deleted account's member rows and messages stay, shown as "Deleted user"; if it owned a group, ownership does not
+    move automatically.
+  - Logout does not disconnect sockets on other tabs; the token expiry timer closes them within the hour.
+  - Accepted, not fixed: a `message:deleted` event (two ids, no content) still reaches both sides of a direct chat hidden
+    by a block, since they share its room; the socket handshake has no rate limit of its own; and a group removal that
+    commits while a connecting socket reads its conversation ids can be missed, leaving that socket in the room until it
+    reconnects (a `shortcut:` in `socket.ts`).
+  - A held message accepted on the friends path is not pushed live; it appears in history.
+- **Rate limit:** REST writes count against the shared write limiter (120 per minute per user, D40); the typing throttle
+  covers the only socket event.
+- **Shortcuts:** message ids are read as INT and keyset cursors cap ids at the INT maximum; both move to BIGINT past
+  2^31 messages. The conversation list builds every conversation of the user before its keyset filter and LIMIT.
+- **Live note cards:** a message is read once for its sender and reused for the response and the room; with a note card,
+  one query computes the card for every member and each gets their own copy.
+- **Tests:** MSG-TC1 to MSG-TC27 (REST in `tests/messaging/messaging.test.ts`; real socket.io-client connections on an
+  ephemeral port in `socket.test.ts`). The shutdown path and the rate limit (skipped under test, as elsewhere) are not
+  unit tested.
+- **Reversibility:** Medium: one migration with a down step (rolling back loses read receipts, replies and soft-delete
+  flags); routes and the gateway are self-contained in `features/messaging/`.
+
+## D51 - Notifications on the server (R8, Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47), "Notifications", and PLAN R8. Backend only; the drawer UI waits for the wireframes.
+- **Schema:** migration `20261016000004_notifications.sql` adds `"NOTIFICATION_T"`: recipient (`ntf_usr_id`), nullable actor,
+  type (CHECK list of 11), optional note, comment, collaboration-request and message-request ids (all foreign keys with
+  ON DELETE CASCADE, so a request removed by a block takes its notification with it), `ntf_read_at` and `ntf_created_at`;
+  a check that the actor is never the recipient. Indexes: `notification_recipient_idx` on (recipient, created_at DESC,
+  id DESC) for the inbox and its keyset, the partial `notification_unread_idx` on recipient WHERE unread, and the partial
+  `notification_collab_request_idx` on `ntf_crq_id` so the cascade from a deleted collaboration request is indexed. No JSON
+  payload: the decision outcomes are separate types (`lecturer_approved`/`lecturer_rejected`, `collab_approved`/`collab_declined`).
+- **Types:** mention, super_like, follow, lecturer_approved, lecturer_rejected, note_hidden, message_request,
+  collab_request, collab_approved, collab_declined, edited_since_verification. Moderation outcomes have no actor, so the
+  admin is not named.
+- **Mentions:** `"USER_T"` has no username column and display names are neither unique nor free of spaces, so `@name`
+  text cannot be resolved reliably. The comment body takes an optional `mentions` list of user ids (at most 10) from the
+  client's mention picker; a named user is notified only when the text contains "@" plus their display name followed by a
+  character that is not a letter, digit or underscore (so "@Annabel" does not name Ann; the name's punctuation is escaped
+  for the regex), they are the
+  note's author, have commented in the same thread (the root comment or its replies) or are the commenter's friend
+  (PLAN R8), and they can see the note (`canSee` in the service, built on `getTarget`, so contacts-only notes and blocks
+  are respected). Ids outside that set
+  are dropped silently, so the response does not reveal who is a friend or participant.
+- **Delivery rules:** one `INSERT ... SELECT` skips the actor, recipients who are not active or restricted (suspended and
+  deleted accounts get nothing), anyone in a block with the actor (`blockedWith`, D49), and an identical notification
+  (same type, actor and targets) within the type's window in `notifications/config.ts`: 60 minutes for follow (unfollow and
+  re-follow) and Super Like (withdraw and give again), 1 minute for edited_since_verification (two saves racing past the
+  lookup). Other types point at a new comment or request each time, so they have no window. A block deletes the follow
+  notifications between the pair in the same transaction, since the follows themselves are deleted. Listing and the unread count also hide notifications whose actor is now suspended, deleted or in a
+  block with the recipient, so blocking someone hides what they caused earlier; an unblock shows it again. The note in an
+  item is `{id, title}` only while the recipient can still read it (`READABLE`, now exported from the notes repository).
+- **When it is written:** every notification is inserted after the triggering write has committed, by `notify()` in
+  `notifications/service.ts`, which catches and logs every error, so a failed notification never fails the action. The
+  spec preferred the same transaction where cheap; none of the triggers is a transaction that returns enough to build
+  and push the notification (most are single statements through `pool`), and the live push must follow the commit
+  anyway, so one post-commit path was simpler. Trade-off: a crash between the commit and the insert loses that
+  notification.
+- **Edited since verification:** after every successful note save, `voidedVerifiers` selects lecturers whose Super Like
+  predates `pst_content_edited_at` and who have no `edited_since_verification` notification newer than their Super Like.
+  So each lecturer is told once per voiding, a hashtag-only save tells nobody, and a lecturer who re-confirms is told
+  again after the next content edit (unless that edit falls inside the 1-minute window). Only lecturers who can still
+  see the note are told (`canSee`), so a lecturer the owner blocked, or one outside a now contacts-only audience, gets
+  nothing. `replaceNote` is unchanged. Known limit: once the earlier notification is purged
+  (30 days), the next save of a still-unconfirmed note tells the lecturer again.
+- **Collaboration decision:** `decideRequest` now returns the requester's id instead of `'ok'`, so the route can notify them.
+- **Hidden note:** `resolveReports` returns `{resolved, hiddenAuthorId}`; the hide UPDATE returns the author, so only the call
+  that actually hid a published note notifies.
+- **Comment response order:** the review asked to send the comment response before the mention insert if trivial. It
+  was not: the insert then races the client's (and the tests') next read of the inbox, so the order is kept.
+- **Endpoints (login required, restricted users included):** `GET /api/notifications?type=&cursor=&limit=` (keyset on
+  created_at and id, 20 per page, D40; `type` is one type or a comma list so the drawer can group), `GET
+  /api/notifications/unread-count` (`{unreadCount: {total, byType}}`), `POST /api/notifications/read` (`{ids?}`, 1-100 ids; without ids
+  marks all; another user's ids are ignored).
+- **Live:** `notify()` emits `notification:new {notification, unreadCount}` to `user:<id>` with the messaging gateway's
+  `emit` (D50); marking read emits `notification:count {unreadCount}` so other tabs update.
+- **Retention:** `purgeOldNotifications` deletes rows older than 30 days, read or not, as part of `purgeAll` (the daily
+  job and `npm run db:purge-interactions`, D34). No index on `ntf_created_at`: one daily scan of a 30-day table is cheap.
+- **Not done:** the request-message notification is stored in addition to the existing `request:new` event, which is
+  unchanged. A new comment on your note is not a notification type (not in the spec). The live push has the same
+  single-machine limit as messaging (R27).
+- **Tests:** NTF-TC1 to NTF-TC18 (`tests/notifications/`).
+- **Reversibility:** Easy: one migration with a down step; remove the `notify` calls from the trigger routes.

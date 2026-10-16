@@ -25,7 +25,22 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
       https://pure.royalholloway.ac.uk/en/publications/a-structured-approach-to-online-discussion/
     - Shahzad et al. (2023): confirmed via Crossref. *Sustainability, 15*(1), Article 5 (was 15(5)).
       https://doi.org/10.3390/su15010005
-    - **OPEN:** Gufroni & Zaman (2026) and Gusenbauer (2024, thesis) could not be found in any index. The user must
-      find the original sources; if they cannot be found, replace or remove the citations. The writer applies the two
-      confirmed fixes.
+    - Gusenbauer (2024), details from the user (via NotebookLM; Google Scholar incomplete):
+      Gusenbauer, C. P. (2024). *Assessment of the risks of fake user-generated content and corresponding
+      countermeasures* [Master's thesis, Johannes Kepler University Linz]. JKU ePUB. Add the repository URL if found.
+    - Gufroni & Zaman (2026), details from the user: no journal, DOI or URL is printed on the PDF, so cite it as an
+      unpublished manuscript (APA 7 uses the year only):
+      Gufroni, M. S. I., & Zaman, S. (2026). *Evaluating the effectiveness of Notion as a project management platform
+      in academic environments* [Unpublished manuscript]. Program Studi Teknik Informatika, Fakultas Sains dan
+      Teknologi, Universitas Islam Negeri Maulana Malik Ibrahim Malang. If the user finds where it was downloaded
+      (repository, preprint server), add that URL.
+    - **Closed:** the writer applies all four entries (PLAN R15). Not independently verified by the researcher.
 11. (Merged into 7.)
+
+## To ask the supervisor at meeting #2 (~28 Oct)
+1. Report length: Chapters 1-4 hold about 39k words of prose against the 18-20k standard. Approve the cut plan (question 7)?
+2. Wireframes (4.4): the UI is being redesigned (TikTok-style layout). Must Chapter 4.4 wireframes match the final
+   product, or may the 25 wireframes stay as the pre-coding design with differences explained in Chapter 5?
+3. Is a clickable prototype expected, or are the 25 wireframes sufficient?
+4. FR changes: confirm the requirement additions (FR19 lecturer approval, follows/friends, notifications, live deployment).
+5. Confirm the exact final submission date.

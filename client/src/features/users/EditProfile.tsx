@@ -1,9 +1,10 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Field } from '../../components/Field';
-import { api, ApiError, errorText, type User } from '../../lib/api';
+import { ProgrammeSelect } from '../../components/ProgrammeSelect';
+import { api, ApiError, errorText } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
-import type { Profile } from '../../types';
+import type { Profile, User } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 
 export default function EditProfile() {
@@ -62,10 +63,7 @@ export default function EditProfile() {
           <Field label="Display name" name="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} error={errors.displayName} />
           {count(displayName, 50)}
         </div>
-        <div>
-          <Field label="Programme" name="programme" value={programme} onChange={(e) => setProgramme(e.target.value)} error={errors.programme} />
-          {count(programme, 100)}
-        </div>
+        <ProgrammeSelect value={programme} onChange={(e) => setProgramme(e.target.value)} error={errors.programme} />
         <div className="flex flex-col gap-1">
           <label htmlFor="field-bio" className="text-sm font-medium">
             Bio

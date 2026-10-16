@@ -1,17 +1,9 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import { api, ApiError } from '../../lib/api';
-
-interface Application {
-  id: number;
-  displayName: string;
-  email: string;
-  staffId: string | null;
-  programme: string | null;
-  createdAt: string;
-}
+import type { LecturerApplication } from '../../types';
 
 export default function AdminLecturers() {
-  const [apps, setApps] = useState<Application[] | null>(null);
+  const [apps, setApps] = useState<LecturerApplication[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<number | null>(null);
@@ -19,12 +11,12 @@ export default function AdminLecturers() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api<{ applications: Application[] }>('/admin/lecturer-applications')
+    api<{ applications: LecturerApplication[] }>('/admin/lecturer-applications')
       .then((d) => setApps(d.applications))
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Could not load applications.'));
   }, []);
 
-  async function decide(app: Application, action: 'approve' | 'reject', body?: { reason: string }) {
+  async function decide(app: LecturerApplication, action: 'approve' | 'reject', body?: { reason: string }) {
     setError(null);
     setBusy(true);
     try {
@@ -40,7 +32,7 @@ export default function AdminLecturers() {
     }
   }
 
-  function onReject(e: FormEvent, app: Application) {
+  function onReject(e: FormEvent, app: LecturerApplication) {
     e.preventDefault();
     if (!reason.trim()) {
       setError('Reason is required');

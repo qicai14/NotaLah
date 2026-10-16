@@ -6,6 +6,7 @@ import { useFetch } from '../../lib/useFetch';
 import type { NoteSummary } from '../../types';
 
 export default function Saved() {
+  // shortcut: first 50 saved notes only (API default page); "load more" with nextCursor comes with the redesign
   const { data, setData, error, loading } = useFetch<{ notes: NoteSummary[] }>('/bookmarks');
   const [actionError, setActionError] = useState<string | null>(null);
 

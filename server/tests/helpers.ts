@@ -45,9 +45,12 @@ export async function insertUser(u: TestUserInput = {}): Promise<number> {
   return rows[0].usr_id;
 }
 
-/** A valid bearer header for an existing user id; the role claim is ignored by the server. */
-export function bearer(id: number): string {
-  return `Bearer ${signToken({ id, role: 'student' } as AuthUser)}`;
+/** CSRF header every state-changing /api request must carry (D35). */
+export const CSRF = { 'X-Requested-With': 'parp' };
+
+/** Headers for an existing user id: the auth cookie plus the CSRF header. The role claim is ignored by the server. */
+export function asUser(id: number): Record<string, string> {
+  return { Cookie: `parp_token=${signToken({ id, role: 'student' } as AuthUser)}`, ...CSRF };
 }
 
 export interface NoteOpts {
@@ -72,4 +75,28 @@ export async function insertNote(authorId: number, o: NoteOpts = {}): Promise<nu
     await pool.query(`INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content) VALUES ($1, $2, '<p>x</p>')`, [id, i]);
   }
   return id;
+}
+
+export async function follow(follower: number, followee: number): Promise<void> {
+  await pool.query(`INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [follower, followee]);
+}
+
+/** Makes two users friends (a mutual follow, D38). */
+export async function befriend(a: number, b: number): Promise<void> {
+  await follow(a, b);
+  await follow(b, a);
+}
+
+/** Follows `nextCursor` from the first page to the last; returns each page's `key` list (keyset lists, D40). */
+export async function walkPages<T>(
+  fetchPage: (cursor?: string) => Promise<{ body: Record<string, unknown> }>, key: string,
+): Promise<T[][]> {
+  const pages: T[][] = [];
+  let cursor: string | undefined;
+  do {
+    const { body } = await fetchPage(cursor);
+    pages.push(body[key] as T[]);
+    cursor = (body.nextCursor as string | null) ?? undefined;
+  } while (cursor);
+  return pages;
 }

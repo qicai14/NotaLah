@@ -43,6 +43,9 @@ entity "POST_T" as POST {
   * pst_created_at : TIMESTAMPTZ
   * pst_updated_at : TIMESTAMPTZ
   pst_published_at : TIMESTAMPTZ
+  pst_content_edited_at : TIMESTAMPTZ
+  pst_lock_usr_id : INTEGER <<FK>>
+  pst_lock_expires_at : TIMESTAMPTZ
 }
 entity "SLIDE_T" as SLIDE {
   * sld_id : INTEGER <<PK>>
@@ -118,11 +121,11 @@ entity "INTERACTION_T" as INTR {
   * int_type : VARCHAR(10)
   * int_created_at : TIMESTAMPTZ
 }
-entity "CONTACT_T" as CON {
-  * con_usr_id : INTEGER <<PK, FK>>
-  * con_contact_id : INTEGER <<PK, FK>>
+entity "FOLLOW_T" as FOL {
+  * fol_follower_id : INTEGER <<PK, FK>>
+  * fol_followee_id : INTEGER <<PK, FK>>
   --
-  * con_created_at : TIMESTAMPTZ
+  * fol_created_at : TIMESTAMPTZ
 }
 entity "MESSAGE_REQUEST_T" as MRQ {
   * mrq_id : INTEGER <<PK>>
@@ -141,6 +144,7 @@ entity "CONVERSATION_T" as CNV {
   * cnv_type : VARCHAR(10)
   cnv_name : VARCHAR(80)
   cnv_owner_id : INTEGER <<FK>>
+  cnv_pair : VARCHAR(21) <<UNIQUE>>
   * cnv_created_at : TIMESTAMPTZ
 }
 entity "CONV_MEMBER_T" as CMB {
@@ -148,8 +152,7 @@ entity "CONV_MEMBER_T" as CMB {
   * cmb_usr_id : INTEGER <<PK, FK>>
   --
   * cmb_joined_at : TIMESTAMPTZ
-  cmb_last_read_at : TIMESTAMPTZ
-  cmb_left_at : TIMESTAMPTZ
+  cmb_last_read_msg_id : BIGINT
 }
 entity "MESSAGE_T" as MSG {
   * msg_id : BIGINT <<PK>>
@@ -157,7 +160,9 @@ entity "MESSAGE_T" as MSG {
   * msg_cnv_id : INTEGER <<FK>>
   * msg_sender_id : INTEGER <<FK>>
   msg_pst_id : INTEGER <<FK>>
+  msg_reply_to_id : BIGINT <<FK>>
   * msg_body : VARCHAR(2000)
+  msg_deleted_at : TIMESTAMPTZ
   * msg_created_at : TIMESTAMPTZ
 }
 entity "ACCOUNT_ACTION_T" as AAC {
@@ -168,6 +173,74 @@ entity "ACCOUNT_ACTION_T" as AAC {
   * aac_action : VARCHAR(20)
   * aac_reason : VARCHAR(300)
   * aac_created_at : TIMESTAMPTZ
+}
+entity "FEED_SNAPSHOT_T" as FSN {
+  * fsn_usr_id : INTEGER <<PK, FK>>
+  * fsn_as_of : TIMESTAMPTZ <<PK>>
+  --
+  * fsn_pst_ids : INTEGER[]
+  * fsn_scores : DOUBLE PRECISION[]
+  * fsn_created_at : TIMESTAMPTZ
+}
+entity "COLLABORATOR_T" as CLB {
+  * clb_pst_id : INTEGER <<PK, FK>>
+  * clb_usr_id : INTEGER <<PK, FK>>
+  --
+  * clb_role : VARCHAR(4)
+  * clb_added_by : INTEGER <<FK>>
+  * clb_created_at : TIMESTAMPTZ
+  clb_edited_at : TIMESTAMPTZ
+}
+entity "SHARE_LINK_T" as SHL {
+  * shl_id : INTEGER <<PK>>
+  --
+  * shl_pst_id : INTEGER <<FK>>
+  * shl_role : VARCHAR(4)
+  * shl_token_hash : CHAR(64) <<UNIQUE>>
+  * shl_created_at : TIMESTAMPTZ
+  shl_revoked_at : TIMESTAMPTZ
+}
+entity "COLLAB_REQUEST_T" as CRQ {
+  * crq_id : INTEGER <<PK>>
+  --
+  * crq_pst_id : INTEGER <<FK>>
+  * crq_usr_id : INTEGER <<FK>>
+  crq_message : VARCHAR(300)
+  * crq_status : VARCHAR(8)
+  * crq_created_at : TIMESTAMPTZ
+  crq_decided_at : TIMESTAMPTZ
+}
+entity "TERM_T" as TRM {
+  * trm_id : INTEGER <<PK>>
+  --
+  * trm_name : VARCHAR(50) <<UNIQUE>>
+  * trm_start_date : DATE
+  * trm_end_date : DATE
+}
+entity "BLOCK_T" as BLK {
+  * blk_blocker_id : INTEGER <<PK, FK>>
+  * blk_blocked_id : INTEGER <<PK, FK>>
+  --
+  * blk_created_at : TIMESTAMPTZ
+}
+entity "NOTIFICATION_T" as NTF {
+  * ntf_id : INTEGER <<PK>>
+  --
+  * ntf_usr_id : INTEGER <<FK>>
+  ntf_actor_id : INTEGER <<FK>>
+  * ntf_type : VARCHAR(30)
+  ntf_pst_id : INTEGER <<FK>>
+  ntf_cmt_id : INTEGER <<FK>>
+  ntf_crq_id : INTEGER <<FK>>
+  ntf_mrq_id : INTEGER <<FK>>
+  ntf_read_at : TIMESTAMPTZ
+  * ntf_created_at : TIMESTAMPTZ
+}
+entity "RATE_LIMIT_T" as RLT {
+  * rlt_key : VARCHAR(200) <<PK>>
+  --
+  * rlt_window_start : TIMESTAMPTZ
+  * rlt_hits : INTEGER
 }
 
 USER ||--o{ POST : authors
@@ -190,7 +263,8 @@ USER ||--o{ BMK
 POST ||--o{ BMK
 USER ||--o{ INTR
 POST ||--o{ INTR
-USER ||--o{ CON
+USER ||--o{ FOL : follows
+USER ||--o{ FOL : "followed by"
 USER ||--o{ MRQ : sends
 POST |o--o{ MRQ : "anchored to"
 CNV ||--|{ CMB
@@ -198,5 +272,20 @@ USER ||--o{ CMB
 CNV ||--o{ MSG
 USER ||--o{ MSG : sends
 POST |o--o{ MSG : "anchored to"
+USER ||--o{ FSN : "ranked for"
 USER ||--o{ AAC : "subject of"
+POST ||--o{ CLB : "shared with"
+USER ||--o{ CLB : collaborates
+POST ||--o{ SHL : "shared by link"
+POST ||--o{ CRQ
+USER ||--o{ CRQ : requests
+USER ||--o{ BLK : blocks
+USER ||--o{ BLK : "blocked by"
+USER ||--o{ NTF : receives
+USER |o--o{ NTF : triggers
+POST |o--o{ NTF
+CMT |o--o{ NTF
+CRQ |o--o{ NTF
+MRQ |o--o{ NTF
+MSG |o--o{ MSG : "replies to"
 @enduml

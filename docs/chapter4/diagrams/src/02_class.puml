@@ -193,7 +193,7 @@ User "1" -- "0..*" Interaction
 Post "1" -- "0..*" Interaction
 User "1" -- "0..*" MessageRequest : sends >
 Post "0..1" -- "0..*" MessageRequest : anchors >
-User "0..*" -- "0..*" User : contacts
+User "0..*" -- "0..*" User : follows >
 Conversation "1" *-- "0..*" Message
 User "2..*" -- "0..*" Conversation : member of >
 Post "0..1" -- "0..*" Message : anchors >

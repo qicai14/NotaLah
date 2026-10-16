@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
 
 export const MAX_SLIDES = 30;
-export const MAX_SLIDE_CHARS = 20_000;
+const MAX_SLIDE_CHARS = 20_000;
 export const MAX_HASHTAGS = 5;
 
 // Mirrors the TipTap StarterKit nodes the editor can produce (D20); every attribute is dropped.
@@ -13,7 +13,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
   transformTags: { b: 'strong', i: 'em', strike: 's', del: 's' },
 };
 
-export const sanitizeSlide = (html: string) => sanitizeHtml(html, OPTIONS);
+const sanitizeSlide = (html: string) => sanitizeHtml(html, OPTIONS);
 
 const plainText = (html: string) =>
   sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
@@ -44,7 +44,24 @@ export interface NoteInput {
   visibility: 'public' | 'contacts' | null;
 }
 
-export type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
+const baseUpdatedAtSchema = z.iso.datetime({ offset: true, error: 'Invalid baseUpdatedAt' });
+
+/**
+ * The `updatedAt` the editor loaded, for the optimistic 409 check (R30). Required from co-authors; optional for the
+ * owner, whose existing editor does not send it yet, so a missing value skips the check (D46).
+ */
+export function parseBaseUpdatedAt(
+  body: unknown, required: boolean,
+): { ok: true; data: Date | null } | { ok: false; errors: Record<string, string> } {
+  const raw = body && typeof body === 'object' ? (body as Record<string, unknown>).baseUpdatedAt : undefined;
+  if (raw === undefined || raw === null) {
+    return required ? { ok: false, errors: { baseUpdatedAt: 'baseUpdatedAt is required' } } : { ok: true, data: null };
+  }
+  const parsed = baseUpdatedAtSchema.safeParse(raw);
+  return parsed.success ? { ok: true, data: new Date(parsed.data) } : { ok: false, errors: { baseUpdatedAt: 'Invalid baseUpdatedAt' } };
+}
+
+type Parsed ={ ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
 
 /** Validates and sanitises a create/replace body. Module existence is checked by the route. */
 export function parseNoteBody(body: unknown): Parsed {
@@ -54,7 +71,6 @@ export function parseNoteBody(body: unknown): Parsed {
   const d = parsed.success ? parsed.data : undefined;
   const publishing = obj.status === 'published';
 
-  // Hashtags: strip one leading '#', lowercase, validate, dedupe.
   const tags: string[] = [];
   if (obj.hashtags !== undefined && !Array.isArray(obj.hashtags)) errors.hashtags = 'Hashtags must be a list';
   for (const raw of Array.isArray(obj.hashtags) ? obj.hashtags : []) {

@@ -36,7 +36,7 @@ rectangle "Peer-to-Peer Academic Resource Platform (PARP)" {
   usecase "UC15 Send Post-Anchored\nMessage" as UC15
   usecase "Send Message Request" as UC15x
   usecase "UC16 Respond to\nMessage Request" as UC16
-  usecase "UC17 Chat with Contact" as UC17
+  usecase "UC17 Chat with Friend" as UC17
   usecase "UC18 Manage Group Chat" as UC18
   usecase "UC19 Super Like\n(Verify) Note" as UC19
   usecase "UC20 Review\nReported Content" as UC20

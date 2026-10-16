@@ -2,12 +2,14 @@
 
 ## Tiers
 ```
-Browser (React + Vite)  --HTTP /api, JWT bearer-->  Express API  --pg, parameterised SQL-->  PostgreSQL 17
-                        <--Socket.io (Sprint 4)-->  (same process)
+Browser (React + Vite)  --HTTP /api, JWT cookie-->  Express API  --pg, parameterised SQL-->  PostgreSQL 17
+                        <--Socket.io, same cookie-->  (same process and port)
 ```
 The client never talks to the database. In development Vite serves the client on :5173 and proxies `/api`
 to Express on :4000 (with `X-Forwarded-For`, so rate limits are per client). Socket.io attaches to the same
-HTTP server in Sprint 4 for post-anchored messaging.
+HTTP server for live messaging (D50) and notifications (D51): REST does every write, and the socket delivers events and relays typing. Its
+handshake checks `Origin` and authenticates the `parp_token` cookie with passport-jwt (D35). The client's Vite proxy
+will need a `/socket.io` entry with `ws: true` when the messaging UI is built.
 
 ## Request flow (server)
 middleware (`features/auth/middleware.ts`: `requireAuth`, `requireRole`, role/status read from the DB on every
@@ -18,24 +20,35 @@ PostgreSQL. Errors thrown or rejected anywhere reach the handler in `app.ts` (Ex
 ## Folder map
 ```
 server/src/app.ts, server.ts      Express app (middleware, routers, error handler) and the listener
-server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health)
+server/src/lib/                   env.ts (validated config), pool.ts (pg pool), health.ts (GET /api/health), keyset.ts (cursor paging, D40),
+                                  validation.ts (zod issue map, id params, body guard), logger.ts (pino, redaction), errorReporting.ts,
+                                  purge.ts (the daily purge set)
 server/src/types/                 types shared by several features
-server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create)
-server/src/features/auth/         passport strategies, JWT, requireAuth/requireRole, register/login/me routes
-server/src/features/users/        USER_T repository
+server/src/scripts/               one-off CLIs (createAdmin.ts, npm run admin:create; purgeInteractions.ts, npm run db:purge-interactions)
+server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes,
+                                  rate limits on a Postgres store (rateLimit.ts, "RATE_LIMIT_T", D40)
+server/src/features/users/        USER_T repository, profiles, follows and follower lists ("FOLLOW_T", D38)
 server/src/features/moderation/   admin-only routes: lecturer approval (UC22), report queue (UC20), account
                                   restrict/suspend/reinstate/delete (UC21)
 server/src/features/ranking/      config.ts (all weights/constants, NFR5), service.ts (scoring), repository.ts (candidates, interactions)
 server/src/features/verification/ lecturer Super Like of notes and its withdrawal, "VERIFICATION_T" (UC19)
+server/src/features/modules/      module, programme and academic term catalogue: GET /api/modules (signed in), GET /api/programmes and
+                                  GET /api/terms (public, D37, D48); admin CRUD routes live in moderation
 server/src/features/notes/        slide notes, drafts, visibility (Sprint 2)
-server/src/features/feed/         feed query, likes, comments, reports, bookmarks (Sprint 2)
-server/src/features/search/       subject/hashtag/keyword/full-text search (Sprint 4)
-server/src/features/messaging/    post-anchored messages, contact approval, groups, Socket.io (Sprint 4)
+server/src/features/feed/         ranked For You feed and chronological Following tab: service.ts, repository.ts (cutoff, note lookup,
+                                  per-asOf ranking snapshot "FEED_SNAPSHOT_T", D40)
+server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sprint 2)
+server/src/features/search/       GET /api/search: notes (text rank blended with E and V), people, hashtags, modules; filters (D48)
+server/src/features/messaging/    direct messages, message requests from non-friends, groups, receipts (routes.ts, repository.ts),
+                                  Socket.io gateway (socket.ts: handshake, rooms, typing), limits (config.ts), D50
+server/src/features/notifications/ in-app inbox "NOTIFICATION_T" (R8, D51): notify() in service.ts, called by other features' routes
+                                  after their write commits; GET list, unread count, mark read; live notification:new on user:<id>
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
 client/src/App.tsx, main.tsx      routes and bootstrap
-client/src/components/            UI shared by several features (Field)
-client/src/lib/                   api.ts (fetch wrapper, session storage)
+client/src/components/            UI shared by several features (ConfirmButton, Dialog, Field, LecturerBadge,
+                                  NoteActions, ReportDialog, SlideViewer)
+client/src/lib/                   api.ts (fetch wrapper), roles.ts (role checks), useFetch.ts (data-loading hook), format.ts (timeAgo, labels), hashtags.ts
 client/src/types/                 shared client types
 client/src/features/<feature>/    pages and components of one feature: auth, users, notes, feed, search,
                                   messaging, verification, moderation (ranking has no UI)
@@ -51,7 +64,7 @@ docker/                           Postgres init script (creates parp_test)
 - A feature owns its routes, repository, tests and (client side) pages. A feature imports another feature only
   through that feature's exported functions, never its SQL; shared code goes to `lib/`, `types/` or `components/`.
 - Exception to the no-SQL rule: `notes/repository.ts` exports SQL fragments other features reuse so the rules exist once:
-  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
+  `VISIBLE` and `READABLE` (VISIBLE or a collaborator; alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `MODULE_COL` (alias `m`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
   aliases `p`, `u`, `m`) and `SUMMARY_COLS` (aliases `p`, `m`). Callers keep those aliases and bind `$1` to the viewer.
 - Tables are UPPERCASE `_T`, double-quoted in SQL; columns lowercase with a table prefix; SQL keywords UPPERCASE.
 - All ranking constants live in `server/src/features/ranking/config.ts`.
