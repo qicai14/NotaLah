@@ -65,7 +65,7 @@ function Tabs({ tab, onChange }: { tab: SearchTab; onChange(tab: SearchTab): voi
           onClick={() => onChange(t)}
           onKeyDown={(e) => move(e, i)}
           className={cn(
-            'relative h-11 shrink-0 rounded-sm px-3.5 text-body font-bold transition-colors duration-(--duration-fast)',
+            'relative h-11 shrink-0 rounded-sm px-2.5 text-body-sm font-bold md:px-3.5 md:text-body transition-colors duration-(--duration-fast)',
             tab === t
               ? 'text-foreground after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-full after:bg-foreground'
               : 'text-muted-foreground hover:text-foreground',

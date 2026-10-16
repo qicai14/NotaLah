@@ -1,9 +1,12 @@
 # client feature: search
 
-Will hold: Subject, module code, hashtag, keyword and full-text search, with lecturer and published-date filters (FR15 reworked, see Sprint 0 review).
+Search screen at `/search` (open to guests, D44): one query box, result tabs (Top, Notes, People, Hashtags, Modules), the
+note filters of FR15 in a sheet, and keyset "Load more". Wireframes 07, 37, 38, 39; API in D48.
 
-Contents: search bar, results page, filters.
+- `Search.tsx`: the page. Query, tab and filters live in the URL (`searchParams.ts`); typing is debounced 300 ms.
+- `searchParams.ts`: URL to state, state to URL and API path (pure, tested as CLI-TC21 to CLI-TC25).
+- `useSearchResults.ts`: pages one query, sends the cursor and the `asOf` from page 1, drops stale answers (CLI-TC26 to CLI-TC28).
+- `FilterSheet.tsx`: lecturer, term (hidden while no terms exist), dates, module (hidden for guests, whose API cannot list modules).
+- `SearchResults.tsx`: note tile (first slide, `SlideBoard`), person, hashtag and module rows. Hashtags and modules have no page yet, so they link to a notes search for that tag or module.
 
-Serves: FR4, FR5, FR12, FR15. Test table: `SRCH-TC*` in `docs/chapter4/4.5_test_cases.md`.
-
-Filled in: Sprint 4. See `docs/ARCHITECTURE.md` for the layering rules.
+Serves: FR4, FR5, FR12, FR15.
