@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useEditor } from './store';
 
 /**
- * Thumbnails of every slide: click to open, drag to reorder (the menu's Move left/right is the single-pointer and
+ * Thumbnails of every slide: click to open, drag with a mouse to reorder (the menu's Move left/right is the single-pointer and
  * keyboard alternative), and add, duplicate or delete.
  */
 export function SlideStrip({ compact }: { compact: boolean }) {
@@ -28,7 +28,8 @@ export function SlideStrip({ compact }: { compact: boolean }) {
   const thumbW = compact ? 'w-12' : 'w-20';
 
   function startDrag(e: ReactPointerEvent, from: number) {
-    if (e.button !== 0) return;
+    // Touch drags scroll the strip; phones reorder from the slide menu instead.
+    if (e.button !== 0 || e.pointerType !== 'mouse') return;
     const x0 = e.clientX;
     let dragging = false;
     dragged.current = false;
