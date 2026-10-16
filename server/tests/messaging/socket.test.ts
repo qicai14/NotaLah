@@ -36,7 +36,8 @@ function socketAs(cookie: string | null, origin: string | null = env.CLIENT_ORIG
   const s = connect(url, { transports: ['websocket'], extraHeaders: headers, reconnection: false, forceNew: true });
   open.push(s);
   return new Promise((resolve, reject) => {
-    s.once('connect', () => resolve(s));
+    // The server joins conversation rooms just after connect (one query), so let that settle before a test acts.
+    s.once('connect', () => setTimeout(() => resolve(s), 50));
     s.once('connect_error', reject);
   });
 }

@@ -991,8 +991,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   server (D41). `maxHttpBufferSize` is 1,000 bytes, since clients send only typing events.
 - **Deployment:** the app runs on a single Fly machine until the Socket.io Postgres adapter lands (R27): rooms, typing
   throttles and the kicks done through them (suspension, removal from a group) are in-memory and per process.
-- **Rooms and events:** each socket joins `user:<id>` and `conv:<id>` for every conversation it belongs to. Joins and
-  leaves follow REST changes through `socketsJoin`/`socketsLeave`. Server events: `message:new`, `message:deleted`,
+- **Rooms and events:** on connect each socket joins `user:<id>`, then `conv:<id>` for every conversation it belongs to
+  (joins happen after connect, not in the handshake middleware, because before connect the socket is not in the namespace
+  and `socketsJoin`, `socketsLeave` and `disconnectSockets` would miss it). After that, REST changes reach open sockets
+  through `socketsJoin`/`socketsLeave` on the user room. Server events: `message:new`, `message:deleted`,
   `request:new` (recipient only), `request:accepted` (sender only; a decline notifies nobody), `conversation:read`,
   `conversation:updated` (group created, renamed, member added or removed), `conversation:removed` (to the removed or
   leaving member) and `typing`. When a message carries a note card it is sent once per member, each with the card checked
@@ -1044,7 +1046,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     move automatically.
   - Logout does not disconnect sockets on other tabs; the token expiry timer closes them within the hour.
   - Accepted, not fixed: a `message:deleted` event (two ids, no content) still reaches both sides of a direct chat hidden
-    by a block, since they share its room; and the socket handshake has no rate limit of its own.
+    by a block, since they share its room; the socket handshake has no rate limit of its own; and a group removal that
+    commits while a connecting socket reads its conversation ids can be missed, leaving that socket in the room until it
+    reconnects (a `shortcut:` in `socket.ts`).
   - A held message accepted on the friends path is not pushed live; it appears in history.
 - **Rate limit:** REST writes count against the shared write limiter (120 per minute per user, D40); the typing throttle
   covers the only socket event.

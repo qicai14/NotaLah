@@ -42,22 +42,22 @@ export function attachSocket(server: HttpServer): Server {
       if (!user) return next(new Error('Unauthorized'));
       const data: Partial<SocketData> = socket.data;
       data.user = user;
-      // The user room first: a conversation joined while the ids below are read still reaches this socket via socketsJoin.
-      await socket.join(userRoom(user.id));
-      await socket.join((await repo.conversationIds(user.id)).map(convRoom));
       next();
     } catch (err) {
       logger.error({ err }, 'socket handshake failed');
       next(new Error('Unauthorized'));
     }
   });
-  io.on('connection', (socket: Socket) => onConnection(socket));
+  io.on('connection', (socket: Socket) => void onConnection(socket));
   return io;
 }
 
-function onConnection(socket: Socket): void {
+// Rooms are joined here, not in the handshake middleware: until connect the socket is not in the namespace, so the
+// socketsJoin, socketsLeave and disconnectSockets calls the routes make would miss it.
+async function onConnection(socket: Socket): Promise<void> {
   const data = socket.data as SocketData;
   const { user } = data;
+  void socket.join(userRoom(user.id));
   data.typingAt = new Map();
   // A socket must not outlive its token, so it is cut when the JWT expires.
   const { exp } = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number };
@@ -79,6 +79,15 @@ function onConnection(socket: Socket): void {
       logger.error({ err }, 'typing relay failed');
     }
   });
+
+  // shortcut: a group removal (socketsLeave) that commits while these ids are read can still be missed, leaving the socket
+  // in that room until it reconnects; re-check membership on delivery if that ever matters (D50).
+  try {
+    await socket.join((await repo.conversationIds(user.id)).map(convRoom));
+  } catch (err) {
+    logger.error({ err }, 'socket room join failed');
+    socket.disconnect(true);
+  }
 }
 
 /** Emits to a room; a no-op when Socket.io is not attached (REST-only tests). */
