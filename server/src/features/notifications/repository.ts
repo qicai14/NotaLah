@@ -23,23 +23,23 @@ export interface NewNotification {
 /**
  * Stores one notification per recipient and returns the stored rows (D51). A recipient is skipped when they are the
  * actor, not active or restricted (suspended and deleted accounts get nothing), in a block with the actor (D49), or
- * already got an identical notification within `dedupeWindowMinutes`.
+ * already got an identical notification within the type's `dedupeWindowMinutes`.
  */
 export async function insertNotifications(n: NewNotification, recipientIds: number[]): Promise<{ id: number; recipientId: number }[]> {
   const { rows } = await pool.query<{ id: number; recipientId: number }>(
     `INSERT INTO "NOTIFICATION_T" (ntf_usr_id, ntf_actor_id, ntf_type, ntf_pst_id, ntf_cmt_id, ntf_crq_id, ntf_mrq_id)
-     SELECT u.usr_id, $2, $3, $4, $5, $6, $7
+     SELECT u.usr_id, $2::INT, $3::VARCHAR, $4::INT, $5::INT, $6::INT, $7::INT
      FROM "USER_T" u
      WHERE u.usr_id = ANY($1::INT[]) AND u.usr_status IN ('active', 'restricted')
        AND u.usr_id IS DISTINCT FROM $2::INT AND NOT ${blockedWith('$2::INT', 'u.usr_id')}
        AND NOT EXISTS (SELECT 1 FROM "NOTIFICATION_T" d
-                       WHERE d.ntf_usr_id = u.usr_id AND d.ntf_type = $3 AND d.ntf_actor_id IS NOT DISTINCT FROM $2::INT
+                       WHERE d.ntf_usr_id = u.usr_id AND d.ntf_type = $3::VARCHAR AND d.ntf_actor_id IS NOT DISTINCT FROM $2::INT
                          AND d.ntf_pst_id IS NOT DISTINCT FROM $4::INT AND d.ntf_cmt_id IS NOT DISTINCT FROM $5::INT
                          AND d.ntf_crq_id IS NOT DISTINCT FROM $6::INT AND d.ntf_mrq_id IS NOT DISTINCT FROM $7::INT
                          AND d.ntf_created_at > NOW() - make_interval(mins => $8))
      RETURNING ntf_id AS "id", ntf_usr_id AS "recipientId"`,
     [[...new Set(recipientIds)], n.actorId, n.type, n.noteId ?? null, n.commentId ?? null, n.collabRequestId ?? null,
-      n.messageRequestId ?? null, NOTIFICATIONS.dedupeWindowMinutes],
+      n.messageRequestId ?? null, NOTIFICATIONS.dedupeWindowMinutes[n.type] ?? 0],
   );
   return rows;
 }
