@@ -44,21 +44,21 @@ export default function AdminLecturers() {
   return (
     <section>
       <h1 className="mb-4 text-xl font-semibold">Lecturer applications</h1>
-      <p role="status" className="mb-2 text-sm text-green-700">
+      <p role="status" className="mb-2 text-sm text-success">
         {status}
       </p>
       {error && (
-        <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       )}
-      {apps === null && !error && <p className="text-slate-500">Loading…</p>}
-      {apps?.length === 0 && <p className="text-slate-500">No pending applications.</p>}
+      {apps === null && !error && <p className="text-muted-foreground">Loading…</p>}
+      {apps?.length === 0 && <p className="text-muted-foreground">No pending applications.</p>}
       {apps && apps.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-300">
+              <tr className="border-b border-input">
                 <th scope="col" className="py-2 pr-3">
                   Name
                 </th>
@@ -81,7 +81,7 @@ export default function AdminLecturers() {
             </thead>
             <tbody>
               {apps.map((a) => (
-                <tr key={a.id} className="border-b border-slate-200 align-top">
+                <tr key={a.id} className="border-b border-border align-top">
                   <td className="py-2 pr-3">{a.displayName}</td>
                   <td className="py-2 pr-3 break-all">{a.email}</td>
                   <td className="py-2 pr-3">{a.staffId}</td>
@@ -99,13 +99,13 @@ export default function AdminLecturers() {
                           maxLength={300}
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
-                          className="rounded-md border border-slate-300 px-2 py-1"
+                          className="rounded-md border border-input px-2 py-1"
                         />
                         <div className="flex gap-2">
                           <button
                             type="submit"
                             disabled={busy}
-                            className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                            className="rounded-md bg-destructive px-3 py-1 text-primary-foreground disabled:opacity-60"
                           >
                             Confirm reject
                           </button>
@@ -115,7 +115,7 @@ export default function AdminLecturers() {
                               setRejecting(null);
                               setError(null);
                             }}
-                            className="rounded-md border border-slate-300 px-3 py-1"
+                            className="rounded-md border border-input px-3 py-1"
                           >
                             Cancel
                           </button>
@@ -128,7 +128,7 @@ export default function AdminLecturers() {
                           disabled={busy}
                           onClick={() => decide(a, 'approve')}
                           aria-label={`Approve ${a.displayName}`}
-                          className="rounded-md bg-green-600 px-3 py-1 text-white disabled:opacity-60"
+                          className="rounded-md bg-success px-3 py-1 text-primary-foreground disabled:opacity-60"
                         >
                           Approve
                         </button>
@@ -141,7 +141,7 @@ export default function AdminLecturers() {
                             setError(null);
                           }}
                           aria-label={`Reject ${a.displayName}`}
-                          className="rounded-md border border-red-600 px-3 py-1 text-red-700"
+                          className="rounded-md border border-destructive px-3 py-1 text-destructive"
                         >
                           Reject
                         </button>

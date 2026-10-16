@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
+import { RANKING } from '../../src/features/ranking/config';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, follow, insertNote, insertUser, truncateAll } from '../helpers';
 
@@ -25,6 +26,7 @@ describe('Feed', () => {
     expect(res.status).toBe(200);
     expect(res.body.items.map((i: { id: number }) => i.id)).toEqual([ok]);
     expect(res.body.nextPage).toBeNull();
+    expect(res.body.weights).toEqual(RANKING.weights);
   });
 
   it('RANK-TC10: page -1 gives 400 "Invalid page", signed in or not', async () => {

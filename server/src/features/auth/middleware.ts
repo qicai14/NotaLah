@@ -15,6 +15,8 @@ export const requireAuth: RequestHandler = (req, res, next) => {
 /**
  * For guest-readable GETs (R31, D44): a valid cookie attaches the user; a missing, invalid or expired one makes a guest,
  * rate-limited by IP. `X-Viewer: guest` lets a client that thinks it is signed in notice its session expired (D45).
+ * Signed-in answers say `X-Viewer: user`: a 304 keeps the cached response's headers unless the 304 replaces them, so
+ * without it a guest copy revalidated after login would still read as guest and end the new session.
  */
 export const optionalAuth: RequestHandler = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
@@ -23,6 +25,7 @@ export const optionalAuth: RequestHandler = (req, res, next) => {
       res.set('X-Viewer', 'guest');
       return guestReadLimiter(req, res, next);
     }
+    res.set('X-Viewer', 'user');
     req.user = user;
     next();
   })(req, res, next);

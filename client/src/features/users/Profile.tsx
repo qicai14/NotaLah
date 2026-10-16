@@ -16,7 +16,7 @@ export default function Profile() {
   if (loading) return <p>Loading…</p>;
   if (error || !data) {
     return (
-      <p role="alert" className="text-red-600">
+      <p role="alert" className="text-destructive">
         {error ?? 'User not found'}
       </p>
     );
@@ -31,13 +31,13 @@ export default function Profile() {
             {p.displayName}
             {p.isVerifiedLecturer && <LecturerBadge />}
           </h1>
-          <p className="text-sm capitalize text-slate-600">
+          <p className="text-sm capitalize text-muted-foreground">
             {p.role}
             {p.programme && ` · ${p.programme}`}
           </p>
         </div>
         {own && (
-          <Link to="/profile/edit" className="rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+          <Link to="/profile/edit" className="rounded-md border border-input px-3 py-1.5 text-sm">
             Edit profile
           </Link>
         )}
@@ -45,20 +45,20 @@ export default function Profile() {
       {p.bio && <p className="mt-3 whitespace-pre-wrap">{p.bio}</p>}
       {own && (
         <p className="mt-3 text-sm">
-          <Link to="/drafts" className="text-indigo-700 underline">
+          <Link to="/drafts" className="text-primary underline">
             {p.draftCount ?? 0} {p.draftCount === 1 ? 'draft' : 'drafts'}
           </Link>
         </p>
       )}
       <h2 className="mb-2 mt-6 text-lg font-semibold">Notes</h2>
-      {p.notes.length === 0 && <p className="text-slate-600">No notes to show yet.</p>}
+      {p.notes.length === 0 && <p className="text-muted-foreground">No notes to show yet.</p>}
       <ul className="flex flex-col gap-3">
         {p.notes.map((n) => (
-          <li key={n.id} className="rounded-lg border border-slate-200 bg-white p-3">
-            <Link to={`/notes/${n.id}`} className="font-medium text-indigo-700">
+          <li key={n.id} className="rounded-lg border border-border bg-card p-3">
+            <Link to={`/notes/${n.id}`} className="font-medium text-primary">
               {n.title}
             </Link>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               {[
                 n.moduleCode,
                 timeAgo(n.publishedAt),

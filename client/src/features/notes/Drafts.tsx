@@ -25,34 +25,34 @@ export default function Drafts() {
     <section>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Drafts</h1>
-        <Link to="/notes/new" className="rounded-md bg-indigo-600 px-3 py-1.5 text-white">
+        <Link to="/notes/new" className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground">
           New note
         </Link>
       </div>
       {loading && <p>Loading…</p>}
       {(error || actionError) && (
-        <p role="alert" className="text-red-600">
+        <p role="alert" className="text-destructive">
           {error ?? actionError}
         </p>
       )}
       {data?.notes.length === 0 && (
-        <p className="text-slate-600">No drafts. Start a note and use Save Draft to keep it here.</p>
+        <p className="text-muted-foreground">No drafts. Start a note and use Save Draft to keep it here.</p>
       )}
       <ul className="flex flex-col gap-3">
         {data?.notes.map((n) => (
           <li
             key={n.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3"
           >
             <div>
               <p className="font-medium">{n.title}</p>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 {n.module?.code ?? 'No module'} · edited {timeAgo(n.updatedAt)}
                 {n.hashtags.length > 0 && ` · ${n.hashtags.map((h) => `#${h}`).join(' ')}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Link to={`/notes/${n.id}/edit`} className="rounded-md border border-slate-300 px-2 py-1 text-sm">
+              <Link to={`/notes/${n.id}/edit`} className="rounded-md border border-input px-2 py-1 text-sm">
                 Edit
               </Link>
               <ConfirmButton label="Delete" onConfirm={() => remove(n.id)} />

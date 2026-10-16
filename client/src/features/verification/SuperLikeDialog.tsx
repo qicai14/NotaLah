@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react';
-import { Dialog } from '../../components/Dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { api, errorText } from '../../lib/api';
 
 /** Confirmation with an optional review remark before a lecturer verifies a note (UC19, wireframe 17). */
@@ -34,44 +35,44 @@ export function SuperLikeDialog({
   }
 
   return (
-    <Dialog title="Super Like this note?" onClose={onClose}>
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <p className="text-sm text-slate-700">
-          The note gets a verified frame with your name, and ranks higher in every feed. You can remove it later.
-        </p>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="superlike-remark" className="text-sm font-medium">
-            Review remark (optional)
-          </label>
-          <textarea
-            id="superlike-remark"
-            value={remark}
-            onChange={(e) => setRemark(e.target.value)}
-            rows={3}
-            className="rounded-md border border-slate-300 px-3 py-2"
-          />
-          <span className={`text-xs ${remark.length > 300 ? 'text-red-600' : 'text-slate-500'}`}>
-            {remark.length}/300
-          </span>
-        </div>
-        {error && (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md border border-slate-300 px-4 py-2">
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-white disabled:opacity-60"
-          >
-            {busy ? 'Verifying…' : 'Super Like'}
-          </button>
-        </div>
-      </form>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogTitle className="text-title font-bold">Super Like this note?</DialogTitle>
+        <DialogDescription className="text-body-sm text-muted-foreground">
+          The note gets a &ldquo;Verified by&rdquo; mark with your name, and ranks higher in every feed. You can remove
+          it later.
+        </DialogDescription>
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="superlike-remark" className="text-sm font-medium">
+              Review remark (optional)
+            </label>
+            <textarea
+              id="superlike-remark"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              rows={3}
+              className="rounded-md border border-input bg-background px-3 py-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+            />
+            <span className={`text-xs ${remark.length > 300 ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {remark.length}/300
+            </span>
+          </div>
+          {error && (
+            <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              {error}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy}>
+              {busy ? 'Verifying…' : 'Super Like'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }

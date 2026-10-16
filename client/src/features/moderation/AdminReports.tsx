@@ -47,26 +47,26 @@ export default function AdminReports() {
   return (
     <section>
       <h1 className="mb-4 text-xl font-semibold">Reported content</h1>
-      <p role="status" className="mb-2 text-sm text-green-700">
+      <p role="status" className="mb-2 text-sm text-success">
         {status}{' '}
         {hidden && (
-          <Link to={`/admin/users?q=${encodeURIComponent(hidden.name)}`} className="text-indigo-700 underline">
+          <Link to={`/admin/users?q=${encodeURIComponent(hidden.name)}`} className="text-primary underline">
             Review {hidden.name}'s account
           </Link>
         )}
       </p>
       {(error ?? detail.error) && (
-        <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error ?? detail.error}
         </p>
       )}
-      {loading && <p className="text-slate-500">Loading…</p>}
-      {data?.groups.length === 0 && <p className="text-slate-500">No open reports.</p>}
+      {loading && <p className="text-muted-foreground">Loading…</p>}
+      {data?.groups.length === 0 && <p className="text-muted-foreground">No open reports.</p>}
       {data && data.groups.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-300">
+              <tr className="border-b border-input">
                 <th scope="col" className="py-2 pr-3">
                   Note
                 </th>
@@ -89,10 +89,7 @@ export default function AdminReports() {
             </thead>
             <tbody>
               {data.groups.map((g) => (
-                <tr
-                  key={g.id}
-                  className={`border-b border-slate-200 align-top ${g.id === openId ? 'bg-indigo-50' : ''}`}
-                >
+                <tr key={g.id} className={`border-b border-border align-top ${g.id === openId ? 'bg-primary/10' : ''}`}>
                   <td className="py-2 pr-3">{g.title}</td>
                   <td className="py-2 pr-3">{g.author.displayName}</td>
                   <td className="py-2 pr-3">{g.reportCount}</td>
@@ -103,7 +100,7 @@ export default function AdminReports() {
                       type="button"
                       onClick={() => (setOpenId(g.id), setRemark(''), setFormError(null))}
                       aria-label={`Review ${g.title}`}
-                      className="rounded-md border border-slate-300 px-3 py-1"
+                      className="rounded-md border border-input px-3 py-1"
                     >
                       Review
                     </button>
@@ -116,11 +113,11 @@ export default function AdminReports() {
       )}
 
       {open && (
-        <section aria-label={`Review ${open.title}`} className="mt-6 rounded-lg border border-slate-200 bg-white p-4">
+        <section aria-label={`Review ${open.title}`} className="mt-6 rounded-lg border border-border bg-card p-4">
           <h2 className="text-lg font-semibold">{open.title}</h2>
-          <p className="mb-3 text-sm text-slate-600">
+          <p className="mb-3 text-sm text-muted-foreground">
             by {open.author.displayName} · {open.module?.code} · status {open.status} ·{' '}
-            <Link to={`/notes/${open.id}`} className="text-indigo-700 underline">
+            <Link to={`/notes/${open.id}`} className="text-primary underline">
               Open note
             </Link>
           </p>
@@ -130,7 +127,7 @@ export default function AdminReports() {
             {open.reports.map((r) => (
               <li key={r.id}>
                 <span className="font-medium">{r.reason}</span> by {r.reporter}, {timeAgo(r.createdAt)}
-                {r.details && <span className="text-slate-600"> — {r.details}</span>}
+                {r.details && <span className="text-muted-foreground"> — {r.details}</span>}
               </li>
             ))}
           </ul>
@@ -145,10 +142,10 @@ export default function AdminReports() {
               rows={2}
               onChange={(e) => setRemark(e.target.value)}
               aria-invalid={formError ? true : undefined}
-              className="rounded-md border border-slate-300 px-3 py-2"
+              className="rounded-md border border-input px-3 py-2"
             />
             {formError && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className="text-sm text-destructive">
                 {formError}
               </p>
             )}
@@ -156,7 +153,7 @@ export default function AdminReports() {
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-md border border-slate-400 px-3 py-1 disabled:opacity-60"
+                className="rounded-md border border-input px-3 py-1 disabled:opacity-60"
               >
                 Dismiss
               </button>
@@ -164,11 +161,15 @@ export default function AdminReports() {
                 type="button"
                 disabled={busy}
                 onClick={(e) => resolve(e, 'hide')}
-                className="rounded-md bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                className="rounded-md bg-destructive px-3 py-1 text-primary-foreground disabled:opacity-60"
               >
                 Hide note
               </button>
-              <button type="button" onClick={() => setOpenId(null)} className="rounded-md px-3 py-1 text-slate-600">
+              <button
+                type="button"
+                onClick={() => setOpenId(null)}
+                className="rounded-md px-3 py-1 text-muted-foreground"
+              >
                 Close
               </button>
             </div>

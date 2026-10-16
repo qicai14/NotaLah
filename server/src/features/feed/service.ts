@@ -50,7 +50,7 @@ export async function getFeedPage(
   viewerId: number,
   page: number,
   asOf: Date | null,
-): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date }> {
+): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date; weights: typeof RANKING.weights }> {
   const cutoff = await getCutoff(asOf);
   const from = (page - 1) * PAGE_SIZE;
   const guest = viewerId === GUEST_ID;
@@ -79,7 +79,8 @@ export async function getFeedPage(
     const note = notes.get(id); // gone only if hidden or deleted since the ranking was stored
     return note ? [{ ...note, score, components }] : [];
   });
-  return { items, nextPage: total > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff };
+  // The weights travel with the page so "Why this note?" can show them without copying the config (FR3, NFR5).
+  return { items, nextPage: total > page * PAGE_SIZE ? page + 1 : null, asOf: cutoff, weights: RANKING.weights };
 }
 
 /** One page of the Following feed: chronological, not ranked, so items carry no score; keyset cursor with the same `asOf` cutoff (D38). */

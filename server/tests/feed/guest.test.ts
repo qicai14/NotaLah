@@ -101,7 +101,7 @@ describe('Guest browsing (R31)', () => {
     expect(bad.headers['x-viewer']).toBe('guest');
     const friendView = await request(app).get(`/api/notes/${w.contacts}`).set(asUser(w.friend));
     expect(friendView.status).toBe(200);
-    expect(friendView.headers['x-viewer']).toBeUndefined();
+    expect(friendView.headers['x-viewer']).toBe('user');
     // A validly signed but expired token is a guest too.
     const expired = jwt.sign({ role: 'student' }, env.JWT_SECRET, {
       algorithm: 'HS256',
@@ -223,5 +223,20 @@ describe('Guest browsing (R31)', () => {
     } finally {
       process.env.NODE_ENV = before;
     }
+  });
+
+  it('AUTH-TC22: a signed-in revalidation of a cached guest response answers 304 with X-Viewer: user', async () => {
+    const w = await world();
+    await request(app).post(`/api/notes/${w.pub}/comments`).set(asUser(w.friend)).send({ body: 'top' });
+    const viewer = await insertUser();
+    const first = await guest(`/api/notes/${w.pub}/comments`);
+    expect(first.status).toBe(200);
+    expect(first.headers['x-viewer']).toBe('guest');
+    const again = await request(app)
+      .get(`/api/notes/${w.pub}/comments`)
+      .set(asUser(viewer))
+      .set('If-None-Match', first.headers.etag);
+    expect(again.status).toBe(304);
+    expect(again.headers['x-viewer']).toBe('user');
   });
 });

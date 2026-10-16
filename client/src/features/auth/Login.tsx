@@ -1,55 +1,50 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useAction } from '@/lib/useAction';
 import { useAuth } from './AuthContext';
 import { Field } from '../../components/Field';
 import { ApiError } from '../../lib/api';
 
+type LoginState = { notice?: string; from?: string } | null;
+
+/** Log in form (UC02, wireframe 03); shown in a dialog over the Welcome page. Returns the visitor to `state.from`. */
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
-  const notice =
-    (location.state as { notice?: string } | null)?.notice ??
-    (params.get('expired') ? 'Session expired. Please log in again.' : null);
+  const state = location.state as LoginState;
+  const notice = state?.notice ?? (params.get('expired') ? 'Session expired. Please log in again.' : null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { run, pending, error, setError } = useAction();
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    if (!email.trim() || !password) {
-      setError('Email and password are required');
-      return;
-    }
-    setBusy(true);
-    try {
-      const user = await login(email, password);
-      navigate(user.role === 'admin' ? '/admin/lecturers' : '/', { replace: true });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not reach the server. Please try again.');
-    } finally {
-      setBusy(false);
-    }
+    if (!email.trim() || !password) return setError('Email and password are required');
+    const user = await run(
+      () => login(email, password),
+      (err) => (err instanceof ApiError ? err.message : 'Could not reach the server. Please try again.'),
+    );
+    if (user) navigate(state?.from ?? (user.role === 'admin' ? '/admin/lecturers' : '/'), { replace: true });
   }
 
   return (
-    <section className="mx-auto max-w-sm">
-      <h1 className="mb-4 text-xl font-semibold">Log in</h1>
+    <div>
       {notice && (
-        <p role="status" className="mb-4 rounded-md bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+        <p role="status" className="mb-5 rounded-md bg-surface px-4 py-3 text-body-sm font-medium">
           {notice}
         </p>
       )}
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <Field
-          label="Email"
+          label="APU email"
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="tp000000@mail.apu.edu.my"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -62,24 +57,24 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="-mt-1 text-body-sm font-semibold text-destructive">
             {error}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white disabled:opacity-60"
-        >
-          {busy ? 'Logging in…' : 'Log in'}
-        </button>
+        <Button type="submit" size="lg" disabled={pending} className="mt-1">
+          {pending ? 'Logging in…' : 'Log in'}
+        </Button>
       </form>
-      <p className="mt-4 text-sm text-slate-600">
-        No account?{' '}
-        <Link to="/register" className="text-indigo-600 underline">
+      <p className="mt-5 text-center text-body-sm text-muted-foreground">
+        Don&rsquo;t have an account?{' '}
+        <Link
+          to="/register"
+          state={state?.from ? { from: state.from } : undefined}
+          className="font-bold text-foreground hover:underline"
+        >
           Register
         </Link>
       </p>
-    </section>
+    </div>
   );
 }
