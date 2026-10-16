@@ -1008,7 +1008,29 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | MSG-TC26 | Concurrent adds at the size cap | group of 29; two friends added at the same moment while the group row is held | Exactly one 201 and one 409; the group ends with 30 members | | |
 | MSG-TC27 | Pending request when the pair become friends | A's request with a note waits; A and B follow each other; B messages A | 201; the request is accepted; history holds A's held message (with its note, original time) before B's; B's inbox is empty | | |
 
-*Table 4.33: Administration module test cases (ADM)*
+*Table 4.33: Notification module test cases (NTF). NTF covers the in-app inbox (R8): every notification type, the delivery rules, the inbox endpoints, retention and the live event.*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| NTF-TC1 | Mention reaches allowed users only | reply in B's thread on A's note by D, naming A, B, C (replier), E (D's friend), F (stranger), G (other thread), H (D's friend, not named in the text), D and an unknown id | A, B, C and E each get one unread mention with actor D, the note and the comment id; F, G, H and D get nothing | | |
+| NTF-TC2 | Mention of someone who cannot see the note; invalid mention lists | contacts-only note by A; B (A's friend) comments naming A and C (B's friend, not A's); mentions "1", [0], [1.5], 11 ids | A notified, C not; 400 for each invalid list | | |
+| NTF-TC3 | Super Like notifies the author once | lecturer Super Likes, repeats, withdraws, Super Likes again | 201, 200, 200, 201; the author has exactly one super_like notification | | |
+| NTF-TC4 | New follower and the dedupe window | A follows B, again, unfollows, re-follows; then 61 minutes later unfollows and re-follows | One follow notification at first; a second after the window; A gets none | | |
+| NTF-TC5 | Lecturer application decided | admin approves one pending applicant and rejects another with a reason | lecturer_approved and lecturer_rejected with no actor | | |
+| NTF-TC6 | Note hidden by a moderator | reports on two notes; one dismissed, the other hidden | Author gets one note_hidden for the hidden note, with its title; nothing for the dismissal | | |
+| NTF-TC7 | Message request received | stranger A messages B; B accepts | B gets message_request with A as actor and the request id, status pending, later accepted | | |
+| NTF-TC8 | Collaboration request and decision | two users request to collaborate; owner approves one and declines the other | Owner gets two collab_request items (newest first) with request ids; requesters get collab_approved and collab_declined with the request status | | |
+| NTF-TC9 | Edited since verification | two lecturers Super Like; owner retags, then edits the title twice; one lecturer re-confirms; owner edits again | Nothing for the retag; each lecturer told once for the two title edits; only the re-confirming lecturer is told again | | |
+| NTF-TC10 | No self-notification | A mentions themself on their own note; follow notification with A as actor and recipient | Nothing stored | | |
+| NTF-TC11 | Blocks | A and C follow B; B blocks A; insert A to B and B to A; B unblocks A | Unread 2, then A's hidden (unread 1); nothing stored either way; after the unblock unread 2 | | |
+| NTF-TC12 | Suspended and deleted users | follow notification for active, restricted, suspended and deleted recipients; then the actor is suspended | Only active and restricted stored; the active user's inbox is then empty | | |
+| NTF-TC13 | Notification failure does not fail the action | recipient lookup rejects with an error | notify resolves; the error is logged | | |
+| NTF-TC14 | Inbox paging, type filter, invalid input | 26 notifications with one timestamp; limit 10; default limit; type=lecturer_approved,super_like; type=likes; cursor abc; no cookie; another user | Pages 10, 10, 6, newest id first, each once; 20 by default; filter returns the one approval; 400, 400, 401; the other user sees none | | |
+| NTF-TC15 | Mark read | 3 unread for me, 1 for another user; read [mine, theirs]; ids [], ["1"], 5, 101 ids; then read with no ids | Counts by type 2+1, then 1+1; the other user's stays unread; 400 each; finally total 0 and every item read | | |
+| NTF-TC16 | 30-day purge | notifications aged 31 and 29 days; purgeAll | 1 purged; the 29-day one remains | | |
+| NTF-TC17 | Live events | A and B connected; A follows B; B marks all read | B receives notification:new with the item and unread {total 1, follow 1}, then notification:count with total 0; A receives nothing | | |
+
+*Table 4.34: Administration module test cases (ADM)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1047,7 +1069,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC33 | Invalid term input | blank name; 51-character name; start 2026-02-30; end "01/12/2026"; end equal to start; duplicate name | 400 with a field error for each; 409 "A term with this name already exists"; one term stored | | |
 | ADM-TC34 | Edit and delete a term | PUT new name and dates; PUT to a taken name; PUT end before start; unknown id; DELETE twice | 200 with the new values; 409; 400; 404; 204 then 404 | | |
 
-*Table 4.34: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
+*Table 4.35: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1076,7 +1098,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | COL-TC23 | Restricted author blocks co-author edits | author restricted; editor PUT and lock; stranger joins an edit link; editor GET; stranger GET of the link | 403, 403, 403; reading 200 and 200 | | |
 | COL-TC24 | Concurrent link regeneration | five simultaneous POST /links {role: view} | All 201; exactly one active link | | |
 
-*Table 4.35: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
+*Table 4.36: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1086,7 +1108,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie parp_token header and a body with a password | Log output shows [redacted] and contains neither the parp_token value nor the password | | |
 | OPS-TC5 | Share-link tokens kept out of the request log | paths /api/share/AbC_-123?x=1, /api/notes/5?cursor=abc, no URL | /api/share/[token]; /api/notes/5; undefined | | |
 
-*Table 4.36: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
+*Table 4.37: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1114,7 +1136,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.37: UAT tester details*
+*Table 4.38: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1122,7 +1144,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.38: UAT scenario tasks*
+*Table 4.39: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1141,7 +1163,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.39: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.40: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1151,7 +1173,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.40: UAT feedback and developer response*
+*Table 4.41: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1162,7 +1184,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.41: Ranking weight re-evaluation (NFR5)*
+*Table 4.42: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

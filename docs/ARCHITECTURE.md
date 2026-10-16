@@ -7,7 +7,7 @@ Browser (React + Vite)  --HTTP /api, JWT cookie-->  Express API  --pg, parameter
 ```
 The client never talks to the database. In development Vite serves the client on :5173 and proxies `/api`
 to Express on :4000 (with `X-Forwarded-For`, so rate limits are per client). Socket.io attaches to the same
-HTTP server for live messaging (D50): REST does every write, and the socket delivers events and relays typing. Its
+HTTP server for live messaging (D50) and notifications (D51): REST does every write, and the socket delivers events and relays typing. Its
 handshake checks `Origin` and authenticates the `parp_token` cookie with passport-jwt (D35). The client's Vite proxy
 will need a `/socket.io` entry with `ws: true` when the messaging UI is built.
 
@@ -41,6 +41,8 @@ server/src/features/engagement/   likes, comments, reports, bookmarks, views (Sp
 server/src/features/search/       GET /api/search: notes (text rank blended with E and V), people, hashtags, modules; filters (D48)
 server/src/features/messaging/    direct messages, message requests from non-friends, groups, receipts (routes.ts, repository.ts),
                                   Socket.io gateway (socket.ts: handshake, rooms, typing), limits (config.ts), D50
+server/src/features/notifications/ in-app inbox "NOTIFICATION_T" (R8, D51): notify() in service.ts, called by other features' routes
+                                  after their write commits; GET list, unread count, mark read; live notification:new on user:<id>
 server/db/migrations/             dbmate SQL migrations (only way to change the schema)
 server/tests/<feature>/           Vitest + Supertest, mirroring features; helpers.ts, globalSetup.ts shared
 client/src/App.tsx, main.tsx      routes and bootstrap
@@ -62,7 +64,7 @@ docker/                           Postgres init script (creates parp_test)
 - A feature owns its routes, repository, tests and (client side) pages. A feature imports another feature only
   through that feature's exported functions, never its SQL; shared code goes to `lib/`, `types/` or `components/`.
 - Exception to the no-SQL rule: `notes/repository.ts` exports SQL fragments other features reuse so the rules exist once:
-  `VISIBLE` (alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `MODULE_COL` (alias `m`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
+  `VISIBLE` and `READABLE` (VISIBLE or a collaborator; alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `MODULE_COL` (alias `m`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
   aliases `p`, `u`, `m`) and `SUMMARY_COLS` (aliases `p`, `m`). Callers keep those aliases and bind `$1` to the viewer.
 - Tables are UPPERCASE `_T`, double-quoted in SQL; columns lowercase with a table prefix; SQL keywords UPPERCASE.
 - All ranking constants live in `server/src/features/ranking/config.ts`.

@@ -65,7 +65,6 @@ export async function mentionable(
   return rows.map((r) => r.id);
 }
 
-/** The note's author, for notifications about a note (hidden by a moderator). */
 export async function noteAuthor(noteId: number): Promise<number[]> {
   const { rows } = await pool.query<{ id: number }>(`SELECT pst_usr_id AS "id" FROM "POST_T" WHERE pst_id = $1`, [noteId]);
   return rows.map((r) => r.id);

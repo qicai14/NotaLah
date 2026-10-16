@@ -51,7 +51,6 @@ const commentSchema = z.object({
   body: z.string({ error: 'Comment is required' }).trim().min(1, 'Comment is required').max(1000, 'Comment must be at most 1000 characters'),
   slideNo: z.number({ error: 'Invalid slide number' }).int('Invalid slide number').min(1, 'Invalid slide number').nullish(),
   parentId: z.number({ error: 'Invalid parent comment' }).int('Invalid parent comment').min(1, 'Invalid parent comment').nullish(),
-  // User ids picked in the client's mention picker; "USER_T" has no username to parse from the text (D51).
   mentions: z
     .array(z.number({ error: 'Invalid mention' }).int('Invalid mention').min(1, 'Invalid mention').max(2147483647, 'Invalid mention'),
       { error: 'Mentions must be a list' })

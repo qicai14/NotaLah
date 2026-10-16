@@ -38,7 +38,6 @@ const readSchema = z.object({
     .optional(),
 });
 
-// Without ids every notification is marked read; with ids only those (the user's own).
 notificationsRouter.post('/read', async (req, res) => {
   const parsed = readSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });

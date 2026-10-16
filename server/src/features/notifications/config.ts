@@ -10,10 +10,7 @@ export const NOTIFICATIONS = Object.freeze({
    * new comment or request each time, so they need no window.
    */
   dedupeWindowMinutes: Object.freeze<Partial<Record<NotificationType, number>>>({ follow: 60, super_like: 60 }),
-  /** Most users one comment may mention. */
   mentionMax: 10,
-  /** Inbox page size. */
   listPage: 20,
-  /** Most ids one mark-read call may name. */
   markReadMax: 100,
 });

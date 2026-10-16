@@ -1061,3 +1061,53 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   unit tested.
 - **Reversibility:** Medium: one migration with a down step (rolling back loses read receipts, replies and soft-delete
   flags); routes and the gateway are self-contained in `features/messaging/`.
+
+## D51 - Notifications on the server (R8, Sprint 4, 16 Oct 2026)
+- **Context:** Sprint 4 spec (D47), "Notifications", and PLAN R8. Backend only; the drawer UI waits for the wireframes.
+- **Schema:** migration `20261016000004_notifications.sql` adds `"NOTIFICATION_T"`: recipient (`ntf_usr_id`), nullable actor,
+  type (CHECK list of 11), optional note, comment, collaboration-request and message-request ids (all foreign keys with
+  ON DELETE CASCADE, so a request removed by a block takes its notification with it), `ntf_read_at` and `ntf_created_at`;
+  a check that the actor is never the recipient. Indexes: `notification_recipient_idx` on (recipient, created_at DESC,
+  id DESC) for the inbox and its keyset, and the partial `notification_unread_idx` on recipient WHERE unread. No JSON
+  payload: the decision outcomes are separate types (`lecturer_approved`/`lecturer_rejected`, `collab_approved`/`collab_declined`).
+- **Types:** mention, super_like, follow, lecturer_approved, lecturer_rejected, note_hidden, message_request,
+  collab_request, collab_approved, collab_declined, edited_since_verification. Moderation outcomes have no actor, so the
+  admin is not named.
+- **Mentions:** `"USER_T"` has no username column and display names are neither unique nor free of spaces, so `@name`
+  text cannot be resolved reliably. The comment body takes an optional `mentions` list of user ids (at most 10) from the
+  client's mention picker; a named user is notified only when the text contains "@" plus their display name, they are the
+  note's author, have commented in the same thread (the root comment or its replies) or are the commenter's friend
+  (PLAN R8), and they can see the note (`getTarget`, so contacts-only notes and blocks are respected). Ids outside that set
+  are dropped silently, so the response does not reveal who is a friend or participant.
+- **Delivery rules:** one `INSERT ... SELECT` skips the actor, recipients who are not active or restricted (suspended and
+  deleted accounts get nothing), anyone in a block with the actor (`blockedWith`, D49), and an identical notification
+  (same type, actor and targets) within the type's window in `notifications/config.ts`: 60 minutes for follow (unfollow and
+  re-follow) and Super Like (withdraw and give again). Other types point at a new comment or request each time, so they
+  have no window. Listing and the unread count also hide notifications whose actor is now suspended, deleted or in a
+  block with the recipient, so blocking someone hides what they caused earlier; an unblock shows it again. The note in an
+  item is `{id, title}` only while the recipient can still read it (`READABLE`, now exported from the notes repository).
+- **When it is written:** every notification is inserted after the triggering write has committed, by `notify()` in
+  `notifications/service.ts`, which catches and logs every error, so a failed notification never fails the action. The
+  spec preferred the same transaction where cheap; none of the triggers is a transaction that returns enough to build
+  and push the notification (most are single statements through `pool`), and the live push must follow the commit
+  anyway, so one post-commit path was simpler. Trade-off: a crash between the commit and the insert loses that
+  notification.
+- **Edited since verification:** after every successful note save, `voidedVerifiers` selects lecturers whose Super Like
+  predates `pst_content_edited_at` and who have no `edited_since_verification` notification newer than their Super Like.
+  So each lecturer is told once per voiding, a hashtag-only save tells nobody, and a lecturer who re-confirms is told
+  again after the next content edit. `replaceNote` is unchanged. Known limit: once the earlier notification is purged
+  (30 days), the next save of a still-unconfirmed note tells the lecturer again.
+- **Collaboration decision:** `decideRequest` now returns the requester's id instead of `'ok'`, so the route can notify them.
+- **Endpoints (login required, restricted users included):** `GET /api/notifications?type=&cursor=&limit=` (keyset on
+  created_at and id, 20 per page, D40; `type` is one type or a comma list so the drawer can group), `GET
+  /api/notifications/unread-count` (`{total, byType}`), `POST /api/notifications/read` (`{ids?}`, 1-100 ids; without ids
+  marks all; another user's ids are ignored).
+- **Live:** `notify()` emits `notification:new {notification, unreadCount}` to `user:<id>` with the messaging gateway's
+  `emit` (D50); marking read emits `notification:count {unreadCount}` so other tabs update.
+- **Retention:** `purgeOldNotifications` deletes rows older than 30 days, read or not, as part of `purgeAll` (the daily
+  job and `npm run db:purge-interactions`, D34). No index on `ntf_created_at`: one daily scan of a 30-day table is cheap.
+- **Not done:** the request-message notification is stored in addition to the existing `request:new` event, which is
+  unchanged. A new comment on your note is not a notification type (not in the spec). The live push has the same
+  single-machine limit as messaging (R27).
+- **Tests:** NTF-TC1 to NTF-TC17 (`tests/notifications/`).
+- **Reversibility:** Easy: one migration with a down step; remove the `notify` calls from the trigger routes.
