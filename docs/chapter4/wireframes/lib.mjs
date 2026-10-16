@@ -1,4 +1,4 @@
-// Shared styles and components for the PARP wireframes (v3, low fidelity).
+// Shared styles and components for the NotaLah wireframes (v3, low fidelity).
 // Greyscale boxes, real text only for labels, headings and buttons; every descriptive line is lorem ipsum (L()).
 // Image placeholders are crossed boxes (.xb). Layout follows TikTok web/mobile and a Canva-style editor.
 import { P } from './icons.mjs';
@@ -334,24 +334,24 @@ export const nav = (on, o = {}) => {
   const badge = (n) => (n === 'Notifications' ? 3 : n === 'Messages' ? 2 : 0);
   const icon = (n, ic) => (n === 'Create' ? `<span class="cr">${I('plus', 18)}</span>` : I(ic, 24));
   if (o.collapsed) {
-    return `<nav class="nav c"><div class="nav-head"><div class="mark">P</div><div class="ib" title="Expand menu">${I('sidebar', 22)}</div></div>
+    return `<nav class="nav c"><div class="nav-head"><div class="mark">N</div><div class="ib" title="Expand menu">${I('sidebar', 22)}</div></div>
       <div class="ni" style="background:var(--s2);border-radius:999px">${I('search', 22)}</div>
       ${NAV.map(([n, ic]) => `<div class="ni ${n === on ? 'on' : ''}" title="${n}">${icon(n, ic)}${badge(n) ? '<span class="dot"></span>' : ''}</div>`).join('')}
       ${o.admin ? `<div style="height:1px;width:32px;background:var(--line);margin:8px 0"></div>${ADMIN.map(([n, ic]) => `<div class="ni ${n === on ? 'on' : ''}">${I(ic, 24)}</div>`).join('')}` : ''}
       <div style="margin-top:auto"></div></nav>`;
   }
   if (o.guest) {
-    return `<nav class="nav"><div class="nav-head"><div class="logo"><span class="mark">P</span>PARP</div><div class="ib">${I('sidebar', 22)}</div></div>
+    return `<nav class="nav"><div class="nav-head"><div class="logo"><span class="mark">N</span>NotaLah</div><div class="ib">${I('sidebar', 22)}</div></div>
       <div class="nsearch">${I('search', 18)}Search</div>
       ${GUEST_NAV.map(([n, ic]) => `<div class="ni ${n === on ? 'on' : ''}">${I(ic, 24)}${n}</div>`).join('')}
       <div class="gbox"><span>${L(12)}</span><span class="b p w">Log in</span><span class="b o w">Register</span></div>
-      <div class="nfoot">About · Help · Terms · Privacy<br>© 2026 PARP</div></nav>`;
+      <div class="nfoot">About · Help · Terms · Privacy<br>© 2026 NotaLah</div></nav>`;
   }
-  return `<nav class="nav"><div class="nav-head"><div class="logo"><span class="mark">P</span>PARP</div><div class="ib" title="Collapse menu">${I('sidebar', 22)}</div></div>
+  return `<nav class="nav"><div class="nav-head"><div class="logo"><span class="mark">N</span>NotaLah</div><div class="ib" title="Collapse menu">${I('sidebar', 22)}</div></div>
     <div class="nsearch">${I('search', 18)}Search</div>
     ${NAV.filter(([n]) => !(o.admin && n === 'More')).map(([n, ic]) => `<div class="ni ${n === on ? 'on' : ''}">${icon(n, ic)}${n}${badge(n) ? `<span class="cnt">${badge(n)}</span>` : ''}</div>`).join('')}
     ${o.admin ? `<div class="ngrp">Admin</div>${ADMIN.map(([n, ic, c]) => `<div class="ni ${n === on ? 'on' : ''}">${I(ic, 24)}${n}${c ? `<span class="cnt">${c}</span>` : ''}</div>`).join('')}` : ''}
-    <div class="nfoot">About · Help · Terms · Privacy<br>© 2026 PARP</div></nav>`;
+    <div class="nfoot">About · Help · Terms · Privacy<br>© 2026 NotaLah</div></nav>`;
 };
 export const util = (me = ME.i) => `<span class="b sm o">${I('plus', 16)}Create</span>${av(me, 36)}`;
 export const guestUtil = `<span class="b sm p">${I('login', 16)}Log in</span>`;

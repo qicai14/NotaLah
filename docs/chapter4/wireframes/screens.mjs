@@ -1,4 +1,4 @@
-// Every PARP wireframe screen, in review order. build.mjs numbers them (NN_) from this order,
+// Every NotaLah wireframe screen, in review order. build.mjs numbers them (NN_) from this order,
 // renders PNG + SVG, and writes INDEX.md from the metadata passed to add().
 import {
   I, VB, av, stack, LECT, xb, L, MODS, MUSIC, slide, cover, COVERS, tile, nav, util, app, title, backT, ftabs,
@@ -12,10 +12,10 @@ const add = (id, html, meta) => screens.push({ id, html, ...meta });
 
 /* ================================================================== account + welcome (R31) */
 const welcome = (o = {}) => `<div class="full" style="background:var(--s0)">
-  <div style="height:72px;display:flex;align-items:center;padding:0 48px;box-shadow:inset 0 -1px 0 var(--line)"><div class="logo"><span class="mark">P</span>PARP</div>
+  <div style="height:72px;display:flex;align-items:center;padding:0 48px;box-shadow:inset 0 -1px 0 var(--line)"><div class="logo"><span class="mark">N</span>NotaLah</div>
     <div class="row" style="margin-left:auto"><span class="b g">About</span><span class="b">Log in</span><span class="b o">Register</span></div></div>
   <div style="position:absolute;left:96px;top:190px;width:620px;display:flex;flex-direction:column;gap:24px">
-    <h1 style="font-size:60px;line-height:1.04;letter-spacing:-.045em;font-weight:700">Welcome to PARP</h1>
+    <h1 style="font-size:60px;line-height:1.04;letter-spacing:-.045em;font-weight:700">Welcome to NotaLah</h1>
     <p style="font-size:19px;line-height:1.5;color:var(--ink2);max-width:540px">${L(26)}</p>
     <div class="row" style="gap:12px"><span class="b p lg">${I('eye', 18)}Browse as guest</span><span class="b lg">Log in</span><span class="b lg o">Register</span></div>
     <div class="help" style="font-size:13px">${L(14)}</div>
@@ -24,12 +24,12 @@ const welcome = (o = {}) => `<div class="full" style="background:var(--s0)">
       <div class="row" style="gap:10px">${I('book', 20)}${L(8)}</div>
       <div class="row" style="gap:10px">${I('chat', 20)}${L(8)}</div></div></div>
   <div style="position:absolute;right:160px;top:120px;width:330px;height:714px;display:flex;flex-direction:column;align-items:center;gap:12px">${xb('width:330px;height:680px;border-radius:12px')}<span class="muted sm" style="font-weight:600">Phone preview of the Feed</span></div>
-  <div style="position:absolute;left:96px;bottom:28px;font-size:12px;color:var(--ink3)">About · Help · Terms · Privacy · © 2026 PARP</div>${o.over || ''}</div>`;
+  <div style="position:absolute;left:96px;bottom:28px;font-size:12px;color:var(--ink3)">About · Help · Terms · Privacy · © 2026 NotaLah</div>${o.over || ''}</div>`;
 
 add('welcome', welcome(), { t: 'Welcome page', refs: 'R31, UC01, UC02', v3: 'Changed: v2 landing merged into the R31 Welcome page (Browse as guest added); phone mock-up replaced by a crossed box',
   p: 'First screen for signed-out visitors: Browse as guest, Log in or Register.' });
 
-add('register', welcome({ over: dlg(500, 'Create your PARP account', `
+add('register', welcome({ over: dlg(500, 'Create your NotaLah account', `
   <div class="seg" style="align-self:flex-start"><span>${I('user', 16)}Student</span><span class="on">${I('book', 16)}Lecturer</span></div>
   <div class="fld"><label>Full name</label><div class="in v">Lee Chin Wei</div></div>
   <div class="fld"><label>APU email</label><div class="in v">lee.chinwei@apu.edu.my</div></div>
@@ -39,7 +39,7 @@ add('register', welcome({ over: dlg(500, 'Create your PARP account', `
   <span class="b p lg w">Register</span><div class="muted" style="text-align:center">Already have an account? <b style="color:var(--ink)">Log in</b></div>`, '') }),
 { t: 'Register dialog', refs: 'UC01, UC22', p: 'Student or lecturer registration over the Welcome page; lecturer adds a staff ID for approval.' });
 
-add('login', welcome({ over: dlg(440, 'Log in to PARP', `
+add('login', welcome({ over: dlg(440, 'Log in to NotaLah', `
   <div class="fld"><label>APU email</label><div class="in v">tp072229@mail.apu.edu.my</div></div>
   <div class="fld"><label>Password</label><div class="in bad v">••••••••<span class="end muted">${I('eye', 18)}</span></div>
     <span class="err" role="alert">${I('info', 16)}Email or password is incorrect.</span></div>
@@ -48,13 +48,13 @@ add('login', welcome({ over: dlg(440, 'Log in to PARP', `
 { t: 'Log in dialog (error state)', refs: 'UC02', v3: 'Changed: password field now the same width and height as the email field', p: 'Log in over the Welcome page, shown with the generic credentials error.' });
 
 /* ================================================================== guest browsing (R31) */
-add('guest_feed', app('Feed', feedBody(feedCard({ verified: 'Dr Lee', idx: 1 }), rail()), { guest: true, center: ftabs('Feed', ['Feed']) }),
+add('guest_feed', app('Feed', feedBody(feedCard({ verified: 'Dr Lee', idx: 1, author: 'Lim Qi Cai' }), rail({ av: 'LQ' })), { guest: true, center: ftabs('Feed', ['Feed']) }),
   { t: 'Guest feed', refs: 'R31, UC09, FR11', v3: 'new',
     p: 'Signed-out Feed of public notes only; guest nav, Log in button in the header, no Following tab.' });
 
 add('guest_note', app('Feed', `<div class="content">
   <div style="position:absolute;left:48px;top:0;width:560px;display:flex;flex-direction:column;gap:14px">
-    <div class="row">${av('AR', 44, true)}<div><div style="font-weight:700;font-size:16px">Aina Rahman</div><div class="muted sm">BSc (Hons) Software Engineering · 2d ago</div></div><span class="b sm p" style="margin-left:auto">Follow</span><span class="ib s sm">${I('more', 18)}</span></div>
+    <div class="row">${av('LQ', 44, true)}<div><div style="font-weight:700;font-size:16px">Lim Qi Cai</div><div class="muted sm">BSc (Hons) Software Engineering · 2d ago</div></div><span class="b sm p" style="margin-left:auto">Follow</span><span class="ib s sm">${I('more', 18)}</span></div>
     <div style="position:relative;width:560px;height:700px;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--s3)">${slide('norm')}
       <div class="sarr" style="left:10px;top:334px">${I('left', 18)}</div><div class="sarr" style="right:10px;top:334px">${I('right', 18)}</div>${dots(6, 1)}</div></div>
   <div style="position:absolute;left:628px;top:56px;display:flex;flex-direction:column;gap:12px">${[['heart', '1.2K'], ['comment', '44', true], ['bookmark', '318'], ['share', 'Share']].map(([ic, c, on]) => `<div class="rb ${on ? 'on' : ''}"><span class="c">${I(ic, 22)}</span>${c}</div>`).join('')}</div>
@@ -344,8 +344,8 @@ add('editor_mobile', `<div class="m" style="background:var(--s2)">${sbar}
       ${person('HI', 'Hafiz Ismail', 'Joined with the edit link', roleDd('Can edit'), 2)}
       ${person('CW', 'Chloe Wong', 'Request approved 12 Oct', roleDd('Can view'), 3)}</div></div>
     <div class="fld"><label>Links</label><div class="col" style="gap:8px">
-      ${linkRow('eye', 'View link', 'parp.app/n/8f3k2q/view?t=V7…', true)}
-      ${linkRow('pencil', 'Edit link', 'parp.app/n/8f3k2q/edit?t=E2…', true, `<span class="b sm o">${I('rotate', 14)}Regenerate</span><span class="b sm o">${I('x', 14)}Revoke</span>`)}</div></div>
+      ${linkRow('eye', 'View link', 'notalah.app/n/8f3k2q/view?t=V7…', true)}
+      ${linkRow('pencil', 'Edit link', 'notalah.app/n/8f3k2q/edit?t=E2…', true, `<span class="b sm o">${I('rotate', 14)}Regenerate</span><span class="b sm o">${I('x', 14)}Revoke</span>`)}</div></div>
     <div class="help">${L(16)}</div>`;
   add('share_dialog', editor({ rail: 'Templates', panel: false, bar: { shareOn: true, people: ['LQ', 'AR', 'HI'] }, board: boardAt(W, H, `<div style="position:absolute;inset:0">${slide('norm')}</div>`, { wsW: 1364, top: 64 }).html, bottom: { left: 76 },
     over: dlg(620, 'Share “Normalisation, 1NF to 3NF”', body, '<span class="b p">Done</span>') }),
@@ -358,7 +358,7 @@ add('editor_mobile', `<div class="m" style="background:var(--s2)">${sbar}
   const visPop = `<div class="pop" style="right:16px;top:60px;width:300px;padding:16px;display:flex;flex-direction:column;gap:12px">
       <b>Publish the last saved version</b><span class="muted sm" style="margin-top:-6px">Aina's unsaved changes are not included.</span>
       <div class="fld"><label>Who can see this note</label>
-        ${[['Public', 'Anyone on PARP, guests included', true], ['Friends only', 'Mutual followers only', false]].map(([t, d, on]) => `<div class="li ${on ? 'on' : ''}" style="padding:10px"><span class="radio ${on ? 'on' : ''}"></span><div class="t"><div class="n">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
+        ${[['Public', 'Anyone on NotaLah, guests included', true], ['Friends only', 'Mutual followers only', false]].map(([t, d, on]) => `<div class="li ${on ? 'on' : ''}" style="padding:10px"><span class="radio ${on ? 'on' : ''}"></span><div class="t"><div class="n">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
       <div class="row" style="justify-content:flex-end;gap:8px"><span class="b sm">Cancel</span><span class="b sm p">Publish</span></div></div>`;
   const dimTip = `<div class="pop" style="right:16px;top:60px;width:240px;padding:10px 14px;font-size:13px"><b>Only the owner can publish</b><div class="muted sm">${L(8)}</div></div>`;
   const locked = (owner) => editor({ rail: '', dimRail: true, panel: false, bar: { locked: true, owner, people: ['LQ', 'AR', 'HI'] },
@@ -383,7 +383,7 @@ add('drafts', app('Profile', `<div class="content" style="padding:0 32px">
   </div>
   <div class="pop" style="left:${32 + 2 * (1168 - 80) / 5 + 40 + 120}px;top:96px;width:200px">${[['pencil', 'Continue editing'], ['upload', 'Publish…'], ['users', 'Share'], ['copy', 'Duplicate'], ['trash', 'Delete draft']].map(([ic, t], k) => `<div class="mi ${k === 1 ? 'on' : ''}">${I(ic, 18)}${t}${k === 1 ? `<span class="k">${I('right', 14)}</span>` : ''}</div>`).join('')}</div>
   <div class="pop" style="left:${32 + 2 * (1168 - 80) / 5 + 40 + 120 + 208}px;top:140px;width:280px;padding:16px;display:flex;flex-direction:column;gap:12px"><b>Publish “React hooks cheat sheet”</b>
-    <div class="fld"><label>Who can see this note</label>${[['Public', 'Anyone on PARP, guests included', true], ['Friends only', 'Mutual followers only', false]].map(([t, d, on]) => `<div class="li ${on ? 'on' : ''}" style="padding:10px"><span class="radio ${on ? 'on' : ''}"></span><div class="t"><div class="n">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
+    <div class="fld"><label>Who can see this note</label>${[['Public', 'Anyone on NotaLah, guests included', true], ['Friends only', 'Mutual followers only', false]].map(([t, d, on]) => `<div class="li ${on ? 'on' : ''}" style="padding:10px"><span class="radio ${on ? 'on' : ''}"></span><div class="t"><div class="n">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
     <span class="muted sm">Module and hashtags are checked before posting.</span><div class="row" style="justify-content:flex-end;gap:8px"><span class="b sm">Cancel</span><span class="b sm p">Publish</span></div></div></div>`, { left: backT('Drafts') + '<span class="muted" style="font-size:15px;font-weight:600">4</span>' }),
 { t: 'Drafts', refs: 'UC06, UC07, UC08', v3: 'Changed: draft menu gains Share (R30) and Publish with a Public or Friends only choice', p: 'Private drafts grid; the draft menu continues, publishes (choosing Public or Friends only), shares, duplicates or deletes.' });
 

@@ -6,15 +6,15 @@
 <rect x="0" y="0" width="1440" height="900" fill="#fafafa"/>
 <rect x="0" y="71" width="1440" height="1" fill="#d6d6d6"/>
 <rect x="48" y="21" width="30" height="30" rx="9" fill="#1c1c1c"/>
-<text x="58.08" y="42.55" font-size="16" font-weight="700" fill="#ffffff">P</text>
-<text x="86" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
+<text x="56.67" y="42.55" font-size="16" font-weight="700" fill="#ffffff">N</text>
+<text x="86" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">NotaLah</text>
 <text x="1147.72" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">About</text>
 <rect x="1217.16" y="16" width="75.33" height="40" rx="20" fill="#e6e6e6"/>
 <text x="1235.16" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">Log in</text>
 <rect x="1304.48" y="16" width="87.52" height="40" rx="20" fill="#ffffff"/>
 <rect x="1305.23" y="16.75" width="86.02" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1322.48" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">Register</text>
-<text x="96" y="245.9" font-size="60" font-weight="700" letter-spacing="-2.7" fill="#1c1c1c">Welcome to PARP</text>
+<text x="96" y="245.9" font-size="60" font-weight="700" letter-spacing="-2.7" fill="#1c1c1c">Welcome to NotaLah</text>
 <text x="96" y="298.28" font-size="19" fill="#474747">Do eiusmod tempor incididunt ut labore et dolore magna aliqua</text>
 <text x="96" y="326.78" font-size="19" fill="#474747">ut enim ad minim veniam quis nostrud exercitation ullamco</text>
 <text x="96" y="355.28" font-size="19" fill="#474747">laboris nisi aliquip ex ea commodo consequat.</text>
@@ -33,13 +33,13 @@
 <path d="M950 120L1280 800M1280 120L950 800" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="950.75" y="120.75" width="328.5" height="678.5" rx="11.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1042.41" y="824.98" font-size="12" font-weight="600" fill="#6b6b6b">Phone preview of the Feed</text>
-<text x="96" y="867.59" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy · © 2026 PARP</text>
+<text x="96" y="867.59" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy · © 2026 NotaLah</text>
 <g id="scrim-1">
 <rect x="0" y="0" width="1440" height="900" fill="#282828" fill-opacity="0.4"/>
 <g id="dlg-2">
 <rect x="499.25" y="259.33" width="441.5" height="381.33" rx="20.75" fill="none" stroke="#6b6b6b" stroke-width="1.5"/>
 <rect x="500" y="260.08" width="440" height="379.83" rx="20" fill="#ffffff"/>
-<text x="524" y="306.88" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Log in to PARP</text>
+<text x="524" y="306.88" font-size="20" font-weight="700" letter-spacing="-0.4" fill="#1c1c1c">Log in to NotaLah</text>
 <g transform="translate(894 286.08) scale(0.83)" fill="none" stroke="#474747" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"></path></g>
 <text x="524" y="344.97" font-size="13" font-weight="600" fill="#474747">APU email</text>
 <rect x="524" y="355.92" width="392" height="44" rx="10" fill="#f2f2f2"/>

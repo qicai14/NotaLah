@@ -6,15 +6,15 @@
 <rect x="0" y="0" width="1440" height="900" fill="#fafafa"/>
 <rect x="0" y="71" width="1440" height="1" fill="#d6d6d6"/>
 <rect x="48" y="21" width="30" height="30" rx="9" fill="#1c1c1c"/>
-<text x="58.08" y="42.55" font-size="16" font-weight="700" fill="#ffffff">P</text>
-<text x="86" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">PARP</text>
+<text x="56.67" y="42.55" font-size="16" font-weight="700" fill="#ffffff">N</text>
+<text x="86" y="44.5" font-size="21" font-weight="700" letter-spacing="-0.63" fill="#1c1c1c">NotaLah</text>
 <text x="1147.72" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">About</text>
 <rect x="1217.16" y="16" width="75.33" height="40" rx="20" fill="#e6e6e6"/>
 <text x="1235.16" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">Log in</text>
 <rect x="1304.48" y="16" width="87.52" height="40" rx="20" fill="#ffffff"/>
 <rect x="1305.23" y="16.75" width="86.02" height="38.5" rx="19.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1322.48" y="41.15" font-size="14" font-weight="600" fill="#1c1c1c">Register</text>
-<text x="96" y="245.9" font-size="60" font-weight="700" letter-spacing="-2.7" fill="#1c1c1c">Welcome to PARP</text>
+<text x="96" y="245.9" font-size="60" font-weight="700" letter-spacing="-2.7" fill="#1c1c1c">Welcome to NotaLah</text>
 <text x="96" y="298.28" font-size="19" fill="#474747">Lorem ipsum dolor sit amet consectetur adipiscing elit sed do</text>
 <text x="96" y="326.78" font-size="19" fill="#474747">eiusmod tempor incididunt ut labore et dolore magna aliqua ut</text>
 <text x="96" y="355.28" font-size="19" fill="#474747">enim ad minim veniam quis nostrud.</text>
@@ -33,5 +33,5 @@
 <path d="M950 120L1280 800M1280 120L950 800" fill="none" stroke="#a8a8a8" stroke-width="1"/>
 <rect x="950.75" y="120.75" width="328.5" height="678.5" rx="11.25" fill="none" stroke="#cdcdcd" stroke-width="1.5"/>
 <text x="1042.41" y="824.98" font-size="12" font-weight="600" fill="#6b6b6b">Phone preview of the Feed</text>
-<text x="96" y="867.59" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy · © 2026 PARP</text>
+<text x="96" y="867.59" font-size="12" fill="#6b6b6b">About · Help · Terms · Privacy · © 2026 NotaLah</text>
 </svg>
