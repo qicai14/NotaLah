@@ -6,6 +6,7 @@ import {
   House,
   type LucideIcon,
   Plus,
+  Search,
   User,
   Users,
   UsersRound,
@@ -25,6 +26,7 @@ export interface NavItem {
  */
 export const RAIL: NavItem[] = [
   { to: '/', label: 'Feed', icon: House },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/?tab=following', label: 'Following', icon: UsersRound },
   { to: '/notes/new', label: 'Create', icon: Plus, primary: true },
   { to: '/drafts', label: 'Drafts', icon: FileText },
@@ -41,7 +43,7 @@ export const ADMIN_RAIL: NavItem[] = [
 /** Phone tab bar: five slots, Create in the middle. */
 export const TABS: NavItem[] = [
   { to: '/', label: 'Home', icon: House },
-  { to: '/saved', label: 'Saved', icon: Bookmark },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/notes/new', label: 'Create', icon: Plus, primary: true },
   { to: '/drafts', label: 'Drafts', icon: FileText },
   { to: '/profile', label: 'Profile', icon: User },

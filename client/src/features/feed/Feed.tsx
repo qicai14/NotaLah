@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MoreMenu } from '@/components/shell/MoreMenu';
@@ -243,9 +243,16 @@ export default function Feed() {
         </div>
         <div className="pointer-events-auto md:absolute md:right-6">
           {guest ? (
-            <Button asChild size="sm" className="md:h-10 md:px-5">
-              <Link to="/login">Log in</Link>
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="icon" className="md:hidden">
+                <Link to="/search" aria-label="Search">
+                  <Search aria-hidden="true" className="size-5" />
+                </Link>
+              </Button>
+              <Button asChild size="sm" className="md:h-10 md:px-5">
+                <Link to="/login">Log in</Link>
+              </Button>
+            </div>
           ) : (
             <span className="block size-10 md:hidden" aria-hidden="true" />
           )}
