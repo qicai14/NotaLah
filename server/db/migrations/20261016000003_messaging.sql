@@ -16,6 +16,8 @@ ALTER TABLE "MESSAGE_T"
 -- History pages and "last message" lookups walk msg_id within one conversation.
 DROP INDEX message_conv_time_idx;
 CREATE INDEX message_conv_id_idx ON "MESSAGE_T" (msg_cnv_id, msg_id);
+-- Serves the reply-to foreign key check when a message is deleted outright (a conversation or user purge).
+CREATE INDEX message_reply_to_idx ON "MESSAGE_T" (msg_reply_to_id) WHERE msg_reply_to_id IS NOT NULL;
 
 -- One pending request per pair in either direction (was one per direction).
 DROP INDEX message_request_one_pending_idx;
@@ -23,6 +25,7 @@ CREATE UNIQUE INDEX message_request_pending_pair_idx ON "MESSAGE_REQUEST_T"
     (LEAST(mrq_sender_id, mrq_recipient_id), GREATEST(mrq_sender_id, mrq_recipient_id)) WHERE mrq_status = 'pending';
 
 -- migrate:down
+DROP INDEX message_reply_to_idx;
 DROP INDEX message_request_pending_pair_idx;
 CREATE UNIQUE INDEX message_request_one_pending_idx ON "MESSAGE_REQUEST_T" (mrq_sender_id, mrq_recipient_id) WHERE mrq_status = 'pending';
 DROP INDEX message_conv_id_idx;

@@ -8,6 +8,8 @@ import { type AuthUser, isBlocked } from '../users/repository';
 import { MESSAGING } from './config';
 import * as repo from './repository';
 
+// shortcut: rooms, typing throttles and the kicks done through them (suspension, removal from a group) live in this
+// process's memory, so the app runs on a single Fly machine (D50); add the Socket.io Postgres adapter (R27) before scaling out.
 let io: Server | undefined;
 
 export const userRoom = (id: number) => `user:${id}`;
@@ -21,7 +23,6 @@ const authenticate = (req: IncomingMessage) =>
 
 interface SocketData {
   user: AuthUser;
-  rooms: number[];
   typingAt: Map<number, number>;
 }
 
@@ -29,6 +30,8 @@ interface SocketData {
 export function attachSocket(server: HttpServer): Server {
   io = new Server(server, {
     serveClient: false,
+    // Clients send only small typing events; every other write is REST.
+    maxHttpBufferSize: 1_000,
     cors: { origin: env.CLIENT_ORIGIN, credentials: true },
     // WebSockets bypass CORS and the CSRF header, so every engine request must come from the client's origin.
     allowRequest: (req, callback) => callback(null, req.headers.origin === env.CLIENT_ORIGIN),
@@ -39,7 +42,9 @@ export function attachSocket(server: HttpServer): Server {
       if (!user) return next(new Error('Unauthorized'));
       const data: Partial<SocketData> = socket.data;
       data.user = user;
-      data.rooms = await repo.conversationIds(user.id);
+      // The user room first: a conversation joined while the ids below are read still reaches this socket via socketsJoin.
+      await socket.join(userRoom(user.id));
+      await socket.join((await repo.conversationIds(user.id)).map(convRoom));
       next();
     } catch (err) {
       logger.error({ err }, 'socket handshake failed');
@@ -53,7 +58,6 @@ export function attachSocket(server: HttpServer): Server {
 function onConnection(socket: Socket): void {
   const data = socket.data as SocketData;
   const { user } = data;
-  void socket.join([userRoom(user.id), ...data.rooms.map(convRoom)]);
   data.typingAt = new Map();
   // A socket must not outlive its token, so it is cut when the JWT expires.
   const { exp } = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number };
@@ -78,7 +82,7 @@ function onConnection(socket: Socket): void {
 }
 
 /** Emits to a room; a no-op when Socket.io is not attached (REST-only tests). */
-export const emit = (room: string | string[], event: string, payload: unknown) => void io?.to(room).emit(event, payload);
+export const emit = (room: string, event: string, payload: unknown) => void io?.to(room).emit(event, payload);
 
 /** Puts every open socket of the users into (or takes them out of) the conversation's room. */
 export const joinConversation = (userIds: number[], conversationId: number) => void io?.in(userIds.map(userRoom)).socketsJoin(convRoom(conversationId));

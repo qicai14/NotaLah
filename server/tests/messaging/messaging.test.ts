@@ -22,12 +22,10 @@ async function users(n: number): Promise<number[]> {
   for (let i = 0; i < n; i++) ids.push(await insertUser({ displayName: `User ${i}` }));
   return ids;
 }
-const befriendOnce = (a: number, b: number) =>
-  pool.query(`INSERT INTO "FOLLOW_T" (fol_follower_id, fol_followee_id) VALUES ($1, $2), ($2, $1) ON CONFLICT DO NOTHING`, [a, b]);
 
 /** Two friends with an open direct conversation; returns its id. */
 async function friendsChat(a: number, b: number): Promise<number> {
-  await befriendOnce(a, b);
+  await befriend(a, b);
   const res = await dm(a, b);
   expect(res.status).toBe(201);
   return res.body.conversationId;
@@ -35,7 +33,7 @@ async function friendsChat(a: number, b: number): Promise<number> {
 
 /** A group owned by `owner` with `members` (all befriended with the owner first). */
 async function group(owner: number, members: number[], name = 'FYP Team'): Promise<number> {
-  for (const m of members) await befriendOnce(owner, m);
+  for (const m of members) await befriend(owner, m);
   const res = await api.post(owner, '/api/conversations', { name, memberIds: members });
   expect(res.status).toBe(201);
   return res.body.conversation.id;
@@ -294,5 +292,40 @@ describe('Messages', () => {
     expect((await api.del(b, `/api/conversations/${g}/members/${c}`)).status).toBe(404);
     expect((await api.del(b, `/api/conversations/${g}/members/${b}`)).body).toEqual({ ownerId: null });
     expect(await count('CONVERSATION_T')).toBe(0);
+  });
+
+  it('MSG-TC26: two concurrent adds to a group of 29 leave exactly 30 members', async () => {
+    const [owner, ...rest] = await users(31);
+    const g = await group(owner, rest.slice(0, 28));
+    const [x, y] = rest.slice(28);
+    await befriend(owner, x);
+    await befriend(owner, y);
+    // Hold the group row so both adds are queued on its lock at once, then release it.
+    const holder = await pool.connect();
+    await holder.query('BEGIN');
+    await holder.query(`SELECT 1 FROM "CONVERSATION_T" WHERE cnv_id = $1 FOR UPDATE`, [g]);
+    // .then() sends each request now; a supertest request is lazy until awaited.
+    const adds = [x, y].map((userId) => api.post(owner, `/api/conversations/${g}/members`, { userId }).then((r) => r));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await holder.query('COMMIT');
+    holder.release();
+    const results = await Promise.all(adds);
+    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    expect((await pool.query(`SELECT COUNT(*)::INT AS n FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1`, [g])).rows[0].n).toBe(30);
+  });
+
+  it('MSG-TC27: a direct message between new friends accepts the pending request and keeps history in order', async () => {
+    const [a, b] = await users(2);
+    const note = await insertNote(a);
+    expect((await dm(a, b, 'held', { noteId: note })).status).toBe(202);
+    await befriend(a, b);
+    const res = await dm(b, a, 'later');
+    expect(res.status).toBe(201);
+    expect((await pool.query(`SELECT mrq_status FROM "MESSAGE_REQUEST_T"`)).rows).toEqual([{ mrq_status: 'accepted' }]);
+    const hist = (await api.get(a, `/api/conversations/${res.body.conversationId}/messages`)).body.messages;
+    expect(hist.map((m: { body: string }) => m.body)).toEqual(['later', 'held']);
+    expect(hist[1]).toMatchObject({ sender: { id: a }, note: { id: note } });
+    expect(new Date(hist[1].createdAt) <= new Date(hist[0].createdAt)).toBe(true);
+    expect((await api.get(b, '/api/message-requests')).body.requests).toEqual([]);
   });
 });

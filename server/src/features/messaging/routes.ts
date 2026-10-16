@@ -54,15 +54,20 @@ function parse<T extends z.ZodType>(schema: T, body: unknown, res: Response): z.
   return parsed.data;
 }
 
-/** Live delivery of a new message: one payload for the room, or one per member when a note card must be checked for each reader. */
-async function deliver(conversationId: number, messageId: number, hasNote: boolean): Promise<void> {
-  if (!hasNote) {
-    const message = await repo.getMessage(messageId, 0);
-    return emit(convRoom(conversationId), 'message:new', { conversationId, message });
+/** Live delivery of a new message (as its sender sees it): one payload for the room, or with a note card one per member, each card checked for that reader. */
+async function deliver(message: repo.Message): Promise<void> {
+  const { conversationId } = message;
+  if (message.note === null && !message.noteUnavailable) return emit(convRoom(conversationId), 'message:new', { conversationId, message });
+  for (const { viewerId, note, noteUnavailable } of await repo.noteCardsFor(message.id)) {
+    emit(userRoom(viewerId), 'message:new', { conversationId, message: { ...message, note, noteUnavailable } });
   }
-  for (const member of await repo.memberIds(conversationId)) {
-    emit(userRoom(member), 'message:new', { conversationId, message: await repo.getMessage(messageId, member) });
-  }
+}
+
+/** The sent message as its sender sees it; it was inserted in this request, so it exists. */
+async function sent(messageId: number, senderId: number): Promise<repo.Message> {
+  const message = await repo.getMessage(messageId, senderId);
+  if (!message) throw new Error(`message ${messageId} vanished after insert`);
+  return message;
 }
 
 messagingRouter.get('/conversations', requireAuth, async (req, res) => {
@@ -100,8 +105,9 @@ messagingRouter.post('/messages', requireAuth, requireActive, async (req, res) =
     return res.status(202).json({ request: { id: out.requestId, status: 'pending' } });
   }
   if (out.created) joinConversation([sender, input.toUserId], out.conversationId);
-  await deliver(out.conversationId, out.messageId, input.noteId !== null);
-  res.status(201).json({ conversationId: out.conversationId, message: await repo.getMessage(out.messageId, sender) });
+  const message = await sent(out.messageId, sender);
+  await deliver(message);
+  res.status(201).json({ conversationId: out.conversationId, message });
 });
 
 messagingRouter.post('/conversations/:id/messages', requireAuth, requireActive, async (req, res) => {
@@ -112,8 +118,9 @@ messagingRouter.post('/conversations/:id/messages', requireAuth, requireActive, 
   if (input.noteId !== null && !(await repo.noteVisibleTo(input.noteId, sender))) return res.status(400).json({ error: 'Note not found' });
   const out = await repo.sendToConversation(conversationId, sender, input);
   if (typeof out === 'string') return refuse(res, out);
-  await deliver(conversationId, out, input.noteId !== null);
-  res.status(201).json({ message: await repo.getMessage(out, sender) });
+  const message = await sent(out, sender);
+  await deliver(message);
+  res.status(201).json({ message });
 });
 
 // Deleting your own message removes content, so a restricted account may do it.
