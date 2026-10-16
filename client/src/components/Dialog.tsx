@@ -36,7 +36,7 @@ export function Dialog({ title, onClose, children }: { title: string; onClose():
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      className="fixed inset-0 z-50 flex animate-in items-end justify-center bg-overlay fade-in-0 sm:items-center sm:p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -45,9 +45,9 @@ export function Dialog({ title, onClose, children }: { title: string; onClose():
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="max-h-full w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl outline-none"
+        className="max-h-[90dvh] w-full max-w-md animate-in overflow-y-auto rounded-t-2xl bg-popover p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-popover-foreground shadow-(--shadow-float) outline-none duration-200 slide-in-from-bottom-4 sm:rounded-2xl sm:pb-6 sm:zoom-in-95 sm:slide-in-from-bottom-0"
       >
-        <h2 id={titleId} className="mb-3 text-lg font-semibold">
+        <h2 id={titleId} className="mb-4 text-title font-bold">
           {title}
         </h2>
         {children}

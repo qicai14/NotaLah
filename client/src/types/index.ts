@@ -53,9 +53,29 @@ export interface Note {
   verifiedByMe: boolean;
 }
 
+/** The four ranking scores, each 0 to 1 (IR 2.3.4): engagement, recency, lecturer validation, hashtag match. */
+export interface RankingComponents {
+  E: number;
+  R: number;
+  V: number;
+  M: number;
+}
+
+/** A Feed item carries its score; Following items are chronological and carry none. */
+export interface FeedNote extends Note {
+  score?: number;
+  components?: RankingComponents;
+}
+
 export interface FeedPage {
-  items: Note[];
+  items: FeedNote[];
   nextPage: number | null;
+  asOf: string;
+}
+
+export interface FollowingPage {
+  items: Note[];
+  nextCursor: string | null;
   asOf: string;
 }
 

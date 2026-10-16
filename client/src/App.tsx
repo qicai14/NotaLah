@@ -1,21 +1,23 @@
-import { useState } from 'react';
-import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { lazy, type ReactNode, Suspense } from 'react';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { AppShell } from './components/shell/AppShell';
 import { useAuth } from './features/auth/AuthContext';
-import { isApprovedLecturer } from './lib/roles';
+import { isGuestBrowsing } from './features/auth/guest';
+import { GuestPromptProvider } from './features/auth/GuestPrompt';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
-import AdminLecturers from './features/moderation/AdminLecturers';
-import AdminReports from './features/moderation/AdminReports';
-import AdminUsers from './features/moderation/AdminUsers';
-import Login from './features/auth/Login';
-import Register from './features/auth/Register';
-import { LecturerBadge } from './components/LecturerBadge';
-import Feed from './features/feed/Feed';
-import Saved from './features/feed/Saved';
-import Drafts from './features/notes/Drafts';
-import NoteDetail from './features/notes/NoteDetail';
-import NoteEditor from './features/notes/NoteEditor';
-import EditProfile from './features/users/EditProfile';
-import Profile from './features/users/Profile';
+
+// One chunk per page, so the first load carries only the shell and the screen being opened.
+const Welcome = lazy(() => import('./features/auth/Welcome'));
+const Feed = lazy(() => import('./features/feed/Feed'));
+const Saved = lazy(() => import('./features/feed/Saved'));
+const Drafts = lazy(() => import('./features/notes/Drafts'));
+const NoteDetail = lazy(() => import('./features/notes/NoteDetail'));
+const NoteEditor = lazy(() => import('./features/notes/NoteEditor'));
+const EditProfile = lazy(() => import('./features/users/EditProfile'));
+const Profile = lazy(() => import('./features/users/Profile'));
+const AdminLecturers = lazy(() => import('./features/moderation/AdminLecturers'));
+const AdminReports = lazy(() => import('./features/moderation/AdminReports'));
+const AdminUsers = lazy(() => import('./features/moderation/AdminUsers'));
 
 /** One NoteEditor per note id: /notes/new and /notes/:id/edit must never share state. */
 function EditorRoute() {
@@ -23,229 +25,55 @@ function EditorRoute() {
   return <NoteEditor key={id ?? 'new'} />;
 }
 
-const DESKTOP_NAV = [
-  ['/', 'Feed'],
-  ['/notes/new', 'Create Note'],
-  ['/drafts', 'Drafts'],
-  ['/saved', 'Saved'],
-  ['/profile', 'Profile'],
-];
-const TABS = [
-  ['/', 'Feed'],
-  ['/notes/new', 'Create'],
-  ['/saved', 'Saved'],
-  ['/profile', 'Me'],
-];
-const ADMIN_NAV = [
-  ['/admin/lecturers', 'Lecturer applications'],
-  ['/admin/reports', 'Reports'],
-  ['/admin/users', 'Users'],
-];
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-  isActive ? 'font-semibold text-indigo-700' : 'text-slate-700';
-
-function SideNav() {
-  return (
-    <nav aria-label="Main" className="hidden w-44 shrink-0 md:block">
-      <ul className="sticky top-20 flex flex-col gap-1">
-        {DESKTOP_NAV.map(([to, label]) => (
-          <li key={to}>
-            <NavLink to={to} end={to === '/'} className={(s) => `block rounded-md px-3 py-2 ${linkClass(s)}`}>
-              {label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
+/** The Feed is open to guests (R31) once they choose "Browse as guest"; other signed-out visitors start at Welcome. */
+function FeedRoute() {
+  const { user } = useAuth();
+  if (!user && !isGuestBrowsing()) return <Navigate to="/welcome" replace />;
+  return <Feed />;
 }
 
-function TabBar() {
-  return (
-    <nav aria-label="Main tabs" className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white md:hidden">
-      <ul className="grid grid-cols-4">
-        {TABS.map(([to, label]) => (
-          <li key={to}>
-            <NavLink to={to} end={to === '/'} className={(s) => `block py-3 text-center text-sm ${linkClass(s)}`}>
-              {label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
+const pageFallback = (
+  <p role="status" className="py-16 text-center text-body-sm text-muted-foreground">
+    Loading…
+  </p>
+);
 
-function Header() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const verified = isApprovedLecturer(user);
-  const [logoutFailed, setLogoutFailed] = useState(false);
+const signedIn = (page: ReactNode, roles?: ['admin']) => <ProtectedRoute roles={roles}>{page}</ProtectedRoute>;
 
+function ShellRoutes() {
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
-      <nav className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-        <Link to="/" className="text-lg font-bold tracking-wide text-indigo-600">
-          NotaLah
-        </Link>
-        {user ? (
-          <div className="flex items-center gap-3 text-sm">
-            {user.role === 'admin' && (
-              <nav aria-label="Administration" className="flex gap-3">
-                {ADMIN_NAV.map(([to, label]) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    className={({ isActive }) => (isActive ? 'font-semibold text-indigo-700' : 'text-indigo-600')}
-                  >
-                    {label}
-                  </NavLink>
-                ))}
-              </nav>
-            )}
-            <Link to="/profile" className="font-medium">
-              {user.displayName}
-              {verified && <LecturerBadge />}
-            </Link>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await logout();
-                  setLogoutFailed(false);
-                  navigate('/login', { replace: true });
-                } catch {
-                  setLogoutFailed(true);
-                }
-              }}
-              className="rounded-md border border-slate-300 px-3 py-1"
-            >
-              Log out
-            </button>
-            {logoutFailed && <span role="alert">Could not log out. Try again.</span>}
-          </div>
-        ) : (
-          <div className="flex gap-4 text-sm">
-            <Link to="/login">Log in</Link>
-            <Link to="/register">Register</Link>
-          </div>
-        )}
-      </nav>
-    </header>
+    <AppShell>
+      <Suspense fallback={pageFallback}>
+        <Routes>
+          <Route path="/" element={<FeedRoute />} />
+          <Route path="/notes/new" element={signedIn(<EditorRoute />)} />
+          <Route path="/notes/:id/edit" element={signedIn(<EditorRoute />)} />
+          <Route path="/notes/:id" element={<NoteDetail />} />
+          <Route path="/drafts" element={signedIn(<Drafts />)} />
+          <Route path="/saved" element={signedIn(<Saved />)} />
+          <Route path="/profile" element={signedIn(<Profile />)} />
+          <Route path="/profile/edit" element={signedIn(<EditProfile />)} />
+          <Route path="/users/:id" element={signedIn(<Profile />)} />
+          <Route path="/admin/lecturers" element={signedIn(<AdminLecturers />, ['admin'])} />
+          <Route path="/admin/reports" element={signedIn(<AdminReports />, ['admin'])} />
+          <Route path="/admin/users" element={signedIn(<AdminUsers />, ['admin'])} />
+        </Routes>
+      </Suspense>
+    </AppShell>
   );
 }
 
 export default function App() {
-  const { user } = useAuth();
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Header />
-      <div className="mx-auto flex max-w-4xl gap-6 px-4 py-6 pb-24 md:pb-6">
-        {user && <SideNav />}
-        <main id="main" tabIndex={-1} className="min-w-0 outline-none max-w-2xl flex-1">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Feed />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/notes/new"
-              element={
-                <ProtectedRoute>
-                  <EditorRoute />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notes/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditorRoute />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notes/:id"
-              element={
-                <ProtectedRoute>
-                  <NoteDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/drafts"
-              element={
-                <ProtectedRoute>
-                  <Drafts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/saved"
-              element={
-                <ProtectedRoute>
-                  <Saved />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile/edit"
-              element={
-                <ProtectedRoute>
-                  <EditProfile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/users/:id"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/lecturers"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <AdminLecturers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/reports"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <AdminReports />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <AdminUsers />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-      </div>
-      {user && <TabBar />}
-    </div>
+    <GuestPromptProvider>
+      <Suspense fallback={pageFallback}>
+        <Routes>
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/login" element={<Welcome dialog="login" />} />
+          <Route path="/register" element={<Welcome dialog="register" />} />
+          <Route path="*" element={<ShellRoutes />} />
+        </Routes>
+      </Suspense>
+    </GuestPromptProvider>
   );
 }
