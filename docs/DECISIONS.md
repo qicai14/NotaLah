@@ -1132,3 +1132,22 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   single-machine limit as messaging (R27).
 - **Tests:** NTF-TC1 to NTF-TC18 (`tests/notifications/`).
 - **Reversibility:** Easy: one migration with a down step; remove the `notify` calls from the trigger routes.
+
+## D52 - Sprint D spec (17 Oct 2026, user interview)
+- **Context:** wireframes v3 approved (gate lifted); Sprint D builds the R19 redesign, the R21 editor with R22 images and
+  R29 video, and the UI for R30, R31, search, blocking, messaging and R8. Full spec: `docs/specs/SprintD_spec.md`.
+- **Theme:** light default plus dark (system setting and a toggle), TikTok layout (left rail on desktop, bottom tabs on
+  mobile, full-height card feed). Every colour is a CSS variable in one token file, so the palette can be replaced later
+  (the user may choose one with a tool such as Google Stitch).
+- **Order:** design system, then shell, feed, note detail, welcome/auth, then all remaining v3 screens. R21 follows its
+  spec order: R21a, R21b, R21c (R22 server alongside), R21d, R22 client, R29.
+- **Split:** `frontend-designer` sets the system (shadcn/ui via its CLI, `client/DESIGN.md`), the key screens and the
+  editor UI; `frontend` does the SlideBoard rollout, search, profiles and blocking, collaboration, messaging,
+  notifications and admin; `implementer` the server halves. At most three parallel worktrees.
+- **Storage:** a storage interface with a local-disk driver for development and tests; the Cloudflare R2 driver is
+  added when the user provides keys. The Unsplash panel stays disabled until `UNSPLASH_ACCESS_KEY` is set.
+- **Accepted proposals:** local backup for published notes (cleared on logout and after Update; restore offered only
+  when the backup's base version equals the server's `updatedAt`); ffmpeg installed with `winget install Gyan.FFmpeg`
+  locally and apt-get in CI and Docker.
+- **Merging:** as on 16 Oct, a PR merges when CI is green and the reviewer reports no blockers; PRs touching uploads
+  also get `/security-review`.
