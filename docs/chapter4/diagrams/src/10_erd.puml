@@ -144,6 +144,7 @@ entity "CONVERSATION_T" as CNV {
   * cnv_type : VARCHAR(10)
   cnv_name : VARCHAR(80)
   cnv_owner_id : INTEGER <<FK>>
+  cnv_pair : VARCHAR(21) <<UNIQUE>>
   * cnv_created_at : TIMESTAMPTZ
 }
 entity "CONV_MEMBER_T" as CMB {
@@ -151,8 +152,7 @@ entity "CONV_MEMBER_T" as CMB {
   * cmb_usr_id : INTEGER <<PK, FK>>
   --
   * cmb_joined_at : TIMESTAMPTZ
-  cmb_last_read_at : TIMESTAMPTZ
-  cmb_left_at : TIMESTAMPTZ
+  cmb_last_read_msg_id : BIGINT
 }
 entity "MESSAGE_T" as MSG {
   * msg_id : BIGINT <<PK>>
@@ -160,7 +160,9 @@ entity "MESSAGE_T" as MSG {
   * msg_cnv_id : INTEGER <<FK>>
   * msg_sender_id : INTEGER <<FK>>
   msg_pst_id : INTEGER <<FK>>
+  msg_reply_to_id : BIGINT <<FK>>
   * msg_body : VARCHAR(2000)
+  msg_deleted_at : TIMESTAMPTZ
   * msg_created_at : TIMESTAMPTZ
 }
 entity "ACCOUNT_ACTION_T" as AAC {
@@ -208,6 +210,32 @@ entity "COLLAB_REQUEST_T" as CRQ {
   * crq_created_at : TIMESTAMPTZ
   crq_decided_at : TIMESTAMPTZ
 }
+entity "TERM_T" as TRM {
+  * trm_id : INTEGER <<PK>>
+  --
+  * trm_name : VARCHAR(50) <<UNIQUE>>
+  * trm_start_date : DATE
+  * trm_end_date : DATE
+}
+entity "BLOCK_T" as BLK {
+  * blk_blocker_id : INTEGER <<PK, FK>>
+  * blk_blocked_id : INTEGER <<PK, FK>>
+  --
+  * blk_created_at : TIMESTAMPTZ
+}
+entity "NOTIFICATION_T" as NTF {
+  * ntf_id : INTEGER <<PK>>
+  --
+  * ntf_usr_id : INTEGER <<FK>>
+  ntf_actor_id : INTEGER <<FK>>
+  * ntf_type : VARCHAR(30)
+  ntf_pst_id : INTEGER <<FK>>
+  ntf_cmt_id : INTEGER <<FK>>
+  ntf_crq_id : INTEGER <<FK>>
+  ntf_mrq_id : INTEGER <<FK>>
+  ntf_read_at : TIMESTAMPTZ
+  * ntf_created_at : TIMESTAMPTZ
+}
 entity "RATE_LIMIT_T" as RLT {
   * rlt_key : VARCHAR(200) <<PK>>
   --
@@ -251,4 +279,13 @@ USER ||--o{ CLB : collaborates
 POST ||--o{ SHL : "shared by link"
 POST ||--o{ CRQ
 USER ||--o{ CRQ : requests
+USER ||--o{ BLK : blocks
+USER ||--o{ BLK : "blocked by"
+USER ||--o{ NTF : receives
+USER |o--o{ NTF : triggers
+POST |o--o{ NTF
+CMT |o--o{ NTF
+CRQ |o--o{ NTF
+MRQ |o--o{ NTF
+MSG |o--o{ MSG : "replies to"
 @enduml
