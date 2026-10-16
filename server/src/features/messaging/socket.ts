@@ -55,7 +55,7 @@ function onConnection(socket: Socket): void {
   const { user } = data;
   void socket.join([userRoom(user.id), ...data.rooms.map(convRoom)]);
   data.typingAt = new Map();
-  // The socket outlives no token: it is cut when the cookie's JWT expires (logout then holds within the token lifetime).
+  // A socket must not outlive its token, so it is cut when the JWT expires.
   const { exp } = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number };
   const expiry = setTimeout(() => socket.disconnect(true), exp * 1000 - Date.now());
   socket.on('disconnect', () => clearTimeout(expiry));
