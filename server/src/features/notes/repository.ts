@@ -236,7 +236,7 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   await client.query(`DELETE FROM "POST_ASSET_T" WHERE pas_pst_id = $1`, [postId]);
   const assetIds = [...new Set(assetRefs(n.slides).map((r) => r.id))].sort((a, b) => a - b);
   if (assetIds.length > 0) {
-    // FOR SHARE keeps an asset from being purged (marked deleted) between the route's check and this link.
+    // FOR SHARE locks the asset rows, so a purge in flight skips them (SKIP LOCKED) and one already committed shows as a short count.
     const { rowCount } = await client.query(
       `INSERT INTO "POST_ASSET_T" (pas_pst_id, pas_ast_id)
        SELECT $1, ast_id FROM "ASSET_T" WHERE ast_id = ANY($2::INT[]) AND ast_status = 'ready' FOR SHARE`,

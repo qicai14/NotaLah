@@ -22,3 +22,6 @@ export const IMAGE_FORMATS: ReadonlySet<string | undefined> = new Set(['jpeg', '
 
 /** The route that serves an asset's file; notes carry this URL in their `assets` map (R21 spec 2.4). The notes SQL builds the same string. */
 export const assetUrl = (id: number) => `/api/assets/${id}/file`;
+
+/** The same file through a share link, for a holder who may not pass the asset route's note checks. */
+export const shareAssetUrl = (token: string, id: number | string) => `/api/share/${token}/assets/${id}`;

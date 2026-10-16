@@ -92,10 +92,13 @@ export async function getLinkedAsset(
 /** Marks old assets that no live note references as deleted and returns their storage keys, for the caller to remove. */
 export async function takeUnlinkedAssets(): Promise<string[]> {
   const { rows } = await pool.query<{ key: string }>(
-    `UPDATE "ASSET_T" a SET ast_status = 'deleted'
-     WHERE a.ast_status IN ('pending', 'ready') AND a.ast_created_at < NOW() - make_interval(hours => $1)
-       AND NOT EXISTS (SELECT 1 FROM "POST_ASSET_T" pa JOIN "POST_T" p ON p.pst_id = pa.pas_pst_id
-                       WHERE pa.pas_ast_id = a.ast_id AND p.pst_status <> 'deleted')
+    `WITH stale AS (
+       SELECT a.ast_id FROM "ASSET_T" a
+       WHERE a.ast_status IN ('pending', 'ready') AND a.ast_created_at < NOW() - make_interval(hours => $1)
+         AND NOT EXISTS (SELECT 1 FROM "POST_ASSET_T" pa JOIN "POST_T" p ON p.pst_id = pa.pas_pst_id
+                         WHERE pa.pas_ast_id = a.ast_id AND p.pst_status <> 'deleted')
+       FOR UPDATE SKIP LOCKED)
+     UPDATE "ASSET_T" a SET ast_status = 'deleted' FROM stale WHERE a.ast_id = stale.ast_id
      RETURNING a.ast_key AS "key"`,
     [ASSETS.unlinkedAgeHours],
   );

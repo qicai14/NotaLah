@@ -5,6 +5,7 @@ import { env } from '../../lib/env';
 import { parseKeyset } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
 import { bodyOrEmpty, idParam, invalidId } from '../../lib/validation';
+import { shareAssetUrl } from '../assets/config';
 import { getLinkedAsset } from '../assets/repository';
 import { sendAsset } from '../assets/service';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
@@ -111,8 +112,7 @@ collaborationRouter.get(
     if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
     const note = await getVisibleNote(found.noteId, viewerId(req), true);
     // The link's holder may not pass the asset route's note checks, so images come through this link too.
-    if (note)
-      for (const id of Object.keys(note.assets)) note.assets[id] = `/api/share/${req.params.token}/assets/${id}`;
+    if (note) for (const id of Object.keys(note.assets)) note.assets[id] = shareAssetUrl(String(req.params.token), id);
     res.json({ role: found.role, note });
   },
 );
