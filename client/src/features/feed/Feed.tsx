@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { api, errorText } from '../../lib/api';
-import type { FeedNote, FeedPage, FollowingPage, Note } from '../../types';
+import type { FeedNote, FeedPage, FollowingPage, Note, RankingWeights } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { CommentPanel } from '../notes/CommentPanel';
 import { NoteCard } from './NoteCard';
@@ -24,6 +24,7 @@ function usePagedFeed(tab: Tab) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadedOnce, setLoadedOnce] = useState(false);
+  const [weights, setWeights] = useState<RankingWeights | null>(null);
   const asOf = useRef<string | null>(null);
   const busy = useRef(false);
   const first = useRef(true);
@@ -40,6 +41,7 @@ function usePagedFeed(tab: Tab) {
       if (tab === 'feed') {
         const p = await api<FeedPage>(`/feed?page=${next}${q}`);
         page = p;
+        setWeights((w) => w ?? p.weights);
         after = p.nextPage === null ? null : String(p.nextPage);
       } else {
         const cursor = first.current ? '' : `&cursor=${encodeURIComponent(next)}`;
@@ -63,7 +65,7 @@ function usePagedFeed(tab: Tab) {
     }
   }, [next, tab]);
 
-  return { items, next, loading, error, loadedOnce, loadMore };
+  return { items, next, loading, error, loadedOnce, loadMore, weights };
 }
 
 function FeedTabs({ tab, guest }: { tab: Tab; guest: boolean }) {
@@ -127,7 +129,7 @@ function EmptyState({ tab, guest }: { tab: Tab; guest: boolean }) {
 }
 
 function FeedList({ tab, guest }: { tab: Tab; guest: boolean }) {
-  const { items, next, loading, error, loadedOnce, loadMore } = usePagedFeed(tab);
+  const { items, next, loading, error, loadedOnce, loadMore, weights } = usePagedFeed(tab);
   const scroller = useRef<HTMLDivElement>(null);
   const sentinel = useRef<HTMLDivElement>(null);
   const [commentsFor, setCommentsFor] = useState<Note | null>(null);
@@ -166,7 +168,7 @@ function FeedList({ tab, guest }: { tab: Tab; guest: boolean }) {
           </div>
         )}
         {items.map((i) => (
-          <NoteCard key={i.id} item={i} guest={guest} onOpenComments={openComments} />
+          <NoteCard key={i.id} item={i} guest={guest} weights={weights} onOpenComments={openComments} />
         ))}
         {(error || (loading && loadedOnce) || (next === null && items.length > 0)) && (
           <div className="flex snap-end flex-col items-center gap-2 px-4 py-8 text-center text-body-sm text-muted-foreground">

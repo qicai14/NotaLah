@@ -29,13 +29,12 @@ export default function Saved() {
           {error ?? actionError}
         </p>
       )}
-      {data?.notes.length === 0 && <p className="text-muted-foreground">Nothing saved yet. Use Save on a note in the feed.</p>}
+      {data?.notes.length === 0 && (
+        <p className="text-muted-foreground">Nothing saved yet. Use Save on a note in the feed.</p>
+      )}
       <ul className="flex flex-col gap-3">
         {data?.notes.map((n) => (
-          <li
-            key={n.id}
-            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3"
-          >
+          <li key={n.id} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3">
             <div>
               <Link to={`/notes/${n.id}`} className="font-medium text-primary">
                 {n.title}

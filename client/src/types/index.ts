@@ -75,10 +75,19 @@ export interface FeedNote extends Note {
   components?: RankingComponents;
 }
 
+/** The server's ranking weights (RANKING.weights): the score is the sum of each component times its weight. */
+export interface RankingWeights {
+  engagement: number;
+  recency: number;
+  lecturerValidation: number;
+  relevance: number;
+}
+
 export interface FeedPage {
   items: FeedNote[];
   nextPage: number | null;
   asOf: string;
+  weights: RankingWeights;
 }
 
 export interface FollowingPage {

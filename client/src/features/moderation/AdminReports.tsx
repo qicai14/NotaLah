@@ -89,10 +89,7 @@ export default function AdminReports() {
             </thead>
             <tbody>
               {data.groups.map((g) => (
-                <tr
-                  key={g.id}
-                  className={`border-b border-border align-top ${g.id === openId ? 'bg-primary/10' : ''}`}
-                >
+                <tr key={g.id} className={`border-b border-border align-top ${g.id === openId ? 'bg-primary/10' : ''}`}>
                   <td className="py-2 pr-3">{g.title}</td>
                   <td className="py-2 pr-3">{g.author.displayName}</td>
                   <td className="py-2 pr-3">{g.reportCount}</td>
@@ -168,7 +165,11 @@ export default function AdminReports() {
               >
                 Hide note
               </button>
-              <button type="button" onClick={() => setOpenId(null)} className="rounded-md px-3 py-1 text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setOpenId(null)}
+                className="rounded-md px-3 py-1 text-muted-foreground"
+              >
                 Close
               </button>
             </div>

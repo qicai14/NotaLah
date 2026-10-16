@@ -7,7 +7,6 @@ import { markGuest } from './guest';
 import Login from './Login';
 import Register from './Register';
 
-
 /** A still of the phone feed, drawn with tokens so it follows the theme. Decorative. */
 function PhonePreview() {
   return (

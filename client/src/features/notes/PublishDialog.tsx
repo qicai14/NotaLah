@@ -31,33 +31,33 @@ export function PublishDialog({
       <DialogContent className="sm:max-w-md">
         <DialogTitle className="text-title font-bold">Who can see this note?</DialogTitle>
         <DialogDescription className="sr-only">Choose the note&rsquo;s visibility.</DialogDescription>
-      <fieldset className="flex flex-col gap-2">
-        <legend className="sr-only">Visibility</legend>
-        {options.map((o) => (
-          <label key={o.value} className="block cursor-pointer">
-            <input
-              type="radio"
-              name="visibility"
-              value={o.value}
-              checked={choice === o.value}
-              onChange={() => setChoice(o.value)}
-              className="peer sr-only"
-            />
-            <span className="block rounded-md border-2 border-input bg-card px-4 py-3 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
-              <span className="block font-medium">{o.title}</span>
-              <span className="block text-sm text-muted-foreground">{o.text}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-      <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button disabled={!choice || busy} onClick={() => choice && onChoose(choice)}>
-          {busy ? 'Saving…' : 'Confirm'}
-        </Button>
-      </div>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="sr-only">Visibility</legend>
+          {options.map((o) => (
+            <label key={o.value} className="block cursor-pointer">
+              <input
+                type="radio"
+                name="visibility"
+                value={o.value}
+                checked={choice === o.value}
+                onChange={() => setChoice(o.value)}
+                className="peer sr-only"
+              />
+              <span className="block rounded-md border-2 border-input bg-card px-4 py-3 peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+                <span className="block font-medium">{o.title}</span>
+                <span className="block text-sm text-muted-foreground">{o.text}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button disabled={!choice || busy} onClick={() => choice && onChoose(choice)}>
+            {busy ? 'Saving…' : 'Confirm'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

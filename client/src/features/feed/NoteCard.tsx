@@ -6,7 +6,7 @@ import { SlideViewer } from '../../components/SlideViewer';
 import { VerifiedPill } from '../../components/VerifiedPill';
 import { api } from '../../lib/api';
 import { timeAgo, visibilityLabel } from '../../lib/format';
-import type { FeedNote, Note } from '../../types';
+import type { FeedNote, Note, RankingWeights } from '../../types';
 import { WhyThisNote } from './WhyThisNote';
 
 /** Logs one view when at least half the card has been visible for a second. Guests log none (D45). */
@@ -46,10 +46,12 @@ function useViewLogger(noteId: number, guest: boolean) {
 export const NoteCard = memo(function NoteCard({
   item: initial,
   guest,
+  weights,
   onOpenComments,
 }: {
   item: FeedNote;
   guest: boolean;
+  weights: RankingWeights | null;
   onOpenComments(note: Note): void;
 }) {
   const [item, setItem] = useState(initial);
@@ -63,11 +65,17 @@ export const NoteCard = memo(function NoteCard({
       className="flex h-full snap-start snap-always items-end justify-center gap-2 px-3 pt-topbar pb-3 md:gap-5 md:px-6 md:pb-6"
     >
       <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-(--shadow-card) md:aspect-[9/16] md:max-w-[34rem] md:flex-none md:rounded-2xl">
-        {(item.verified || item.components) && (
+        {(item.verified || (item.components && weights)) && (
           <div className="flex min-h-14 items-center justify-between gap-2 px-3 pt-3">
             {item.verified ? <VerifiedPill by={item.verifiedBy} /> : <span />}
-            {item.components && item.score !== undefined && (
-              <WhyThisNote score={item.score} components={item.components} guest={guest} className="bg-surface" />
+            {item.components && weights && item.score !== undefined && (
+              <WhyThisNote
+                score={item.score}
+                components={item.components}
+                weights={weights}
+                guest={guest}
+                className="bg-surface"
+              />
             )}
           </div>
         )}

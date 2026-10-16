@@ -1,24 +1,36 @@
 import { X } from 'lucide-react';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import type { RankingComponents } from '../../types';
+import type { RankingComponents, RankingWeights } from '../../types';
 
-const ROWS: { key: keyof RankingComponents; name: string; explain: string }[] = [
-  { key: 'E', name: 'Engagement', explain: 'Likes and comments; a comment counts for more than a like.' },
-  { key: 'R', name: 'Recency', explain: 'Newer notes score higher, fading over a few days.' },
-  { key: 'V', name: 'Lecturer validation', explain: 'Full marks once an approved lecturer Super Likes it.' },
-  { key: 'M', name: 'Hashtag match', explain: 'How closely its hashtags match the notes you engage with.' },
+const ROWS: { key: keyof RankingComponents; weight: keyof RankingWeights; name: string; explain: string }[] = [
+  { key: 'E', weight: 'engagement', name: 'Engagement', explain: 'Likes and comments on the note.' },
+  { key: 'R', weight: 'recency', name: 'Recency', explain: 'How recently it was published.' },
+  {
+    key: 'V',
+    weight: 'lecturerValidation',
+    name: 'Lecturer validation',
+    explain: 'Whether a lecturer Super Liked it.',
+  },
+  {
+    key: 'M',
+    weight: 'relevance',
+    name: 'Hashtag match',
+    explain: 'How its hashtags match the notes you engage with.',
+  },
 ];
 
-/** "Why this note?" (FR3, wireframe 12): the four ranking scores and the total for the note on screen. */
+/** "Why this note?" (FR3, wireframe 12): each ranking score times its weight (from the server), and the total. */
 export function WhyThisNote({
   score,
   components,
+  weights,
   guest,
   className,
 }: {
   score: number;
   components: RankingComponents;
+  weights: RankingWeights;
   guest: boolean;
   className?: string;
 }) {
@@ -51,15 +63,21 @@ export function WhyThisNote({
           The feed ranks notes with four scores from 0 to 1, weighted and added up. No AI is involved.
         </p>
         <dl className="mt-4 flex flex-col gap-3.5">
-          {ROWS.map(({ key, name, explain }) => {
+          {ROWS.map(({ key, weight, name, explain }) => {
             const v = components[key];
+            const w = weights[weight];
             return (
               <div key={key}>
                 <div className="flex items-baseline justify-between gap-2">
                   <dt className="text-body-sm font-semibold">
                     {name} ({key})
                   </dt>
-                  <dd className="text-body-sm font-bold tabular-nums">{v.toFixed(2)}</dd>
+                  <dd className="text-body-sm tabular-nums">
+                    <span className="text-muted-foreground">
+                      {v.toFixed(2)} &times; {w.toFixed(2)} ={' '}
+                    </span>
+                    <span className="font-bold">{(v * w).toFixed(2)}</span>
+                  </dd>
                 </div>
                 <div
                   role="meter"

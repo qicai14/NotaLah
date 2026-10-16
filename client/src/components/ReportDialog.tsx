@@ -60,54 +60,54 @@ export function ReportDialog({
         <DialogDescription className="text-body-sm text-muted-foreground">
           Moderators review every report. The author is not told who reported it.
         </DialogDescription>
-      {done ? (
-        <div>
-          <p role="status">Thanks. Your report was sent to the moderators.</p>
-          <Button autoFocus onClick={onClose} className="mt-4">
-            Close
-          </Button>
-        </div>
-      ) : (
-        <form onSubmit={submit} className="flex flex-col gap-3">
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-sm font-medium">Reason</legend>
-            {reasons.map(([v, l]) => (
-              <label key={v} className="flex items-center gap-2">
-                <input type="radio" name="reason" value={v} checked={reason === v} onChange={() => setReason(v)} />
-                {l}
+        {done ? (
+          <div>
+            <p role="status">Thanks. Your report was sent to the moderators.</p>
+            <Button autoFocus onClick={onClose} className="mt-4">
+              Close
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="flex flex-col gap-3">
+            <fieldset className="flex flex-col gap-1">
+              <legend className="mb-1 text-sm font-medium">Reason</legend>
+              {reasons.map(([v, l]) => (
+                <label key={v} className="flex items-center gap-2">
+                  <input type="radio" name="reason" value={v} checked={reason === v} onChange={() => setReason(v)} />
+                  {l}
+                </label>
+              ))}
+            </fieldset>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="report-details" className="text-sm font-medium">
+                Details (optional)
               </label>
-            ))}
-          </fieldset>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="report-details" className="text-sm font-medium">
-              Details (optional)
-            </label>
-            <textarea
-              id="report-details"
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={3}
-              className="rounded-md border border-input bg-background px-3 py-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
-            />
-            <span className={`text-xs ${details.length > 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {details.length}/500
-            </span>
-          </div>
-          {error && (
-            <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="destructive" disabled={busy}>
-              {busy ? 'Sending…' : 'Send report'}
-            </Button>
-          </div>
-        </form>
-      )}
+              <textarea
+                id="report-details"
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                rows={3}
+                className="rounded-md border border-input bg-background px-3 py-2 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+              />
+              <span className={`text-xs ${details.length > 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {details.length}/500
+              </span>
+            </div>
+            {error && (
+              <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+                {error}
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="destructive" disabled={busy}>
+                {busy ? 'Sending…' : 'Send report'}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
