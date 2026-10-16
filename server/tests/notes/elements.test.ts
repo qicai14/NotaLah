@@ -58,13 +58,19 @@ const rejected = async (body: object) => {
 describe('Slide elements (R21a)', () => {
   it('NOTE-TC45: a deck with every element type is stored and returned unchanged', async () => {
     const uid = await insertUser();
+    const { rows } = await pool.query<{ ast_id: number }>(
+      `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_mime, ast_bytes, ast_status)
+       VALUES ($1, 'video', 'v/00000000-0000-4000-8000-000000000001.mp4', 'video/mp4', 10, 'ready') RETURNING ast_id`,
+      [uid],
+    );
+    const videoId = rows[0].ast_id;
     const elements = [
       text('<p>Hello</p>'),
       shape(2, { shape: 'ellipse', fill: '#ff0000' }),
       el(3, 'line', { stroke: '#000000', strokeWidth: 4, dash: 'dashed', startCap: 'none', endCap: 'arrow' }),
       image(4, 'A diagram'),
       el(5, 'code', { code: 'SELECT 1;', language: 'sql', theme: 'dark', size: 28 }),
-      el(6, 'video', { assetId: 7, loop: true }),
+      el(6, 'video', { assetId: videoId, loop: true }),
       table([
         ['a', 'b'],
         ['c', 'd'],
@@ -75,7 +81,12 @@ describe('Slide elements (R21a)', () => {
     const res = await post(uid, body);
     expect(res.status).toBe(201);
     const got = (await get(uid, res.body.note.id)).body.note;
-    expect(got).toMatchObject({ aspect: '9:16', theme: 'lecture', music: null, assets: {} });
+    expect(got).toMatchObject({
+      aspect: '9:16',
+      theme: 'lecture',
+      music: null,
+      assets: { [videoId]: `/api/assets/${videoId}/file` },
+    });
     expect(got.slides).toEqual([{ position: 1, background, elements, notes: 'say hi' }]);
   });
 

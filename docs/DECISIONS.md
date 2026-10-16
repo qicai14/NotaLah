@@ -1173,3 +1173,35 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   long); Unsplash image URLs are limited to URL-safe characters; an aspect change counts as a content edit; a slide with an
   image or gradient background is not empty.
 - **Reversibility:** Moderate: the down migration drops non-text elements, page notes and music.
+
+
+## D54 - Image uploads on the server (R22, 17 Oct 2026)
+- **Built:** migration `20261017000002_assets` (`"ASSET_T"`, `"POST_ASSET_T"` as in R21 spec 2.2; `ast_kind` already allows `video` for R29);
+  `lib/storage.ts` with a `Storage` interface (`put`, `read`, `remove`, `signedUrl`) and a local-disk driver under `STORAGE_DIR`
+  (default `<repo>/uploads`, gitignored; tests use a temp folder). An R2 driver returns presigned GET URLs from `signedUrl` and
+  the asset route then redirects to them; the AWS SDK is not added yet.
+- **Upload:** `POST /api/assets/images` (requireAuth, requireActive, CSRF, write limiter, 30 uploads an hour per user), multipart
+  field `file`, at most 5 MB (413). `sharp` decodes the bytes, so the type comes from content, not name or header (only
+  JPEG, PNG, WebP, GIF); input over 50 megapixels is refused; the image is auto-rotated, scaled so the longest edge is at most 2560
+  and re-encoded as WebP quality 80. EXIF, GPS and ICC data are dropped and a GIF becomes its first frame (D43). 500 MB quota per
+  user counted on stored bytes, checked under a per-user advisory lock (413). Reusable across notes.
+- **Dependencies:** `sharp` 0.35.5 (27 Sep 2026), `multer` 2.4.0 (14 Sep 2026) and `@types/multer` 2.3.0 (28 Sep 2026), all
+  pinned and over two weeks old. multer rather than hand-written busboy handling: it already caps size and file count, and its memory storage is fine at 5 MB.
+- **Notes:** saving checks every upload id (image element, video element, image background) is `ready`, the right kind and owned by
+  the saver or already linked to that note in `POST_ASSET_T`, so a co-author keeps the owner's images and the owner keeps a co-author's, but neither can pull in the other's unrelated uploads (400 "Slide 1, element 2: Image not found"). `POST_ASSET_T` is rebuilt on every save. Note
+  detail and feed carry `assets: {id: "/api/assets/:id/file"}`.
+- **Access:** `GET /api/assets/:id/file` (optionalAuth) serves a ready asset to its owner, or to anyone who may read a note that
+  references it (READABLE or VISIBLE_OR_ADMIN, the note detail's own rule: blocks, friends-only, hidden, deleted, collaborators).
+  Everything else is 404. `Cache-Control: private, max-age=300`, so a hide takes effect within five minutes in a browser cache.
+- **Share links:** `GET /api/share/:token/assets/:assetId` (same limits as the link's note route) serves only assets that the link's note references; the link's `assets` map points there, because a link holder may not pass the asset route's note checks.
+  The link and upload inserts re-check `ready` under `FOR SHARE`, so a purge cannot slip between check and link (400 "Image not found").
+- **Unsplash:** `GET /api/unsplash/search?q=&page=` and `POST /api/unsplash/:photoId/download` (signed-in), 503 "Unsplash is not configured"
+  while `UNSPLASH_ACCESS_KEY` is unset. Results are checked against the deck's image-source schema (images.unsplash.com image, unsplash.com credit),
+  the credit link gets `utm_source=notalah&utm_medium=referral`, pages are cached for an hour (200 entries); searches are limited to 20 an hour per user. The download route reads
+  `download_location` from Unsplash's own photo response and only calls it when it starts with `https://api.unsplash.com/`.
+- **Cleanup:** the daily purge marks assets older than 24 h that no non-deleted note references as `deleted` and removes their files.
+  shortcut: age is measured from upload, not from when the asset was unlinked, so an image removed from a note long after upload is purged at the next run.
+- **Known limits:** a guest loading a public note's images counts against the 120 reads a minute guest limit, one request per image; R2 presigned URLs
+  would remove that. Video (R29) adds its own routes and the poster key.
+- **Test IDs:** NOTE-TC33, 34, 37, 38, 40 as in the R21 spec (TC34 stays R21a's URL spoofing; the proxy is NOTE-TC51), plus NOTE-TC49 (quota), TC50 (file access incl. share links), TC52 (purge), TC53 (request checks), TC54 (asset links) and TC55 (co-author assets). The quota lock is `pg_advisory_xact_lock(hashtext('asset_quota'), user)`.
+- **Reversibility:** Easy: the down step drops both tables; uploaded files stay on disk.
