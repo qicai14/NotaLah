@@ -11,13 +11,22 @@ import { patchElement, useEditor } from './store';
  */
 export function TextEditing({ el, slide }: { el: TextElement; slide: number }) {
   const base = useRef(useEditor.getState().deck);
+  const box = useRef<HTMLDivElement>(null);
   const editor = useTipTap({
     extensions: TEXT_EXTENSIONS,
     content: el.html,
     autofocus: 'end',
     editorProps: { attributes: { role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Edit text' } },
-    onUpdate: ({ editor: e }) =>
-      useEditor.getState().preview((d) => patchElement(d, slide, el.id, { html: e.isEmpty ? '' : e.getHTML() })),
+    onUpdate: ({ editor: e }) => {
+      useEditor.getState().preview((d) => patchElement(d, slide, el.id, { html: e.isEmpty ? '' : e.getHTML() }));
+      // The box grows as lines are added, so typed text is never clipped (layout px inside the board are board units).
+      const content = box.current?.firstElementChild?.firstElementChild as HTMLElement | null;
+      const needed = content ? content.scrollHeight + el.padding * 2 : 0;
+      const current = useEditor.getState().deck.slides[slide]?.elements.find((x) => x.id === el.id);
+      if (current && needed > current.h + 0.5) {
+        useEditor.getState().preview((d) => patchElement(d, slide, el.id, { h: Math.ceil(needed) }));
+      }
+    },
   });
 
   useEffect(() => {
@@ -32,6 +41,7 @@ export function TextEditing({ el, slide }: { el: TextElement; slide: number }) {
 
   return (
     <div
+      ref={box}
       className="board-text size-full cursor-text overflow-hidden break-words"
       style={textBoxStyle(el)}
       onPointerDown={(e) => e.stopPropagation()}

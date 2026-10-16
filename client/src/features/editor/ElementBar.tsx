@@ -18,7 +18,7 @@ import {
   Trash2,
   Underline,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useReducer } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -165,8 +165,13 @@ function PositionPopover({ el, update }: { el: SlideElement; update(p: Partial<S
 export function ElementBar() {
   const el = useEditor((s) => s.deck.slides[s.activeSlide].elements.find((e) => e.id === s.selection) ?? null);
   const tt = useEditor((s) => s.textEditor);
-  // Re-render on TipTap selection changes so the mark buttons show their state.
-  useEditor((s) => s.deck);
+  // Re-render on every TipTap transaction (including selection moves) so the mark buttons show their state.
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (!tt) return;
+    tt.on('transaction', bump);
+    return () => void tt.off('transaction', bump);
+  }, [tt]);
   const { updateElement, deleteElement, addElement, apply, activeSlide } = useEditor.getState();
 
   if (!el) {
