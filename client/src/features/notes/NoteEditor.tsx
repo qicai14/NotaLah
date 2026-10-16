@@ -1,9 +1,11 @@
+import { LIMITS } from '@parp/shared';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Field } from '../../components/Field';
 import { api, ApiError, errorText } from '../../lib/api';
+import { htmlToSlide, slideToHtml } from '../../lib/slides';
 import { useFetch } from '../../lib/useFetch';
 import type { ModuleRef, Note } from '../../types';
 import { useAuth } from '../auth/AuthContext';
@@ -11,7 +13,7 @@ import { HashtagInput } from './HashtagInput';
 import { type PublishChoice, PublishDialog } from './PublishDialog';
 import { Toolbar } from './Toolbar';
 
-const MAX_SLIDES = 30; // mirrors the server limit
+const MAX_SLIDES = LIMITS.slides;
 const TEMPLATES = [
   ['plain', 'Plain'],
   ['lecture', 'Lecture summary'],
@@ -50,7 +52,9 @@ export default function NoteEditor() {
   const modules = useFetch<{ modules: ModuleRef[] }>('/modules');
 
   const [title, setTitle] = useState('');
-  const [template, setTemplate] = useState('plain');
+  const [theme, setTheme] = useState('plain');
+  // shortcut: the aspect and music of a loaded note are resent untouched, as this editor cannot change them; R21c can.
+  const kept = useRef<Pick<Note, 'aspect' | 'music'>>({ aspect: '4:5', music: null });
   const [moduleId, setModuleId] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [slides, setSlidesState] = useState<string[]>(['']);
@@ -64,6 +68,8 @@ export default function NoteEditor() {
 
   // Refs mirror state so editor callbacks never read a stale slide list.
   const slidesRef = useRef(slides);
+  // Page notes per slide, kept in step with the slide list and sent back unchanged (no UI edits them yet).
+  const notesRef = useRef<string[]>(['']);
   const activeRef = useRef(0);
   const setSlides = (next: string[]) => ((slidesRef.current = next), setSlidesState(next));
   const setActive = (n: number) => ((activeRef.current = n), setActiveState(n));
@@ -92,12 +98,14 @@ export default function NoteEditor() {
     loaded.current = true;
     if (seed) navigate(location.pathname, { replace: true, state: null }); // a reload or Back must refetch, not reseed from this first save
     setTitle(note.title);
-    setTemplate(note.template);
+    setTheme(note.theme);
+    kept.current = { aspect: note.aspect, music: note.music };
     setModuleId(note.module ? String(note.module.id) : '');
     setHashtags(note.hashtags);
     setStatus(note.status === 'published' ? 'published' : 'draft');
     setVisibility(note.visibility);
-    const s = note.slides.length ? note.slides.map((x) => x.content) : [''];
+    notesRef.current = note.slides.map((x) => x.notes ?? '');
+    const s = note.slides.length ? note.slides.map(slideToHtml) : [''];
     setSlides(s);
     setActive(0);
     editor.commands.setContent(s[0], { emitUpdate: false });
@@ -110,11 +118,14 @@ export default function NoteEditor() {
   function addSlide() {
     if (slides.length >= MAX_SLIDES) return;
     const next = [...slides, ''];
+    notesRef.current = [...notesRef.current, ''];
     setSlides(next);
     show(next.length - 1, next);
   }
   function removeSlide() {
+    notesRef.current = notesRef.current.filter((_, i) => i !== active);
     if (slides.length === 1) {
+      notesRef.current = [''];
       setSlides(['']);
       return show(0, ['']);
     }
@@ -127,6 +138,8 @@ export default function NoteEditor() {
     if (to < 0 || to >= slides.length) return;
     const next = [...slides];
     [next[active], next[to]] = [next[to], next[active]];
+    const kept = notesRef.current;
+    [kept[active], kept[to]] = [kept[to], kept[active]];
     setSlides(next);
     setActive(to); // the editor already shows this slide's content
   }
@@ -138,10 +151,16 @@ export default function NoteEditor() {
     setMessage(null);
     const body = {
       title,
-      template,
+      theme,
+      aspect: kept.current.aspect,
+      music: kept.current.music && {
+        provider: 'deezer',
+        trackId: kept.current.music.trackId,
+        volume: kept.current.music.volume,
+      },
       moduleId: moduleId ? Number(moduleId) : null,
       hashtags,
-      slides: slidesRef.current,
+      slides: slidesRef.current.map((html, i) => htmlToSlide(html, i, notesRef.current[i] ?? '')),
       status: publishing ? 'published' : 'draft',
       visibility: publishing ? choice : null,
     };
@@ -223,13 +242,13 @@ export default function NoteEditor() {
             )}
           </div>
           <div className={card}>
-            <label htmlFor="template" className="text-sm font-medium">
+            <label htmlFor="theme" className="text-sm font-medium">
               Template
             </label>
             <select
-              id="template"
-              value={template}
-              onChange={(e) => setTemplate(e.target.value)}
+              id="theme"
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
               className="rounded-md border border-slate-300 bg-white px-3 py-2"
             >
               {TEMPLATES.map(([v, l]) => (

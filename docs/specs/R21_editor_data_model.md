@@ -193,11 +193,11 @@ Upload routes use `requireActive` and get `/security-review` before merge.
   note and switches to `/edit/:id`; 409 offers "Reload" or "Keep mine". Published notes need an explicit Update.
 - **Mobile:** tap to select, drag to move, corner and rotate handles with 44 px targets, centre snap only, bottom tool tray.
 
-## 6. Test plan (continues from NOTE-TC25)
+## 6. Test plan (continues from NOTE-TC25; the first two rows are numbered 45 and 46 because TC26 and TC27 were taken)
 | TC ID | Test | Data | Expected |
 |---|---|---|---|
-| NOTE-TC26 | Valid deck of every element type | one slide with text, shape, line, image, code, video | 201; GET returns elements unchanged plus `assets` |
-| NOTE-TC27 | Unknown type or extra key | `type:'iframe'`; text with `style` | 400 naming slide and element |
+| NOTE-TC45 | Valid deck of every element type | one slide with text, shape, line, image, code, video | 201; GET returns elements unchanged plus `assets` |
+| NOTE-TC46 | Unknown type or extra key | `type:'iframe'`; text with `style` | 400 naming slide and element |
 | NOTE-TC28 | Out-of-range geometry | `x: 1e9`, `rotation: 400`, `opacity: 2`, `w: 0` | 400 each |
 | NOTE-TC29 | Invalid colour, font, aspect | `color:'red;...'`, `font:'Comic Sans'`, `aspect:'1:1'` | 400 each |
 | NOTE-TC30 | Duplicate element ids | two elements, same id | 400 |

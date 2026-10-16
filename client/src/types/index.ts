@@ -1,3 +1,5 @@
+import type { Aspect, Fill, SlideElement } from '@parp/shared';
+
 export interface ModuleRef {
   id: number;
   code: string;
@@ -6,7 +8,10 @@ export interface ModuleRef {
 
 export interface Slide {
   position: number;
-  content: string;
+  background: Fill;
+  elements: SlideElement[];
+  /** Private page notes; only sent to the author and edit collaborators. */
+  notes?: string;
 }
 
 export type Role = 'student' | 'lecturer' | 'admin';
@@ -33,7 +38,10 @@ export type Visibility = 'public' | 'contacts';
 export interface Note {
   id: number;
   title: string;
-  template: string;
+  theme: string;
+  aspect: Aspect;
+  music: { trackId: number; title: string | null; artist: string | null; cover: string | null; volume: number } | null;
+  assets: Record<string, string>;
   status: 'draft' | 'published' | 'hidden' | 'deleted';
   visibility: Visibility | null;
   module: ModuleRef | null;

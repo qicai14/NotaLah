@@ -1,7 +1,8 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
+import { slideToHtml } from '../lib/slides';
 import type { Slide } from '../types';
 
-/** Read-only slide viewer. Content is HTML the server already sanitised against the editor allow-list (D20). */
+/** Read-only slide viewer. Text is HTML the server already sanitised against the editor allow-list (D20); R21b replaces this with the SlideBoard. */
 export function SlideViewer({ slides }: { slides: Slide[] }) {
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
@@ -35,7 +36,7 @@ export function SlideViewer({ slides }: { slides: Slide[] }) {
         }}
         aria-live="polite"
         className="slide-content h-64 overflow-auto rounded-md border border-slate-200 bg-white p-4 sm:h-72"
-        dangerouslySetInnerHTML={{ __html: slides[cur].content }}
+        dangerouslySetInnerHTML={{ __html: slideToHtml(slides[cur]) }}
       />
       <div className="mt-2 flex items-center justify-between text-sm">
         <button

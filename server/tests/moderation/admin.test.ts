@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { createAdmin } from '../../src/scripts/createAdmin';
-import { asUser, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, CSRF, insertNote, insertUser, textSlide, truncateAll } from '../helpers';
 
 const superLike = async (lecturerId: number) =>
   request(app)
@@ -275,7 +275,7 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
     const created = await request(app)
       .post('/api/notes')
       .set(token)
-      .send({ title: 'New', slides: ['<p>x</p>'] });
+      .send({ title: 'New', slides: [textSlide('<p>x</p>')] });
     expect(created.status).toBe(403);
     const other = await insertNote(await insertUser());
     const commented = await request(app).post(`/api/notes/${other}/comments`).set(token).send({ body: 'hi' });

@@ -8,10 +8,13 @@
     "build": "tsc --noEmit && vp build",
     "typecheck": "tsc --noEmit",
     "preview": "vp preview",
-    "test": "vp test run"
+    "test": "vp test run",
+    "pretest": "tsc -p ../shared",
+    "pretypecheck": "tsc -p ../shared"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "5.3.0",
+    "@parp/shared": "0.1.0",
     "@tiptap/pm": "3.31.3",
     "@tiptap/react": "3.31.3",
     "@tiptap/starter-kit": "3.31.3",

@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { createNote } from '../../src/features/notes/repository';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, insertUser, textSlide, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(async () => {
@@ -34,8 +34,10 @@ async function note(authorId: number, o: Opts = {}): Promise<number> {
   const status = o.status ?? 'published';
   const id = await createNote(authorId, {
     title: o.title ?? 'Untitled',
-    template: 'plain',
-    slides: o.slides ?? ['<p>Intro</p>'],
+    theme: 'plain',
+    aspect: '4:5',
+    slides: (o.slides ?? ['<p>Intro</p>']).map((h) => textSlide(h)),
+    music: null,
     hashtags: o.hashtags ?? [],
     moduleId: await moduleId(o.module ?? 'CT030-3-2'),
     status,
