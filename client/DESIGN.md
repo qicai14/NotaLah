@@ -126,6 +126,7 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   right (`Button size="sm"`). Back navigation: ghost icon button with `ArrowLeft` and `aria-label="Back"`.
 - **Lists and grids** (Saved, Drafts, profile notes): tiles on `bg-card border rounded-xl`, title `text-title-sm
   font-semibold`, meta `text-body-sm text-muted-foreground`, module chip `rounded-sm bg-surface-strong px-2 text-caption`.
+- **Profile.** `features/users/Profile.tsx`: avatar, name with `LecturerBadge`, role and programme, `Stat` row (Following, Followers, Likes; the first two open `PeopleDialog` for signed-in users), then Follow (`default`; `secondary` when following; reads Friends when mutual), Message (`outline` link to `/messages?to=id`) and a More menu holding Block (`BlockDialog`). Notes are a 2 or 3 column grid of tiles with the first slide in a `SlideBoard`. A blocked profile shows only name and Unblock; a blocked-from-the-other-side or missing one shows "This profile is not available". Guests may read it; Follow and Message open the guest sheet.
 - **Empty state.** Centred, `text-title font-bold` line, one `text-body text-muted-foreground` sentence saying what
   to do, and at most one primary button.
 - **Loading.** `role="status"` text in `text-body-sm text-muted-foreground`, or a `bg-surface animate-pulse` block the

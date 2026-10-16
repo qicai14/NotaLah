@@ -25,7 +25,7 @@ import { PeopleDialog } from './PeopleDialog';
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const NOT_AVAILABLE = 'User not found';
 
-const isBlocked = (u: ProfileData | BlockedProfile): u is BlockedProfile => 'blockedByMe' in u;
+const isBlocked = (u: ProfileData | BlockedProfile): u is BlockedProfile => u.blockedByMe === true;
 
 /** One component serves /users/:id and /profile (own: Edit and drafts; other: Follow, Message, More; blocked: Unblock). */
 export default function Profile() {

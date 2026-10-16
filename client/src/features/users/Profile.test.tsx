@@ -37,6 +37,7 @@ const profile = (over: Partial<ProfileData> = {}): ProfileData => ({
   followsMe: false,
   isFriend: false,
   likeCount: 40,
+  blockedByMe: false,
   notes: [],
   notesNextCursor: null,
   ...over,

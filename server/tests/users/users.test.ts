@@ -153,4 +153,15 @@ describe('Profiles', () => {
     expect((await request(app).get(`/api/users/99999/notes`).set(asUser(viewer))).status).toBe(404);
     expect((await request(app).get(`/api/users/${author}/notes?cursor=x`).set(asUser(viewer))).status).toBe(400);
   });
+
+  it('USR-TC28: the profile carries likeCount and each note a likes count, first slide and aspect for the thumbnail', async () => {
+    const author = await insertUser();
+    const fan = await insertUser();
+    const note = await insertNote(author, { slides: 2 });
+    await pool.query(`INSERT INTO "LIKE_T" (lik_pst_id, lik_usr_id) VALUES ($1, $2)`, [note, fan]);
+    const profile = (await getUser(fan, author)).body.user;
+    expect(profile.likeCount).toBe(1);
+    expect(profile.notes[0]).toMatchObject({ id: note, likes: 1, aspect: expect.any(String), assets: {} });
+    expect(profile.notes[0].cover.elements).toHaveLength(1);
+  });
 });

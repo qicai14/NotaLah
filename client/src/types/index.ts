@@ -169,6 +169,7 @@ export interface Profile {
   /** Mutual follow (D38). */
   isFriend: boolean;
   likeCount: number;
+  blockedByMe: false;
   notes: ProfileNote[];
   notesNextCursor: string | null;
   draftCount?: number;
