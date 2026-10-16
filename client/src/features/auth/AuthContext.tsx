@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { api, setSignedIn } from '../../lib/api';
 import type { User } from '../../types';
+import { clearAllBackups } from '../editor/backup';
 
 export interface RegisterInput {
   displayName: string;
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async logout() {
       await api('/auth/logout', { method: 'POST' }); // on failure the cookie may still be live, so stay signed in
+      clearAllBackups();
       update(null);
     },
     setUser(next) {

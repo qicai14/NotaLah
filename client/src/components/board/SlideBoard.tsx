@@ -55,16 +55,16 @@ function Background({ fill, assets }: { fill: Fill; assets: Assets }) {
 }
 
 export const textBoxStyle = (el: El<'text'>): CSSProperties => ({
-    fontFamily: FONT_STACK[el.font],
-    fontSize: el.size,
-    fontWeight: el.weight,
-    color: el.color,
-    textAlign: el.align,
-    lineHeight: el.lineHeight,
-    letterSpacing: el.letterSpacing,
-    padding: el.padding,
-    background: el.fill,
-    textShadow: el.shadow && `${el.shadow.x}px ${el.shadow.y}px ${el.shadow.blur}px ${el.shadow.color}`,
+  fontFamily: FONT_STACK[el.font],
+  fontSize: el.size,
+  fontWeight: el.weight,
+  color: el.color,
+  textAlign: el.align,
+  lineHeight: el.lineHeight,
+  letterSpacing: el.letterSpacing,
+  padding: el.padding,
+  background: el.fill,
+  textShadow: el.shadow && `${el.shadow.x}px ${el.shadow.y}px ${el.shadow.blur}px ${el.shadow.color}`,
 });
 
 function TextBox({ el }: { el: El<'text'> }) {

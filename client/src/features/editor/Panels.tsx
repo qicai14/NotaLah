@@ -25,7 +25,18 @@ export const THEMES = [
 ] as const;
 
 /** Background swatches; slide colours belong to the deck, not the app theme. */
-const SWATCHES = ['#ffffff', '#f3f4f6', '#fff8e1', '#e8f0fe', '#e6f4ea', '#fde7ef', '#15171c', '#1e2a78', '#0b4f3a', '#5b1a32'];
+const SWATCHES = [
+  '#ffffff',
+  '#f3f4f6',
+  '#fff8e1',
+  '#e8f0fe',
+  '#e6f4ea',
+  '#fde7ef',
+  '#15171c',
+  '#1e2a78',
+  '#0b4f3a',
+  '#5b1a32',
+];
 const GRADIENTS: Fill[] = [
   { kind: 'gradient', from: '#2b37e3', to: '#8a93ff', angle: 135 },
   { kind: 'gradient', from: '#ffe14d', to: '#ff8a4d', angle: 135 },
@@ -50,10 +61,18 @@ function TextPanel() {
     useEditor.getState().addElement(makeText(k, boardHeight(useEditor.getState().deck.aspect)));
   return (
     <Section title="Default text styles">
-      <button type="button" className={cn(tile, 'h-16 justify-start px-4 text-title font-bold')} onClick={() => add('heading')}>
+      <button
+        type="button"
+        className={cn(tile, 'h-16 justify-start px-4 text-title font-bold')}
+        onClick={() => add('heading')}
+      >
         Add a heading
       </button>
-      <button type="button" className={cn(tile, 'h-12 justify-start px-4 text-title-sm font-semibold')} onClick={() => add('subheading')}>
+      <button
+        type="button"
+        className={cn(tile, 'h-12 justify-start px-4 text-title-sm font-semibold')}
+        onClick={() => add('subheading')}
+      >
         Add a subheading
       </button>
       <button type="button" className={cn(tile, 'h-10 justify-start px-4 text-body-sm')} onClick={() => add('body')}>
@@ -75,7 +94,14 @@ function ElementsPanel() {
           {SHAPES.map(({ shape, label }) => {
             const Icon = SHAPE_ICONS[shape];
             return (
-              <button key={shape} type="button" aria-label={`Add ${label.toLowerCase()}`} title={label} className={cn(tile, 'aspect-square')} onClick={() => add(makeShape(shape, h()))}>
+              <button
+                key={shape}
+                type="button"
+                aria-label={`Add ${label.toLowerCase()}`}
+                title={label}
+                className={cn(tile, 'aspect-square')}
+                onClick={() => add(makeShape(shape, h()))}
+              >
                 <Icon className="size-8 fill-primary/80 text-primary" aria-hidden="true" />
               </button>
             );
@@ -139,7 +165,9 @@ function BackgroundPanel() {
               aria-label={`Gradient ${i + 1}`}
               aria-pressed={same(g)}
               className="aspect-square rounded-md border border-border aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-2 aria-pressed:ring-offset-background"
-              style={{ background: g.kind === 'gradient' ? `linear-gradient(${g.angle}deg, ${g.from}, ${g.to})` : undefined }}
+              style={{
+                background: g.kind === 'gradient' ? `linear-gradient(${g.angle}deg, ${g.from}, ${g.to})` : undefined,
+              }}
               onClick={() => set(g)}
             />
           ))}

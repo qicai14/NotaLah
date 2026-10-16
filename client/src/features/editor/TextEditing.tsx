@@ -22,6 +22,8 @@ export function TextEditing({ el, slide }: { el: TextElement; slide: number }) {
 
   useEffect(() => {
     useEditor.setState({ textEditor: editor });
+    // The press that opened the box focused its frame; move focus into the text once TipTap is ready.
+    requestAnimationFrame(() => editor?.commands.focus('end'));
     return () => {
       useEditor.setState({ textEditor: null });
       useEditor.getState().commitFrom(base.current);

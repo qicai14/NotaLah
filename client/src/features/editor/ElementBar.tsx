@@ -70,7 +70,10 @@ function Tool({
 
 function Colour({ label, value, onChange }: { label: string; value: string; onChange(v: string): void }) {
   return (
-    <label className="relative flex size-8 cursor-pointer items-center justify-center rounded-md hover:bg-accent" title={label}>
+    <label
+      className="relative flex size-8 cursor-pointer items-center justify-center rounded-md hover:bg-accent"
+      title={label}
+    >
       <span className="sr-only">{label}</span>
       <span className="size-5 rounded-full border border-border" style={{ background: value }} aria-hidden="true" />
       <input
@@ -184,13 +187,16 @@ export function ElementBar() {
       }),
     }));
   const mark = (name: string, run: () => void) => (
-    <Tool
-      label={name}
-      disabled={!tt}
-      pressed={tt?.isActive(name.toLowerCase()) ?? false}
-      onClick={run}
-    >
-      {name === 'Bold' ? <Bold /> : name === 'Italic' ? <Italic /> : name === 'Underline' ? <Underline /> : <Strikethrough />}
+    <Tool label={name} disabled={!tt} pressed={tt?.isActive(name.toLowerCase()) ?? false} onClick={run}>
+      {name === 'Bold' ? (
+        <Bold />
+      ) : name === 'Italic' ? (
+        <Italic />
+      ) : name === 'Underline' ? (
+        <Underline />
+      ) : (
+        <Strikethrough />
+      )}
     </Tool>
   );
 
@@ -210,17 +216,34 @@ export function ElementBar() {
               </option>
             ))}
           </select>
-          <Num label="Size" value={el.size} min={8} max={400} onChange={(size) => update({ size })} className="sr-only" />
+          <Num
+            label="Size"
+            value={el.size}
+            min={8}
+            max={400}
+            onChange={(size) => update({ size })}
+            className="sr-only"
+          />
           <Colour label="Text colour" value={el.color} onChange={(color) => update({ color })} />
           <Sep />
           {mark('Bold', () => tt?.chain().focus().toggleBold().run())}
           {mark('Italic', () => tt?.chain().focus().toggleItalic().run())}
           {mark('Underline', () => tt?.chain().focus().toggleUnderline().run())}
           {mark('Strike', () => tt?.chain().focus().toggleStrike().run())}
-          <Tool label="Bulleted list" disabled={!tt} pressed={tt?.isActive('bulletList')} onClick={() => tt?.chain().focus().toggleBulletList().run()}>
+          <Tool
+            label="Bulleted list"
+            disabled={!tt}
+            pressed={tt?.isActive('bulletList')}
+            onClick={() => tt?.chain().focus().toggleBulletList().run()}
+          >
             <List />
           </Tool>
-          <Tool label="Numbered list" disabled={!tt} pressed={tt?.isActive('orderedList')} onClick={() => tt?.chain().focus().toggleOrderedList().run()}>
+          <Tool
+            label="Numbered list"
+            disabled={!tt}
+            pressed={tt?.isActive('orderedList')}
+            onClick={() => tt?.chain().focus().toggleOrderedList().run()}
+          >
             <ListOrdered />
           </Tool>
           <Sep />
@@ -242,8 +265,18 @@ export function ElementBar() {
       {el.type === 'shape' && (
         <>
           <Colour label="Fill colour" value={el.fill ?? '#ffffff'} onChange={(fill) => update({ fill })} />
-          <Colour label="Border colour" value={el.stroke ?? '#111827'} onChange={(stroke) => update({ stroke, strokeWidth: el.strokeWidth || 4 })} />
-          <Num label="Border" value={el.strokeWidth} min={0} max={40} onChange={(strokeWidth) => update({ strokeWidth })} />
+          <Colour
+            label="Border colour"
+            value={el.stroke ?? '#111827'}
+            onChange={(stroke) => update({ stroke, strokeWidth: el.strokeWidth || 4 })}
+          />
+          <Num
+            label="Border"
+            value={el.strokeWidth}
+            min={0}
+            max={40}
+            onChange={(strokeWidth) => update({ strokeWidth })}
+          />
           {el.shape === 'rect' && (
             <Num label="Corner" value={el.radius} min={0} max={500} onChange={(radius) => update({ radius })} />
           )}
@@ -253,7 +286,13 @@ export function ElementBar() {
       {el.type === 'line' && (
         <>
           <Colour label="Line colour" value={el.stroke} onChange={(stroke) => update({ stroke })} />
-          <Num label="Weight" value={el.strokeWidth} min={1} max={40} onChange={(strokeWidth) => update({ strokeWidth })} />
+          <Num
+            label="Weight"
+            value={el.strokeWidth}
+            min={1}
+            max={40}
+            onChange={(strokeWidth) => update({ strokeWidth })}
+          />
           <select
             aria-label="Line style"
             value={el.dash}
@@ -277,7 +316,10 @@ export function ElementBar() {
       <Tool label={el.locked ? 'Unlock' : 'Lock'} pressed={el.locked} onClick={() => update({ locked: !el.locked })}>
         {el.locked ? <Lock /> : <LockOpen />}
       </Tool>
-      <Tool label="Duplicate" onClick={() => addElement({ ...el, id: newId(), x: round1(el.x + 24), y: round1(el.y + 24) })}>
+      <Tool
+        label="Duplicate"
+        onClick={() => addElement({ ...el, id: newId(), x: round1(el.x + 24), y: round1(el.y + 24) })}
+      >
         <Copy />
       </Tool>
       <Tool label="Delete" disabled={el.locked} onClick={() => deleteElement(el.id)}>

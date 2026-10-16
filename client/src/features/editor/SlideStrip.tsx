@@ -57,7 +57,11 @@ export function SlideStrip({ compact }: { compact: boolean }) {
     <div className="flex min-w-0 items-center gap-2">
       <ol ref={list} aria-label="Slides" className="flex min-w-0 items-end gap-2 overflow-x-auto px-1 py-2">
         {deck.slides.map((s, i) => (
-          <li key={i} data-slide={i} className={cn('group relative shrink-0', drag?.over === i && drag.from !== i && 'pl-3')}>
+          <li
+            key={i}
+            data-slide={i}
+            className={cn('group relative shrink-0', drag?.over === i && drag.from !== i && 'pl-3')}
+          >
             <button
               type="button"
               aria-label={`Slide ${i + 1}`}
@@ -125,7 +129,12 @@ export function SlideStrip({ compact }: { compact: boolean }) {
       {compact && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={`Slide ${active + 1} options`} className="shrink-0 rounded-md">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`Slide ${active + 1} options`}
+              className="shrink-0 rounded-md"
+            >
               <MoreHorizontal />
             </Button>
           </DropdownMenuTrigger>
@@ -136,7 +145,10 @@ export function SlideStrip({ compact }: { compact: boolean }) {
             <DropdownMenuItem disabled={active === 0} onSelect={() => moveSlide(active, active - 1)}>
               <ArrowLeft /> Move left
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={active === deck.slides.length - 1} onSelect={() => moveSlide(active, active + 1)}>
+            <DropdownMenuItem
+              disabled={active === deck.slides.length - 1}
+              onSelect={() => moveSlide(active, active + 1)}
+            >
               <ArrowRight /> Move right
             </DropdownMenuItem>
             <DropdownMenuSeparator />

@@ -125,7 +125,15 @@ export function Canvas({ compact }: { compact: boolean }) {
     useEditor.getState().select(el.id);
     if (el.locked) return;
     track(
-      { kind: 'move', id: el.id, start: boxOf(el), from: toBoard(e), moved: false, reselect, isText: el.type === 'text' },
+      {
+        kind: 'move',
+        id: el.id,
+        start: boxOf(el),
+        from: toBoard(e),
+        moved: false,
+        reselect,
+        isText: el.type === 'text',
+      },
       e,
     );
   }

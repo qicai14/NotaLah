@@ -76,7 +76,7 @@ export const newId = (): string => crypto.randomUUID();
 const withNewIds = (s: Slide): Slide => ({ ...s, elements: s.elements.map((e) => ({ ...e, id: newId() })) });
 
 /** Array.prototype.toSpliced, which the ES2022 lib lacks. */
-const spliced = <T,>(a: T[], at: number, remove: number, ...add: T[]): T[] => {
+const spliced = <T>(a: T[], at: number, remove: number, ...add: T[]): T[] => {
   const c = [...a];
   c.splice(at, remove, ...add);
   return c;
@@ -176,7 +176,11 @@ export const useEditor = create<EditorStore>()((set, get) => {
     const { deck, past, activeSlide, selection } = get();
     const next = recipe(deck);
     if (next === deck) return;
-    const pos = settle(next, extra.activeSlide ?? activeSlide, 'selection' in extra ? (extra.selection ?? null) : selection);
+    const pos = settle(
+      next,
+      extra.activeSlide ?? activeSlide,
+      'selection' in extra ? (extra.selection ?? null) : selection,
+    );
     set({ ...extra, ...pos, deck: next, past: capped(past, deck), future: [], dirty: true, rev: get().rev + 1 });
   };
   const active = () => get().activeSlide;
@@ -236,10 +240,10 @@ export const useEditor = create<EditorStore>()((set, get) => {
       });
     },
     deleteSlide: (index) => {
-      apply(
-        (d) => ({ ...d, slides: d.slides.length === 1 ? [blankSlide()] : spliced(d.slides, index, 1) }),
-        { activeSlide: Math.max(0, index - (index >= slideCount() - 1 ? 1 : 0)), selection: null },
-      );
+      apply((d) => ({ ...d, slides: d.slides.length === 1 ? [blankSlide()] : spliced(d.slides, index, 1) }), {
+        activeSlide: Math.max(0, index - (index >= slideCount() - 1 ? 1 : 0)),
+        selection: null,
+      });
     },
     moveSlide: (from, to) => {
       if (from === to || to < 0 || to >= slideCount()) return;
