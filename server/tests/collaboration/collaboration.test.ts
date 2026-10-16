@@ -5,7 +5,7 @@ import { app } from '../../src/app';
 import { replaceNote } from '../../src/features/notes/repository';
 import { getCandidates } from '../../src/features/ranking/repository';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, CSRF, follow, insertNote, insertUser, truncateAll } from '../helpers';
+import { asUser, befriend, CSRF, follow, insertNote, insertUser, slidesOf, textSlide, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -42,7 +42,7 @@ async function editBody(owner: number, note: number, over: object = {}) {
   const n = (await api.get(owner, `/api/notes/${note}`)).body.note;
   return {
     title: n.title,
-    slides: n.slides.map((s: { content: string }) => s.content),
+    slides: slidesOf(n.slides),
     moduleId: n.module?.id ?? null,
     hashtags: n.hashtags.length ? n.hashtags : ['notes'],
     status: n.status,
@@ -361,7 +361,7 @@ describe('Collaboration (R30)', () => {
     expect(await verifiedIn()).toBe(true);
 
     await api
-      .put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { slides: ['<p>new content</p>'] }))
+      .put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note, { slides: [textSlide('<p>new content</p>')] }))
       .expect(200);
     const after = (await api.get(c.stranger, `/api/notes/${c.note}`)).body.note;
     expect(after).toMatchObject({ verified: false, verifiedBy: null, editedSinceVerification: true });
@@ -489,7 +489,10 @@ describe('Collaboration (R30)', () => {
     const id = (
       await api.post(owner, '/api/notes', {
         title: 'Rich',
-        slides: ['<h2>Heading</h2><p><strong>bold</strong> and <em>em</em></p>', '<ul><li>a</li><li>b</li></ul>'],
+        slides: [
+          textSlide('<h2>Heading</h2><p><strong>bold</strong> and <em>em</em></p>'),
+          textSlide('<ul><li>a</li><li>b</li></ul>'),
+        ],
         moduleId: (await pool.query(`SELECT mod_id FROM "MODULE_T" ORDER BY mod_id LIMIT 1`)).rows[0].mod_id,
         hashtags: ['rich'],
         status: 'published',
@@ -518,8 +521,10 @@ describe('Collaboration (R30)', () => {
     expect((await api.post(c.owner, `/api/notes/${c.note}/lock`)).status).toBe(200);
     const input = {
       title: 'x',
-      template: 'plain',
+      theme: 'plain',
+      aspect: '4:5' as const,
       slides: [],
+      music: null,
       moduleId: null,
       hashtags: [],
       status: 'draft' as const,

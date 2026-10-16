@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, CSRF, follow, insertUser, truncateAll, walkPages } from '../helpers';
+import { asUser, befriend, CSRF, follow, insertUser, slideHtml, textSlide, truncateAll, walkPages } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -12,7 +12,7 @@ const moduleId = async (code = 'CT046-3-M') =>
 
 const publishBody = async (over: object = {}) => ({
   title: 'MVC basics',
-  slides: ['<p>one</p>', '<p>two</p>', '<p>three</p>'],
+  slides: ['<p>one</p>', '<p>two</p>', '<p>three</p>'].map(textSlide),
   moduleId: await moduleId(),
   hashtags: ['#MVC', 'design_patterns'],
   status: 'published',
@@ -85,11 +85,8 @@ describe('Notes', () => {
     });
     expect(n.publishedAt).toBeTruthy();
     expect([...n.hashtags].sort()).toEqual(['design_patterns', 'mvc']);
-    expect(n.slides).toEqual([
-      { position: 1, content: '<p>one</p>' },
-      { position: 2, content: '<p>two</p>' },
-      { position: 3, content: '<p>three</p>' },
-    ]);
+    expect(n.slides.map((s: { position: number }) => s.position)).toEqual([1, 2, 3]);
+    expect(slideHtml(n.slides)).toEqual(['<p>one</p>', '<p>two</p>', '<p>three</p>']);
     const { rows } = await pool.query(
       `SELECT pst_search_doc @@ plainto_tsquery('english', 'mvc') AS hit FROM "POST_T" WHERE pst_id = $1`,
       [n.id],
@@ -119,16 +116,12 @@ describe('Notes', () => {
       created.id,
       await publishBody({
         title: 'MVC revised',
-        slides: ['<p>two</p>', '<p>one</p>', '<p>three</p>'],
+        slides: ['<p>two</p>', '<p>one</p>', '<p>three</p>'].map(textSlide),
       }),
     );
     expect(res.status).toBe(200);
     expect(res.body.note.title).toBe('MVC revised');
-    expect(res.body.note.slides.map((s: { content: string }) => s.content)).toEqual([
-      '<p>two</p>',
-      '<p>one</p>',
-      '<p>three</p>',
-    ]);
+    expect(slideHtml(res.body.note.slides)).toEqual(['<p>two</p>', '<p>one</p>', '<p>three</p>']);
     expect(new Date(res.body.note.updatedAt).getTime()).toBeGreaterThan(new Date(created.updatedAt).getTime());
     expect(res.body.note.publishedAt).toBe(created.publishedAt);
   });
@@ -146,9 +139,9 @@ describe('Notes', () => {
 
   it('NOTE-TC10: script is removed from slide content and formatting is kept', async () => {
     const uid = await insertUser();
-    const res = await post(uid, await publishBody({ slides: ['<script>alert(1)</script><b>ok</b>'] }));
+    const res = await post(uid, await publishBody({ slides: [textSlide('<script>alert(1)</script><b>ok</b>')] }));
     expect(res.status).toBe(201);
-    expect(res.body.note.slides[0].content).toBe('<strong>ok</strong>');
+    expect(slideHtml(res.body.note.slides)[0]).toBe('<strong>ok</strong>');
   });
 
   it('NOTE-TC11: attributes and disallowed tags are stripped', async () => {
@@ -156,19 +149,21 @@ describe('Notes', () => {
       title: 'x',
       status: 'draft',
       slides: [
-        '<p onclick="x()" style="color:red">hi <a href="javascript:alert(1)">link</a><img src=x onerror=alert(1)></p>',
+        textSlide(
+          '<p onclick="x()" style="color:red">hi <a href="javascript:alert(1)">link</a><img src=x onerror=alert(1)></p>',
+        ),
       ],
     });
-    expect(res.body.note.slides[0].content).toBe('<p>hi link</p>');
+    expect(slideHtml(res.body.note.slides)[0]).toBe('<p>hi link</p>');
   });
 
   it('NOTE-TC22: numbered list start is kept and other list attributes are stripped', async () => {
     const res = await post(await insertUser(), {
       title: 'x',
       status: 'draft',
-      slides: ['<ol start="3" onclick="x()"><li>a</li></ol>'],
+      slides: [textSlide('<ol start="3" onclick="x()"><li>a</li></ol>')],
     });
-    expect(res.body.note.slides[0].content).toBe('<ol start="3"><li>a</li></ol>');
+    expect(slideHtml(res.body.note.slides)[0]).toBe('<ol start="3"><li>a</li></ol>');
   });
 
   it('NOTE-TC23: note detail carries counts and the viewer like and bookmark state', async () => {
@@ -183,13 +178,13 @@ describe('Notes', () => {
     expect(note.verified).toBe(false);
   });
 
-  it('NOTE-TC25: template must be one of the editor choices and defaults to plain', async () => {
+  it('NOTE-TC25: theme must be one of the editor choices and defaults to plain', async () => {
     const uid = await insertUser();
-    const bad = await post(uid, await publishBody({ template: 'fancy' }));
+    const bad = await post(uid, await publishBody({ theme: 'fancy' }));
     expect(bad.status).toBe(400);
-    expect(bad.body.errors.template).toBe('Invalid template');
-    expect((await post(uid, await publishBody({ template: 'howto' }))).body.note.template).toBe('howto');
-    expect((await post(uid, await publishBody())).body.note.template).toBe('plain');
+    expect(bad.body.errors.theme).toBe('Invalid theme');
+    expect((await post(uid, await publishBody({ theme: 'howto' }))).body.note.theme).toBe('howto');
+    expect((await post(uid, await publishBody())).body.note.theme).toBe('plain');
   });
 
   it('NOTE-TC12: a draft needs a title', async () => {
@@ -199,7 +194,7 @@ describe('Notes', () => {
   });
 
   it('NOTE-TC13: more than 30 slides is rejected', async () => {
-    const res = await post(await insertUser(), { title: 'x', status: 'draft', slides: Array(31).fill('<p>a</p>') });
+    const res = await post(await insertUser(), { title: 'x', status: 'draft', slides: Array(31).fill(textSlide('<p>a</p>')) });
     expect(res.status).toBe(400);
     expect(res.body.errors.slides).toBe('Maximum 30 slides');
   });

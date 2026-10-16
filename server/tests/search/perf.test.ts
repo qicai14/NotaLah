@@ -39,9 +39,13 @@ async function seed(): Promise<void> {
     [NOTES, WORDS],
   );
   await pool.query(
-    `INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_content)
-     SELECT p.pst_id, s, '<p>' || (SELECT string_agg(($1::TEXT[])[1 + floor(random() * cardinality($1::TEXT[]))::INT], ' ')
-                                   FROM generate_series(1, 40 + p.pst_id % 7)) || '</p>'
+    `INSERT INTO "SLIDE_T" (sld_pst_id, sld_position, sld_doc)
+     SELECT p.pst_id, s, jsonb_build_object(
+              'background', jsonb_build_object('kind', 'color', 'color', '#ffffff'),
+              'elements', jsonb_build_array(jsonb_build_object(
+                'type', 'text',
+                'html', '<p>' || (SELECT string_agg(($1::TEXT[])[1 + floor(random() * cardinality($1::TEXT[]))::INT], ' ')
+                                  FROM generate_series(1, 40 + p.pst_id % 7)) || '</p>')))
      FROM "POST_T" p, generate_series(1, 3) s`,
     [WORDS],
   );
@@ -83,8 +87,9 @@ async function seed(): Promise<void> {
     `UPDATE "POST_T" p
      SET pst_search_doc = to_tsvector('english',
            p.pst_title || ' '
-           || COALESCE((SELECT string_agg(regexp_replace(s.sld_content, '<[^>]*>', ' ', 'g'), ' ' ORDER BY s.sld_position)
-                        FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '') || ' '
+           || COALESCE((SELECT string_agg(regexp_replace(e ->> 'html', '<[^>]*>', ' ', 'g'), ' ' ORDER BY s.sld_position)
+                        FROM "SLIDE_T" s, jsonb_array_elements(s.sld_doc -> 'elements') e
+                        WHERE s.sld_pst_id = p.pst_id AND e ->> 'type' = 'text'), '') || ' '
            || COALESCE((SELECT string_agg(h.hsh_name, ' ')
                         FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
                         WHERE ph.phs_pst_id = p.pst_id), ''))`,
