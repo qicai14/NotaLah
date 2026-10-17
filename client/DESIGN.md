@@ -44,6 +44,7 @@ Ink blue is the brand (a ballpoint pen); highlighter yellow means lecturer valid
 | `highlight` / `highlight-foreground` | #ffe14d / #2a2300 | same | "Verified by", Super Like state |
 | `overlay` | 55 % ink | 65 % black | Scrim behind dialogs and sheets |
 | `rail` | #fafafb | #121319 | Desktop left rail |
+| `media` / `media-dim` | #ffffff / 50 % white (both themes) | same | Icons, dots and text drawn straight over a slide: the phone action rail, carousel arrows and dots. `media` is the current dot; `media-dim` the others. Always paired with `media-shadow` (below) |
 | `slide` / `slide-foreground` | #ffffff | #1a1c23 | Slide content box (also `--slide-muted`, `--slide-quote`, `--slide-rule`, `--code-block*`) |
 
 Write them as Tailwind classes: `bg-surface`, `text-muted-foreground`, `border-border`, `ring-ring/50`,
@@ -78,6 +79,7 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
 - Spacing: Tailwind's 0.25rem scale. Layout tokens: `w-rail` 15rem, `w-rail-collapsed` 4.5rem, `h-tabbar` 3.75rem,
   `h-topbar`/`pt-topbar` 3.5rem, `size-action` 3rem (rail buttons). Ordinary pages: `max-w-3xl px-4 py-6 md:px-8 md:py-10`
   (the shell adds this; do not repeat it).
+- Halo on media: the `media-shadow` utility (a dark `drop-shadow` from `--media-shadow`) keeps `media` readable on a white slide. It is for icons and dots over slides only; never a column, scrim or gradient behind them.
 - Shadows: `shadow-(--shadow-card)` for resting cards, `shadow-(--shadow-float)` for dialogs, sheets and popovers.
   No other shadows.
 
@@ -107,7 +109,7 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
 | Lecturer mark | `LecturerBadge` after a name | Blue check with sr-only text. |
 | Verified note | `VerifiedPill by` | The highlighter stroke; only for lecturer validation. |
 | Delete with confirm | `ConfirmButton` | Inline "Are you sure?" instead of `confirm()`. |
-| Note actions | `NoteActions` | `layout="rail"` (vertical, feed and note detail desktop) or `"bar"` (phone note detail). Handles guests. |
+| Note actions | `NoteActions` | `layout="rail"` (vertical, feed and note detail desktop) or `"bar"` (phone note detail). Handles guests. Below 768 px a `rail` drops the grey circles: only the avatar keeps its circle, the rest are bare 44 px icons in `media` with `media-shadow` and the count underneath (see Feed card). |
 | Comments | `CommentPanel` | Fills its parent's height; `heading={false}` inside a sheet that has its own title. |
 
 ## 7. Patterns
@@ -121,13 +123,13 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   (Saved moved to the phone More menu, D55). When Explore, Messages and Notifications land, they go in `RAIL` after
   Following, and Discover and Inbox replace Search and Drafts in `TABS` (wireframe 13). Badges: a `size-5 rounded-full bg-foreground text-background text-caption`
   count at the row's right edge.
-- **Feed card.** Full height, `snap-start`, card `aspect-[9/16]` on desktop, rail to its right aligned to the bottom.
+- **Feed card.** Full height, `snap-start`, card `aspect-[9/16]` on desktop, rail to its right aligned to the bottom. On phones the rail floats over the card instead of taking a column: `NoteCard` mounts `NoteActions` inside the slide area (`absolute right-0.5 bottom-2`, above the footer) and the card and slide padding shrink to `px-2`, so the note gets the width. The rail never covers the dots, which sit centred at the slide's foot. Exactly one `NoteActions` is mounted (`useMediaQuery(DESKTOP)` picks the spot).
   Top row: `VerifiedPill` left, "Why this note?" right. Bottom: author, time, title, module chip, hashtags on `bg-surface`.
 - **Page header.** Ordinary pages start with `<h1 className="text-title font-bold">` and, if needed, actions on the
   right (`Button size="sm"`). Back navigation: ghost icon button with `ArrowLeft` and `aria-label="Back"`.
 - **Lists and grids** (Saved, Drafts, profile notes): tiles on `bg-card border rounded-xl`, title `text-title-sm
   font-semibold`, meta `text-body-sm text-muted-foreground`, module chip `rounded-sm bg-surface-strong px-2 text-caption`.
-- **Profile.** `features/users/Profile.tsx`: avatar, name with `LecturerBadge`, role and programme, `Stat` row (Following, Followers, Likes; the first two open `PeopleDialog` for signed-in users), then Follow (`default`; `secondary` when following; reads Friends when mutual), Message (`outline` link to `/messages?to=id`) and a More menu holding Block (`BlockDialog`). Notes are a 2 or 3 column grid of tiles with the first slide in a `SlideBoard`. A blocked profile shows only name and Unblock; a blocked-from-the-other-side or missing one shows "This profile is not available". Guests may read it; Follow and Message open the guest sheet.
+- **Profile.** `features/users/Profile.tsx`: avatar, name with `LecturerBadge`, role and programme, `Stat` row (Following, Followers, Likes; the first two open `PeopleDialog` for signed-in users), then Follow (`default`; `secondary` when following; reads Friends when mutual), Message (`outline` link to `/messages?to=id`) and a More menu holding Block (`BlockDialog`). Notes are a 2 or 3 column grid of tiles with the first slide in a `SlideBoard`. On your own profile a `tablist` (Notes, Saved; arrow keys move between them) sits above the grid; Saved renders `features/feed/SavedNotes` (the same list as `/saved`, paged with `usePaged`). Saved also stays in the More menu. A blocked profile shows only name and Unblock; a blocked-from-the-other-side or missing one shows "This profile is not available". Guests may read it; Follow and Message open the guest sheet.
 - **Empty state.** Centred, `text-title font-bold` line, one `text-body text-muted-foreground` sentence saying what
   to do, and at most one primary button.
 - **Loading.** `role="status"` text in `text-body-sm text-muted-foreground`, or a `bg-surface animate-pulse` block the
@@ -142,7 +144,8 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   note with its comments.
 - **Forms.** Labels above inputs, `gap-4` between fields, the submit as `Button size="lg"` full width, the switch link
   ("Already have an account? Log in") centred below in `text-body-sm`.
-- **Slides.** `SlideCarousel` (`components/board/`) shows a note's slides with prev/next, arrow keys and swipe; it
+- **Slides.** `SlideCarousel` (`components/board/`) shows a note's slides with arrow keys, swipe and, over the foot of the slide, a
+  TikTok-style row: a bare `<` chevron, dots, a bare `>` chevron (44 px targets, `media` with `media-shadow`; a chevron fades out at the first or last slide). Dots are decorative: the current one is `media` (white) and slightly larger, the others `media-dim`. With more than 7 slides `dotWindow` shows a sliding window of 7 whose outer dots are smaller when more slides lie beyond them. The slide count is announced by an `aria-live` "Slide 3 of 8" (sr-only); one slide shows no controls. It
   fills its parent, so give the parent a height (`h-[min(36rem,64dvh)]`, or `min-h-0 flex-1` in a flex column). Each slide is a
   `SlideBoard`, a fixed 1000 x H board scaled to fit; slide colours come from the deck, not the theme.
 - **Editor** (`features/editor/`, R21c). Full-window route outside `AppShell`. Desktop: top bar (Drafts, title, save

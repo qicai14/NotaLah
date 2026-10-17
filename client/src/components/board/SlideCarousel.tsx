@@ -79,7 +79,9 @@ export function SlideCarousel({
             <div
               key={i}
               inert={i !== cur}
-              className={i === cur ? 'size-full rounded-lg' : 'invisible absolute inset-0 rounded-lg'}
+              className={
+                i === cur ? 'size-full rounded-lg' : 'pointer-events-none absolute inset-0 rounded-lg opacity-0'
+              }
             >
               <SlideBoard slide={slide} aspect={aspect} assets={assets} label={`Slide ${i + 1} of ${slides.length}`} />
             </div>

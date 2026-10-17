@@ -53,7 +53,7 @@
   --board-credit-foreground: #ffffff;
   --media: #ffffff;
   --media-dim: rgb(255 255 255 / 0.5);
-  --media-shadow: rgb(0 0 0 / 0.6);
+  --media-shadow: rgb(0 0 0 / 0.7);
   --editor-guide: #e5167a;
   --editor-canvas: #eceef2;
   --shadow-color: 220 20% 10%;
@@ -103,7 +103,7 @@
   --board-credit-foreground: #ffffff;
   --media: #ffffff;
   --media-dim: rgb(255 255 255 / 0.5);
-  --media-shadow: rgb(0 0 0 / 0.6);
+  --media-shadow: rgb(0 0 0 / 0.7);
   --editor-guide: #ff5fae;
   --editor-canvas: #0a0b0f;
   --shadow-color: 0 0% 0%;
@@ -242,7 +242,7 @@
 /* Icons and text drawn straight over a slide (action rail on phones, carousel arrows and dots): a soft dark halo keeps
  * white readable on a white slide. Not a column or a scrim. */
 @utility media-shadow {
-  filter: drop-shadow(0 1px 1.5px var(--media-shadow)) drop-shadow(0 0 5px var(--media-shadow));
+  filter: drop-shadow(0 1px 2px var(--media-shadow)) drop-shadow(0 0 6px var(--media-shadow));
 }
 
 @utility scrollbar-none {
