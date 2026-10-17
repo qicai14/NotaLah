@@ -146,6 +146,14 @@ export type ReportSummary = Pick<
   author: Pick<ReportGroup['author'], 'id' | 'displayName'>;
 };
 
+/** A tile on a profile: the summary plus the first slide, drawn as the thumbnail. */
+export interface ProfileNote extends NoteSummary {
+  aspect: Aspect;
+  likes: number;
+  cover: Pick<Slide, 'background' | 'elements'> | null;
+  assets: Record<string, string>;
+}
+
 export interface Profile {
   id: number;
   displayName: string;
@@ -154,8 +162,41 @@ export interface Profile {
   bio: string | null;
   avatarUrl: string | null;
   isVerifiedLecturer: boolean;
-  notes: NoteSummary[];
+  followerCount: number;
+  followingCount: number;
+  followedByMe: boolean;
+  followsMe: boolean;
+  /** Mutual follow (D38). */
+  isFriend: boolean;
+  likeCount: number;
+  blockedByMe: false;
+  notes: ProfileNote[];
+  notesNextCursor: string | null;
   draftCount?: number;
+}
+
+/** What the server returns for someone the viewer blocked (D49, wireframe 34). */
+export interface BlockedProfile {
+  id: number;
+  displayName: string;
+  blockedByMe: true;
+}
+
+export type FollowState = Pick<Profile, 'followerCount' | 'followingCount' | 'followedByMe' | 'followsMe' | 'isFriend'>;
+
+export interface PersonRow {
+  id: number;
+  displayName: string;
+  role: Role;
+  isVerifiedLecturer: boolean;
+  followedByMe: boolean;
+  isFriend: boolean;
+}
+
+export interface BlockedUser {
+  id: number;
+  displayName: string;
+  blockedAt: string;
 }
 
 export interface LecturerApplication {

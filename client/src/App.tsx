@@ -53,7 +53,7 @@ function ShellRoutes() {
           <Route path="/saved" element={signedIn(<Saved />)} />
           <Route path="/profile" element={signedIn(<Profile />)} />
           <Route path="/profile/edit" element={signedIn(<EditProfile />)} />
-          <Route path="/users/:id" element={signedIn(<Profile />)} />
+          <Route path="/users/:id" element={<Profile />} />
           <Route path="/admin/lecturers" element={signedIn(<AdminLecturers />, ['admin'])} />
           <Route path="/admin/reports" element={signedIn(<AdminReports />, ['admin'])} />
           <Route path="/admin/users" element={signedIn(<AdminUsers />, ['admin'])} />
