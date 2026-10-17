@@ -39,6 +39,8 @@ beforeAll(() => {
   );
   ffmpeg(...src('16x16', 1), '-t', '91', ...h264, file('long.mp4'));
   ffmpeg(...src('2000x1100', 2), '-t', '1', ...h264, file('big.mp4'));
+  ffmpeg(...src('1920x1080', 1), '-t', '1', ...h264, file('landscape.mp4'));
+  ffmpeg('-display_rotation', '90', '-i', file('landscape.mp4'), '-c', 'copy', file('portrait.mp4'));
   ffmpeg(...src('4100x64', 1), '-t', '1', ...h264, file('wide.mp4'));
   ffmpeg(...src('160x120', 10), '-t', '1', '-c:v', 'mpeg4', file('legacy.avi'));
 });
@@ -126,6 +128,11 @@ http://127.0.0.1:${port}/seg.ts
     const asset = await ready(await insertUser(), 'big.mp4');
     expect(asset.width).toBeLessThanOrEqual(VIDEO.maxWidth);
     expect(asset.height).toBeLessThanOrEqual(VIDEO.maxHeight);
+  });
+
+  it('NOTE-TC39: a rotated 1920x1080 clip is stored as the 1080x1920 portrait it displays as', async () => {
+    const asset = await ready(await insertUser(), 'portrait.mp4');
+    expect([asset.width, asset.height]).toEqual([1080, 1920]);
   });
 
   it('strips metadata from both containers', async () => {

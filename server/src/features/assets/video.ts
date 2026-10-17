@@ -36,6 +36,8 @@ interface Stream {
   pix_fmt?: string;
   width?: number;
   height?: number;
+  tags?: { rotate?: string };
+  side_data_list?: { rotation?: number }[];
 }
 interface Probe {
   format: { format_name?: string; duration?: string };
@@ -44,6 +46,13 @@ interface Probe {
 
 /** Input options for every ffprobe and ffmpeg call: local files and the five containers we accept, so a playlist or concat file cannot make the tools open URLs or other files (SSRF, local reads). */
 const SAFE_INPUT = ['-protocol_whitelist', 'file', '-format_whitelist', 'mov,mp4,m4a,3gp,3g2,mj2,matroska,webm'];
+
+/** Width and height as a viewer sees them: a quarter turn in the display matrix swaps them. */
+function displayed(s: Stream): { w: number; h: number } {
+  const turn = s.side_data_list?.find((d) => d.rotation !== undefined)?.rotation ?? Number(s.tags?.rotate ?? 0);
+  const quarter = Math.abs(Math.round(turn / 90)) % 2 === 1;
+  return quarter ? { w: s.height!, h: s.width! } : { w: s.width!, h: s.height! };
+}
 
 const probe = async (file: string, timeoutMs: number) =>
   JSON.parse(
@@ -74,12 +83,17 @@ export async function processVideo(
     if (!video?.width || !video.height || (!isMp4 && !names.includes('webm'))) {
       throw new Rejected('Only MP4 and WebM videos are accepted');
     }
-    const seconds = Number(found.format.duration);
-    if (!Number.isFinite(seconds) || seconds <= 0) throw new Rejected('Not a valid video');
-    if (seconds > VIDEO.maxSeconds) throw new Rejected(`Video must be at most ${VIDEO.maxSeconds} seconds`);
+    // Browser-recorded WebM has no duration in the header, so only a present duration can reject here; -t caps the rest.
+    const declared = Number(found.format.duration);
+    if (Number.isFinite(declared) && declared > VIDEO.maxSeconds) {
+      throw new Rejected(`Video must be at most ${VIDEO.maxSeconds} seconds`);
+    }
     if (Math.max(video.width, video.height) > VIDEO.maxInputEdge) throw new Rejected('Video dimensions are too large');
 
-    const oversize = video.width > VIDEO.maxWidth || video.height > VIDEO.maxHeight;
+    const { w, h } = displayed(video);
+    const longEdge = Math.max(w, h);
+    const shortEdge = Math.min(w, h);
+    const oversize = longEdge > VIDEO.maxWidth || shortEdge > VIDEO.maxHeight;
     const ext = isMp4 ? 'mp4' : 'webm';
     const out = path.join(workDir, `clean.${ext}`);
     const copyVideo =
@@ -88,12 +102,13 @@ export async function processVideo(
         ? video.codec_name === 'h264' && video.pix_fmt === 'yuv420p'
         : ['vp8', 'vp9'].includes(video.codec_name ?? ''));
     const copyAudio = !audio || audio.codec_name === (isMp4 ? 'aac' : 'opus');
-    const args = ['-v', 'error', '-y', ...SAFE_INPUT, '-i', `file:${input}`, '-map', '0:v:0', '-map', '0:a:0?'];
+    const args = ['-v', 'error', '-y', '-threads', '2', '-filter_threads', '1', ...SAFE_INPUT, '-i', `file:${input}`];
+    args.push('-map', '0:v:0', '-map', '0:a:0?', '-t', String(VIDEO.maxSeconds));
     args.push('-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact', '-threads', '2');
     if (copyVideo) args.push('-c:v', 'copy');
     else {
-      const fit = `scale=${VIDEO.maxWidth}:${VIDEO.maxHeight}:force_original_aspect_ratio=decrease:force_divisible_by=2`;
-      args.push('-vf', fit);
+      const box = w < h ? [VIDEO.maxHeight, VIDEO.maxWidth] : [VIDEO.maxWidth, VIDEO.maxHeight];
+      args.push('-vf', `scale=${box[0]}:${box[1]}:force_original_aspect_ratio=decrease:force_divisible_by=2`);
       args.push(
         ...(isMp4
           ? ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast']
@@ -106,11 +121,16 @@ export async function processVideo(
 
     const { size } = await stat(out);
     if (size > VIDEO.maxBytes) throw new Rejected('Video is still over 50 MB after processing');
-    const cleaned = (await probe(out, timeoutMs)).streams.find((s) => s.codec_type === 'video');
-    if (!cleaned?.width || !cleaned.height) throw new Rejected('Not a valid video');
+    const result = await probe(out, timeoutMs);
+    const cleaned = result.streams.find((s) => s.codec_type === 'video');
+    const seconds = Number(result.format.duration);
+    if (!cleaned?.width || !cleaned.height || !Number.isFinite(seconds) || seconds <= 0) {
+      throw new Rejected('Not a valid video');
+    }
+    const shown = displayed(cleaned);
 
     const frame = path.join(workDir, 'poster.png');
-    const at = String(Math.min(1, seconds / 2));
+    const at = seconds >= 2 ? '1' : '0';
     await runTool(
       'ffmpeg',
       ['-v', 'error', '-y', '-ss', at, ...SAFE_INPUT, '-i', `file:${out}`, '-frames:v', '1', frame],
@@ -126,8 +146,8 @@ export async function processVideo(
         mime: isMp4 ? 'video/mp4' : 'video/webm',
         ext,
         bytes: size,
-        width: cleaned.width,
-        height: cleaned.height,
+        width: shown.w,
+        height: shown.h,
         durationMs: Math.min(Math.max(1, Math.round(seconds * 1000)), VIDEO.maxSeconds * 1000),
         poster: poster.image.data,
       },
