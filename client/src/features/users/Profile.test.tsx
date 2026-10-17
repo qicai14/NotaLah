@@ -236,6 +236,34 @@ describe('profile page', () => {
     const tile = await screen.findByRole('link', { name: /Joins/ });
     expect(tile.querySelector('[inert][aria-hidden="true"]')).not.toBeNull();
   });
+
+  it('CLI-TC45: your own profile has a Saved tab that lists bookmarks; another profile has none', async () => {
+    handlers['GET /users/1'] = () => ({
+      status: 200,
+      body: { user: profile({ id: 1, displayName: 'Sam Student', role: 'student', isVerifiedLecturer: false }) },
+    });
+    handlers['GET /bookmarks'] = () => ({
+      status: 200,
+      body: {
+        notes: [
+          { id: 9, title: 'Normal forms', moduleCode: 'CT069', publishedAt: null, hashtags: [], verifiedBy: null },
+        ],
+        nextCursor: null,
+      },
+    });
+    mount('/profile');
+    const saved = await screen.findByRole('tab', { name: 'Saved' });
+    expect(screen.getByRole('tab', { name: 'Notes' }).getAttribute('aria-selected')).toBe('true');
+    expect(calls.some((c) => c.path.startsWith('/bookmarks'))).toBe(false);
+    await userEvent.click(saved);
+    expect(await screen.findByRole('link', { name: 'Normal forms' })).toBeTruthy();
+    expect(saved.getAttribute('aria-selected')).toBe('true');
+    cleanup();
+    handlers['GET /users/2'] = () => ({ status: 200, body: { user: profile() } });
+    mount();
+    await screen.findByRole('heading', { name: /Dr Lee/ });
+    expect(screen.queryByRole('tab', { name: 'Saved' })).toBeNull();
+  });
 });
 
 describe('blocked accounts list', () => {

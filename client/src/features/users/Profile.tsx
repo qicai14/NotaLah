@@ -1,6 +1,6 @@
 import { BOARD_WIDTH, boardHeight } from '@parp/shared';
 import { ArrowLeft, Ban, MoreHorizontal, Pencil } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SlideBoard } from '@/components/board/SlideBoard';
 import { LecturerBadge } from '@/components/LecturerBadge';
@@ -20,10 +20,14 @@ import { usePaged } from '@/lib/usePaged';
 import type { BlockedProfile, FollowState, Profile as ProfileData, ProfileNote } from '@/types';
 import { useAuth } from '../auth/AuthContext';
 import { useGuestPrompt } from '../auth/GuestPrompt';
+import { SavedNotes } from '../feed/SavedNotes';
 import { BlockDialog } from './BlockDialog';
 import { PeopleDialog } from './PeopleDialog';
 
-const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const compact = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
 
 const isBlocked = (u: ProfileData | BlockedProfile): u is BlockedProfile => u.blockedByMe === true;
 
@@ -33,9 +37,9 @@ export default function Profile() {
   const { user } = useAuth();
   const uid = id ?? String(user?.id);
   const afterUnblock = useRef(false);
-  const { data, setData, error, errorStatus, loading, reload } = useFetch<{ user: ProfileData | BlockedProfile }>(
-    `/users/${uid}`,
-  );
+  const { data, setData, error, errorStatus, loading, reload } = useFetch<{
+    user: ProfileData | BlockedProfile;
+  }>(`/users/${uid}`);
 
   if (loading) return <ProfileSkeleton />;
   if (errorStatus === 404) return <Unavailable />;
@@ -64,7 +68,14 @@ export default function Profile() {
       own={p.id === user?.id}
       focusName={afterUnblock.current}
       onFollowState={(s) => setData((d) => d && { user: { ...(d.user as ProfileData), ...s } })}
-      onBlocked={() => setData((d) => d && { user: { id: p.id, displayName: p.displayName, blockedByMe: true } })}
+      onBlocked={() =>
+        setData(
+          (d) =>
+            d && {
+              user: { id: p.id, displayName: p.displayName, blockedByMe: true },
+            },
+        )
+      }
       reload={reload}
     />
   );
@@ -177,6 +188,7 @@ function Loaded({
     });
   };
 
+  const [tab, setTab] = useState<'notes' | 'saved'>('notes');
   const notes = usePaged<ProfileNote>(`/users/${p.id}/notes`, 'notes', {
     items: p.notes,
     next: p.notesNextCursor,
@@ -273,32 +285,44 @@ function Loaded({
         </div>
       </header>
 
-      <h2 className="mt-8 mb-3 text-title-sm font-bold">Notes</h2>
-      {notes.items.length === 0 && !notes.loading && (
-        <div className="py-12 text-center">
-          <p className="text-title font-bold">No notes yet</p>
-          <p className="mt-1 text-body text-muted-foreground">
-            {own ? 'Notes you publish will show up here.' : `${p.displayName} has not published a note yet.`}
-          </p>
+      {own ? <ProfileTabs tab={tab} onTab={setTab} /> : <h2 className="mt-8 mb-3 text-title-sm font-bold">Notes</h2>}
+      {own && tab === 'saved' ? (
+        <div role="tabpanel" id="profile-panel-saved" aria-labelledby="profile-tab-saved">
+          <SavedNotes />
         </div>
-      )}
-      <ul className="grid grid-cols-2 items-start gap-3 sm:grid-cols-3">
-        {notes.items.map((n) => (
-          <li key={n.id}>
-            <NoteTile note={n} />
-          </li>
-        ))}
-      </ul>
-      {notes.error && (
-        <p role="alert" className="mt-3 text-center text-body-sm font-medium text-destructive">
-          {notes.error}
-        </p>
-      )}
-      {notes.hasMore && (
-        <div className="mt-4 flex justify-center">
-          <Button variant="secondary" disabled={notes.loadingMore} onClick={notes.loadMore}>
-            Show more notes
-          </Button>
+      ) : (
+        <div
+          role={own ? 'tabpanel' : undefined}
+          id={own ? 'profile-panel-notes' : undefined}
+          aria-labelledby={own ? 'profile-tab-notes' : undefined}
+        >
+          {notes.items.length === 0 && !notes.loading && (
+            <div className="py-12 text-center">
+              <p className="text-title font-bold">No notes yet</p>
+              <p className="mt-1 text-body text-muted-foreground">
+                {own ? 'Notes you publish will show up here.' : `${p.displayName} has not published a note yet.`}
+              </p>
+            </div>
+          )}
+          <ul className="grid grid-cols-2 items-start gap-3 sm:grid-cols-3">
+            {notes.items.map((n) => (
+              <li key={n.id}>
+                <NoteTile note={n} />
+              </li>
+            ))}
+          </ul>
+          {notes.error && (
+            <p role="alert" className="mt-3 text-center text-body-sm font-medium text-destructive">
+              {notes.error}
+            </p>
+          )}
+          {notes.hasMore && (
+            <div className="mt-4 flex justify-center">
+              <Button variant="secondary" disabled={notes.loadingMore} onClick={notes.loadMore}>
+                Show more notes
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -307,6 +331,48 @@ function Loaded({
         <BlockDialog userId={p.id} name={p.displayName} onClose={() => setBlocking(false)} onBlocked={onBlocked} />
       )}
     </section>
+  );
+}
+
+const TABS = [
+  { id: 'notes', label: 'Notes' },
+  { id: 'saved', label: 'Saved' },
+] as const;
+
+/** Notes / Saved switch on your own profile: a tablist with arrow-key movement. */
+function ProfileTabs({ tab, onTab }: { tab: 'notes' | 'saved'; onTab(t: 'notes' | 'saved'): void }) {
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const next = tab === 'notes' ? 'saved' : 'notes';
+    onTab(next);
+    refs.current[next]?.focus();
+  };
+  return (
+    <div role="tablist" aria-label="Your notes" onKeyDown={onKey} className="mt-8 mb-4 flex gap-6 border-b">
+      {TABS.map((t) => (
+        <button
+          key={t.id}
+          ref={(el) => {
+            refs.current[t.id] = el;
+          }}
+          type="button"
+          role="tab"
+          id={`profile-tab-${t.id}`}
+          aria-selected={tab === t.id}
+          aria-controls={`profile-panel-${t.id}`}
+          tabIndex={tab === t.id ? 0 : -1}
+          onClick={() => onTab(t.id)}
+          className={`-mb-px h-11 cursor-pointer border-b-2 text-title-sm font-bold ${
+            tab === t.id
+              ? 'border-foreground text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
