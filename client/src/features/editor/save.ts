@@ -176,13 +176,14 @@ const SAFE_COLOUR = /^\s*color:\s*#(?:[0-9a-f]{6}|[0-9a-f]{8})\s*;?\s*$/i;
 export function cleanHtml(html: string): string {
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
   const walk = (node: Element) => {
-    for (const child of [...node.children]) {
+    // Array.from copies the live collection, because the loop removes and unwraps children.
+    for (const child of Array.from(node.children)) {
       if (DROPPED.has(child.tagName)) {
         child.remove();
         continue;
       }
       walk(child);
-      for (const attr of [...child.attributes]) {
+      for (const attr of Array.from(child.attributes)) {
         const keep =
           (attr.name === 'start' && child.tagName === 'OL') ||
           (attr.name === 'style' && child.tagName === 'SPAN' && SAFE_COLOUR.test(attr.value));
