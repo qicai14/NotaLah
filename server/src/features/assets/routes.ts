@@ -5,6 +5,7 @@ import path from 'node:path';
 import { Router, type RequestHandler } from 'express';
 import multer from 'multer';
 import { idParam } from '../../lib/validation';
+import { env } from '../../lib/env';
 import { storage } from '../../lib/storage';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { fileLimiter, uploadLimiter, videoUploadLimiter } from '../auth/rateLimit';
@@ -99,6 +100,15 @@ const readVideo: RequestHandler = (req, res, next) =>
     res.status(400).json({ error: 'Invalid upload' });
   });
 
+/** Refuses before the body is read when uploads are off or no video-sized file could fit, so a rejected upload costs no bandwidth or disk. */
+const videoAllowed: RequestHandler = async (_req, res, next) => {
+  if (env.UPLOADS_DISABLED) return void res.status(503).json({ error: 'Uploads are turned off' });
+  if (!(await storageFits(VIDEO.maxBytes))) {
+    return void res.status(507).json({ error: 'Video storage is full. Uploads are paused' });
+  }
+  next();
+};
+
 let processing = 0;
 
 assetsRouter.post(
@@ -106,6 +116,7 @@ assetsRouter.post(
   requireAuth,
   requireActive,
   videoUploadLimiter,
+  videoAllowed,
   prepareVideoUpload,
   readVideo,
   async (req, res) => {

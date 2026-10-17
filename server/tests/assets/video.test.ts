@@ -119,6 +119,17 @@ http://127.0.0.1:${port}/seg.ts
     expect(hits).toEqual([]);
   });
 
+  it('NOTE-TC39: refuses before reading the body when uploads are disabled', async () => {
+    env.UPLOADS_DISABLED = true;
+    try {
+      const res = await upload(await insertUser(), readFileSync(file('short.mp4')));
+      expect(res.status).toBe(503);
+      expect(tmpDirs()).toEqual([]);
+    } finally {
+      env.UPLOADS_DISABLED = false;
+    }
+  });
+
   it('refuses a body over 50 MB with 413', async () => {
     const res = await upload(await insertUser(), Buffer.alloc(VIDEO.maxBytes + 1024));
     expect(res.status).toBe(413);
