@@ -1226,16 +1226,24 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Choices the spec left open:** a drag, a resize, a rotation and a whole text-editing session are each one undo step
   (`preview` while moving, `commitFrom(base)` on release); title, module and hashtags are not in undo. Rotation snaps by
   default and Alt turns snapping off (Shift is taken by keep-ratio); Alt also turns off move guides. A first tap selects
-  a text box, a second tap (or Enter) opens it for typing; Escape closes it. Autosave is skipped while the title is empty
-  (the server requires one) and the status line says "Add a title to save". "Keep mine" refetches the note's current
+  a text box, a second tap (or Enter) opens it for typing; Escape closes it. "Keep mine" refetches the note's current
   `updatedAt` and saves over it. The editor route sits outside `AppShell` (paths unchanged) so it fills the window; when the
   first autosave moves `/notes/new` to `/notes/:id/edit`, the page remounts but keeps the store, so typing in flight and
   undo history survive. Backups are cleared on Update and on logout. Arrow keys nudge (Shift: 10 units) and a Position
   popover sets x, y, size, angle and opacity exactly, as the single-pointer alternative to dragging (WCAG 2.5.7); a Layers
   panel lists elements top first with move up/down buttons. Ctrl+C/V/D copy, paste and duplicate (an in-editor clipboard).
+- **Review fixes (17 Oct):** an untitled draft autosaves as "Untitled note" (the author renames it later) instead of
+  waiting for a title. The Back links ask "Leave without saving?" only when the edits cannot be kept: a 409 conflict, a
+  423 lock, or a published edit whose local backup could not be written; drafts are saved on the way out from a
+  snapshot of the moment of leaving. Each save carries the store's `session` (bumped on every load), so a late reply
+  never writes into another note. A 423 is a `locked` state with a "Try again" banner, stops autosave, and backs the
+  draft up locally. Backups record their owner and are cleared when a different user signs in or the session expires;
+  a restored backup must pass `deckSchema` and its text is reduced to the server's allow-list with `DOMParser` (no new
+  dependency). Live edits keep their base in the store (`previewBase`), so undo, redo and any discrete change first
+  record them as their own step; the header Undo/Redo wait while a text box is open (TipTap owns Ctrl+Z there).
 - **Removed:** the old TipTap `NoteEditor`, its `Toolbar`, and the `lib/slides.ts` HTML adapter, which nothing else used,
   so NOTE-TC47 and NOTE-TC48 are retired; the `.slide-content` CSS went with them.
 - **Test IDs:** NOTE-TC44 (geometry), NOTE-TC58 (undo/redo), NOTE-TC59 (slide strip and aspect), NOTE-TC60 (save state),
-  NOTE-TC61 (autosave timing, create then PUT with baseUpdatedAt, 409), NOTE-TC62 (keyboard selection, nudge, delete; layers).
+  NOTE-TC61 (autosave timing, create then PUT with baseUpdatedAt, 409), NOTE-TC62 (keyboard selection, nudge, delete; layers), NOTE-TC63 to TC66 (backup restore and clearing, late reply, untitled and locked saves).
 - **Reversibility:** Easy: client only; the API is unchanged.
 
