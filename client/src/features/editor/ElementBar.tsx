@@ -23,7 +23,9 @@ import {
   Lock,
   LockOpen,
   Move,
+  SquareDashed,
   Strikethrough,
+  TextCursorInput,
   Trash2,
   Underline,
 } from 'lucide-react';
@@ -32,6 +34,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { arrange, selectedElements } from './arrange';
+import { type BoxList, type BoxMark, styleWholeBox, wholeBoxHas } from './wholeBox';
 import { offsetCopy, useEditor } from './store';
 
 const FONT_NAMES: Record<FontId, string> = {
@@ -276,24 +279,63 @@ export function ElementBar() {
         return { ...s, elements: to === 'front' ? [...rest, el] : [el, ...rest] };
       }),
     }));
-  const mark = (name: string, run: () => void) => (
-    <Tool label={name} disabled={!tt} pressed={tt?.isActive(name.toLowerCase()) ?? false} onClick={run}>
-      {name === 'Bold' ? (
-        <Bold />
-      ) : name === 'Italic' ? (
-        <Italic />
-      ) : name === 'Underline' ? (
-        <Underline />
-      ) : (
-        <Strikethrough />
-      )}
-    </Tool>
-  );
+  // An open box styles the selected text; a closed one styles all of its text at once (D43).
+  const whole = el.type === 'text' && !tt;
+  const html = el.type === 'text' ? el.html : '';
+  const scope = whole ? ' (whole box)' : '';
+  const toggle = (name: BoxMark | BoxList, pressed: boolean) => {
+    if (el.type !== 'text') return;
+    if (tt) {
+      const c = tt.chain().focus();
+      ({
+        bold: () => c.toggleBold(),
+        italic: () => c.toggleItalic(),
+        underline: () => c.toggleUnderline(),
+        strike: () => c.toggleStrike(),
+        bulletList: () => c.toggleBulletList(),
+        orderedList: () => c.toggleOrderedList(),
+      })
+        [name]()
+        .run();
+      return;
+    }
+    // Bold on a closed box is its weight; turning it off also clears bold runs inside, so the box really reads plain.
+    if (name === 'bold') {
+      update(pressed ? { weight: 400, html: styleWholeBox(html, 'bold', false) } : { weight: 700 });
+    } else update({ html: styleWholeBox(html, name, !pressed) });
+  };
+  const isOn = (name: BoxMark | BoxList) => {
+    if (el.type !== 'text') return false;
+    if (tt) return tt.isActive(name);
+    return name === 'bold' ? el.weight === 700 || wholeBoxHas(html, 'bold') : wholeBoxHas(html, name);
+  };
+  const styleTool = (name: BoxMark | BoxList, label: string, icon: ReactNode) => {
+    const pressed = isOn(name);
+    return (
+      <Tool label={label + scope} pressed={pressed} onClick={() => toggle(name, pressed)}>
+        {icon}
+      </Tool>
+    );
+  };
 
   return (
     <div role="toolbar" aria-label="Element" className="flex min-w-max items-center gap-1 px-2">
       {el.type === 'text' && (
         <>
+          <span
+            className={cn(
+              'mr-1 flex h-7 shrink-0 items-center gap-1 rounded-sm px-2 text-caption font-semibold whitespace-nowrap',
+              whole ? 'bg-surface text-muted-foreground' : 'bg-primary/10 text-primary',
+            )}
+            title={whole ? 'Press Enter or tap the box again to style part of the text' : undefined}
+          >
+            {whole ? (
+              <SquareDashed className="size-3.5" aria-hidden="true" />
+            ) : (
+              <TextCursorInput className="size-3.5" aria-hidden="true" />
+            )}
+            {whole ? 'Whole box' : 'Selected text'}
+          </span>
           <select
             aria-label="Font"
             value={el.font}
@@ -316,26 +358,12 @@ export function ElementBar() {
           />
           <Colour label="Text colour" value={el.color} onChange={(color) => update({ color })} />
           <Sep />
-          {mark('Bold', () => tt?.chain().focus().toggleBold().run())}
-          {mark('Italic', () => tt?.chain().focus().toggleItalic().run())}
-          {mark('Underline', () => tt?.chain().focus().toggleUnderline().run())}
-          {mark('Strike', () => tt?.chain().focus().toggleStrike().run())}
-          <Tool
-            label="Bulleted list"
-            disabled={!tt}
-            pressed={tt?.isActive('bulletList')}
-            onClick={() => tt?.chain().focus().toggleBulletList().run()}
-          >
-            <List />
-          </Tool>
-          <Tool
-            label="Numbered list"
-            disabled={!tt}
-            pressed={tt?.isActive('orderedList')}
-            onClick={() => tt?.chain().focus().toggleOrderedList().run()}
-          >
-            <ListOrdered />
-          </Tool>
+          {styleTool('bold', 'Bold', <Bold />)}
+          {styleTool('italic', 'Italic', <Italic />)}
+          {styleTool('underline', 'Underline', <Underline />)}
+          {styleTool('strike', 'Strikethrough', <Strikethrough />)}
+          {styleTool('bulletList', 'Bulleted list', <List />)}
+          {styleTool('orderedList', 'Numbered list', <ListOrdered />)}
           <Sep />
           {(
             [
