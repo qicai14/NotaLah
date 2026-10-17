@@ -32,6 +32,7 @@ import {
   readBackup,
   saveNote,
   type SaveOutcome,
+  snapshot,
   writeBackup,
 } from './save';
 import { PageNotes } from './PageNotes';
@@ -44,8 +45,16 @@ const ASPECT_LABELS: Record<Aspect, string> = {
   '16:9': '16:9 Widescreen',
 };
 
-const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
+/** Focus is in a field, rich text, a dialog or a menu, which keep their own keyboard handling. */
+const ownsKeys = (t: EventTarget | null) =>
+  t instanceof HTMLElement &&
+  (t.isContentEditable ||
+    ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) ||
+    t.closest('[role=dialog], [role=alertdialog], [role=menu]') !== null);
+
+/** Edits that only survive on this device: a published note before Update, or a draft the lock keeps from saving. */
+const needsBackup = (s: { dirty: boolean; meta: { status: string }; saveState: string }) =>
+  s.dirty && (s.meta.status === 'published' || s.saveState === 'locked');
 
 function SaveStatus() {
   const saveState = useEditor((s) => s.saveState);
@@ -56,11 +65,10 @@ function SaveStatus() {
   if (saveState === 'saving') {
     icon = <LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />;
     text = 'Saving…';
-  } else if (saveState === 'error' || saveState === 'conflict') {
+  } else if (saveState === 'error' || saveState === 'conflict' || saveState === 'locked') {
     icon = <CloudOff className="size-3.5" aria-hidden="true" />;
     text = 'Not saved';
-  } else if (dirty && meta.status === 'draft' && !meta.title.trim()) text = 'Add a title to save';
-  else if (dirty && meta.status === 'published') text = 'Unsaved changes';
+  } else if (dirty && meta.status === 'published') text = 'Unsaved changes';
   else if (dirty) text = 'Editing';
   else if (saveState === 'saved') {
     icon = <Check className="size-3.5" aria-hidden="true" />;
@@ -117,8 +125,10 @@ function AspectPicker({ compact }: { compact: boolean }) {
 }
 
 function UndoRedo({ size }: { size: 'icon' | 'icon-sm' }) {
-  const canUndo = useEditor((s) => s.past.length > 0);
-  const canRedo = useEditor((s) => s.future.length > 0);
+  // While a text box is open, Ctrl+Z belongs to TipTap; the header buttons would undo around it, so they wait.
+  const typing = useEditor((s) => s.textEditor !== null);
+  const canUndo = useEditor((s) => s.past.length > 0 || s.previewBase !== null) && !typing;
+  const canRedo = useEditor((s) => s.future.length > 0) && !typing;
   return (
     <>
       <Button
@@ -166,12 +176,14 @@ export default function EditorPage() {
   const [sheet, setSheet] = useState<PanelId | null>(null);
   const [backup, setBackup] = useState<Backup | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
+  const userId = useRef(user?.id);
+  userId.current = user?.id;
 
   async function fetchAndLoad(noteId: number) {
     const { note } = await api<{ note: Note }>(`/notes/${noteId}`);
     if (note.author.id !== user?.id) return setNotMine(true);
     useEditor.getState().load(noteToDeck(note), noteToMeta(note));
-    if (note.status === 'published') setBackup(readBackup(note.id, note.updatedAt));
+    setBackup(readBackup(note.id, note.updatedAt, user?.id));
   }
 
   // Load once per mount. Right after the first autosave creates the note the URL changes and this page remounts; the
@@ -209,7 +221,7 @@ export default function EditorPage() {
     let first: number | null = null;
     const eligible = () => {
       const s = useEditor.getState();
-      return s.dirty && s.meta.status === 'draft' && s.saveState !== 'conflict' && s.meta.title.trim() !== '';
+      return s.dirty && s.meta.status === 'draft' && s.saveState !== 'conflict' && s.saveState !== 'locked';
     };
     const run = async () => {
       first = null;
@@ -237,21 +249,31 @@ export default function EditorPage() {
       unsub();
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onHide);
-      if (eligible()) void saveNote('draft'); // leaving within the idle delay still saves the draft
+      if (eligible()) void saveNote('draft', snapshot()); // leaving within the idle delay still saves this draft
     };
   }, []);
 
-  // Published notes only change on Update, so their unsaved edits are backed up on this device (D52).
+  // Published notes only change on Update, and a locked draft cannot be saved, so those edits are backed up on this
+  // device (D52): 800 ms after a change, and at once when the tab hides or the editor closes.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const unsub = useEditor.subscribe((s, p) => {
-      if (s.rev === p.rev || s.meta.status !== 'published' || !s.dirty) return;
+    const flush = () => {
+      if (timer === undefined) return;
       clearTimeout(timer);
-      timer = setTimeout(writeBackup, 800);
+      timer = undefined;
+      writeBackup(userId.current);
+    };
+    const unsub = useEditor.subscribe((s, p) => {
+      if ((s.rev === p.rev && s.saveState === p.saveState) || !needsBackup(s)) return;
+      clearTimeout(timer);
+      timer = setTimeout(flush, 800);
     });
+    const onHide = () => document.visibilityState === 'hidden' && flush();
+    document.addEventListener('visibilitychange', onHide);
     return () => {
       unsub();
-      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onHide);
+      flush();
     };
   }, []);
 
@@ -259,7 +281,7 @@ export default function EditorPage() {
   useEffect(() => {
     let copied: SlideElement | null = null;
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || isTyping(e.target)) return;
+      if (!(e.ctrlKey || e.metaKey) || ownsKeys(e.target)) return;
       const st = useEditor.getState();
       const selected = st.deck.slides[st.activeSlide].elements.find((el) => el.id === st.selection);
       const k = e.key.toLowerCase();
@@ -272,7 +294,9 @@ export default function EditorPage() {
       e.preventDefault();
     };
     const onLeave = (e: BeforeUnloadEvent) => {
-      if (useEditor.getState().dirty) e.preventDefault();
+      if (!useEditor.getState().dirty) return;
+      e.preventDefault();
+      e.returnValue = ''; // older browsers only show the prompt when this is set
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('beforeunload', onLeave);
@@ -281,6 +305,15 @@ export default function EditorPage() {
       window.removeEventListener('beforeunload', onLeave);
     };
   }, []);
+
+  /** Back links: leave freely when the edits will be saved or backed up, otherwise ask first (D56). */
+  function confirmLeave(e: { preventDefault(): void }) {
+    const st = useEditor.getState();
+    if (!st.dirty) return;
+    const blocked = st.saveState === 'conflict' || st.saveState === 'locked';
+    const kept = st.meta.status === 'draft' ? !blocked : !blocked && writeBackup(userId.current);
+    if (!kept && !window.confirm('Leave without saving?')) e.preventDefault();
+  }
 
   async function run(save: () => Promise<SaveOutcome>, publishing: boolean) {
     setBusy(true);
@@ -368,6 +401,14 @@ export default function EditorPage() {
           </Button>
         </Banner>
       )}
+      {saveState === 'locked' && (
+        <Banner tone="error">
+          <span>Another collaborator is editing this note. Your changes are kept on this device until it is free.</span>
+          <Button size="xs" onClick={() => run(() => saveNote(resaveChoice), false)}>
+            Try again
+          </Button>
+        </Banner>
+      )}
       {backup && (
         <Banner tone="info">
           <span>
@@ -437,7 +478,7 @@ export default function EditorPage() {
         <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
         <header className="flex h-topbar shrink-0 items-center gap-1 border-b bg-background px-2">
           <Button asChild variant="ghost" size="icon-sm" aria-label="Back to drafts">
-            <Link to="/drafts">
+            <Link to="/drafts" onClick={confirmLeave}>
               <ArrowLeft />
             </Link>
           </Button>
@@ -512,7 +553,7 @@ export default function EditorPage() {
       <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
       <header className="flex h-topbar shrink-0 items-center gap-2 border-b bg-background px-3">
         <Button asChild variant="ghost" size="sm">
-          <Link to="/drafts">
+          <Link to="/drafts" onClick={confirmLeave}>
             <ArrowLeft aria-hidden="true" />
             Drafts
           </Link>

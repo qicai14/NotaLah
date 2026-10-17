@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const update = (next: User | null) => {
     setSignedIn(next !== null);
+    if (next) clearAllBackups(next.id); // a different user signed in on this browser: drop the previous one's backups
     setUserState(next);
   };
 
