@@ -75,7 +75,7 @@ const additive = (e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }) 
  * the ratio), rotate with 15° snap (Alt for free), group move, scale and rotate, and snapping guides, all with
  * Pointer Events. Phones get corner handles only, 44 px targets and centre-only snap.
  */
-export function Canvas({ compact }: { compact: boolean }) {
+export function Canvas({ compact, readOnly = false }: { compact: boolean; readOnly?: boolean }) {
   const deck = useEditor((s) => s.deck);
   const active = useEditor((s) => s.activeSlide);
   const selection = useEditor((s) => s.selection);
@@ -417,6 +417,24 @@ export function Canvas({ compact }: { compact: boolean }) {
       ))}
     </>
   );
+
+  if (readOnly) {
+    // Someone else holds the lock (wireframe 28): the slide as readers will see it, with nothing to grab.
+    return (
+      <div
+        className={cn(
+          'relative size-full [&_[aria-roledescription=slide]]:shadow-(--shadow-card)',
+          compact ? 'px-6 py-12' : 'p-12',
+        )}
+      >
+        <SlideBoard
+          slide={slide}
+          aspect={deck.aspect}
+          label={`Slide ${active + 1} of ${deck.slides.length}, read only`}
+        />
+      </div>
+    );
+  }
 
   return (
     <div

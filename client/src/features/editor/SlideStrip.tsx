@@ -26,7 +26,7 @@ const Thumb = memo(function Thumb({ slide, aspect }: { slide: Slide; aspect: Asp
  * Thumbnails of every slide: click to open, drag with a mouse to reorder (the menu's Move left/right is the single-pointer and
  * keyboard alternative), and add, duplicate or delete.
  */
-export function SlideStrip({ compact }: { compact: boolean }) {
+export function SlideStrip({ compact, readOnly = false }: { compact: boolean; readOnly?: boolean }) {
   const deck = useEditor((s) => s.deck);
   const active = useEditor((s) => s.activeSlide);
   const { setActiveSlide, addSlide, duplicateSlide, deleteSlide, moveSlide } = useEditor.getState();
@@ -38,7 +38,7 @@ export function SlideStrip({ compact }: { compact: boolean }) {
 
   function startDrag(e: ReactPointerEvent, from: number) {
     // Touch drags scroll the strip; phones reorder from the slide menu instead.
-    if (e.button !== 0 || e.pointerType !== 'mouse') return;
+    if (e.button !== 0 || e.pointerType !== 'mouse' || readOnly) return;
     const x0 = e.clientX;
     let dragging = false;
     dragged.current = false;
@@ -91,7 +91,7 @@ export function SlideStrip({ compact }: { compact: boolean }) {
             <span className="pointer-events-none absolute bottom-1 left-1 rounded-sm bg-board-credit px-1 text-caption tabular-nums text-board-credit-foreground">
               {i + 1}
             </span>
-            {!compact && (
+            {!compact && !readOnly && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -123,18 +123,20 @@ export function SlideStrip({ compact }: { compact: boolean }) {
           </li>
         ))}
       </ol>
-      <Button
-        variant="secondary"
-        size={compact ? 'icon-sm' : 'icon'}
-        aria-label="Add slide"
-        title="Add slide"
-        disabled={full}
-        onClick={addSlide}
-        className="shrink-0 rounded-md"
-      >
-        <Plus />
-      </Button>
-      {compact && (
+      {!readOnly && (
+        <Button
+          variant="secondary"
+          size={compact ? 'icon-sm' : 'icon'}
+          aria-label="Add slide"
+          title="Add slide"
+          disabled={full}
+          onClick={addSlide}
+          className="shrink-0 rounded-md"
+        >
+          <Plus />
+        </Button>
+      )}
+      {compact && !readOnly && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

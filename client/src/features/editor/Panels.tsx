@@ -264,6 +264,8 @@ export interface Details {
   modules: ModuleRef[] | undefined;
   modulesError: string | null;
   setModuleId(v: string): void;
+  /** Co-authors cannot move a note to another module (D44). */
+  moduleLocked?: boolean;
   setHashtags(v: string[]): void;
 }
 
@@ -279,6 +281,7 @@ function DetailsPanel({ d }: { d: Details }) {
           id="module"
           value={d.moduleId}
           onChange={(e) => d.setModuleId(e.target.value)}
+          disabled={d.moduleLocked}
           aria-invalid={d.errors.moduleId ? true : undefined}
           aria-describedby={d.errors.moduleId ? 'module-error' : undefined}
           className={inputClass}

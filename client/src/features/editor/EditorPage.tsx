@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
-import { api, errorText } from '@/lib/api';
+import { api, ApiError, errorText } from '@/lib/api';
 import { useFetch } from '@/lib/useFetch';
 import { cn } from '@/lib/utils';
 import type { ModuleRef, Note } from '@/types';
@@ -14,6 +14,8 @@ import { PublishDialog, type PublishChoice } from '../notes/PublishDialog';
 import { selectedElements } from './arrange';
 import { AspectPicker } from './AspectPicker';
 import { Canvas } from './Canvas';
+import { useEditLock } from './lock';
+import { LockedNotice, ViewOnly } from './LockedNotice';
 import { ElementBar } from './ElementBar';
 import { type Details, PanelBody, type PanelId, PANELS } from './Panels';
 import {
@@ -84,11 +86,11 @@ function Banner({ tone, children }: { tone: 'error' | 'info'; children: ReactNod
   );
 }
 
-function UndoRedo({ size }: { size: 'icon' | 'icon-sm' }) {
+function UndoRedo({ size, disabled }: { size: 'icon' | 'icon-sm'; disabled: boolean }) {
   // While a text box is open, Ctrl+Z belongs to TipTap; the header buttons would undo around it, so they wait.
   const typing = useEditor((s) => s.textEditor !== null);
-  const canUndo = useEditor((s) => s.past.length > 0 || s.previewBase !== null) && !typing;
-  const canRedo = useEditor((s) => s.future.length > 0) && !typing;
+  const canUndo = useEditor((s) => s.past.length > 0 || s.previewBase !== null) && !typing && !disabled;
+  const canRedo = useEditor((s) => s.future.length > 0) && !typing && !disabled;
   return (
     <>
       <Button
@@ -136,12 +138,25 @@ export default function EditorPage() {
   const [sheet, setSheet] = useState<PanelId | null>(null);
   const [backup, setBackup] = useState<Backup | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
+  /** The owner, or a co-author with edit access (R30), who edits content only. */
+  const [role, setRole] = useState<'owner' | 'edit'>('owner');
   const userId = useRef(user?.id);
   userId.current = user?.id;
+  // The soft lock (D46): while someone else holds it, this editor is read-only. Winning it after a wait reloads the
+  // note, so editing starts from what the other editor saved.
+  const lock = useEditLock(ready && !loadError && !notMine ? meta.noteId : null, () => {
+    const noteId = useEditor.getState().meta.noteId;
+    if (noteId) fetchAndLoad(noteId).catch((e) => setLoadError(errorText(e)));
+  });
+  const readOnly = lock.state.kind === 'locked';
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
 
   async function fetchAndLoad(noteId: number) {
     const { note } = await api<{ note: Note }>(`/notes/${noteId}`);
-    if (note.author.id !== user?.id) return setNotMine(true);
+    const mine = note.myRole ?? (note.author.id === user?.id ? 'owner' : null);
+    if (mine !== 'owner' && mine !== 'edit') return setNotMine(true);
+    setRole(mine);
     useEditor.getState().load(noteToDeck(note), noteToMeta(note));
     setBackup(readBackup(note.id, note.updatedAt, user?.id));
   }
@@ -241,7 +256,7 @@ export default function EditorPage() {
   useEffect(() => {
     let copied: SlideElement[] = [];
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || ownsKeys(e.target)) return;
+      if (!(e.ctrlKey || e.metaKey) || ownsKeys(e.target) || readOnlyRef.current) return;
       const st = useEditor.getState();
       const elements = st.deck.slides[st.activeSlide].elements;
       const selected = selectedElements();
@@ -294,7 +309,23 @@ export default function EditorPage() {
     }
   }
 
+  /** The owner publishes the last saved version while a co-author holds the lock (wireframe 29). */
+  async function publishSaved(choice: PublishChoice) {
+    if (!meta.noteId || choice === 'draft') return;
+    setBusy(true);
+    try {
+      await api(`/notes/${meta.noteId}/publish`, { method: 'POST', body: { visibility: choice } });
+      navigate(`/notes/${meta.noteId}`);
+    } catch (e) {
+      setDialog(false);
+      setErrors(e instanceof ApiError && Object.keys(e.errors).length ? e.errors : { form: errorText(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const published = meta.status === 'published';
+  const owner = role === 'owner';
   const resaveChoice: PublishChoice = published ? (meta.visibility ?? 'public') : 'draft';
 
   if (!ready) {
@@ -308,7 +339,7 @@ export default function EditorPage() {
     return (
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-16 text-center">
         <p role="alert" className="text-body-sm font-medium text-destructive">
-          {notMine ? 'You can only edit your own notes.' : loadError}
+          {notMine ? 'You can only edit your own notes and notes shared with you for editing.' : loadError}
         </p>
         <Button asChild variant="secondary">
           <Link to="/drafts">Back to drafts</Link>
@@ -324,6 +355,7 @@ export default function EditorPage() {
     modules: modules.data?.modules,
     modulesError: modules.error,
     setModuleId: (moduleId) => useEditor.getState().setMeta({ moduleId }),
+    moduleLocked: !owner,
     setHashtags: (hashtags) => useEditor.getState().setMeta({ hashtags }),
   };
   const formErrors = Object.entries(errors).filter(([k]) => k !== 'title');
@@ -336,6 +368,7 @@ export default function EditorPage() {
       <input
         id="note-title"
         value={meta.title}
+        readOnly={readOnly}
         maxLength={150}
         placeholder="Untitled note"
         onChange={(e) => useEditor.getState().setMeta({ title: e.target.value })}
@@ -411,27 +444,59 @@ export default function EditorPage() {
     </>
   );
 
+  // Co-authors save content but never publish (D44); while locked, only the owner's publish of a saved draft is left.
+  const canPublish = published ? !readOnly : owner;
   const actions = (
     <>
       {!published && desktop && (
-        <Button variant="secondary" size="sm" disabled={busy} onClick={() => run(() => saveNote('draft'), false)}>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={busy || readOnly}
+          onClick={() => run(() => saveNote('draft'), false)}
+        >
           Save draft
         </Button>
       )}
-      <Button size="sm" disabled={busy} onClick={() => setDialog(true)}>
-        {published ? 'Update' : 'Publish'}
-      </Button>
+      {canPublish ? (
+        <Button size="sm" disabled={busy} onClick={() => setDialog(true)}>
+          {published ? 'Update' : 'Publish'}
+        </Button>
+      ) : (
+        <Button size="sm" disabled title="Only the owner can publish">
+          {published ? 'Update' : 'Publish'}
+        </Button>
+      )}
     </>
   );
+  const holder = lock.state.kind === 'locked' ? lock.state.holder : null;
 
-  const dialogEl = dialog && (
-    <PublishDialog
-      initial={meta.visibility}
-      alreadyPublished={published}
-      busy={busy}
-      onClose={() => setDialog(false)}
-      onChoose={(c) => run(() => saveNote(c), c !== 'draft')}
-    />
+  const dialogEl =
+    dialog &&
+    (readOnly ? (
+      <PublishDialog
+        initial="public"
+        alreadyPublished
+        busy={busy}
+        title="Publish the last saved version"
+        note={`${holder?.displayName ?? 'The editor'}'s unsaved changes are not included.`}
+        onClose={() => setDialog(false)}
+        onChoose={publishSaved}
+      />
+    ) : (
+      <PublishDialog
+        initial={meta.visibility}
+        alreadyPublished={published}
+        busy={busy}
+        onClose={() => setDialog(false)}
+        onChoose={(c) => run(() => saveNote(c), c !== 'draft')}
+      />
+    ));
+  const lockNotice = holder && <LockedNotice holder={holder} owner={owner && !published} onRetry={lock.retry} />;
+  const coAuthorHint = !owner && !published && !readOnly && (
+    <span className="hidden text-caption whitespace-nowrap text-muted-foreground lg:inline">
+      Only the owner can publish
+    </span>
   );
 
   if (!desktop) {
@@ -446,26 +511,25 @@ export default function EditorPage() {
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
             {titleInput}
-            <span className="px-2">
-              <SaveStatus />
-            </span>
+            <span className="px-2">{readOnly ? <ViewOnly /> : <SaveStatus />}</span>
           </div>
-          <UndoRedo size="icon-sm" />
+          <UndoRedo size="icon-sm" disabled={readOnly} />
           {actions}
         </header>
         {banners}
+        {lockNotice}
         <div className="h-12 shrink-0 overflow-x-auto border-b bg-background [scrollbar-width:none]">
           <div className="flex h-full items-center">
-            <ElementBar />
+            {readOnly ? <p className="px-3 text-body-sm text-muted-foreground">Read only</p> : <ElementBar />}
           </div>
         </div>
         <div className="min-h-0 flex-1">
-          <Canvas compact />
+          <Canvas compact readOnly={readOnly} />
         </div>
-        {notesOpen && <PageNotes />}
+        {notesOpen && <PageNotes readOnly={readOnly} />}
         <div className="flex shrink-0 items-center gap-1 border-t bg-background px-2">
           <div className="min-w-0 flex-1">
-            <SlideStrip compact />
+            <SlideStrip compact readOnly={readOnly} />
           </div>
           <Button
             variant="ghost"
@@ -477,7 +541,7 @@ export default function EditorPage() {
           >
             <NotebookPen />
           </Button>
-          <AspectPicker compact />
+          <AspectPicker compact disabled={readOnly} />
         </div>
         <nav
           aria-label="Editor tools"
@@ -487,8 +551,9 @@ export default function EditorPage() {
             <button
               key={p.id}
               type="button"
+              disabled={readOnly}
               onClick={() => setSheet(p.id)}
-              className="flex h-14 flex-col items-center justify-center gap-0.5 text-caption text-muted-foreground active:scale-[0.97]"
+              className="flex h-14 flex-col items-center justify-center gap-0.5 text-caption text-muted-foreground active:scale-[0.97] disabled:opacity-40"
             >
               <p.icon className="size-5" aria-hidden="true" />
               {p.label}
@@ -509,7 +574,7 @@ export default function EditorPage() {
     );
   }
 
-  const active = PANELS.find((p) => p.id === panel);
+  const active = readOnly ? undefined : PANELS.find((p) => p.id === panel);
   return (
     <div className="flex h-dvh flex-col bg-editor-canvas text-foreground">
       <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
@@ -522,10 +587,11 @@ export default function EditorPage() {
         </Button>
         <span className="h-6 w-px bg-border" aria-hidden="true" />
         {titleInput}
-        <SaveStatus />
-        <UndoRedo size="icon" />
+        {readOnly ? <ViewOnly /> : <SaveStatus />}
+        <UndoRedo size="icon" disabled={readOnly} />
         <span className="h-6 w-px bg-border" aria-hidden="true" />
-        <AspectPicker compact={false} />
+        <AspectPicker compact={false} disabled={readOnly} />
+        {coAuthorHint}
         {actions}
       </header>
       <div className="flex min-h-0 flex-1">
@@ -534,9 +600,10 @@ export default function EditorPage() {
             <button
               key={p.id}
               type="button"
-              aria-pressed={panel === p.id}
+              aria-pressed={!readOnly && panel === p.id}
+              disabled={readOnly}
               onClick={() => setPanel(panel === p.id ? null : p.id)}
-              className="mx-1.5 flex h-16 flex-col items-center justify-center gap-1 rounded-md text-caption text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-surface hover:text-foreground aria-pressed:bg-surface-strong aria-pressed:font-semibold aria-pressed:text-foreground"
+              className="mx-1.5 flex h-16 flex-col items-center justify-center gap-1 rounded-md text-caption text-muted-foreground transition-colors duration-(--duration-fast) hover:bg-surface hover:text-foreground disabled:pointer-events-none disabled:opacity-40 aria-pressed:bg-surface-strong aria-pressed:font-semibold aria-pressed:text-foreground"
             >
               <p.icon className="size-5" aria-hidden="true" />
               {p.label}
@@ -558,16 +625,17 @@ export default function EditorPage() {
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex h-12 shrink-0 items-center overflow-x-auto border-b bg-background [scrollbar-width:thin]">
-            <ElementBar />
+            {readOnly ? <p className="px-3 text-body-sm text-muted-foreground">Read only</p> : <ElementBar />}
           </div>
           {banners}
+          {lockNotice}
           <div className="min-h-0 flex-1">
-            <Canvas compact={false} />
+            <Canvas compact={false} readOnly={readOnly} />
           </div>
-          {notesOpen && <PageNotes />}
+          {notesOpen && <PageNotes readOnly={readOnly} />}
           <div className="flex shrink-0 items-center gap-3 border-t bg-background px-3">
             <div className="min-w-0 flex-1">
-              <SlideStrip compact={false} />
+              <SlideStrip compact={false} readOnly={readOnly} />
             </div>
             <Button
               variant="ghost"

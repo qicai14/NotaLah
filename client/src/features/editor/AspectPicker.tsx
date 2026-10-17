@@ -27,7 +27,7 @@ const ASPECT_ICON: Record<Aspect, { w: number; h: number }> = {
  * Slide size (wireframe 23): picking a size only marks it; Resize applies it to every slide, which scales content to
  * fit and centres it. One undo step.
  */
-export function AspectPicker({ compact }: { compact: boolean }) {
+export function AspectPicker({ compact, disabled = false }: { compact: boolean; disabled?: boolean }) {
   const aspect = useEditor((s) => s.deck.aspect);
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<Aspect>(aspect);
@@ -43,6 +43,7 @@ export function AspectPicker({ compact }: { compact: boolean }) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
+          disabled={disabled}
           size={compact ? 'icon-sm' : 'sm'}
           aria-label={compact ? `Slide size, ${ASPECT_LABELS[aspect]}` : undefined}
         >

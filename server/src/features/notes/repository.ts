@@ -313,12 +313,14 @@ export type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
  * live soft lock, with 'stale' when `baseUpdatedAt` is given and differs from pst_updated_at, and with 'forbidden' when the
  * editor lost edit access since the route checked it (R30). A co-author's first save starts their credit (clb_edited_at, D46). An edit never moves
  * pst_published_at; a title or slide change to a published note stamps pst_content_edited_at, which voids older Super Likes.
+ * `ignoreLock` is only for the owner publishing the last saved version while a co-author holds the lock (D58).
  */
 export function replaceNote(
   id: number,
   n: NoteInput,
   editorId: number,
   baseUpdatedAt: Date | null,
+  { ignoreLock = false }: { ignoreLock?: boolean } = {},
 ): Promise<ReplaceResult> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{
@@ -340,7 +342,7 @@ export function replaceNote(
     const cur = rows[0];
     if (!cur) return 'gone'; // deleted or hidden since the permission check
     if (cur.role !== 'owner' && cur.role !== 'edit') return 'forbidden';
-    if (cur.lockedByOther) return 'locked';
+    if (cur.lockedByOther && !ignoreLock) return 'locked';
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
     const contentEdited =

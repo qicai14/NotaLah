@@ -352,6 +352,28 @@ describe('Collaboration (R30)', () => {
     expect((await api.post(c.owner, lock)).status).toBe(200);
   });
 
+  it('COL-TC25: the owner publishes the last saved version while an editor holds the lock', async () => {
+    const c = await cast();
+    const publish = `/api/notes/${c.note}/publish`;
+    expect((await api.post(c.editor, `/api/notes/${c.note}/lock`)).status).toBe(200);
+    expect((await api.post(c.owner, publish, { visibility: 'public' })).body.errors).toEqual({
+      hashtags: 'At least one hashtag is required',
+    });
+    const saved = await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note));
+    expect(saved.status).toBe(200);
+    expect((await api.post(c.editor, publish, { visibility: 'public' })).status).toBe(403);
+    expect((await api.post(c.stranger, publish, { visibility: 'public' })).status).toBe(404);
+    expect((await api.post(c.owner, publish, { visibility: 'everyone' })).status).toBe(400);
+    const res = await api.post(c.owner, publish, { visibility: 'contacts' });
+    expect(res.status).toBe(200);
+    expect(res.body.note).toMatchObject({ status: 'published', visibility: 'contacts', hashtags: ['notes'] });
+    expect(res.body.note.slides).toHaveLength(saved.body.note.slides.length);
+    expect((await api.post(c.owner, publish, { visibility: 'public' })).status).toBe(400); // already published
+    // The editor's next save was based on the draft, so it gets the usual 409 instead of overwriting the publish.
+    const late = { ...(await editBody(c.owner, c.note)), baseUpdatedAt: saved.body.note.updatedAt };
+    expect((await api.put(c.editor, `/api/notes/${c.note}`, late)).status).toBe(409);
+  });
+
   it('COL-TC15: a slide edit removes V until the lecturer re-confirms', async () => {
     const c = await cast('published');
     const lect = await lecturer();

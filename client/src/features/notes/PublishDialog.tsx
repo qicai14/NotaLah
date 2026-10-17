@@ -17,10 +17,16 @@ export function PublishDialog({
   busy,
   onChoose,
   onClose,
+  title = 'Who can see this note?',
+  note,
 }: {
   initial: PublishChoice | null;
   alreadyPublished: boolean;
   busy: boolean;
+  /** Replaces the heading, as when the owner publishes from a locked editor (wireframe 29). */
+  title?: string;
+  /** A line under the heading saying what will be published. */
+  note?: string;
   onChoose(c: PublishChoice): void;
   onClose(): void;
 }) {
@@ -29,8 +35,12 @@ export function PublishDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
-        <DialogTitle className="text-title font-bold">Who can see this note?</DialogTitle>
-        <DialogDescription className="sr-only">Choose the note&rsquo;s visibility.</DialogDescription>
+        <DialogTitle className="text-title font-bold">{title}</DialogTitle>
+        {note ? (
+          <DialogDescription className="-mt-2 text-body-sm text-muted-foreground">{note}</DialogDescription>
+        ) : (
+          <DialogDescription className="sr-only">Choose the note&rsquo;s visibility.</DialogDescription>
+        )}
         <fieldset className="flex flex-col gap-2">
           <legend className="sr-only">Visibility</legend>
           {options.map((o) => (
