@@ -1,16 +1,8 @@
 import type { Aspect, SlideElement } from '@parp/shared';
-import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Proportions, Redo2, Undo2, X } from 'lucide-react';
+import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Redo2, Undo2, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { api, errorText } from '@/lib/api';
@@ -20,6 +12,7 @@ import type { ModuleRef, Note } from '@/types';
 import { useAuth } from '../auth/AuthContext';
 import { PublishDialog, type PublishChoice } from '../notes/PublishDialog';
 import { selectedElements } from './arrange';
+import { AspectPicker } from './AspectPicker';
 import { Canvas } from './Canvas';
 import { ElementBar } from './ElementBar';
 import { type Details, PanelBody, type PanelId, PANELS } from './Panels';
@@ -39,12 +32,6 @@ import {
 import { PageNotes } from './PageNotes';
 import { SlideStrip } from './SlideStrip';
 import { emptyDeck, offsetCopy, useEditor } from './store';
-
-const ASPECT_LABELS: Record<Aspect, string> = {
-  '4:5': '4:5 Portrait',
-  '9:16': '9:16 Full screen',
-  '16:9': '16:9 Widescreen',
-};
 
 /** Focus is in a field, rich text, a dialog or a menu, which keep their own keyboard handling. */
 const ownsKeys = (t: EventTarget | null) =>
@@ -94,34 +81,6 @@ function Banner({ tone, children }: { tone: 'error' | 'info'; children: ReactNod
     >
       {children}
     </div>
-  );
-}
-
-function AspectPicker({ compact }: { compact: boolean }) {
-  const aspect = useEditor((s) => s.deck.aspect);
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size={compact ? 'icon-sm' : 'sm'}
-          aria-label={compact ? `Slide size, ${ASPECT_LABELS[aspect]}` : undefined}
-        >
-          <Proportions aria-hidden="true" />
-          {!compact && ASPECT_LABELS[aspect]}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Slide size</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={aspect} onValueChange={(v) => useEditor.getState().setAspect(v as Aspect)}>
-          {(Object.keys(ASPECT_LABELS) as Aspect[]).map((a) => (
-            <DropdownMenuRadioItem key={a} value={a}>
-              {ASPECT_LABELS[a]}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 
