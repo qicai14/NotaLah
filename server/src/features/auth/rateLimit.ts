@@ -83,6 +83,18 @@ export const uploadLimiter = rateLimit({
   message: { error: 'Too many uploads. Try again later.' },
 });
 
+/** Video uploads per signed-in user per hour (R29, D59); a separate, lower cap because each one runs ffmpeg. */
+export const videoUploadLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: ASSETS.videoUploadsPerHour,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('video:'),
+  keyGenerator: (req: Request) => `user:${req.user?.id ?? ''}`,
+  skip: testing,
+  message: { error: 'Too many video uploads. Try again later.' },
+});
+
 /** Unsplash searches per signed-in user per hour (R22); the demo tier allows 50 an hour for the whole app. */
 export const unsplashLimiter = rateLimit({
   windowMs: 60 * 60_000,

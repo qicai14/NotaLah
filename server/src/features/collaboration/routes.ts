@@ -129,7 +129,7 @@ collaborationRouter.get(
     const assetId = String(req.params.assetId);
     const asset = invalidId(assetId) ? undefined : await getLinkedAsset(found.noteId, Number(assetId));
     if (!asset) return res.status(404).json({ error: 'Asset not found' });
-    await sendAsset(res, asset);
+    await sendAsset(req, res, asset);
   },
 );
 
