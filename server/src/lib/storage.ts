@@ -1,5 +1,7 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { Readable } from 'node:stream';
 import { consumeOrThrow, UsageLimitError } from '../features/usage/service';
 import { env } from './env';
 
@@ -8,10 +10,38 @@ import { env } from './env';
  * implements the same three methods and streams every byte through the server: no presigned GET or PUT URLs and no
  * browser-direct uploads, so each operation passes `metered` (R34, D57). Uploads are one PutObject, never multipart.
  */
+export interface StoredRead {
+  /** Whole object size; `start`..`end` (inclusive) is what `stream` yields, and `partial` says a range was applied. */
+  size: number;
+  start: number;
+  end: number;
+  partial: boolean;
+  stream: Readable;
+}
+
+/** A single `bytes=` range against `size` bytes, or null when absent, malformed or multi-range (served whole). */
+export function parseRange(
+  header: string | undefined,
+  size: number,
+): { start: number; end: number } | 'unsatisfiable' | null {
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header ?? '');
+  if (!m || (m[1] === '' && m[2] === '')) return null;
+  let start: number;
+  let end: number;
+  if (m[1] === '') {
+    start = Math.max(size - Number(m[2]), 0);
+    end = size - 1;
+  } else {
+    start = Number(m[1]);
+    end = m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
+  }
+  return start >= size || start > end ? 'unsatisfiable' : { start, end };
+}
+
 export interface Storage {
   put(key: string, body: Buffer): Promise<void>;
-  /** The object's bytes, or null when it does not exist. */
-  read(key: string): Promise<Buffer | null>;
+  /** The object, or the part a `Range` header asks for, as a stream; null when it does not exist, `{ unsatisfiable: size }` when the range lies outside it. */
+  read(key: string, range?: string): Promise<StoredRead | { unsatisfiable: number } | null>;
   /** Idempotent: a missing object is not an error. */
   remove(key: string): Promise<void>;
 }
@@ -30,11 +60,17 @@ export function localStorageDriver(root: string): Storage {
       await mkdir(path.dirname(target), { recursive: true });
       await writeFile(target, body);
     },
-    async read(key) {
-      return readFile(file(key)).catch((err: NodeJS.ErrnoException) => {
+    async read(key, header) {
+      const target = file(key);
+      const info = await stat(target).catch((err: NodeJS.ErrnoException) => {
         if (err.code === 'ENOENT') return null;
         throw err;
       });
+      if (!info) return null;
+      const range = parseRange(header, info.size);
+      if (range === 'unsatisfiable') return { unsatisfiable: info.size };
+      const { start, end } = range ?? { start: 0, end: info.size - 1 };
+      return { size: info.size, start, end, partial: range !== null, stream: createReadStream(target, { start, end }) };
     },
     async remove(key) {
       await rm(file(key), { force: true });
@@ -51,12 +87,12 @@ export function metered(inner: Storage): Storage {
     ...inner,
     async put(key, body) {
       if (env.UPLOADS_DISABLED) throw new UsageLimitError('Uploads are turned off');
-      await consumeOrThrow('class_a', 'Monthly image limit reached');
+      await consumeOrThrow('class_a', 'Monthly upload limit reached');
       await inner.put(key, body);
     },
-    async read(key) {
-      await consumeOrThrow('class_b', 'Monthly image limit reached');
-      return inner.read(key);
+    async read(key, range) {
+      await consumeOrThrow('class_b', 'Monthly upload limit reached');
+      return inner.read(key, range);
     },
   };
 }

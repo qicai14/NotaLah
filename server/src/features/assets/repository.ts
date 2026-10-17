@@ -97,8 +97,8 @@ export async function getLinkedAsset(noteId: number, assetId: number): Promise<S
   return rows[0];
 }
 
-/** Marks old assets that no live note references as deleted and returns their storage keys, for the caller to remove. */
-export async function takeUnlinkedAssets(): Promise<string[]> {
+/** Marks old assets that no live note references as deleted and returns their storage keys (a video also has a poster key), for the caller to remove. */
+export async function takeUnlinkedAssets(): Promise<{ key: string; posterKey: string | null }[]> {
   const { rows } = await pool.query<{ key: string; posterKey: string | null }>(
     `WITH stale AS (
        SELECT a.ast_id FROM "ASSET_T" a
@@ -110,5 +110,5 @@ export async function takeUnlinkedAssets(): Promise<string[]> {
      RETURNING a.ast_key AS "key", a.ast_poster_key AS "posterKey"`,
     [ASSETS.unlinkedAgeHours],
   );
-  return rows.flatMap((r) => (r.posterKey ? [r.key, r.posterKey] : [r.key]));
+  return rows;
 }
