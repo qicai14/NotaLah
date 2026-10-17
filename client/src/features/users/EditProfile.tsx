@@ -1,11 +1,16 @@
+import { ArrowLeft } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Field } from '../../components/Field';
-import { ProgrammeSelect } from '../../components/ProgrammeSelect';
-import { api, ApiError, errorText } from '../../lib/api';
-import { useFetch } from '../../lib/useFetch';
-import type { Profile, User } from '../../types';
+import { Field, inputClass } from '@/components/Field';
+import { ProgrammeSelect } from '@/components/ProgrammeSelect';
+import { Button } from '@/components/ui/button';
+import { api, ApiError, errorText } from '@/lib/api';
+import { cn } from '@/lib/utils';
+import { useAction } from '@/lib/useAction';
+import { useFetch } from '@/lib/useFetch';
+import type { Profile, User } from '@/types';
 import { useAuth } from '../auth/AuthContext';
+import { BlockedAccounts } from './BlockedAccounts';
 
 export default function EditProfile() {
   const { user, setUser } = useAuth();
@@ -15,8 +20,7 @@ export default function EditProfile() {
   const [programme, setProgramme] = useState('');
   const [bio, setBio] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { run, pending: busy, error: formError } = useAction();
 
   useEffect(() => {
     if (!data) return;
@@ -27,37 +31,50 @@ export default function EditProfile() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setErrors({});
-    setFormError(null);
-    try {
-      const r = await api<{ user: User }>('/users/me', { method: 'PUT', body: { displayName, programme, bio } });
+    const r = await run(
+      () => api<{ user: User }>('/users/me', { method: 'PUT', body: { displayName, programme, bio } }),
+      (err) => {
+        if (err instanceof ApiError && Object.keys(err.errors ?? {}).length) {
+          setErrors(err.errors);
+          return null;
+        }
+        return errorText(err);
+      },
+    );
+    if (r) {
       setUser(r.user);
       navigate('/profile');
-    } catch (err) {
-      if (err instanceof ApiError && Object.keys(err.errors ?? {}).length) setErrors(err.errors);
-      else setFormError(errorText(err));
-    } finally {
-      setBusy(false);
     }
   }
 
-  if (loading) return <p>Loading…</p>;
+  if (loading) {
+    return (
+      <p role="status" className="py-16 text-center text-body-sm text-muted-foreground">
+        Loading…
+      </p>
+    );
+  }
   if (error) {
     return (
-      <p role="alert" className="text-destructive">
+      <p role="alert" className="text-body-sm font-medium text-destructive">
         {error}
       </p>
     );
   }
   const count = (s: string, max: number) => (
-    <span className={`text-xs ${s.length > max ? 'text-destructive' : 'text-muted-foreground'}`}>
+    <span className={cn('text-caption tabular-nums', s.length > max ? 'text-destructive' : 'text-muted-foreground')}>
       {s.length}/{max}
     </span>
   );
   return (
     <section className="max-w-md">
-      <h1 className="mb-4 text-xl font-semibold">Edit profile</h1>
+      <div className="mb-5 flex items-center gap-2">
+        <Button variant="ghost" size="icon" aria-label="Back" onClick={() => navigate('/profile')} className="-ml-2">
+          <ArrowLeft aria-hidden="true" />
+        </Button>
+        <h1 className="text-title font-bold">Edit profile</h1>
+      </div>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <div>
           <Field
@@ -70,8 +87,8 @@ export default function EditProfile() {
           {count(displayName, 50)}
         </div>
         <ProgrammeSelect value={programme} onChange={(e) => setProgramme(e.target.value)} error={errors.programme} />
-        <div className="flex flex-col gap-1">
-          <label htmlFor="field-bio" className="text-sm font-medium">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="field-bio" className="text-body-sm font-semibold">
             Bio
           </label>
           <textarea
@@ -81,37 +98,30 @@ export default function EditProfile() {
             onChange={(e) => setBio(e.target.value)}
             aria-invalid={errors.bio ? true : undefined}
             aria-describedby={errors.bio ? 'bio-error' : undefined}
-            className="rounded-md border border-input px-3 py-2"
+            className={cn(inputClass, 'h-auto py-3')}
           />
           {count(bio, 300)}
           {errors.bio && (
-            <p id="bio-error" role="alert" className="text-sm text-destructive">
+            <p id="bio-error" role="alert" className="text-body-sm font-medium text-destructive">
               {errors.bio}
             </p>
           )}
         </div>
         {formError && (
-          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-body-sm font-medium text-destructive">
             {formError}
           </p>
         )}
         <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-60"
-          >
+          <Button type="submit" size="lg" disabled={busy} className="flex-1">
             {busy ? 'Saving…' : 'Save'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/profile')}
-            className="rounded-md border border-input px-4 py-2"
-          >
+          </Button>
+          <Button type="button" variant="outline" size="lg" onClick={() => navigate('/profile')}>
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
+      <BlockedAccounts />
     </section>
   );
 }

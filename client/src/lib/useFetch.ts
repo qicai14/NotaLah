@@ -1,24 +1,34 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, errorText } from './api';
+import { api, ApiError, errorText } from './api';
 
 interface State<T> {
   path: string | null;
   data: T | null;
   error: string | null;
+  status: number | null;
 }
 
 /** GET `path` (null = skip). `reload` refetches without clearing the data already shown; a new path starts loading afresh. */
 export function useFetch<T>(path: string | null) {
   // Results are tagged with their path, so data and loading never describe a previous path.
-  const [state, setState] = useState<State<T>>({ path: null, data: null, error: null });
+  const [state, setState] = useState<State<T>>({ path: null, data: null, error: null, status: null });
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (path === null) return;
     let live = true;
     api<T>(path)
-      .then((data) => live && setState({ path, data, error: null }))
-      .catch((e) => live && setState((s) => ({ path, data: s.path === path ? s.data : null, error: errorText(e) })));
+      .then((data) => live && setState({ path, data, error: null, status: null }))
+      .catch(
+        (e) =>
+          live &&
+          setState((s) => ({
+            path,
+            data: s.path === path ? s.data : null,
+            error: errorText(e),
+            status: e instanceof ApiError ? e.status : null,
+          })),
+      );
     return () => {
       live = false;
     };
@@ -31,6 +41,8 @@ export function useFetch<T>(path: string | null) {
     data: current ? state.data : null,
     setData,
     error: current ? state.error : null,
+    /** HTTP status of the failed call; null for a network failure. */
+    errorStatus: current ? state.status : null,
     loading: path !== null && !current,
     reload,
   };

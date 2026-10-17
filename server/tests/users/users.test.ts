@@ -153,4 +153,41 @@ describe('Profiles', () => {
     expect((await request(app).get(`/api/users/99999/notes`).set(asUser(viewer))).status).toBe(404);
     expect((await request(app).get(`/api/users/${author}/notes?cursor=x`).set(asUser(viewer))).status).toBe(400);
   });
+
+  it('USR-TC28: profile thumbnail data and likeCount: no page notes, ready assets only, only likes the viewer can see, no own likes', async () => {
+    const author = await insertUser();
+    const fan = await insertUser();
+    const stranger = await insertUser();
+    const note = await insertNote(author, { slides: 2 });
+    const hidden = await insertNote(author, { slides: 1, visibility: 'contacts' });
+    await pool.query(`UPDATE "SLIDE_T" SET sld_notes = 'private' WHERE sld_pst_id = $1`, [note]);
+    const asset = async (status: string) =>
+      (
+        await pool.query<{ ast_id: number }>(
+          `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_mime, ast_bytes, ast_status)
+           VALUES ($1, 'image', $2, 'image/png', 10, $3) RETURNING ast_id`,
+          [author, `k${Math.random()}`, status],
+        )
+      ).rows[0].ast_id;
+    const ready = await asset('ready');
+    const pending = await asset('pending');
+    await pool.query(`INSERT INTO "POST_ASSET_T" (pas_pst_id, pas_ast_id) VALUES ($1, $2), ($1, $3)`, [
+      note,
+      ready,
+      pending,
+    ]);
+    for (const [n, u] of [
+      [note, fan],
+      [note, author],
+      [hidden, fan],
+    ])
+      await pool.query(`INSERT INTO "LIKE_T" (lik_pst_id, lik_usr_id) VALUES ($1, $2)`, [n, u]);
+    const profile = (await getUser(stranger, author)).body.user;
+    expect(profile.likeCount).toBe(1);
+    expect(profile.notes).toHaveLength(1);
+    expect(profile.notes[0]).toMatchObject({ id: note, likes: 2, aspect: expect.any(String) });
+    expect(profile.notes[0].assets).toEqual({ [ready]: `/api/assets/${ready}/file` });
+    expect(profile.notes[0].cover.elements).toHaveLength(1);
+    expect(profile.notes[0].cover).not.toHaveProperty('notes');
+  });
 });
