@@ -76,8 +76,6 @@ export function Canvas({ compact }: { compact: boolean }) {
 
   /** Tracks one gesture on window, so it keeps going when the pointer leaves the board. */
   function track(g: Gesture, down: ReactPointerEvent) {
-    const store = useEditor.getState();
-    const base = store.deck;
     const others = slide.elements.filter((e) => e.id !== g.id).map(boxOf);
     const downAt = { x: down.clientX, y: down.clientY };
     const move = (ev: PointerEvent) => {
@@ -107,7 +105,7 @@ export function Canvas({ compact }: { compact: boolean }) {
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       setGuides({ x: [], y: [] });
-      useEditor.getState().commitFrom(base);
+      useEditor.getState().commit();
       // A tap on a text box that was already selected opens it for typing.
       if (g.kind === 'move' && !g.moved && g.reselect && g.isText) setEditingId(g.id);
     };

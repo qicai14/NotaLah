@@ -26,9 +26,8 @@ beforeEach(() => s().load(emptyDeck()));
 describe('editor store', () => {
   it('NOTE-TC58: undo and redo step through discrete changes and a drag counts once', () => {
     s().addElement(rect('el-000001'));
-    const base = s().deck;
     for (let x = 110; x <= 150; x += 10) s().preview((d) => patchElement(d, 0, 'el-000001', { x }));
-    s().commitFrom(base);
+    s().commit();
     expect(s().past).toHaveLength(2);
     expect(s().deck.slides[0].elements[0].x).toBe(150);
     s().undo();
@@ -91,11 +90,11 @@ describe('editor store', () => {
     s().addElement(rect('el-000001'));
     const sent = s().rev;
     s().updateElement('el-000001', { x: 300 });
-    s().markSaved(sent, { noteId: 7 });
+    s().markSaved(s().session, sent, { noteId: 7 });
     expect(s().dirty).toBe(true);
     expect(s().meta.noteId).toBe(7);
     s().setMeta({ title: 'Week 6' });
-    s().markSaved(s().rev, {});
+    s().markSaved(s().session, s().rev, {});
     expect(s().dirty).toBe(false);
     expect(s().saveState).toBe('saved');
   });

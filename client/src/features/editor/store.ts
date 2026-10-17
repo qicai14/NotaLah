@@ -14,7 +14,7 @@ import {
 /** Snapshot undo keeps at most this many steps (R21 spec 5). */
 export const HISTORY_LIMIT = 100;
 
-export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict';
+export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict' | 'locked';
 
 export interface EditorState {
   deck: Deck;
@@ -30,6 +30,10 @@ export interface EditorState {
   meta: NoteMeta;
   /** Bumped by every change, so a finished save can tell whether anything moved while it was in flight. */
   rev: number;
+  /** Bumped by every `load`, so a save reply for a previous note never writes into the one now open. */
+  session: number;
+  /** Deck before the live changes now in progress (a drag, typing, a held arrow key); one undo step once committed. */
+  previewBase: Deck | null;
   /** The TipTap instance of the text box being edited, so the toolbar can format inside it. */
   textEditor: TipTapEditor | null;
 }
@@ -68,6 +72,8 @@ const initial = (): EditorState => ({
   saveState: 'idle',
   meta: emptyMeta(),
   rev: 0,
+  session: 0,
+  previewBase: null,
   textEditor: null,
 });
 
@@ -156,10 +162,10 @@ interface Actions {
   setMeta: (patch: Partial<NoteMeta>) => void;
   /** One undoable change. */
   apply: (recipe: (deck: Deck) => Deck) => void;
-  /** Live update during a drag or while typing; not recorded until `commitFrom`. */
+  /** Live update during a drag, typing or a held key; not recorded until `commit`. */
   preview: (recipe: (deck: Deck) => Deck) => void;
-  /** Ends a drag or a text edit that started from `base`: the whole change becomes one undo step. */
-  commitFrom: (base: Deck) => void;
+  /** Ends the live changes: everything since the first `preview` becomes one undo step. */
+  commit: () => void;
   undo: () => void;
   redo: () => void;
   select: (id: string | null) => void;
@@ -173,41 +179,61 @@ interface Actions {
   updateElement: (id: string, patch: Partial<SlideElement>) => void;
   deleteElement: (id: string) => void;
   setSaveState: (s: SaveState) => void;
-  /** The server confirmed the state at `sentRev`; the note stays dirty if it changed while the save was in flight. */
-  markSaved: (sentRev: number, meta: Partial<NoteMeta>) => void;
+  /**
+   * The server confirmed the state at `sentRev` of `session`; the note stays dirty if it changed while the save was in
+   * flight, and nothing happens if another note has been loaded since.
+   */
+  markSaved: (session: number, sentRev: number, meta: Partial<NoteMeta>) => void;
 }
 
 export type EditorStore = EditorState & Actions;
 
 export const useEditor = create<EditorStore>()((set, get) => {
   const apply = (recipe: (deck: Deck) => Deck, extra: Partial<EditorState> = {}) => {
-    const { deck, past, activeSlide, selection } = get();
+    const { deck, past, activeSlide, selection, previewBase } = get();
     const next = recipe(deck);
     if (next === deck) return;
+    const before = previewBase ?? deck;
     const pos = settle(
       next,
       extra.activeSlide ?? activeSlide,
       'selection' in extra ? (extra.selection ?? null) : selection,
     );
-    set({ ...extra, ...pos, deck: next, past: capped(past, deck), future: [], dirty: true, rev: get().rev + 1 });
+    set({
+      ...extra,
+      ...pos,
+      deck: next,
+      past: before === next ? past : capped(past, before),
+      future: [],
+      previewBase: null,
+      dirty: true,
+      rev: get().rev + 1,
+    });
   };
   const active = () => get().activeSlide;
   const slideCount = () => get().deck.slides.length;
 
   return {
     ...initial(),
-    load: (deck, meta = emptyMeta()) => set({ ...initial(), deck, meta }),
+    load: (deck, meta = emptyMeta()) => set({ ...initial(), deck, meta, session: get().session + 1 }),
     setMeta: (patch) => set({ meta: { ...get().meta, ...patch }, dirty: true, rev: get().rev + 1 }),
     apply: (recipe) => apply(recipe),
     preview: (recipe) => {
-      const next = recipe(get().deck);
-      if (next !== get().deck) set({ deck: next, dirty: true, rev: get().rev + 1 });
+      const { deck, previewBase } = get();
+      const next = recipe(deck);
+      if (next !== deck) set({ deck: next, previewBase: previewBase ?? deck, dirty: true, rev: get().rev + 1 });
     },
-    commitFrom: (base) => {
-      const { deck, past } = get();
-      if (base !== deck) set({ past: capped(past, base), future: [] });
+    commit: () => {
+      const { deck, past, previewBase } = get();
+      if (!previewBase) return;
+      set(
+        previewBase === deck
+          ? { previewBase: null }
+          : { past: capped(past, previewBase), future: [], previewBase: null },
+      );
     },
     undo: () => {
+      get().commit(); // live changes in progress are the step that undo takes back
       const { past, future, deck, activeSlide, selection } = get();
       if (!past.length) return;
       const prev = past[past.length - 1];
@@ -221,6 +247,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
       });
     },
     redo: () => {
+      get().commit();
       const { past, future, deck, activeSlide, selection } = get();
       if (!future.length) return;
       const next = future[0];
@@ -276,7 +303,9 @@ export const useEditor = create<EditorStore>()((set, get) => {
         selection: null,
       }),
     setSaveState: (saveState) => set({ saveState }),
-    markSaved: (sentRev, meta) =>
-      set({ saveState: 'saved', dirty: get().rev !== sentRev, meta: { ...get().meta, ...meta } }),
+    markSaved: (session, sentRev, meta) => {
+      if (session !== get().session) return;
+      set({ saveState: 'saved', dirty: get().rev !== sentRev, meta: { ...get().meta, ...meta } });
+    },
   };
 });

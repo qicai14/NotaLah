@@ -10,7 +10,6 @@ import { patchElement, useEditor } from './store';
  * the whole edit becomes one undo step when the box closes. TipTap owns Ctrl+Z while it has focus.
  */
 export function TextEditing({ el, slide }: { el: TextElement; slide: number }) {
-  const base = useRef(useEditor.getState().deck);
   const box = useRef<HTMLDivElement>(null);
   const editor = useTipTap({
     extensions: TEXT_EXTENSIONS,
@@ -35,7 +34,7 @@ export function TextEditing({ el, slide }: { el: TextElement; slide: number }) {
     requestAnimationFrame(() => editor?.commands.focus('end'));
     return () => {
       useEditor.setState({ textEditor: null });
-      useEditor.getState().commitFrom(base.current);
+      useEditor.getState().commit();
     };
   }, [editor]);
 
