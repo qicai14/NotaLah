@@ -24,10 +24,7 @@ import { SavedNotes } from '../feed/SavedNotes';
 import { BlockDialog } from './BlockDialog';
 import { PeopleDialog } from './PeopleDialog';
 
-const compact = new Intl.NumberFormat('en', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 const isBlocked = (u: ProfileData | BlockedProfile): u is BlockedProfile => u.blockedByMe === true;
 
@@ -37,9 +34,9 @@ export default function Profile() {
   const { user } = useAuth();
   const uid = id ?? String(user?.id);
   const afterUnblock = useRef(false);
-  const { data, setData, error, errorStatus, loading, reload } = useFetch<{
-    user: ProfileData | BlockedProfile;
-  }>(`/users/${uid}`);
+  const { data, setData, error, errorStatus, loading, reload } = useFetch<{ user: ProfileData | BlockedProfile }>(
+    `/users/${uid}`,
+  );
 
   if (loading) return <ProfileSkeleton />;
   if (errorStatus === 404) return <Unavailable />;
@@ -68,14 +65,7 @@ export default function Profile() {
       own={p.id === user?.id}
       focusName={afterUnblock.current}
       onFollowState={(s) => setData((d) => d && { user: { ...(d.user as ProfileData), ...s } })}
-      onBlocked={() =>
-        setData(
-          (d) =>
-            d && {
-              user: { id: p.id, displayName: p.displayName, blockedByMe: true },
-            },
-        )
-      }
+      onBlocked={() => setData((d) => d && { user: { id: p.id, displayName: p.displayName, blockedByMe: true } })}
       reload={reload}
     />
   );

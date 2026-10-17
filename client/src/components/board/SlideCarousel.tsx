@@ -44,9 +44,15 @@ export function SlideCarousel({
 }) {
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
+  const group = useRef<HTMLDivElement>(null);
   const last = slides.length - 1;
   const cur = Math.min(index, Math.max(0, last));
   const go = (i: number) => setIndex(Math.max(0, Math.min(last, i)));
+  /** A chevron that has just reached the end fades out and is disabled, so focus moves to the carousel instead of being lost. */
+  const step = (to: number) => {
+    go(to);
+    if (to <= 0 || to >= last) group.current?.focus();
+  };
 
   if (slides.length === 0) return <p className="text-body-sm text-muted-foreground">This note has no slides.</p>;
 
@@ -57,12 +63,13 @@ export function SlideCarousel({
 
   return (
     <div
+      ref={group}
       role="group"
       aria-roledescription="carousel"
       aria-label="Slides"
       tabIndex={0}
       onKeyDown={onKey}
-      className="relative size-full min-h-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="relative size-full min-h-0 rounded-lg bg-media-backdrop outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div
         className="relative size-full touch-pan-y rounded-lg"
@@ -94,7 +101,7 @@ export function SlideCarousel({
             type="button"
             aria-label="Previous slide"
             disabled={cur === 0}
-            onClick={() => go(cur - 1)}
+            onClick={() => step(cur - 1)}
             className={cn(arrow, 'pointer-events-auto')}
           >
             <ChevronLeft aria-hidden="true" className="size-6" />
@@ -115,7 +122,7 @@ export function SlideCarousel({
             type="button"
             aria-label="Next slide"
             disabled={cur === last}
-            onClick={() => go(cur + 1)}
+            onClick={() => step(cur + 1)}
             className={cn(arrow, 'pointer-events-auto')}
           >
             <ChevronRight aria-hidden="true" className="size-6" />

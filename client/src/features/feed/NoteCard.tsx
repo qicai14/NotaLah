@@ -63,7 +63,7 @@ export const NoteCard = memo(function NoteCard({
     <NoteActions
       note={item}
       onOpenComments={() => onOpenComments(item)}
-      onVerify={(v) => setItem((n) => ({ ...n, ...v }))}
+      onChange={(v) => setItem((n) => ({ ...n, ...v }))}
     />
   );
 
@@ -89,9 +89,9 @@ export const NoteCard = memo(function NoteCard({
           </div>
         )}
 
-        <div className="relative flex min-h-0 flex-1 flex-col justify-center px-2 py-2 md:px-6">
+        <div className="relative flex min-h-0 flex-1 flex-col justify-center py-2 max-md:bg-media-backdrop md:px-6">
           {item.module && (
-            <p className="mb-2 text-caption font-semibold text-muted-foreground">
+            <p className="mb-2 text-caption font-semibold text-muted-foreground max-md:hidden">
               {item.module.code}
               <span className="sr-only">, {item.module.name}</span>
             </p>

@@ -51,6 +51,8 @@ describe('carousel dots', () => {
     for (let i = 0; i < 6; i++) await userEvent.click(container.querySelector('button[aria-label="Next slide"]')!);
     expect(dots()[3]).toBe('current');
     expect(dots()[0]).toBe('edge');
+    for (let i = 0; i < 5; i++) await userEvent.click(container.querySelector('button[aria-label="Next slide"]')!);
+    expect(document.activeElement).toBe(container.querySelector('[aria-roledescription="carousel"]'));
     cleanup();
     const one = render(<SlideCarousel slides={slides(1)} aspect="4:5" assets={{}} />);
     expect(one.container.querySelector('button')).toBeNull();

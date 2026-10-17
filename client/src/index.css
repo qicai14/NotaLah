@@ -54,6 +54,7 @@
   --media: #ffffff;
   --media-dim: rgb(255 255 255 / 0.5);
   --media-shadow: rgb(0 0 0 / 0.7);
+  --media-backdrop: #0b0c10;
   --editor-guide: #e5167a;
   --editor-canvas: #eceef2;
   --shadow-color: 220 20% 10%;
@@ -104,6 +105,7 @@
   --media: #ffffff;
   --media-dim: rgb(255 255 255 / 0.5);
   --media-shadow: rgb(0 0 0 / 0.7);
+  --media-backdrop: #0b0c10;
   --editor-guide: #ff5fae;
   --editor-canvas: #0a0b0f;
   --shadow-color: 0 0% 0%;
@@ -144,6 +146,7 @@
   --color-board-credit-foreground: var(--board-credit-foreground);
   --color-media: var(--media);
   --color-media-dim: var(--media-dim);
+  --color-media-backdrop: var(--media-backdrop);
   --color-editor-guide: var(--editor-guide);
   --color-editor-canvas: var(--editor-canvas);
 }

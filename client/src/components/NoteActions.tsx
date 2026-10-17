@@ -18,8 +18,6 @@ import { SuperLikeDialog } from '../features/verification/SuperLikeDialog';
 import { ReportDialog } from './ReportDialog';
 import { UserAvatar } from './UserAvatar';
 
-type VerifyState = Pick<Note, 'verified' | 'verifiedBy' | 'verifiedByMe'>;
-
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
 const circle =
@@ -27,6 +25,8 @@ const circle =
 /** On phones the feed rail floats over the slide, so its icons go bare and white with a halo (md: and up keep the circle). */
 const overlayCircle =
   'max-md:size-11 max-md:bg-transparent max-md:text-media max-md:media-shadow max-md:group-hover:bg-transparent';
+
+const circleFor = (bar: boolean) => cn(circle, !bar && overlayCircle);
 
 /** One rail control: a round icon button with its count or label underneath. */
 function RailButton({
@@ -50,7 +50,7 @@ function RailButton({
 }) {
   const inner = (
     <>
-      <span className={cn(circle, !bar && overlayCircle)}>{icon}</span>
+      <span className={circleFor(bar)}>{icon}</span>
       {caption !== undefined && (
         <span
           aria-hidden="true"
@@ -91,7 +91,7 @@ function RailButton({
 /**
  * The action rail beside a note: author, like, comments, save, Super Like (approved lecturers) and More. `bar` lays it
  * out in a row (note detail on phones). `onOpenComments` opens the comments panel; without it the button links to
- * the note. Guests get the R31 log-in sheet instead of a write. `onVerify` lets the parent redraw the verified mark.
+ * the note. Guests get the R31 log-in sheet instead of a write. `onChange` hands the parent every change (like, save, Super Like) so it can keep the note current; the parent remounts this component when the layout changes.
  */
 export function NoteActions({
   note,
@@ -99,14 +99,14 @@ export function NoteActions({
   showAuthor = true,
   commentsLink = true,
   onOpenComments,
-  onVerify,
+  onChange,
 }: {
   note: Note;
   layout?: 'rail' | 'bar';
   showAuthor?: boolean;
   commentsLink?: boolean;
   onOpenComments?(): void;
-  onVerify(v: VerifyState): void;
+  onChange(patch: Partial<Note>): void;
 }) {
   const { user } = useAuth();
   const askToLogIn = useGuestPrompt();
@@ -129,9 +129,14 @@ export function NoteActions({
         method: on ? 'DELETE' : 'POST',
       });
       if (kind === 'like') {
+        const nextLikes = r.likes ?? likes;
         setLiked(!!r.liked);
-        setLikes(r.likes ?? likes);
-      } else setSaved(!!r.bookmarked);
+        setLikes(nextLikes);
+        onChange({ liked: !!r.liked, counts: { ...note.counts, likes: nextLikes } });
+      } else {
+        setSaved(!!r.bookmarked);
+        onChange({ bookmarked: !!r.bookmarked });
+      }
     });
   };
 
@@ -140,7 +145,7 @@ export function NoteActions({
       const r = await api<{ verified: boolean; verifiedBy: string | null }>(`/notes/${note.id}/verify`, {
         method: 'DELETE',
       });
-      onVerify({ ...r, verifiedByMe: false });
+      onChange({ ...r, verifiedByMe: false });
     });
 
   const report = () => (user ? setReporting(true) : askToLogIn({ action: 'report', returnTo }));
@@ -151,13 +156,13 @@ export function NoteActions({
       <div
         role="group"
         aria-label="Note actions"
-        className={cn('flex items-center', bar ? 'flex-row flex-wrap gap-2' : 'flex-col gap-4 max-md:gap-2')}
+        className={cn('flex items-center', bar ? 'flex-row flex-wrap gap-2' : 'flex-col gap-4 max-md:gap-1')}
       >
         {showAuthor && !bar && (
           <Link
             to={`/users/${note.author.id}`}
             aria-label={`${note.author.displayName}'s profile`}
-            className="mb-1 rounded-full ring-2 ring-background max-md:ring-media max-md:shadow-(--shadow-float)"
+            className="mb-1 rounded-full ring-2 ring-background max-md:ring-media max-md:shadow-(--shadow-float) max-md:[@media(max-height:720px)]:hidden"
           >
             <UserAvatar name={note.author.displayName} className="size-action" />
           </Link>
@@ -226,7 +231,7 @@ export function NoteActions({
             aria-label="More actions"
             className={cn('group flex cursor-pointer rounded-full', bar ? 'flex-row' : 'flex-col')}
           >
-            <span className={cn(circle, !bar && overlayCircle)}>
+            <span className={circleFor(bar)}>
               <MoreHorizontal aria-hidden="true" className="size-6" />
             </span>
           </DropdownMenuTrigger>
@@ -262,7 +267,7 @@ export function NoteActions({
           onClose={() => setSuperLiking(false)}
           onDone={(me) => {
             setSuperLiking(false);
-            onVerify({ verified: true, verifiedBy: note.verifiedBy ?? me, verifiedByMe: true }); // the earliest verifier keeps the label
+            onChange({ verified: true, verifiedBy: note.verifiedBy ?? me, verifiedByMe: true }); // the earliest verifier keeps the label
           }}
         />
       )}

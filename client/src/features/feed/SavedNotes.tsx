@@ -62,6 +62,7 @@ export function SavedNotes() {
               type="button"
               variant="outline"
               size="sm"
+              className="max-md:min-h-11"
               disabled={removal.pending}
               onClick={() => remove(n.id)}
               aria-label={`Remove ${n.title} from saved`}
