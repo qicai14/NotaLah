@@ -64,6 +64,9 @@ export function Canvas({ compact }: { compact: boolean }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [guides, setGuides] = useState<Guides>({ x: [], y: [] });
   const board = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  /** The pointer driving the current gesture; a second finger or pen is ignored until it ends. */
+  const activePointer = useRef<number | null>(null);
   const editing = editingId && selected?.id === editingId && selected.type === 'text' ? selected : null;
 
   const toBoard = useCallback(
@@ -76,6 +79,7 @@ export function Canvas({ compact }: { compact: boolean }) {
 
   /** Tracks one gesture on window, so it keeps going when the pointer leaves the board. */
   function track(g: Gesture, down: ReactPointerEvent) {
+    activePointer.current = down.pointerId;
     const others = slide.elements.filter((e) => e.id !== g.id).map(boxOf);
     const downAt = { x: down.clientX, y: down.clientY };
     const move = (ev: PointerEvent) => {
@@ -104,6 +108,7 @@ export function Canvas({ compact }: { compact: boolean }) {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
+      activePointer.current = null;
       setGuides({ x: [], y: [] });
       useEditor.getState().commit();
       // A tap on a text box that was already selected opens it for typing.
@@ -115,7 +120,7 @@ export function Canvas({ compact }: { compact: boolean }) {
   }
 
   function onElementDown(e: ReactPointerEvent<HTMLDivElement>, el: SlideElement) {
-    if (e.button !== 0 || el.id === editing?.id) return;
+    if (e.button !== 0 || el.id === editing?.id || activePointer.current !== null) return;
     e.preventDefault();
     e.currentTarget.focus({ preventScroll: true });
     const reselect = selection === el.id;
@@ -137,7 +142,7 @@ export function Canvas({ compact }: { compact: boolean }) {
   }
 
   function onHandleDown(e: ReactPointerEvent, handle: Handle | 'rotate') {
-    if (!selected || e.button !== 0) return;
+    if (!selected || e.button !== 0 || activePointer.current !== null) return;
     e.preventDefault();
     e.stopPropagation();
     const start = boxOf(selected);
@@ -146,7 +151,7 @@ export function Canvas({ compact }: { compact: boolean }) {
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    const { select, deleteElement, updateElement } = useEditor.getState();
+    const { select, deleteElement, preview } = useEditor.getState();
     if (editing) {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -166,11 +171,12 @@ export function Canvas({ compact }: { compact: boolean }) {
     if (nudge[e.key] && !selected.locked) {
       e.preventDefault();
       const b = moveBox(boxOf(selected), ...nudge[e.key]);
-      updateElement(selected.id, { x: b.x, y: b.y });
+      // Held or repeated arrows are one undo step, committed on key up or blur.
+      preview((d) => patchElement(d, active, selected.id, { x: b.x, y: b.y }));
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && !selected.locked) {
       e.preventDefault();
       deleteElement(selected.id);
-      board.current?.focus();
+      frame.current?.focus(); // the deleted element had focus; keep it inside the canvas
     } else if (e.key === 'Enter' && selected.type === 'text' && !selected.locked) {
       e.preventDefault();
       setEditingId(selected.id);
@@ -279,6 +285,8 @@ export function Canvas({ compact }: { compact: boolean }) {
     <div
       className={cn('relative size-full', compact ? 'p-4' : 'p-10')}
       onKeyDown={onKeyDown}
+      onKeyUp={(e) => e.key.startsWith('Arrow') && useEditor.getState().commit()}
+      onBlur={() => useEditor.getState().commit()}
       onPointerDown={(e) => {
         if (e.target === e.currentTarget) {
           setEditingId(null);
@@ -286,7 +294,11 @@ export function Canvas({ compact }: { compact: boolean }) {
         }
       }}
     >
-      <div className="size-full [&_[aria-roledescription=slide]]:shadow-(--shadow-card)" tabIndex={-1}>
+      <div
+        ref={frame}
+        className="size-full outline-none [&_[aria-roledescription=slide]]:shadow-(--shadow-card)"
+        tabIndex={-1}
+      >
         <SlideBoard
           slide={slide}
           aspect={deck.aspect}

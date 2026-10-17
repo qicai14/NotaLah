@@ -193,7 +193,8 @@ export const useEditor = create<EditorStore>()((set, get) => {
     const { deck, past, activeSlide, selection, previewBase } = get();
     const next = recipe(deck);
     if (next === deck) return;
-    const before = previewBase ?? deck;
+    // Live changes still in progress become their own step first, so this change undoes on its own.
+    const settled = previewBase && previewBase !== deck ? capped(past, previewBase) : past;
     const pos = settle(
       next,
       extra.activeSlide ?? activeSlide,
@@ -203,7 +204,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
       ...extra,
       ...pos,
       deck: next,
-      past: before === next ? past : capped(past, before),
+      past: capped(settled, deck),
       future: [],
       previewBase: null,
       dirty: true,

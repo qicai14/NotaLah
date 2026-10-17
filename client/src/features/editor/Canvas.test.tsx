@@ -55,6 +55,9 @@ describe('editor canvas', () => {
     expect(s().deck.slides[0].elements.map((e) => e.id)).toEqual(['el-0000002']);
     s().undo();
     expect(s().deck.slides[0].elements).toHaveLength(2);
+    expect(s().deck.slides[0].elements[0]).toMatchObject({ x: 101, y: 110 }); // the nudges are their own step
+    s().undo();
+    expect(s().deck.slides[0].elements[0]).toMatchObject({ x: 100, y: 100 });
   });
 
   it('NOTE-TC62: the layers panel lists top first and reorders without dragging', () => {

@@ -1,6 +1,6 @@
-import { LIMITS } from '@parp/shared';
+import { type Aspect, LIMITS, type Slide } from '@parp/shared';
 import { ArrowLeft, ArrowRight, Copy, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
-import { type PointerEvent as ReactPointerEvent, useRef, useState } from 'react';
+import { memo, type PointerEvent as ReactPointerEvent, useRef, useState } from 'react';
 import { SlideBoard } from '@/components/board/SlideBoard';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useEditor } from './store';
+
+/** A slide preview that re-renders only when its own slide changes (unchanged slides keep their object identity). */
+const Thumb = memo(function Thumb({ slide, aspect }: { slide: Slide; aspect: Aspect }) {
+  return (
+    <span className="pointer-events-none block size-full" aria-hidden="true">
+      <SlideBoard slide={slide} aspect={aspect} />
+    </span>
+  );
+});
 
 /**
  * Thumbnails of every slide: click to open, drag with a mouse to reorder (the menu's Move left/right is the single-pointer and
@@ -77,9 +86,7 @@ export function SlideStrip({ compact }: { compact: boolean }) {
                 drag?.from === i && 'opacity-50',
               )}
             >
-              <span className="pointer-events-none block size-full" aria-hidden="true">
-                <SlideBoard slide={s} aspect={deck.aspect} label={`Slide ${i + 1}`} />
-              </span>
+              <Thumb slide={s} aspect={deck.aspect} />
             </button>
             <span className="pointer-events-none absolute bottom-1 left-1 rounded-sm bg-board-credit px-1 text-caption tabular-nums text-board-credit-foreground">
               {i + 1}
