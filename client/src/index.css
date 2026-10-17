@@ -51,6 +51,8 @@
   --board-code-dark-foreground: #e9ebf2;
   --board-credit: rgb(0 0 0 / 0.6);
   --board-credit-foreground: #ffffff;
+  --editor-guide: #e5167a;
+  --editor-canvas: #eceef2;
   --shadow-color: 220 20% 10%;
   color-scheme: light;
 }
@@ -96,6 +98,8 @@
   --board-code-dark-foreground: #e9ebf2;
   --board-credit: rgb(0 0 0 / 0.6);
   --board-credit-foreground: #ffffff;
+  --editor-guide: #ff5fae;
+  --editor-canvas: #0a0b0f;
   --shadow-color: 0 0% 0%;
   color-scheme: dark;
 }
@@ -132,6 +136,8 @@
   --color-slide-foreground: var(--slide-foreground);
   --color-board-credit: var(--board-credit);
   --color-board-credit-foreground: var(--board-credit-foreground);
+  --color-editor-guide: var(--editor-guide);
+  --color-editor-canvas: var(--editor-canvas);
 }
 
 @theme {
@@ -245,67 +251,6 @@
   box-decoration-break: clone;
 }
 
-/* Slide content in the old editor (R21c replaces it): Tailwind's reset strips these element styles. */
-.slide-content {
-  background-color: var(--slide);
-  border-color: var(--border);
-  color: var(--slide-foreground);
-}
-.slide-content > * + * {
-  margin-top: 0.6em;
-}
-.slide-content h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.slide-content h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-}
-.slide-content h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.slide-content ul {
-  list-style: disc;
-  padding-left: 1.4rem;
-}
-.slide-content ol {
-  list-style: decimal;
-  padding-left: 1.4rem;
-}
-.slide-content blockquote {
-  border-left: 3px solid var(--slide-rule);
-  padding-left: 0.8rem;
-  color: var(--slide-quote);
-}
-.slide-content code {
-  background: var(--slide-muted);
-  border-radius: 4px;
-  padding: 0 0.25em;
-  font-family: var(--font-mono);
-}
-.slide-content pre {
-  background: var(--code-block);
-  color: var(--code-block-foreground);
-  border-radius: 6px;
-  padding: 0.7rem;
-  overflow-x: auto;
-}
-.slide-content pre code {
-  background: none;
-  padding: 0;
-}
-.slide-content hr {
-  border-color: var(--slide-rule);
-}
-.slide-content.ProseMirror {
-  outline: none;
-  min-height: 12rem;
-}
-
 /* Server-sanitised text inside a SlideBoard. Sizes are em, so they follow the element's font size in board units;
  * colours come from the deck (currentColor), never from the app theme. */
 .board-text > * + * {
@@ -375,4 +320,13 @@
   .backdrop-blur-md {
     backdrop-filter: none;
   }
+}
+
+/* The text box being edited: TipTap's root sits inside the board text box, so spacing applies one level down. */
+.board-text .ProseMirror {
+  min-height: 100%;
+  outline: none;
+}
+.board-text .ProseMirror > * + * {
+  margin-top: 0.5em;
 }

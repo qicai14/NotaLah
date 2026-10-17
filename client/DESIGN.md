@@ -144,8 +144,15 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   ("Already have an account? Log in") centred below in `text-body-sm`.
 - **Slides.** `SlideCarousel` (`components/board/`) shows a note's slides with prev/next, arrow keys and swipe; it
   fills its parent, so give the parent a height (`h-[min(36rem,64dvh)]`, or `min-h-0 flex-1` in a flex column). Each slide is a
-  `SlideBoard`, a fixed 1000 x H board scaled to fit; slide colours come from the deck, not the theme. Only the old editor
-  still uses `.slide-content` in `index.css`.
+  `SlideBoard`, a fixed 1000 x H board scaled to fit; slide colours come from the deck, not the theme.
+- **Editor** (`features/editor/`, R21c). Full-window route outside `AppShell`. Desktop: top bar (Drafts, title, save
+  status, undo/redo, slide size, Save draft, Publish/Update), a `w-rail-collapsed` panel rail with a `w-80` panel, the
+  contextual `ElementBar` (h-12) above the canvas on `bg-editor-canvas`, and the slide strip below. Phone: the same top
+  bar, the element bar, canvas, a compact strip, and a 4-button tool tray whose panels open as bottom sheets. State lives
+  in the zustand store (`store.ts`); every change goes through `apply` (one undo step) or `preview` + `commitFrom` (a drag
+  or a text edit as one step). Selection frame and handles use `--primary`; snap guides use `--editor-guide`. Handles are
+  10 px (22 px target) on desktop and 14 px (44 px target) on phones; phones get corner handles only and centre snap.
+  Background and shape swatches are deck colours, so they are the one place raw hex values appear in components.
 
 ## 8. Accessibility checklist
 

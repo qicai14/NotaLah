@@ -13,17 +13,17 @@ const Search = lazy(() => import('./features/search/Search'));
 const Saved = lazy(() => import('./features/feed/Saved'));
 const Drafts = lazy(() => import('./features/notes/Drafts'));
 const NoteDetail = lazy(() => import('./features/notes/NoteDetail'));
-const NoteEditor = lazy(() => import('./features/notes/NoteEditor'));
+const EditorPage = lazy(() => import('./features/editor/EditorPage'));
 const EditProfile = lazy(() => import('./features/users/EditProfile'));
 const Profile = lazy(() => import('./features/users/Profile'));
 const AdminLecturers = lazy(() => import('./features/moderation/AdminLecturers'));
 const AdminReports = lazy(() => import('./features/moderation/AdminReports'));
 const AdminUsers = lazy(() => import('./features/moderation/AdminUsers'));
 
-/** One NoteEditor per note id: /notes/new and /notes/:id/edit must never share state. */
+/** One editor per note id: /notes/new and /notes/:id/edit must never share state. */
 function EditorRoute() {
   const { id } = useParams();
-  return <NoteEditor key={id ?? 'new'} />;
+  return <EditorPage key={id ?? 'new'} />;
 }
 
 /** The Feed is open to guests (R31) once they choose "Browse as guest"; other signed-out visitors start at Welcome. */
@@ -48,8 +48,6 @@ function ShellRoutes() {
         <Routes>
           <Route path="/" element={<FeedRoute />} />
           <Route path="/search" element={<Search />} />
-          <Route path="/notes/new" element={signedIn(<EditorRoute />)} />
-          <Route path="/notes/:id/edit" element={signedIn(<EditorRoute />)} />
           <Route path="/notes/:id" element={<NoteDetail />} />
           <Route path="/drafts" element={signedIn(<Drafts />)} />
           <Route path="/saved" element={signedIn(<Saved />)} />
@@ -73,6 +71,9 @@ export default function App() {
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/login" element={<Welcome dialog="login" />} />
           <Route path="/register" element={<Welcome dialog="register" />} />
+          {/* The editor fills the window (wireframes 19-29), so it sits outside the app shell. */}
+          <Route path="/notes/new" element={signedIn(<EditorRoute />)} />
+          <Route path="/notes/:id/edit" element={signedIn(<EditorRoute />)} />
           <Route path="*" element={<ShellRoutes />} />
         </Routes>
       </Suspense>

@@ -1,4 +1,12 @@
-import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+  type Ref,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Play } from 'lucide-react';
 import {
   BOARD_WIDTH,
@@ -46,19 +54,21 @@ function Background({ fill, assets }: { fill: Fill; assets: Assets }) {
   );
 }
 
+export const textBoxStyle = (el: El<'text'>): CSSProperties => ({
+  fontFamily: FONT_STACK[el.font],
+  fontSize: el.size,
+  fontWeight: el.weight,
+  color: el.color,
+  textAlign: el.align,
+  lineHeight: el.lineHeight,
+  letterSpacing: el.letterSpacing,
+  padding: el.padding,
+  background: el.fill,
+  textShadow: el.shadow && `${el.shadow.x}px ${el.shadow.y}px ${el.shadow.blur}px ${el.shadow.color}`,
+});
+
 function TextBox({ el }: { el: El<'text'> }) {
-  const style: CSSProperties = {
-    fontFamily: FONT_STACK[el.font],
-    fontSize: el.size,
-    fontWeight: el.weight,
-    color: el.color,
-    textAlign: el.align,
-    lineHeight: el.lineHeight,
-    letterSpacing: el.letterSpacing,
-    padding: el.padding,
-    background: el.fill,
-    textShadow: el.shadow && `${el.shadow.x}px ${el.shadow.y}px ${el.shadow.blur}px ${el.shadow.color}`,
-  };
+  const style = textBoxStyle(el);
   // The server sanitised this HTML against the editor allow-list (R21 spec 2.5), so it is safe to inject.
   return (
     <div
@@ -241,9 +251,24 @@ function Body({ el, assets }: { el: SlideElement; assets: Assets }) {
   }
 }
 
+/** Editing hooks for `mode="edit"`; the editor owns selection, gestures and the overlay it draws. */
+export interface BoardEditing {
+  /** Replaces the element's body (the selected text box mounts TipTap here). */
+  renderBody?: (el: SlideElement) => ReactNode | undefined;
+  onElementPointerDown?: (e: ReactPointerEvent<HTMLDivElement>, el: SlideElement) => void;
+  onBackgroundPointerDown?: (e: ReactPointerEvent<HTMLDivElement>) => void;
+  /** Accessible name and focus handling for each element, so the board can be worked from the keyboard. */
+  elementLabel?: (el: SlideElement) => string;
+  onElementFocus?: (el: SlideElement) => void;
+  /** Drawn above the elements, inside the board's coordinate space (selection frame, handles, guides). */
+  overlay?: ReactNode;
+  boardRef?: Ref<HTMLDivElement>;
+  onScale?: (scale: number) => void;
+}
+
 /**
  * One slide on its logical board (1000 x H units, R21 spec 1.1), scaled to fit its parent with a CSS transform.
- * The parent sets the size; the board is centred and never cropped. `mode="edit"` arrives with R21c.
+ * The parent sets the size; the board is centred and never cropped. `mode="edit"` adds the editor's hooks.
  */
 export function SlideBoard({
   slide,
@@ -251,27 +276,35 @@ export function SlideBoard({
   mode = 'view',
   assets = {},
   label = 'Slide',
+  editing,
 }: {
   slide: BoardSlide;
   aspect: Aspect;
-  mode?: 'view';
+  mode?: 'view' | 'edit';
   assets?: Assets;
   label?: string;
+  editing?: BoardEditing;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
   const height = boardHeight(aspect);
+  const onScale = editing?.onScale;
+  const edit = mode === 'edit' ? editing : undefined;
 
   useLayoutEffect(() => {
     const node = box.current;
     if (!node) return;
-    const measure = () => setScale(fitScale(node.clientWidth, node.clientHeight, aspect));
+    const measure = () => {
+      const s = fitScale(node.clientWidth, node.clientHeight, aspect);
+      setScale(s);
+      onScale?.(s);
+    };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(measure);
     ro.observe(node);
     return () => ro.disconnect();
-  }, [aspect]);
+  }, [aspect, onScale]);
 
   const credits = creditsOf(slide);
   return (
@@ -288,15 +321,25 @@ export function SlideBoard({
         }}
       >
         <div
+          ref={edit?.boardRef}
           className="absolute top-0 left-0 origin-top-left"
           style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
         >
-          <Background fill={slide.background} assets={assets} />
+          <div className="absolute inset-0" onPointerDown={edit?.onBackgroundPointerDown}>
+            <Background fill={slide.background} assets={assets} />
+          </div>
           {inReadingOrder(slide.elements).map(({ el, z }) => (
             <div
               key={el.id}
               data-element={el.type}
-              className="absolute"
+              data-id={edit ? el.id : undefined}
+              tabIndex={edit ? 0 : undefined}
+              role={edit ? 'group' : undefined}
+              aria-roledescription={edit ? 'element' : undefined}
+              aria-label={edit?.elementLabel?.(el)}
+              onPointerDown={edit?.onElementPointerDown && ((e) => edit.onElementPointerDown?.(e, el))}
+              onFocus={edit?.onElementFocus && ((e) => e.target === e.currentTarget && edit.onElementFocus?.(el))}
+              className={edit ? 'absolute touch-none outline-none' : 'absolute'}
               style={{
                 left: el.x,
                 top: el.y,
@@ -307,9 +350,10 @@ export function SlideBoard({
                 transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
               }}
             >
-              <Body el={el} assets={assets} />
+              {edit?.renderBody?.(el) ?? <Body el={el} assets={assets} />}
             </div>
           ))}
+          {edit?.overlay}
         </div>
         {credits.length > 0 && (
           <p className="absolute bottom-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
