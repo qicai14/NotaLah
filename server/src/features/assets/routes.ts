@@ -7,7 +7,8 @@ import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/
 import { uploadLimiter } from '../auth/rateLimit';
 import { ASSETS, assetUrl } from './config';
 import { reencodeImage } from './image';
-import { getReadableAsset, insertImage } from './repository';
+import { parseKeyset } from '../../lib/keyset';
+import { getReadableAsset, insertImage, listMyImages } from './repository';
 import { sendAsset } from './service';
 
 export const assetsRouter = Router();
@@ -49,6 +50,13 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
     return res.status(413).json({ error: 'Storage limit of 500 MB reached. Delete notes or images to free space' });
   }
   res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
+});
+
+assetsRouter.get('/images', requireAuth, async (req, res) => {
+  const page = parseKeyset(req, res, 2, 30);
+  if (!page) return;
+  const { items, nextCursor } = await listMyImages(me(req).id, page);
+  res.json({ assets: items.map((a) => ({ ...a, url: assetUrl(a.id) })), nextCursor });
 });
 
 assetsRouter.get('/:id/file', optionalAuth, async (req, res) => {

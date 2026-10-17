@@ -4,6 +4,8 @@ import {
   ChevronUp,
   Circle,
   Diamond,
+  Film,
+  ImageIcon,
   Info,
   Layers,
   Lock,
@@ -13,20 +15,24 @@ import {
   Square,
   Triangle,
   Type,
+  Upload,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { inputClass } from '@/components/Field';
 import { cn } from '@/lib/utils';
 import type { ModuleRef } from '@/types';
 import { HashtagInput } from '../notes/HashtagInput';
-import { elementLabel, makeLine, makeShape, makeText, SHAPES, TEXT_PRESETS } from './elements';
+import { elementLabel, makeCode, makeLine, makeShape, makeTable, makeText, SHAPES, TEXT_PRESETS } from './elements';
+import { PhotosPanel, UploadsPanel } from './MediaPanels';
 import { mapSlide, useEditor } from './store';
 
-export type PanelId = 'text' | 'elements' | 'background' | 'layers' | 'details';
+export type PanelId = 'text' | 'elements' | 'uploads' | 'photos' | 'background' | 'layers' | 'details';
 
 export const PANELS: { id: PanelId; label: string; icon: typeof Type }[] = [
   { id: 'text', label: 'Text', icon: Type },
   { id: 'elements', label: 'Elements', icon: Shapes },
+  { id: 'uploads', label: 'Uploads', icon: Upload },
+  { id: 'photos', label: 'Photos', icon: ImageIcon },
   { id: 'background', label: 'Background', icon: Palette },
   { id: 'layers', label: 'Layers', icon: Layers },
   { id: 'details', label: 'Details', icon: Info },
@@ -126,6 +132,36 @@ function ElementsPanel({ onAdd }: { onAdd?: () => void }) {
               </button>
             );
           })}
+        </div>
+      </Section>
+      <Section title="Blocks">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            className={cn(tile, 'h-24 flex-col items-start justify-start gap-1 p-3 text-left')}
+            onClick={() => add(makeCode(h()))}
+          >
+            <span className="text-body-sm font-semibold">Code block</span>
+            <span className="font-mono text-caption text-muted-foreground">SELECT * FROM</span>
+          </button>
+          <button
+            type="button"
+            className={cn(tile, 'h-24 flex-col items-start justify-start gap-1 p-3 text-left')}
+            onClick={() => add(makeTable(h()))}
+          >
+            <span className="text-body-sm font-semibold">Table</span>
+            <span className="text-caption text-muted-foreground">Up to 20 rows and 8 columns</span>
+          </button>
+          <div
+            aria-disabled="true"
+            className="col-span-2 flex h-14 items-center gap-3 rounded-md border border-dashed border-input px-3 text-muted-foreground"
+          >
+            <Film className="size-5 shrink-0" aria-hidden="true" />
+            <span className="flex flex-col">
+              <span className="text-body-sm font-semibold">Video</span>
+              <span className="text-caption">Short clips arrive with video uploads.</span>
+            </span>
+          </div>
         </div>
       </Section>
       <Section title="Lines">
@@ -335,6 +371,8 @@ export function PanelBody({ id, details, onAdd }: { id: PanelId; details: Detail
     <div className="flex flex-col gap-5">
       {id === 'text' && <TextPanel onAdd={onAdd} />}
       {id === 'elements' && <ElementsPanel onAdd={onAdd} />}
+      {id === 'uploads' && <UploadsPanel onAdd={onAdd} />}
+      {id === 'photos' && <PhotosPanel onAdd={onAdd} />}
       {id === 'background' && <BackgroundPanel />}
       {id === 'layers' && <LayersPanel />}
       {id === 'details' && <DetailsPanel d={details} />}

@@ -36,6 +36,10 @@ export interface EditorState {
   previewBase: Deck | null;
   /** The TipTap instance of the text box being edited, so the toolbar can format inside it. */
   textEditor: TipTapEditor | null;
+  /** Upload id to file URL for the board (the note's `assets` map plus anything uploaded since); not in undo. */
+  assets: Record<string, string>;
+  /** The text box, code block or table open for typing (at most one, and only while it is the sole selection). */
+  editingId: string | null;
 }
 
 export interface NoteMeta {
@@ -75,6 +79,8 @@ const initial = (): EditorState => ({
   session: 0,
   previewBase: null,
   textEditor: null,
+  assets: {},
+  editingId: null,
 });
 
 export const newId = (): string => crypto.randomUUID();
@@ -169,7 +175,11 @@ export function reaspect(deck: Deck, aspect: Aspect): Deck {
 
 interface Actions {
   /** Replaces everything with a loaded (or new) deck; history is cleared. */
-  load: (deck: Deck, meta?: NoteMeta) => void;
+  load: (deck: Deck, meta?: NoteMeta, assets?: Record<string, string>) => void;
+  /** Opens an element for typing, or closes the open one (null). */
+  setEditing: (id: string | null) => void;
+  /** Makes an upload drawable on the board. */
+  addAsset: (id: number, url: string) => void;
   /** Detail edits (title, module, hashtags) mark the note dirty without an undo step. */
   setMeta: (patch: Partial<NoteMeta>) => void;
   /** One undoable change. */
@@ -231,7 +241,10 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
   return {
     ...initial(),
-    load: (deck, meta = emptyMeta()) => set({ ...initial(), deck, meta, session: get().session + 1 }),
+    load: (deck, meta = emptyMeta(), assets = {}) =>
+      set({ ...initial(), deck, meta, assets, session: get().session + 1 }),
+    setEditing: (editingId) => set({ editingId }),
+    addAsset: (id, url) => set({ assets: { ...get().assets, [String(id)]: url } }),
     setMeta: (patch) => set({ meta: { ...get().meta, ...patch }, dirty: true, rev: get().rev + 1 }),
     apply: (recipe) => apply(recipe),
     preview: (recipe) => {

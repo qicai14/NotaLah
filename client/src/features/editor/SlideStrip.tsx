@@ -14,10 +14,18 @@ import { cn } from '@/lib/utils';
 import { useEditor } from './store';
 
 /** A slide preview that re-renders only when its own slide changes (unchanged slides keep their object identity). */
-const Thumb = memo(function Thumb({ slide, aspect }: { slide: Slide; aspect: Aspect }) {
+const Thumb = memo(function Thumb({
+  slide,
+  aspect,
+  assets,
+}: {
+  slide: Slide;
+  aspect: Aspect;
+  assets: Record<string, string>;
+}) {
   return (
     <span className="pointer-events-none block size-full" aria-hidden="true">
-      <SlideBoard slide={slide} aspect={aspect} />
+      <SlideBoard slide={slide} aspect={aspect} assets={assets} />
     </span>
   );
 });
@@ -29,6 +37,7 @@ const Thumb = memo(function Thumb({ slide, aspect }: { slide: Slide; aspect: Asp
 export function SlideStrip({ compact, readOnly = false }: { compact: boolean; readOnly?: boolean }) {
   const deck = useEditor((s) => s.deck);
   const active = useEditor((s) => s.activeSlide);
+  const assets = useEditor((s) => s.assets);
   const { setActiveSlide, addSlide, duplicateSlide, deleteSlide, moveSlide } = useEditor.getState();
   const [drag, setDrag] = useState<{ from: number; over: number } | null>(null);
   const list = useRef<HTMLOListElement>(null);
@@ -86,7 +95,7 @@ export function SlideStrip({ compact, readOnly = false }: { compact: boolean; re
                 drag?.from === i && 'opacity-50',
               )}
             >
-              <Thumb slide={s} aspect={deck.aspect} />
+              <Thumb slide={s} aspect={deck.aspect} assets={assets} />
             </button>
             <span className="pointer-events-none absolute bottom-1 left-1 rounded-sm bg-board-credit px-1 text-caption tabular-nums text-board-credit-foreground">
               {i + 1}

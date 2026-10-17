@@ -157,7 +157,7 @@ export default function EditorPage() {
     const mine = note.myRole ?? (note.author.id === user?.id ? 'owner' : null);
     if (mine !== 'owner' && mine !== 'edit') return setNotMine(true);
     setRole(mine);
-    useEditor.getState().load(noteToDeck(note), noteToMeta(note));
+    useEditor.getState().load(noteToDeck(note), noteToMeta(note), note.assets);
     setBackup(readBackup(note.id, note.updatedAt, user?.id));
   }
 
@@ -413,8 +413,8 @@ export default function EditorPage() {
           <Button
             size="xs"
             onClick={() => {
-              const { load, meta: m, setMeta } = useEditor.getState();
-              load(backup.deck, m);
+              const { load, meta: m, setMeta, assets } = useEditor.getState();
+              load(backup.deck, m, assets);
               setMeta(backup.meta);
               setBackup(null);
             }}
@@ -545,7 +545,7 @@ export default function EditorPage() {
         </div>
         <nav
           aria-label="Editor tools"
-          className="grid shrink-0 grid-cols-5 border-t bg-background pb-[env(safe-area-inset-bottom)]"
+          className="flex shrink-0 overflow-x-auto border-t bg-background pb-[env(safe-area-inset-bottom)] [scrollbar-width:none]"
         >
           {PANELS.map((p) => (
             <button
@@ -553,7 +553,7 @@ export default function EditorPage() {
               type="button"
               disabled={readOnly}
               onClick={() => setSheet(p.id)}
-              className="flex h-14 flex-col items-center justify-center gap-0.5 text-caption text-muted-foreground active:scale-[0.97] disabled:opacity-40"
+              className="flex h-14 min-w-16 flex-1 flex-col items-center justify-center gap-0.5 text-caption text-muted-foreground active:scale-[0.97] disabled:opacity-40"
             >
               <p.icon className="size-5" aria-hidden="true" />
               {p.label}

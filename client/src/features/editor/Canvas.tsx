@@ -28,6 +28,7 @@ import { boxOf } from './arrange';
 import { elementLabel } from './elements';
 import { mapElements, patchElement, scaleElement, useEditor } from './store';
 import { TextEditing } from './TextEditing';
+import { CodeEditing, TableEditing } from './BlockEditing';
 
 type Gesture =
   | {
@@ -37,7 +38,7 @@ type Gesture =
       from: Point;
       moved: boolean;
       /** The pressed element, and whether the press alone (no drag) should narrow the selection to it or open it. */
-      hit: { id: string; wasSelected: boolean; isText: boolean; narrow: boolean };
+      hit: { id: string; wasSelected: boolean; opens: boolean; narrow: boolean };
     }
   | { kind: 'resize'; id: string; start: Box; handle: Handle; keepRatio: boolean }
   | { kind: 'rotate'; id: string; start: Box }
@@ -68,6 +69,8 @@ const HANDLE_POS: Record<Handle, [number, number]> = {
   w: [0, 50],
 };
 const CORNERS = HANDLES.filter((h) => h.length === 2);
+/** Elements a second tap (or Enter) opens for typing. */
+const OPENS = new Set<SlideElement['type']>(['text', 'code', 'table']);
 const additive = (e: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }) => e.shiftKey || e.ctrlKey || e.metaKey;
 
 /**
@@ -79,6 +82,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
   const deck = useEditor((s) => s.deck);
   const active = useEditor((s) => s.activeSlide);
   const selection = useEditor((s) => s.selection);
+  const assets = useEditor((s) => s.assets);
   const slide = deck.slides[active];
   const boardH = boardHeight(deck.aspect);
   const picked = slide.elements.filter((e) => selection.includes(e.id));
@@ -86,7 +90,8 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
   const multi = picked.length > 1;
 
   const [scale, setScale] = useState(1);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingId = useEditor((s) => s.editingId);
+  const setEditingId = useEditor.getState().setEditing;
   const [guides, setGuides] = useState<Guides>({ x: [], y: [] });
   const [marquee, setMarquee] = useState<Rect | null>(null);
   const board = useRef<HTMLDivElement>(null);
@@ -95,7 +100,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
   const activePointer = useRef<number | null>(null);
   /** Focus moved by a press, which has already set the selection itself. */
   const pressing = useRef(false);
-  const editing = editingId && selected?.id === editingId && selected.type === 'text' ? selected : null;
+  const editing = editingId && selected?.id === editingId && OPENS.has(selected.type) ? selected : null;
 
   const toBoard = useCallback(
     (e: { clientX: number; clientY: number }): Point => {
@@ -196,7 +201,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
       if (g.kind === 'move' && !g.moved && g.hit.narrow) {
         // A press without a drag on one of several selected elements picks just that one; a second tap on a text
         // box that was already the only selection opens it for typing.
-        if (g.hit.wasSelected && g.starts.length === 1 && g.hit.isText) setEditingId(g.hit.id);
+        if (g.hit.wasSelected && g.starts.length === 1 && g.hit.opens) setEditingId(g.hit.id);
         else useEditor.getState().select(g.hit.id);
       }
     };
@@ -227,7 +232,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
     focusWithoutSelecting(e.currentTarget);
     const ids = wasSelected ? st.selection : [el.id];
     const starts = slide.elements.filter((x) => ids.includes(x.id) && !x.locked);
-    const hit = { id: el.id, wasSelected, isText: el.type === 'text', narrow: wasSelected };
+    const hit = { id: el.id, wasSelected, opens: OPENS.has(el.type) && !el.locked, narrow: wasSelected };
     if (!starts.length) return;
     track({ kind: 'move', starts, frame: groupBounds(starts.map(boxOf)), from: toBoard(e), moved: false, hit }, e);
   }
@@ -294,7 +299,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
       e.preventDefault();
       deleteSelected();
       frame.current?.focus(); // the deleted element had focus; keep it inside the canvas
-    } else if (e.key === 'Enter' && selected?.type === 'text' && !selected.locked) {
+    } else if (e.key === 'Enter' && selected && OPENS.has(selected.type) && !selected.locked) {
       e.preventDefault();
       setEditingId(selected.id);
     } else if (e.key === 'Escape') {
@@ -430,6 +435,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
         <SlideBoard
           slide={slide}
           aspect={deck.aspect}
+          assets={assets}
           label={`Slide ${active + 1} of ${deck.slides.length}, read only`}
         />
       </div>
@@ -454,6 +460,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
         <SlideBoard
           slide={slide}
           aspect={deck.aspect}
+          assets={assets}
           mode="edit"
           label={`Slide ${active + 1} of ${deck.slides.length}`}
           editing={{
@@ -465,7 +472,12 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
             onElementFocus: (el) =>
               !pressing.current && !selection.includes(el.id) && useEditor.getState().select(el.id),
             onElementPointerDown: onElementDown,
-            renderBody: (el) => (el.id === editing?.id ? <TextEditing el={editing} slide={active} /> : undefined),
+            renderBody: (el) => {
+              if (el.id !== editing?.id) return undefined;
+              if (editing.type === 'text') return <TextEditing el={editing} slide={active} />;
+              if (editing.type === 'code') return <CodeEditing el={editing} slide={active} />;
+              if (editing.type === 'table') return <TableEditing el={editing} slide={active} />;
+            },
           }}
         />
       </div>

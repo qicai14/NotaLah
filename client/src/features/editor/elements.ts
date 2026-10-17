@@ -1,4 +1,12 @@
-import { BOARD_WIDTH, round1, type SlideElement, type TextElement } from '@parp/shared';
+import {
+  BOARD_WIDTH,
+  type CodeLang,
+  type ImageSource,
+  LIMITS,
+  round1,
+  type SlideElement,
+  type TextElement,
+} from '@parp/shared';
 import StarterKit from '@tiptap/starter-kit';
 import { newId } from './store';
 
@@ -74,6 +82,77 @@ export function makeLine(boardH: number, arrow = false): SlideElement {
     startCap: 'none',
     endCap: arrow ? 'arrow' : 'none',
   };
+}
+
+type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
+
+export const CODE_LANG_NAMES: Record<CodeLang, string> = {
+  plaintext: 'Plain text',
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  python: 'Python',
+  java: 'Java',
+  c: 'C',
+  cpp: 'C++',
+  csharp: 'C#',
+  sql: 'SQL',
+  html: 'HTML',
+  css: 'CSS',
+  json: 'JSON',
+  bash: 'Bash',
+};
+
+export function makeCode(boardH: number): El<'code'> {
+  return {
+    ...base(boardH, 760, 300),
+    type: 'code',
+    code: 'SELECT *\nFROM "NOTE_T";',
+    language: 'sql',
+    theme: 'dark',
+    size: 28,
+  };
+}
+
+export function makeTable(boardH: number): El<'table'> {
+  return {
+    ...base(boardH, 760, 270),
+    type: 'table',
+    cells: [
+      ['Heading', 'Heading', 'Heading'],
+      ['', '', ''],
+      ['', '', ''],
+    ],
+    font: 'source-sans-3',
+    size: 28,
+    color: '#111827',
+    borderColor: '#9ca3af',
+    headerRow: true,
+  };
+}
+
+/** An image at its own aspect ratio, fitted into 700 x 700 units and centred. */
+export function makeImage(boardH: number, source: ImageSource, width: number, height: number, alt = ''): El<'image'> {
+  const k = Math.min(700 / (width || 1), Math.min(700, boardH * 0.7) / (height || 1));
+  const w = round1(Math.max(40, (width || 700) * k));
+  const h = round1(Math.max(40, (height || 700) * k));
+  return {
+    ...base(boardH, w, h),
+    type: 'image',
+    source,
+    alt: alt.slice(0, LIMITS.altText),
+    crop: { x: 0, y: 0, w: 1, h: 1 },
+    flipX: false,
+    flipY: false,
+    radius: 0,
+  };
+}
+
+/** A table with one row or column added or removed, within the schema's limits; null when it cannot change. */
+export function resizeTable(cells: string[][], rows: number, cols: number): string[][] | null {
+  const r = Math.min(LIMITS.tableRows, Math.max(1, rows));
+  const c = Math.min(LIMITS.tableCols, Math.max(1, cols));
+  if (r === cells.length && c === cells[0].length) return null;
+  return Array.from({ length: r }, (_, i) => Array.from({ length: c }, (_, j) => cells[i]?.[j] ?? ''));
 }
 
 const plain = (html: string) =>
