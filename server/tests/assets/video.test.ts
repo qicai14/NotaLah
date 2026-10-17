@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
@@ -93,6 +95,26 @@ describe('Video upload (R29)', () => {
       expect(poster.status).toBe(200);
       expect(poster.headers['content-type']).toBe('image/webp');
     }
+  });
+
+  it('NOTE-TC39: a playlist that points at an http segment is refused without a network call', async () => {
+    const hits: string[] = [];
+    const server = createServer((req, res) => {
+      hits.push(req.url ?? '');
+      res.end();
+    });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const { port } = server.address() as AddressInfo;
+    const playlist = `#EXTM3U
+#EXT-X-TARGETDURATION:1
+#EXTINF:1,
+http://127.0.0.1:${port}/seg.ts
+#EXT-X-ENDLIST
+`;
+    const res = await upload(await insertUser(), Buffer.from(playlist), 'clip.mp4');
+    server.close();
+    expect(res.status).toBe(400);
+    expect(hits).toEqual([]);
   });
 
   it('refuses a body over 50 MB with 413', async () => {

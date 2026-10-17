@@ -42,11 +42,14 @@ interface Probe {
   streams: Stream[];
 }
 
+/** Input options for every ffprobe and ffmpeg call: local files and the five containers we accept, so a playlist or concat file cannot make the tools open URLs or other files (SSRF, local reads). */
+const SAFE_INPUT = ['-protocol_whitelist', 'file', '-format_whitelist', 'mov,mp4,m4a,3gp,3g2,mj2,matroska,webm'];
+
 const probe = async (file: string, timeoutMs: number) =>
   JSON.parse(
     await runTool(
       'ffprobe',
-      ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', file],
+      ['-v', 'error', ...SAFE_INPUT, '-print_format', 'json', '-show_format', '-show_streams', `file:${file}`],
       timeoutMs,
     ),
   ) as Probe;
@@ -85,7 +88,7 @@ export async function processVideo(
         ? video.codec_name === 'h264' && video.pix_fmt === 'yuv420p'
         : ['vp8', 'vp9'].includes(video.codec_name ?? ''));
     const copyAudio = !audio || audio.codec_name === (isMp4 ? 'aac' : 'opus');
-    const args = ['-v', 'error', '-y', '-i', input, '-map', '0:v:0', '-map', '0:a:0?'];
+    const args = ['-v', 'error', '-y', ...SAFE_INPUT, '-i', `file:${input}`, '-map', '0:v:0', '-map', '0:a:0?'];
     args.push('-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact', '-threads', '2');
     if (copyVideo) args.push('-c:v', 'copy');
     else {
@@ -108,7 +111,11 @@ export async function processVideo(
 
     const frame = path.join(workDir, 'poster.png');
     const at = String(Math.min(1, seconds / 2));
-    await runTool('ffmpeg', ['-v', 'error', '-y', '-ss', at, '-i', out, '-frames:v', '1', frame], timeoutMs);
+    await runTool(
+      'ffmpeg',
+      ['-v', 'error', '-y', '-ss', at, ...SAFE_INPUT, '-i', `file:${out}`, '-frames:v', '1', frame],
+      timeoutMs,
+    );
     const poster = await reencodeImage(await readFile(frame));
     if (!poster.ok) throw new Rejected('Could not read a frame from the video');
 
