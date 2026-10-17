@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Slide, SlideElement } from '@parp/shared';
 import { cropBox, fitScale, inReadingOrder } from './geometry';
@@ -206,5 +207,24 @@ describe('SlideBoard', () => {
     const many = Array.from({ length: 5 }, () => ({ background: slide.background, elements: [] }));
     render(<SlideCarousel slides={many} aspect="4:5" assets={{}} />);
     expect(document.querySelectorAll('[aria-roledescription="slide"]').length).toBe(2);
+  });
+
+  it('NOTE-TC57: the carousel has chevron buttons and a live "Slide N of M" label, and no Prev/Next text', async () => {
+    const many = Array.from({ length: 4 }, () => ({ background: slide.background, elements: [] }));
+    render(<SlideCarousel slides={many} aspect="4:5" assets={{}} />);
+    const prev = screen.getByRole('button', { name: 'Previous slide' }) as HTMLButtonElement;
+    const next = screen.getByRole('button', { name: 'Next slide' }) as HTMLButtonElement;
+    const live = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    expect(live.textContent).toBe('Slide 1 of 4');
+    expect(prev.disabled).toBe(true);
+    expect(screen.queryByText(/^Prev|^Next/)).toBeNull();
+    await userEvent.click(next);
+    expect(live.textContent).toBe('Slide 2 of 4');
+    expect(prev.disabled).toBe(false);
+    fireEvent.keyDown(screen.getByRole('group', { name: 'Slides' }), { key: 'ArrowRight' });
+    expect(live.textContent).toBe('Slide 3 of 4');
+    fireEvent.keyDown(screen.getByRole('group', { name: 'Slides' }), { key: 'ArrowLeft' });
+    await userEvent.click(prev);
+    expect(live.textContent).toBe('Slide 1 of 4');
   });
 });
