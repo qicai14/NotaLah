@@ -1,6 +1,15 @@
 import { FONT_IDS, type FontId, round1, type SlideElement } from '@parp/shared';
 import {
   AlignCenter,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
+  AlignHorizontalDistributeCenter,
+  AlignHorizontalSpaceAround,
+  AlignStartHorizontal,
+  AlignStartVertical,
+  AlignVerticalDistributeCenter,
   AlignJustify,
   AlignLeft,
   AlignRight,
@@ -22,6 +31,7 @@ import { type ReactNode, useEffect, useReducer } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { arrange, selectedElements } from './arrange';
 import { offsetCopy, useEditor } from './store';
 
 const FONT_NAMES: Record<FontId, string> = {
@@ -161,9 +171,67 @@ function PositionPopover({ el, update }: { el: SlideElement; update(p: Partial<S
   );
 }
 
+const ALIGN = [
+  ['left', 'Align left', AlignStartVertical],
+  ['center', 'Align centres', AlignCenterVertical],
+  ['right', 'Align right', AlignEndVertical],
+  ['top', 'Align top', AlignStartHorizontal],
+  ['middle', 'Align middles', AlignCenterHorizontal],
+  ['bottom', 'Align bottom', AlignEndHorizontal],
+] as const;
+
+/**
+ * Align and distribute. Several elements line up on their shared frame; one element lines up on the slide.
+ * Distribute needs three or more.
+ */
+function ArrangePopover({ several }: { several: boolean }) {
+  const count = useEditor((s) => s.selection.length);
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="rounded-md">
+          <AlignHorizontalSpaceAround aria-hidden="true" />
+          Arrange
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="flex w-72 flex-col gap-3 rounded-xl p-4 shadow-(--shadow-float)">
+        <p className="text-body-sm font-semibold">{several ? 'Align to each other' : 'Align to slide'}</p>
+        <div className="grid grid-cols-6 gap-1">
+          {ALIGN.map(([to, label, Icon]) => (
+            <Tool key={to} label={label} onClick={() => arrange(to)}>
+              <Icon />
+            </Tool>
+          ))}
+        </div>
+        {several && (
+          <>
+            <p className="text-body-sm font-semibold">Space evenly</p>
+            <div className="flex gap-1">
+              <Button type="button" variant="secondary" size="sm" disabled={count < 3} onClick={() => arrange('x')}>
+                <AlignHorizontalDistributeCenter aria-hidden="true" />
+                Across
+              </Button>
+              <Button type="button" variant="secondary" size="sm" disabled={count < 3} onClick={() => arrange('y')}>
+                <AlignVerticalDistributeCenter aria-hidden="true" />
+                Down
+              </Button>
+            </div>
+            {count < 3 && <p className="text-caption text-muted-foreground">Select three or more to space them.</p>}
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** The contextual bar above the canvas (wireframes 20 and 23): what it shows follows the selected element. */
 export function ElementBar() {
-  const el = useEditor((s) => s.deck.slides[s.activeSlide].elements.find((e) => e.id === s.selection) ?? null);
+  const count = useEditor((s) => s.selection.length);
+  const el = useEditor((s) =>
+    s.selection.length === 1
+      ? (s.deck.slides[s.activeSlide].elements.find((e) => e.id === s.selection[0]) ?? null)
+      : null,
+  );
   const tt = useEditor((s) => s.textEditor);
   // Re-render on every TipTap transaction (including selection moves) so the mark buttons show their state.
   const [, bump] = useReducer((n: number) => n + 1, 0);
@@ -172,8 +240,25 @@ export function ElementBar() {
     tt.on('transaction', bump);
     return () => void tt.off('transaction', bump);
   }, [tt]);
-  const { updateElement, deleteElement, addElement, apply, activeSlide } = useEditor.getState();
+  const { updateElement, deleteElement, addElement, addElements, deleteSelected, apply, activeSlide } =
+    useEditor.getState();
 
+  if (count > 1) {
+    return (
+      <div role="toolbar" aria-label="Selection" className="flex min-w-max items-center gap-1 px-2">
+        <span className="px-2 text-body-sm font-semibold tabular-nums">{count} selected</span>
+        <Sep />
+        <ArrangePopover several />
+        <Tool label="Duplicate (Ctrl+D)" onClick={() => addElements(selectedElements().map(offsetCopy))}>
+          <Copy />
+        </Tool>
+        <Tool label="Delete" onClick={deleteSelected}>
+          <Trash2 />
+        </Tool>
+        <span className="ml-2 hidden text-caption text-muted-foreground lg:inline">Shift-click to add or remove</span>
+      </div>
+    );
+  }
   if (!el) {
     return (
       <p className="px-3 text-body-sm text-muted-foreground">
@@ -312,6 +397,7 @@ export function ElementBar() {
         </>
       )}
       <PositionPopover el={el} update={update} />
+      <ArrangePopover several={false} />
       <Tool label="Bring to front" onClick={() => reorder('front')}>
         <ArrowUpToLine />
       </Tool>

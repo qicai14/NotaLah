@@ -18,8 +18,8 @@ export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict' | 'lo
 
 export interface EditorState {
   deck: Deck;
-  /** Selected element id on the active slide. */
-  selection: string | null;
+  /** Selected element ids on the active slide, in the order they were picked (the first drives single-element tools). */
+  selection: string[];
   activeSlide: number;
   past: Deck[];
   future: Deck[];
@@ -64,7 +64,7 @@ export const emptyDeck = (): Deck => ({ aspect: '4:5', theme: 'plain', slides: [
 
 const initial = (): EditorState => ({
   deck: emptyDeck(),
-  selection: null,
+  selection: [],
   activeSlide: 0,
   past: [],
   future: [],
@@ -111,14 +111,26 @@ export const patchElement = (deck: Deck, slide: number, id: string, patch: Parti
   }));
 
 /** Keeps the active slide and selection valid after the deck changes under them (undo, delete). */
-function settle(deck: Deck, activeSlide: number, selection: string | null) {
+function settle(deck: Deck, activeSlide: number, selection: string[]) {
   const active = Math.min(activeSlide, deck.slides.length - 1);
-  const keep = selection && deck.slides[active].elements.some((e) => e.id === selection) ? selection : null;
-  return { activeSlide: active, selection: keep };
+  const ids = new Set(deck.slides[active].elements.map((e) => e.id));
+  const keep = selection.filter((id) => ids.has(id));
+  return { activeSlide: active, selection: keep.length === selection.length ? selection : keep };
 }
 
+/** The deck with every listed element on one slide replaced by `fn(element)`. */
+export const mapElements = (
+  deck: Deck,
+  slide: number,
+  ids: readonly string[],
+  fn: (e: SlideElement) => SlideElement,
+): Deck => {
+  const set = new Set(ids);
+  return mapSlide(deck, slide, (s) => ({ ...s, elements: s.elements.map((e) => (set.has(e.id) ? fn(e) : e)) }));
+};
+
 /** Scales an element's geometry and its board-unit sizes by `s`, then shifts it by (dx, dy). */
-function scaleElement(e: SlideElement, s: number, dx: number, dy: number): SlideElement {
+export function scaleElement(e: SlideElement, s: number, dx: number, dy: number): SlideElement {
   const g = { x: round1(e.x * s + dx), y: round1(e.y * s + dy), w: round1(e.w * s), h: round1(e.h * s) };
   const font = (n: number) => Math.max(8, round1(n * s));
   switch (e.type) {
@@ -168,7 +180,10 @@ interface Actions {
   commit: () => void;
   undo: () => void;
   redo: () => void;
-  select: (id: string | null) => void;
+  /** Selects exactly these elements (none for null). */
+  select: (id: string | string[] | null) => void;
+  /** Shift or Ctrl click: adds the element to the selection, or takes it out. */
+  toggleSelect: (id: string) => void;
   setActiveSlide: (index: number) => void;
   addSlide: () => void;
   duplicateSlide: (index: number) => void;
@@ -176,8 +191,12 @@ interface Actions {
   moveSlide: (from: number, to: number) => void;
   setAspect: (aspect: Aspect) => void;
   addElement: (el: SlideElement) => void;
+  /** Adds several elements as one step (paste, duplicate of a selection) and selects them; stops at the slide limit. */
+  addElements: (els: SlideElement[]) => void;
   updateElement: (id: string, patch: Partial<SlideElement>) => void;
   deleteElement: (id: string) => void;
+  /** Deletes every unlocked element in the selection as one step. */
+  deleteSelected: () => void;
   setSaveState: (s: SaveState) => void;
   /**
    * The server confirmed the state at `sentRev` of `session`; the note stays dirty if it changed while the save was in
@@ -195,11 +214,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
     if (next === deck) return;
     // Live changes still in progress become their own step first, so this change undoes on its own.
     const settled = previewBase && previewBase !== deck ? capped(past, previewBase) : past;
-    const pos = settle(
-      next,
-      extra.activeSlide ?? activeSlide,
-      'selection' in extra ? (extra.selection ?? null) : selection,
-    );
+    const pos = settle(next, extra.activeSlide ?? activeSlide, extra.selection ?? selection);
     set({
       ...extra,
       ...pos,
@@ -261,24 +276,28 @@ export const useEditor = create<EditorStore>()((set, get) => {
         ...settle(next, activeSlide, selection),
       });
     },
-    select: (id) => set({ selection: id }),
-    setActiveSlide: (index) => set({ activeSlide: Math.max(0, Math.min(index, slideCount() - 1)), selection: null }),
+    select: (id) => set({ selection: id === null ? [] : Array.isArray(id) ? id : [id] }),
+    toggleSelect: (id) => {
+      const sel = get().selection;
+      set({ selection: sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id] });
+    },
+    setActiveSlide: (index) => set({ activeSlide: Math.max(0, Math.min(index, slideCount() - 1)), selection: [] }),
     addSlide: () => {
       if (slideCount() >= LIMITS.slides) return;
       const at = active() + 1;
-      apply((d) => ({ ...d, slides: spliced(d.slides, at, 0, blankSlide()) }), { activeSlide: at, selection: null });
+      apply((d) => ({ ...d, slides: spliced(d.slides, at, 0, blankSlide()) }), { activeSlide: at, selection: [] });
     },
     duplicateSlide: (index) => {
       if (slideCount() >= LIMITS.slides) return;
       apply((d) => ({ ...d, slides: spliced(d.slides, index + 1, 0, withNewIds(d.slides[index])) }), {
         activeSlide: index + 1,
-        selection: null,
+        selection: [],
       });
     },
     deleteSlide: (index) => {
       apply((d) => ({ ...d, slides: d.slides.length === 1 ? [blankSlide()] : spliced(d.slides, index, 1) }), {
         activeSlide: Math.max(0, index - (index >= slideCount() - 1 ? 1 : 0)),
-        selection: null,
+        selection: [],
       });
     },
     moveSlide: (from, to) => {
@@ -294,15 +313,31 @@ export const useEditor = create<EditorStore>()((set, get) => {
     setAspect: (aspect) => {
       if (aspect !== get().deck.aspect) apply((d) => reaspect(d, aspect));
     },
-    addElement: (el) => {
-      if (get().deck.slides[active()].elements.length >= LIMITS.elementsPerSlide) return;
-      apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: [...s.elements, el] })), { selection: el.id });
+    addElement: (el) => get().addElements([el]),
+    addElements: (els) => {
+      const room = LIMITS.elementsPerSlide - get().deck.slides[active()].elements.length;
+      const add = els.slice(0, Math.max(0, room));
+      if (!add.length) return;
+      apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: [...s.elements, ...add] })), {
+        selection: add.map((e) => e.id),
+      });
     },
     updateElement: (id, patch) => apply((d) => patchElement(d, active(), id, patch)),
     deleteElement: (id) =>
       apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== id) })), {
-        selection: null,
+        selection: get().selection.filter((x) => x !== id),
       }),
+    deleteSelected: () => {
+      const gone = new Set(
+        get()
+          .deck.slides[active()].elements.filter((e) => get().selection.includes(e.id) && !e.locked)
+          .map((e) => e.id),
+      );
+      if (!gone.size) return;
+      apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: s.elements.filter((e) => !gone.has(e.id)) })), {
+        selection: get().selection.filter((x) => !gone.has(x)),
+      });
+    },
     setSaveState: (saveState) => set({ saveState }),
     markSaved: (session, sentRev, meta) => {
       if (session !== get().session) return;

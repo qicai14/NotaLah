@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import type { ModuleRef, Note } from '@/types';
 import { useAuth } from '../auth/AuthContext';
 import { PublishDialog, type PublishChoice } from '../notes/PublishDialog';
+import { selectedElements } from './arrange';
 import { Canvas } from './Canvas';
 import { ElementBar } from './ElementBar';
 import { type Details, PanelBody, type PanelId, PANELS } from './Panels';
@@ -279,17 +280,19 @@ export default function EditorPage() {
 
   // Undo, redo, copy, paste and duplicate from the keyboard, except while typing (TipTap and inputs keep their own).
   useEffect(() => {
-    let copied: SlideElement | null = null;
+    let copied: SlideElement[] = [];
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || ownsKeys(e.target)) return;
       const st = useEditor.getState();
-      const selected = st.deck.slides[st.activeSlide].elements.find((el) => el.id === st.selection);
+      const elements = st.deck.slides[st.activeSlide].elements;
+      const selected = selectedElements();
       const k = e.key.toLowerCase();
       if (k === 'z' && !e.shiftKey) st.undo();
       else if ((k === 'z' && e.shiftKey) || k === 'y') st.redo();
-      else if (k === 'c' && selected) copied = selected;
-      else if (k === 'v' && copied) st.addElement(offsetCopy(copied));
-      else if (k === 'd' && selected) st.addElement(offsetCopy(selected));
+      else if (k === 'a') st.select(elements.map((el) => el.id));
+      else if (k === 'c' && selected.length) copied = selected;
+      else if (k === 'v' && copied.length) st.addElements(copied.map(offsetCopy));
+      else if (k === 'd' && selected.length) st.addElements(selected.map(offsetCopy));
       else return;
       e.preventDefault();
     };

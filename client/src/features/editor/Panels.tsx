@@ -222,8 +222,12 @@ function LayersPanel() {
         <li key={el.id} className="flex items-center gap-1">
           <button
             type="button"
-            aria-pressed={selection === el.id}
-            onClick={() => useEditor.getState().select(el.id)}
+            aria-pressed={selection.includes(el.id)}
+            onClick={(e) =>
+              e.shiftKey || e.ctrlKey || e.metaKey
+                ? useEditor.getState().toggleSelect(el.id)
+                : useEditor.getState().select(el.id)
+            }
             className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-md px-3 text-left text-body-sm hover:bg-surface aria-pressed:bg-surface-strong aria-pressed:font-semibold"
           >
             <span className="truncate">{elementLabel(el)}</span>

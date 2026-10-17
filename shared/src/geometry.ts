@@ -170,3 +170,107 @@ export function snapMove(
     },
   };
 }
+
+/** An unrotated rectangle on the board. */
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The smallest unrotated rectangle around every box (rotation included): the frame of a multi-selection. */
+export function groupBounds(boxes: Box[]): Rect {
+  const rs = boxes.map(bounds);
+  const left = Math.min(...rs.map((r) => r.left));
+  const top = Math.min(...rs.map((r) => r.top));
+  const right = Math.max(...rs.map((r) => r.right));
+  const bottom = Math.max(...rs.map((r) => r.bottom));
+  return { x: left, y: top, w: right - left, h: bottom - top };
+}
+
+/**
+ * Scale factor for dragging a corner of a group frame to `pointer`: groups always keep their ratio, because a
+ * rotated member cannot be stretched along the board's axes without skewing. The opposite corner stays fixed.
+ */
+export function groupScale(frame: Rect, handle: Handle, pointer: Point, min = MIN_BOX): { k: number; anchor: Point } {
+  const s = handleSign(handle);
+  const box: Box = { ...frame, rotation: 0 };
+  const anchor = handlePoint(box, opposite(handle));
+  const kx = s.x ? (s.x * (pointer.x - anchor.x)) / frame.w : 0;
+  const ky = s.y ? (s.y * (pointer.y - anchor.y)) / frame.h : 0;
+  const k = Math.max(kx, ky, min / Math.min(frame.w, frame.h));
+  return { k, anchor };
+}
+
+/** A box rotated by `deg` about `pivot`: its centre moves round the pivot and its own angle turns with it. */
+export function rotateAbout(b: Box, pivot: Point, deg: number): Box {
+  const c = centreOf(b);
+  const r = rotate({ x: c.x - pivot.x, y: c.y - pivot.y }, deg);
+  return {
+    ...b,
+    x: round1(pivot.x + r.x - b.w / 2),
+    y: round1(pivot.y + r.y - b.h / 2),
+    rotation: round1(normaliseAngle(b.rotation + deg)),
+  };
+}
+
+/** Angle in degrees of `pointer` round `pivot`, measured like `rotationFromPointer` (straight up is 0). */
+export const angleAbout = (pivot: Point, pointer: Point): number =>
+  (Math.atan2(pointer.y - pivot.y, pointer.x - pivot.x) * 180) / Math.PI + 90;
+
+export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
+
+/**
+ * Lines every box up on one edge or centre of `frame` (the selection's frame, or the board for a single element),
+ * measured on each box's rotated bounds so a turned element lines up by what you see.
+ */
+export function alignBoxes(boxes: Box[], frame: Rect, to: Alignment): Box[] {
+  return boxes.map((b) => {
+    const r = bounds(b);
+    let dx = 0;
+    let dy = 0;
+    if (to === 'left') dx = frame.x - r.left;
+    else if (to === 'center') dx = frame.x + frame.w / 2 - (r.left + r.right) / 2;
+    else if (to === 'right') dx = frame.x + frame.w - r.right;
+    else if (to === 'top') dy = frame.y - r.top;
+    else if (to === 'middle') dy = frame.y + frame.h / 2 - (r.top + r.bottom) / 2;
+    else dy = frame.y + frame.h - r.bottom;
+    return moveBox(b, dx, dy);
+  });
+}
+
+/**
+ * Spaces three or more boxes so the gaps between them are equal along one axis; the first and last (by position)
+ * stay put. Returns the boxes in their original order.
+ */
+export function distributeBoxes(boxes: Box[], axis: 'x' | 'y'): Box[] {
+  if (boxes.length < 3) return boxes;
+  const lo = (b: Box) => (axis === 'x' ? bounds(b).left : bounds(b).top);
+  const size = (b: Box) => {
+    const r = bounds(b);
+    return axis === 'x' ? r.right - r.left : r.bottom - r.top;
+  };
+  const order = boxes.map((b, i) => ({ b, i })).sort((p, q) => lo(p.b) - lo(q.b));
+  const first = order[0].b;
+  const last = order[order.length - 1].b;
+  const span = lo(last) + size(last) - lo(first);
+  const gap = (span - order.reduce((n, o) => n + size(o.b), 0)) / (order.length - 1);
+  const out = [...boxes];
+  let at = lo(first);
+  for (const { b, i } of order) {
+    const d = at - lo(b);
+    out[i] = axis === 'x' ? moveBox(b, d, 0) : moveBox(b, 0, d);
+    at += size(b) + gap;
+  }
+  return out;
+}
+
+/** Boxes whose rotated bounds touch the rectangle (a marquee drag). */
+export const boxesTouching = (rect: Rect, boxes: { id: string; box: Box }[]): string[] =>
+  boxes
+    .filter(({ box }) => {
+      const r = bounds(box);
+      return r.left <= rect.x + rect.w && r.right >= rect.x && r.top <= rect.y + rect.h && r.bottom >= rect.y;
+    })
+    .map((b) => b.id);

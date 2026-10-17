@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { SlideElement } from '@parp/shared';
+import { arrange } from './arrange';
 import { Canvas } from './Canvas';
 import { PanelBody } from './Panels';
 import { emptyDeck, useEditor } from './store';
@@ -47,7 +48,7 @@ describe('editor canvas', () => {
     const box = container.querySelector<HTMLElement>('[data-id="el-0000001"]')!;
     expect(box.getAttribute('aria-label')).toBe('Rectangle');
     fireEvent.focus(box);
-    expect(s().selection).toBe('el-0000001');
+    expect(s().selection).toEqual(['el-0000001']);
     fireEvent.keyDown(box, { key: 'ArrowRight' });
     fireEvent.keyDown(box, { key: 'ArrowDown', shiftKey: true });
     expect(s().deck.slides[0].elements[0]).toMatchObject({ x: 101, y: 110 });
@@ -66,5 +67,33 @@ describe('editor canvas', () => {
     expect(names).toEqual(['Circle', 'Rectangle']);
     fireEvent.click(screen.getByRole('button', { name: 'Move Rectangle up' }));
     expect(s().deck.slides[0].elements.map((e) => e.id)).toEqual(['el-0000002', 'el-0000001']);
+  });
+
+  it('NOTE-TC69: Shift-click builds a selection that nudges, aligns, duplicates and deletes as one', () => {
+    const { container } = render(<Canvas compact={false} />);
+    const one = container.querySelector<HTMLElement>('[data-id="el-0000001"]')!;
+    const two = container.querySelector<HTMLElement>('[data-id="el-0000002"]')!;
+    fireEvent.pointerDown(one, { button: 0 });
+    fireEvent.pointerUp(window, { button: 0 });
+    fireEvent.pointerDown(two, { button: 0, shiftKey: true });
+    expect(s().selection).toEqual(['el-0000001', 'el-0000002']);
+    expect(screen.getByLabelText('Circle, selected')).toBeTruthy();
+    fireEvent.keyDown(two, { key: 'ArrowDown', shiftKey: true });
+    fireEvent.keyUp(two, { key: 'ArrowDown' });
+    expect(s().deck.slides[0].elements.map((e) => e.y)).toEqual([110, 110]);
+    s().updateElement('el-0000002', { y: 300 });
+    s().select(['el-0000001', 'el-0000002']);
+    arrange('top');
+    expect(s().deck.slides[0].elements.map((e) => e.y)).toEqual([110, 110]);
+    const before = s().past.length;
+    fireEvent.keyDown(two, { key: 'Delete' });
+    expect(s().deck.slides[0].elements).toHaveLength(0);
+    expect(s().past.length).toBe(before + 1); // one undo step for the whole selection
+    act(() => {
+      s().undo();
+      s().select(['el-0000001']);
+    });
+    fireEvent.pointerDown(container.querySelector('[data-id="el-0000001"]')!, { button: 0, ctrlKey: true });
+    expect(s().selection).toEqual([]); // Ctrl-click on a selected element takes it out
   });
 });
