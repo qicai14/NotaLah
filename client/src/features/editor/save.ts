@@ -45,6 +45,8 @@ export const snapshot = (): Snapshot => {
 };
 
 let inFlight: Promise<SaveOutcome> | null = null;
+/** What the last successful save learned, kept even after its note was closed, so a queued save of it never POSTs again. */
+let handover: { session: number; noteId: number; updatedAt: string } | null = null;
 
 /**
  * Creates or replaces the note. Saves never overlap: a second call waits for the first, then sends its own snapshot
@@ -55,10 +57,13 @@ let inFlight: Promise<SaveOutcome> | null = null;
 export async function saveNote(choice: SaveChoice = 'draft', snap: Snapshot = snapshot()): Promise<SaveOutcome> {
   while (inFlight) await inFlight;
   const live = useEditor.getState();
-  const s =
+  const known =
     live.session === snap.session
-      ? { ...snap, meta: { ...snap.meta, noteId: live.meta.noteId, baseUpdatedAt: live.meta.baseUpdatedAt } }
-      : snap;
+      ? { noteId: live.meta.noteId, baseUpdatedAt: live.meta.baseUpdatedAt }
+      : handover?.session === snap.session
+        ? { noteId: handover.noteId, baseUpdatedAt: handover.updatedAt }
+        : null;
+  const s = known ? { ...snap, meta: { ...snap.meta, ...known } } : snap;
   inFlight = send(choice, s);
   try {
     return await inFlight;
@@ -86,6 +91,7 @@ async function send(choice: SaveChoice, { deck, meta, rev, session }: Snapshot):
   const id = meta.noteId;
   try {
     const { note } = await api<{ note: Note }>(id ? `/notes/${id}` : '/notes', { method: id ? 'PUT' : 'POST', body });
+    handover = { session, noteId: note.id, updatedAt: note.updatedAt };
     useEditor.getState().markSaved(session, rev, {
       noteId: note.id,
       baseUpdatedAt: note.updatedAt,

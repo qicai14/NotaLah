@@ -141,4 +141,33 @@ describe('editor save', () => {
     expect(s().saveState).toBe('locked');
     expect(s().dirty).toBe(true);
   });
+
+  it('NOTE-TC67: a save queued behind a new note’s first save PUTs to its id even after another note opens', async () => {
+    const answers: ((r: Response) => void)[] = [];
+    const fetch = vi.fn((_url: string, _init?: RequestInit) => new Promise<Response>((res) => answers.push(res)));
+    vi.stubGlobal('fetch', fetch);
+    const first = saveNote();
+    s().setMeta({ title: 'Week 6, more' });
+    const queued = saveNote(); // e.g. the exit save, with its own snapshot
+    s().load(emptyDeck()); // another note opens before the first reply
+    answers[0](
+      new Response(JSON.stringify({ note: { id: 9, updatedAt: 'v1', status: 'draft', visibility: null } }), {
+        status: 201,
+      }),
+    );
+    await first;
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    expect(fetch.mock.calls[1][0]).toBe('/api/notes/9');
+    expect(JSON.parse(String(fetch.mock.calls[1][1]?.body))).toMatchObject({
+      title: 'Week 6, more',
+      baseUpdatedAt: 'v1',
+    });
+    answers[1](
+      new Response(JSON.stringify({ note: { id: 9, updatedAt: 'v2', status: 'draft', visibility: null } }), {
+        status: 200,
+      }),
+    );
+    await queued;
+    expect(s().meta.noteId).toBeNull();
+  });
 });

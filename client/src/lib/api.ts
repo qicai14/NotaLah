@@ -1,5 +1,3 @@
-import { clearAllBackups } from '@/features/editor/backup';
-
 // True while the client believes a user is signed in; only then does a 401, or a guest-readable route answering as a guest, mean the session expired.
 let signedIn = false;
 export function setSignedIn(value: boolean): void {
@@ -38,7 +36,6 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   const expired = res.status === 401 || res.headers.get('X-Viewer') === 'guest'; // D45
   if (expired && signedIn && path !== '/auth/login') {
     signedIn = false;
-    clearAllBackups();
     window.location.assign('/login?expired=1'); // full reload also drops in-memory auth state
   }
   if (!res.ok) throw new ApiError(res.status, data.error ?? 'Something went wrong. Please try again.', data.errors);

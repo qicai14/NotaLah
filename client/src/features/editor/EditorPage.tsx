@@ -310,7 +310,7 @@ export default function EditorPage() {
   function confirmLeave(e: { preventDefault(): void }) {
     const st = useEditor.getState();
     if (!st.dirty) return;
-    const blocked = st.saveState === 'conflict' || st.saveState === 'locked';
+    const blocked = st.saveState === 'conflict' || st.saveState === 'locked' || st.saveState === 'error';
     const kept = st.meta.status === 'draft' ? !blocked : !blocked && writeBackup(userId.current);
     if (!kept && !window.confirm('Leave without saving?')) e.preventDefault();
   }

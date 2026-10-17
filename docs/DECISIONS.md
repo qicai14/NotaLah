@@ -1234,10 +1234,12 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   panel lists elements top first with move up/down buttons. Ctrl+C/V/D copy, paste and duplicate (an in-editor clipboard).
 - **Review fixes (17 Oct):** an untitled draft autosaves as "Untitled note" (the author renames it later) instead of
   waiting for a title. The Back links ask "Leave without saving?" only when the edits cannot be kept: a 409 conflict, a
-  423 lock, or a published edit whose local backup could not be written; drafts are saved on the way out from a
+  423 lock, a failed save, or a published edit whose local backup could not be written; drafts are saved on the way out from a
   snapshot of the moment of leaving. Each save carries the store's `session` (bumped on every load), so a late reply
-  never writes into another note. A 423 is a `locked` state with a "Try again" banner, stops autosave, and backs the
-  draft up locally. Backups record their owner and are cleared when a different user signs in or the session expires;
+  never writes into another note; the id and `updatedAt` of the last successful save are handed to a save of the same
+  session queued behind it even after that note was closed, so it PUTs instead of creating a duplicate. A 423 is a `locked` state with a "Try again" banner, stops autosave, and backs the
+  draft up locally. Backups record their owner and another user's are cleared when someone signs in (an expired session keeps them, so
+  the same user can still restore after signing back in);
   a restored backup must pass `deckSchema` and its text is reduced to the server's allow-list with `DOMParser` (no new
   dependency). Live edits keep their base in the store (`previewBase`), so undo, redo and any discrete change first
   record them as their own step; the header Undo/Redo wait while a text box is open (TipTap owns Ctrl+Z there).
