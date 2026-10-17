@@ -24,6 +24,9 @@ const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFracti
 
 const circle =
   'grid size-action place-items-center rounded-full bg-surface text-foreground transition-[background-color,transform] duration-(--duration-fast) ease-(--ease-out-soft) group-hover:bg-surface-strong group-active:scale-90';
+/** On phones the feed rail floats over the slide, so its icons go bare and white with a halo (md: and up keep the circle). */
+const overlayCircle =
+  'max-md:size-11 max-md:bg-transparent max-md:text-media max-md:media-shadow max-md:group-hover:bg-transparent';
 
 /** One rail control: a round icon button with its count or label underneath. */
 function RailButton({
@@ -47,9 +50,15 @@ function RailButton({
 }) {
   const inner = (
     <>
-      <span className={circle}>{icon}</span>
+      <span className={cn(circle, !bar && overlayCircle)}>{icon}</span>
       {caption !== undefined && (
-        <span aria-hidden="true" className="text-caption font-bold text-foreground/90 tabular-nums">
+        <span
+          aria-hidden="true"
+          className={cn(
+            'text-caption font-bold tabular-nums',
+            bar ? 'text-foreground/90' : 'text-foreground/90 max-md:text-media max-md:media-shadow',
+          )}
+        >
           {caption}
         </span>
       )}
@@ -142,13 +151,13 @@ export function NoteActions({
       <div
         role="group"
         aria-label="Note actions"
-        className={cn('flex items-center', bar ? 'flex-row flex-wrap gap-2' : 'flex-col gap-4')}
+        className={cn('flex items-center', bar ? 'flex-row flex-wrap gap-2' : 'flex-col gap-4 max-md:gap-2')}
       >
         {showAuthor && !bar && (
           <Link
             to={`/users/${note.author.id}`}
             aria-label={`${note.author.displayName}'s profile`}
-            className="mb-1 rounded-full ring-2 ring-background"
+            className="mb-1 rounded-full ring-2 ring-background max-md:ring-media max-md:shadow-(--shadow-float)"
           >
             <UserAvatar name={note.author.displayName} className="size-action" />
           </Link>
@@ -185,7 +194,7 @@ export function NoteActions({
           disabled={pending}
           onClick={() => toggle('bookmark')}
           caption={saved ? 'Saved' : 'Save'}
-          icon={<Bookmark aria-hidden="true" className={cn('size-6', saved && 'fill-foreground')} />}
+          icon={<Bookmark aria-hidden="true" className={cn('size-6', saved && 'fill-current')} />}
         />
         {canSuperLike &&
           (note.verifiedByMe ? (
@@ -217,7 +226,7 @@ export function NoteActions({
             aria-label="More actions"
             className={cn('group flex cursor-pointer rounded-full', bar ? 'flex-row' : 'flex-col')}
           >
-            <span className={circle}>
+            <span className={cn(circle, !bar && overlayCircle)}>
               <MoreHorizontal aria-hidden="true" className="size-6" />
             </span>
           </DropdownMenuTrigger>
