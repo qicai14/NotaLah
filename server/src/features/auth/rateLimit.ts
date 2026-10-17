@@ -13,6 +13,8 @@ export const RATE_LIMITS = Object.freeze({
   writes: 120,
   /** Guest-readable GETs per client IP per window (R31, D45); keyed on req.ip, so it needs `trust proxy` set for the host (D35). */
   guestReads: 120,
+  /** Asset file requests per signed-in user (or IP) per window (R34): each one is a counted storage read. */
+  files: 300,
 });
 
 /**
@@ -91,6 +93,21 @@ export const unsplashLimiter = rateLimit({
   keyGenerator: (req: Request) => `user:${req.user?.id ?? ''}`,
   skip: testing,
   message: { error: 'Too many searches. Try again later.' },
+});
+
+/** Asset file requests, on both file routes (R34, D57); keyed like the write limiter. */
+export const fileLimiter = rateLimit({
+  windowMs: RATE_LIMITS.windowMs,
+  limit: RATE_LIMITS.files,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('file:'),
+  keyGenerator: (req: Request) => {
+    const user = tokenSubject(req);
+    return user ? `user:${user}` : ipKeyGenerator(req.ip ?? '');
+  },
+  skip: testing,
+  message: { error: 'Too many requests. Try again in a minute.' },
 });
 
 /** Applied by optionalAuth to signed-out requests only. */
