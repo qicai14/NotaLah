@@ -9,7 +9,7 @@ import { shareAssetUrl } from '../assets/config';
 import { getLinkedAsset } from '../assets/repository';
 import { sendAsset } from '../assets/service';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
-import { guestReadLimiter } from '../auth/rateLimit';
+import { fileLimiter, guestReadLimiter } from '../auth/rateLimit';
 import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
 import { isBlocked } from '../users/repository';
 import { notify } from '../notifications/service';
@@ -120,6 +120,7 @@ collaborationRouter.get(
 collaborationRouter.get(
   '/share/:token/assets/:assetId',
   optionalAuth,
+  fileLimiter,
   (req, res, next) => (req.user ? guestReadLimiter(req, res, next) : next()),
   async (req, res) => {
     const found = await link(req, res);

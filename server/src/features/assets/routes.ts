@@ -4,7 +4,8 @@ import multer from 'multer';
 import { idParam } from '../../lib/validation';
 import { storage } from '../../lib/storage';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
-import { uploadLimiter } from '../auth/rateLimit';
+import { fileLimiter, uploadLimiter } from '../auth/rateLimit';
+import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl } from './config';
 import { reencodeImage } from './image';
 import { getReadableAsset, insertImage } from './repository';
@@ -35,8 +36,17 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
   if (!result.ok) return res.status(400).json({ error: result.error });
   const { data, width, height } = result.image;
 
+  if (!(await storageFits(data.length))) {
+    return res.status(507).json({ error: 'Image storage is full. Uploads are paused' });
+  }
+
   const key = `i/${randomUUID()}.webp`;
-  await storage.put(key, data);
+  try {
+    await storage.put(key, data);
+  } catch (err) {
+    if (err instanceof UsageLimitError) return res.status(503).json({ error: err.message });
+    throw err;
+  }
   let asset;
   try {
     asset = await insertImage(me(req).id, key, data.length, width, height);
@@ -46,12 +56,14 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
   }
   if (asset === 'quota') {
     await storage.remove(key);
-    return res.status(413).json({ error: 'Storage limit of 500 MB reached. Delete notes or images to free space' });
+    return res.status(413).json({
+      error: 'Storage limit of 500 MB reached. Delete notes or images to free space',
+    });
   }
   res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
 });
 
-assetsRouter.get('/:id/file', optionalAuth, async (req, res) => {
+assetsRouter.get('/:id/file', optionalAuth, fileLimiter, async (req, res) => {
   const asset = await getReadableAsset(Number(req.params.id), viewerId(req));
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
   await sendAsset(res, asset);

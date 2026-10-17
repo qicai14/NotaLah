@@ -44,7 +44,7 @@ unsplashRouter.get('/search', unsplashLimiter, async (req, res) => {
   }
 });
 
-unsplashRouter.post('/:photoId/download', requireActive, async (req, res) => {
+unsplashRouter.post('/:photoId/download', requireActive, unsplashLimiter, async (req, res) => {
   const photoId = String(req.params.photoId);
   if (!/^[A-Za-z0-9_-]{1,40}$/.test(photoId)) return res.status(404).json({ error: 'Photo not found' });
   try {
