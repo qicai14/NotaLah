@@ -43,6 +43,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Install ffmpeg (video upload tests)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: npm ci
       - name: Create empty .env (dbmate scripts require the file; values come from job env)
         run: touch .env
