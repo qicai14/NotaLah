@@ -260,7 +260,10 @@ export interface BoardEditing {
   /** Accessible name and focus handling for each element, so the board can be worked from the keyboard. */
   elementLabel?: (el: SlideElement) => string;
   onElementFocus?: (el: SlideElement) => void;
-  /** Drawn above the elements, inside the board's coordinate space (selection frame, handles, guides). */
+  /**
+   * Drawn above the slide in the board's coordinate space but outside its clip (selection frame, handles, guides), so
+   * handles of an element at the edge are never cut off.
+   */
   overlay?: ReactNode;
   boardRef?: Ref<HTMLDivElement>;
   onScale?: (scale: number) => void;
@@ -310,10 +313,7 @@ export function SlideBoard({
   return (
     <div ref={box} className="flex size-full items-center justify-center" data-mode={mode}>
       <div
-        role="group"
-        aria-roledescription="slide"
-        aria-label={label}
-        className="relative shrink-0 overflow-hidden rounded-[inherit]"
+        className="relative shrink-0 rounded-[inherit]"
         style={{
           width: BOARD_WIDTH * scale,
           height: height * scale,
@@ -321,61 +321,76 @@ export function SlideBoard({
         }}
       >
         <div
-          ref={edit?.boardRef}
-          className="absolute top-0 left-0 origin-top-left"
-          style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+          role="group"
+          aria-roledescription="slide"
+          aria-label={label}
+          className="absolute inset-0 overflow-hidden rounded-[inherit]"
         >
-          <div className="absolute inset-0" onPointerDown={edit?.onBackgroundPointerDown}>
-            <Background fill={slide.background} assets={assets} />
-          </div>
-          {inReadingOrder(slide.elements).map(({ el, z }) => (
-            <div
-              key={el.id}
-              data-element={el.type}
-              data-id={edit ? el.id : undefined}
-              tabIndex={edit ? 0 : undefined}
-              role={edit ? 'group' : undefined}
-              aria-roledescription={edit ? 'element' : undefined}
-              aria-label={edit?.elementLabel?.(el)}
-              onPointerDown={edit?.onElementPointerDown && ((e) => edit.onElementPointerDown?.(e, el))}
-              onFocus={edit?.onElementFocus && ((e) => e.target === e.currentTarget && edit.onElementFocus?.(el))}
-              className={edit ? 'absolute touch-none outline-none' : 'absolute'}
-              style={{
-                left: el.x,
-                top: el.y,
-                width: el.w,
-                height: el.h,
-                zIndex: z,
-                opacity: el.opacity,
-                transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-              }}
-            >
-              {edit?.renderBody?.(el) ?? <Body el={el} assets={assets} />}
+          <div
+            ref={edit?.boardRef}
+            className="absolute top-0 left-0 origin-top-left"
+            style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+          >
+            <div className="absolute inset-0" onPointerDown={edit?.onBackgroundPointerDown}>
+              <Background fill={slide.background} assets={assets} />
             </div>
-          ))}
-          {edit?.overlay}
+            {inReadingOrder(slide.elements).map(({ el, z }) => (
+              <div
+                key={el.id}
+                data-element={el.type}
+                data-id={edit ? el.id : undefined}
+                tabIndex={edit ? 0 : undefined}
+                role={edit ? 'group' : undefined}
+                aria-roledescription={edit ? 'element' : undefined}
+                aria-label={edit?.elementLabel?.(el)}
+                onPointerDown={edit?.onElementPointerDown && ((e) => edit.onElementPointerDown?.(e, el))}
+                onFocus={edit?.onElementFocus && ((e) => e.target === e.currentTarget && edit.onElementFocus?.(el))}
+                className={edit ? 'absolute touch-none outline-none' : 'absolute'}
+                style={{
+                  left: el.x,
+                  top: el.y,
+                  width: el.w,
+                  height: el.h,
+                  zIndex: z,
+                  opacity: el.opacity,
+                  transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+                }}
+              >
+                {edit?.renderBody?.(el) ?? <Body el={el} assets={assets} />}
+              </div>
+            ))}
+          </div>
+          {credits.length > 0 && (
+            <p className="absolute bottom-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
+              Photo by{' '}
+              {credits.map((c, i) => (
+                <span key={c.name}>
+                  {i > 0 && ', '}
+                  <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
+                    {c.name}
+                  </a>
+                </span>
+              ))}{' '}
+              on{' '}
+              <a
+                href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="font-semibold underline"
+              >
+                Unsplash
+              </a>
+            </p>
+          )}
         </div>
-        {credits.length > 0 && (
-          <p className="absolute bottom-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
-            Photo by{' '}
-            {credits.map((c, i) => (
-              <span key={c.name}>
-                {i > 0 && ', '}
-                <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
-                  {c.name}
-                </a>
-              </span>
-            ))}{' '}
-            on{' '}
-            <a
-              href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="font-semibold underline"
-            >
-              Unsplash
-            </a>
-          </p>
+        {edit?.overlay && (
+          // Outside the clipped slide, so handles and frames of elements at the edge stay whole and grabbable.
+          <div
+            className="pointer-events-none absolute top-0 left-0 origin-top-left"
+            style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+          >
+            {edit.overlay}
+          </div>
         )}
       </div>
     </div>

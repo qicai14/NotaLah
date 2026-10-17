@@ -420,7 +420,7 @@ export function Canvas({ compact }: { compact: boolean }) {
 
   return (
     <div
-      className={cn('relative size-full', compact ? 'p-4' : 'p-10')}
+      className={cn('relative size-full', compact ? 'px-6 py-12' : 'p-12')}
       onKeyDown={onKeyDown}
       onKeyUp={(e) => e.key.startsWith('Arrow') && useEditor.getState().commit()}
       onBlur={() => useEditor.getState().commit()}

@@ -598,7 +598,7 @@ export default function EditorPage() {
           </aside>
         )}
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex h-12 shrink-0 items-center overflow-x-auto border-b bg-background">
+          <div className="flex h-12 shrink-0 items-center overflow-x-auto border-b bg-background [scrollbar-width:thin]">
             <ElementBar />
           </div>
           {banners}
