@@ -206,6 +206,7 @@ describe('profile page', () => {
     const unblock = await screen.findByRole('button', { name: 'Unblock' });
     expect(document.activeElement).toBe(unblock);
     await userEvent.click(unblock);
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Unblock' })).toBeNull());
     const h1 = await screen.findByRole('heading', { name: /Dr Lee/ });
     await waitFor(() => expect(document.activeElement).toBe(h1));
   });
