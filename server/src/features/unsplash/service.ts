@@ -1,5 +1,6 @@
 import { imageSourceSchema } from '@parp/shared';
 import { env } from '../../lib/env';
+import { consume } from '../usage/service';
 
 const API = 'https://api.unsplash.com';
 const TIMEOUT_MS = 5000;
@@ -31,6 +32,7 @@ export interface UnsplashPage {
 async function call(path: string): Promise<unknown> {
   const key = env.UNSPLASH_ACCESS_KEY;
   if (!key) throw new UnsplashUnavailable('Unsplash is not configured');
+  if (!(await consume('unsplash'))) throw new UnsplashUnavailable('Unsplash search is busy. Try again later');
   let res: Response;
   try {
     res = await fetch(path.startsWith('https://') ? path : `${API}${path}`, {
@@ -86,8 +88,15 @@ export async function searchPhotos(query: string, page: number): Promise<Unsplas
   const cacheKey = `${query.toLowerCase()}|${page}`;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.page;
-  const params = new URLSearchParams({ query, page: String(page), per_page: String(PER_PAGE) });
-  const body = (await call(`/search/photos?${params}`)) as { results?: Raw[]; total_pages?: number };
+  const params = new URLSearchParams({
+    query,
+    page: String(page),
+    per_page: String(PER_PAGE),
+  });
+  const body = (await call(`/search/photos?${params}`)) as {
+    results?: Raw[];
+    total_pages?: number;
+  };
   const result: UnsplashPage = {
     results: (body.results ?? []).map(toPhoto).filter((p): p is UnsplashPhoto => p !== null),
     totalPages: Number(body.total_pages) || 0,
@@ -99,7 +108,9 @@ export async function searchPhotos(query: string, page: number): Promise<Unsplas
 
 /** Tells Unsplash the photo was used, as their guidelines require. The URL comes from Unsplash's own response, never from the client. */
 export async function trackDownload(photoId: string): Promise<void> {
-  const photo = (await call(`/photos/${photoId}`)) as { links?: { download_location?: unknown } };
+  const photo = (await call(`/photos/${photoId}`)) as {
+    links?: { download_location?: unknown };
+  };
   const location = str(photo.links?.download_location);
   if (!location.startsWith(`${API}/`)) throw new UnsplashUnavailable('Unsplash is unavailable');
   await call(location);

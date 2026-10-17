@@ -1,6 +1,8 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { consume, consumeOrThrow } from '../features/usage/service';
 import { env } from './env';
+import { logger } from './logger';
 
 /**
  * Object storage behind the asset routes (D54). The local driver serves dev and tests; an R2 driver (S3-compatible)
@@ -43,4 +45,23 @@ export function localStorageDriver(root: string): Storage {
   };
 }
 
-export const storage: Storage = localStorageDriver(env.STORAGE_DIR);
+/**
+ * Counts every write and delete as an R2 Class A operation (R34, D57). A write past the cap throws `UsageLimitError`
+ * before anything is stored. A delete is always carried out, since it frees space; it is only counted. Reads are counted
+ * where they are served (`sendAsset`), because one served file may cost a read or a presigned URL.
+ */
+export function metered(inner: Storage): Storage {
+  return {
+    ...inner,
+    async put(key, body) {
+      await consumeOrThrow('class_a', 'Monthly image limit reached');
+      await inner.put(key, body);
+    },
+    async remove(key) {
+      if (!(await consume('class_a'))) logger.warn({ key }, 'class A cap reached; deleting anyway to free space');
+      await inner.remove(key);
+    },
+  };
+}
+
+export const storage: Storage = metered(localStorageDriver(env.STORAGE_DIR));

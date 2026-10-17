@@ -5,6 +5,8 @@ import { idParam } from '../../lib/validation';
 import { storage } from '../../lib/storage';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { uploadLimiter } from '../auth/rateLimit';
+import { env } from '../../lib/env';
+import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl } from './config';
 import { reencodeImage } from './image';
 import { getReadableAsset, insertImage } from './repository';
@@ -29,14 +31,26 @@ const readUpload: RequestHandler = (req, res, next) =>
   });
 
 // requireAuth, requireActive and the write limiter (app.ts) run before the body is read; CSRF runs before them all.
-assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUpload, async (req, res) => {
+const uploadsOpen: RequestHandler = (_req, res, next) =>
+  env.UPLOADS_DISABLED ? void res.status(503).json({ error: 'Uploads are turned off' }) : next();
+
+assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, uploadsOpen, readUpload, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
   const result = await reencodeImage(req.file.buffer);
   if (!result.ok) return res.status(400).json({ error: result.error });
   const { data, width, height } = result.image;
 
+  if (!(await storageFits(data.length))) {
+    return res.status(507).json({ error: 'Image storage is full. Uploads are paused' });
+  }
+
   const key = `i/${randomUUID()}.webp`;
-  await storage.put(key, data);
+  try {
+    await storage.put(key, data);
+  } catch (err) {
+    if (err instanceof UsageLimitError) return res.status(503).json({ error: err.message });
+    throw err;
+  }
   let asset;
   try {
     asset = await insertImage(me(req).id, key, data.length, width, height);
@@ -46,7 +60,9 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
   }
   if (asset === 'quota') {
     await storage.remove(key);
-    return res.status(413).json({ error: 'Storage limit of 500 MB reached. Delete notes or images to free space' });
+    return res.status(413).json({
+      error: 'Storage limit of 500 MB reached. Delete notes or images to free space',
+    });
   }
   res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
 });
