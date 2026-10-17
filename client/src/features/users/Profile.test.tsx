@@ -153,11 +153,8 @@ describe('profile page', () => {
     expect(screen.queryByRole('button', { name: 'Unblock' })).toBeNull();
   });
 
-  it('CLI-TC34: blocking an admin shows the server reason and keeps the dialog open', async () => {
-    handlers['GET /users/2'] = () => ({
-      status: 200,
-      body: { user: profile({ role: 'admin', isVerifiedLecturer: false }) },
-    });
+  it('CLI-TC34: when the server refuses the block (403) it shows the reason and keeps the dialog open', async () => {
+    handlers['GET /users/2'] = () => ({ status: 200, body: { user: profile() } });
     handlers['POST /users/2/block'] = () => ({ status: 403, body: { error: 'Administrators cannot be blocked' } });
     mount();
     await userEvent.click(await screen.findByRole('button', { name: 'More options' }));
@@ -168,23 +165,76 @@ describe('profile page', () => {
     expect(screen.queryByRole('button', { name: 'Unblock' })).toBeNull();
   });
 
-  it('CLI-TC35: a guest sees the profile, and Follow and Message open the guest sheet instead of writing', async () => {
+  it('CLI-TC35: a guest sees the profile, and Follow opens the guest sheet instead of writing', async () => {
     signedIn = null;
     handlers['GET /users/2'] = () => ({ status: 200, body: { user: profile() } });
     mount();
     await userEvent.click(await screen.findByRole('button', { name: 'Follow' }));
     expect(askToLogIn).toHaveBeenCalledWith({ action: 'follow', returnTo: '/users/2' });
-    await userEvent.click(screen.getByRole('button', { name: /Message/ }));
-    expect(askToLogIn).toHaveBeenCalledWith({ action: 'message', returnTo: '/users/2' });
     expect(screen.queryByRole('button', { name: 'More options' })).toBeNull();
     expect(calls.every((c) => c.method === 'GET')).toBe(true);
   });
 
-  it('CLI-TC36: Message is a plain link to /messages?to=id for a signed-in viewer', async () => {
+  it('CLI-TC36: the Message button is hidden until the inbox exists', async () => {
     handlers['GET /users/2'] = () => ({ status: 200, body: { user: profile() } });
     mount();
-    const link = await screen.findByRole('link', { name: /Message/ });
-    expect(link.getAttribute('href')).toBe('/messages?to=2');
+    await screen.findByRole('button', { name: 'Follow' });
+    expect(screen.queryByText('Message')).toBeNull();
+  });
+
+  it('CLI-TC39: an administrator profile has no More menu, so it cannot be blocked from the UI', async () => {
+    handlers['GET /users/2'] = () => ({
+      status: 200,
+      body: { user: profile({ role: 'admin', isVerifiedLecturer: false }) },
+    });
+    mount();
+    await screen.findByRole('button', { name: 'Follow' });
+    expect(screen.queryByRole('button', { name: 'More options' })).toBeNull();
+  });
+
+  it('CLI-TC40: Unblock takes focus on the blocked view, and the name heading after unblocking', async () => {
+    let blocked = true;
+    handlers['GET /users/2'] = () => ({
+      status: 200,
+      body: { user: blocked ? { id: 2, displayName: 'Dr Lee', blockedByMe: true } : profile() },
+    });
+    handlers['DELETE /users/2/block'] = () => {
+      blocked = false;
+      return { status: 200, body: { blockedByMe: false } };
+    };
+    mount();
+    const unblock = await screen.findByRole('button', { name: 'Unblock' });
+    expect(document.activeElement).toBe(unblock);
+    await userEvent.click(unblock);
+    const h1 = await screen.findByRole('heading', { name: /Dr Lee/ });
+    await waitFor(() => expect(document.activeElement).toBe(h1));
+  });
+
+  it('CLI-TC41: a profile note tile hides its slide from the link and from assistive technology', async () => {
+    handlers['GET /users/2'] = () => ({
+      status: 200,
+      body: {
+        user: profile({
+          notes: [
+            {
+              id: 7,
+              title: 'Joins',
+              moduleCode: null,
+              publishedAt: null,
+              hashtags: [],
+              verifiedBy: null,
+              aspect: '4:5',
+              likes: 0,
+              cover: { background: { kind: 'color', color: '#ffffff' }, elements: [] },
+              assets: {},
+            },
+          ],
+        }),
+      },
+    });
+    mount();
+    const tile = await screen.findByRole('link', { name: /Joins/ });
+    expect(tile.querySelector('[inert][aria-hidden="true"]')).not.toBeNull();
   });
 });
 

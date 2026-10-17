@@ -43,6 +43,11 @@ export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh
                    FROM "POST_HASHTAG_T" ph JOIN "HASHTAG_T" h ON h.hsh_id = ph.phs_hsh_id
                    WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"`;
 
+/** The note's ready uploads as asset id -> file URL (alias p = POST_T). */
+export const ASSETS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/api/assets/' || a.ast_id || '/file')
+                   FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
+                   WHERE pa.pas_pst_id = p.pst_id AND a.ast_status = 'ready'), '{}'::JSON) AS "assets"`;
+
 export interface Note {
   id: number;
   title: string;
@@ -71,9 +76,7 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
               ELSE json_build_object('trackId', p.pst_music_track_id, 'title', p.pst_music_title,
                                      'artist', p.pst_music_artist, 'cover', p.pst_music_cover,
                                      'volume', p.pst_music_volume) END AS "music",
-         COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/api/assets/' || a.ast_id || '/file')
-                   FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
-                   WHERE pa.pas_pst_id = p.pst_id AND a.ast_status = 'ready'), '{}'::JSON) AS "assets",
+         ${ASSETS_COL},
          p.pst_visibility AS "visibility",
          ${MODULE_COL},
          ${HASHTAGS_COL},
@@ -403,9 +406,7 @@ export async function listNotesByAuthor(
             (SELECT COUNT(*)::INT FROM "LIKE_T" l WHERE l.lik_pst_id = p.pst_id) AS "likes",
             (SELECT json_build_object('background', s.sld_doc -> 'background', 'elements', s.sld_doc -> 'elements')
              FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id ORDER BY s.sld_position LIMIT 1) AS "cover",
-            COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/api/assets/' || a.ast_id || '/file')
-                      FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
-                      WHERE pa.pas_pst_id = p.pst_id AND a.ast_status = 'ready'), '{}'::JSON) AS "assets",
+            ${ASSETS_COL},
             ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE_OR_ADMIN}
@@ -417,12 +418,12 @@ export async function listNotesByAuthor(
   return toPage(rows, limit);
 }
 
-/** Likes on the author's published notes, for the profile header. */
-export async function countLikesReceived(authorId: number): Promise<number> {
+/** Likes on the author's published notes that the viewer can see, not counting the author's own; for the profile header. */
+export async function countLikesReceived(authorId: number, viewerId: number): Promise<number> {
   const { rows } = await pool.query<{ n: number }>(
     `SELECT COUNT(*)::INT AS n FROM "LIKE_T" l JOIN "POST_T" p ON p.pst_id = l.lik_pst_id
-     WHERE p.pst_usr_id = $1 AND p.pst_status = 'published'`,
-    [authorId],
+     WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE_OR_ADMIN} AND l.lik_usr_id <> p.pst_usr_id`,
+    [viewerId, authorId],
   );
   return rows[0].n;
 }

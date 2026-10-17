@@ -1,4 +1,3 @@
-import type { RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
@@ -10,13 +9,11 @@ export function BlockDialog({
   name,
   onClose,
   onBlocked,
-  returnFocus,
 }: {
   userId: number;
   name: string;
   onClose(): void;
   onBlocked(): void;
-  returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const { run, pending, error } = useAction();
 
@@ -33,14 +30,7 @@ export function BlockDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent
-        className="sm:max-w-md"
-        onCloseAutoFocus={(e) => {
-          if (!returnFocus?.current) return;
-          e.preventDefault();
-          returnFocus.current.focus();
-        }}
-      >
+      <DialogContent className="sm:max-w-md">
         <DialogTitle className="text-title font-bold">Block {name}?</DialogTitle>
         <DialogDescription className="text-body-sm text-muted-foreground">
           They will not be told. You can unblock them any time from their profile or from Edit profile.

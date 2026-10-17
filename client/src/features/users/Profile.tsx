@@ -1,6 +1,6 @@
 import { BOARD_WIDTH, boardHeight } from '@parp/shared';
-import { ArrowLeft, Ban, MessageCircle, MoreHorizontal, Pencil } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { ArrowLeft, Ban, MoreHorizontal, Pencil } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SlideBoard } from '@/components/board/SlideBoard';
 import { LecturerBadge } from '@/components/LecturerBadge';
@@ -16,6 +16,7 @@ import { api } from '@/lib/api';
 import { timeAgo } from '@/lib/format';
 import { useAction } from '@/lib/useAction';
 import { useFetch } from '@/lib/useFetch';
+import { usePaged } from '@/lib/usePaged';
 import type { BlockedProfile, FollowState, Profile as ProfileData, ProfileNote } from '@/types';
 import { useAuth } from '../auth/AuthContext';
 import { useGuestPrompt } from '../auth/GuestPrompt';
@@ -23,7 +24,6 @@ import { BlockDialog } from './BlockDialog';
 import { PeopleDialog } from './PeopleDialog';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
-const NOT_AVAILABLE = 'User not found';
 
 const isBlocked = (u: ProfileData | BlockedProfile): u is BlockedProfile => u.blockedByMe === true;
 
@@ -32,10 +32,13 @@ export default function Profile() {
   const { id } = useParams();
   const { user } = useAuth();
   const uid = id ?? String(user?.id);
-  const { data, setData, error, loading, reload } = useFetch<{ user: ProfileData | BlockedProfile }>(`/users/${uid}`);
+  const afterUnblock = useRef(false);
+  const { data, setData, error, errorStatus, loading, reload } = useFetch<{ user: ProfileData | BlockedProfile }>(
+    `/users/${uid}`,
+  );
 
   if (loading) return <ProfileSkeleton />;
-  if (error === NOT_AVAILABLE) return <Unavailable />;
+  if (errorStatus === 404) return <Unavailable />;
   if (error || !data) {
     return (
       <p role="alert" className="py-16 text-center text-body-sm font-medium text-destructive">
@@ -44,12 +47,22 @@ export default function Profile() {
     );
   }
   const p = data.user;
-  if (isBlocked(p)) return <BlockedView profile={p} onUnblocked={reload} />;
+  if (isBlocked(p))
+    return (
+      <BlockedView
+        profile={p}
+        onUnblocked={() => {
+          afterUnblock.current = true;
+          reload();
+        }}
+      />
+    );
   return (
     <Loaded
       key={p.id}
       p={p}
       own={p.id === user?.id}
+      focusName={afterUnblock.current}
       onFollowState={(s) => setData((d) => d && { user: { ...(d.user as ProfileData), ...s } })}
       onBlocked={() => setData((d) => d && { user: { id: p.id, displayName: p.displayName, blockedByMe: true } })}
       reload={reload}
@@ -87,6 +100,8 @@ function Unavailable() {
 /** Wireframe 34: the blocker sees only the name and Unblock. */
 function BlockedView({ profile, onUnblocked }: { profile: BlockedProfile; onUnblocked(): void }) {
   const { run, pending, error } = useAction();
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => button.current?.focus(), []);
   const unblock = async () => {
     if ((await run(() => api(`/users/${profile.id}/block`, { method: 'DELETE' }))) !== undefined) onUnblocked();
   };
@@ -97,7 +112,7 @@ function BlockedView({ profile, onUnblocked }: { profile: BlockedProfile; onUnbl
       <p className="max-w-sm text-body text-muted-foreground">
         You blocked this account. Their notes and profile are hidden from you, and yours from them.
       </p>
-      <Button variant="outline" onClick={unblock} disabled={pending}>
+      <Button ref={button} variant="outline" onClick={unblock} disabled={pending}>
         {pending ? 'Unblocking…' : 'Unblock'}
       </Button>
       {error && (
@@ -118,12 +133,7 @@ function Stat({ value, label, onClick }: { value: number; label: string; onClick
   );
   if (!onClick) return <div>{inner}</div>;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={`${value} ${label}`}
-      className="cursor-pointer rounded-sm hover:underline"
-    >
+    <button type="button" onClick={onClick} className="cursor-pointer rounded-sm hover:underline">
       {inner}
     </button>
   );
@@ -132,12 +142,14 @@ function Stat({ value, label, onClick }: { value: number; label: string; onClick
 function Loaded({
   p,
   own,
+  focusName,
   onFollowState,
   onBlocked,
   reload,
 }: {
   p: ProfileData;
   own: boolean;
+  focusName: boolean;
   onFollowState(s: FollowState): void;
   onBlocked(): void;
   reload(): void;
@@ -147,8 +159,10 @@ function Loaded({
   const navigate = useNavigate();
   const [people, setPeople] = useState<'followers' | 'following' | null>(null);
   const [blocking, setBlocking] = useState(false);
-  const [more, setMore] = useState<{ notes: ProfileNote[]; next: string | null } | null>(null);
-  const moreTrigger = useRef<HTMLButtonElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (focusName) heading.current?.focus();
+  }, [focusName]);
   const { run, pending, error } = useAction();
   const returnTo = `/users/${p.id}`;
 
@@ -163,15 +177,10 @@ function Loaded({
     });
   };
 
-  const loadMore = () =>
-    run(async () => {
-      const cursor = more ? more.next : p.notesNextCursor;
-      const r = await api<{ notes: ProfileNote[]; nextCursor: string | null }>(`/users/${p.id}/notes?cursor=${cursor}`);
-      setMore((m) => ({ notes: [...(m?.notes ?? []), ...r.notes], next: r.nextCursor }));
-    });
-
-  const notes = [...p.notes, ...(more?.notes ?? [])];
-  const nextCursor = more ? more.next : p.notesNextCursor;
+  const notes = usePaged<ProfileNote>(`/users/${p.id}/notes`, 'notes', {
+    items: p.notes,
+    next: p.notesNextCursor,
+  });
   const followLabel = p.isFriend ? 'Friends' : p.followedByMe ? 'Following' : p.followsMe ? 'Follow back' : 'Follow';
   const subtitle = [p.role === 'lecturer' ? 'Lecturer' : p.role === 'admin' ? 'Admin' : 'Student', p.programme]
     .filter(Boolean)
@@ -193,7 +202,7 @@ function Loaded({
       <header className="flex flex-col gap-5 sm:flex-row sm:items-start">
         <UserAvatar name={p.displayName} src={p.avatarUrl} className="size-24 text-title sm:size-28" />
         <div className="min-w-0 flex-1">
-          <h1 id="profile-name" className="text-title font-bold">
+          <h1 id="profile-name" ref={heading} tabIndex={-1} className="text-title font-bold outline-none">
             {p.displayName}
             {p.isVerifiedLecturer && <LecturerBadge />}
           </h1>
@@ -237,23 +246,11 @@ function Loaded({
                 >
                   {followLabel}
                 </Button>
-                {user ? (
-                  <Button asChild variant="outline">
-                    <Link to={`/messages?to=${p.id}`}>
-                      <MessageCircle aria-hidden="true" />
-                      Message
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button variant="outline" onClick={() => askToLogIn({ action: 'message', returnTo })}>
-                    <MessageCircle aria-hidden="true" />
-                    Message
-                  </Button>
-                )}
-                {user && (
+                {/* shortcut: Message button hidden until the messaging UI lands; it must read ?to=<id> */}
+                {user && p.role !== 'admin' && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button ref={moreTrigger} variant="outline" size="icon" aria-label="More options">
+                      <Button variant="outline" size="icon" aria-label="More options">
                         <MoreHorizontal aria-hidden="true" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -277,7 +274,7 @@ function Loaded({
       </header>
 
       <h2 className="mt-8 mb-3 text-title-sm font-bold">Notes</h2>
-      {notes.length === 0 && (
+      {notes.items.length === 0 && !notes.loading && (
         <div className="py-12 text-center">
           <p className="text-title font-bold">No notes yet</p>
           <p className="mt-1 text-body text-muted-foreground">
@@ -286,15 +283,20 @@ function Loaded({
         </div>
       )}
       <ul className="grid grid-cols-2 items-start gap-3 sm:grid-cols-3">
-        {notes.map((n) => (
+        {notes.items.map((n) => (
           <li key={n.id}>
             <NoteTile note={n} />
           </li>
         ))}
       </ul>
-      {nextCursor && (
+      {notes.error && (
+        <p role="alert" className="mt-3 text-center text-body-sm font-medium text-destructive">
+          {notes.error}
+        </p>
+      )}
+      {notes.hasMore && (
         <div className="mt-4 flex justify-center">
-          <Button variant="secondary" disabled={pending} onClick={loadMore}>
+          <Button variant="secondary" disabled={notes.loadingMore} onClick={notes.loadMore}>
             Show more notes
           </Button>
         </div>
@@ -302,13 +304,7 @@ function Loaded({
 
       {people && <PeopleDialog userId={p.id} side={people} name={p.displayName} onClose={() => setPeople(null)} />}
       {blocking && (
-        <BlockDialog
-          userId={p.id}
-          name={p.displayName}
-          onClose={() => setBlocking(false)}
-          onBlocked={onBlocked}
-          returnFocus={moreTrigger}
-        />
+        <BlockDialog userId={p.id} name={p.displayName} onClose={() => setBlocking(false)} onBlocked={onBlocked} />
       )}
     </section>
   );
@@ -322,7 +318,9 @@ function NoteTile({ note: n }: { note: ProfileNote }) {
     >
       <div className="bg-surface-strong" style={{ aspectRatio: BOARD_WIDTH / boardHeight(n.aspect) }}>
         {n.cover && (
-          <SlideBoard slide={n.cover} aspect={n.aspect} assets={n.assets} label={`First slide of ${n.title}`} />
+          <div inert aria-hidden="true" className="size-full">
+            <SlideBoard slide={n.cover} aspect={n.aspect} assets={n.assets} label={`First slide of ${n.title}`} />
+          </div>
         )}
       </div>
       <div className="p-3">

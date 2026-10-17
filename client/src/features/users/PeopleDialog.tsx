@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LecturerBadge } from '@/components/LecturerBadge';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { api, errorText } from '@/lib/api';
+import { usePaged } from '@/lib/usePaged';
 import type { PersonRow } from '@/types';
 
 type Side = 'followers' | 'following';
@@ -21,33 +20,14 @@ export function PeopleDialog({
   name: string;
   onClose(): void;
 }) {
-  const [rows, setRows] = useState<PersonRow[]>([]);
-  const [next, setNext] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(
-    async (cursor: string | null) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const r = await api<{ items: PersonRow[]; nextCursor: string | null }>(
-          `/users/${userId}/${side}${cursor ? `?cursor=${cursor}` : ''}`,
-        );
-        setRows((prev) => (cursor ? [...prev, ...r.items] : r.items));
-        setNext(r.nextCursor);
-      } catch (e) {
-        setError(errorText(e));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userId, side],
-  );
-
-  useEffect(() => {
-    void load(null);
-  }, [load]);
+  const {
+    items: rows,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadMore,
+  } = usePaged<PersonRow>(`/users/${userId}/${side}`, 'items');
 
   const title = side === 'followers' ? 'Followers' : 'Following';
   return (
@@ -81,7 +61,7 @@ export function PeopleDialog({
               </li>
             ))}
           </ul>
-          {loading && (
+          {(loading || loadingMore) && (
             <p role="status" className="py-4 text-center text-body-sm text-muted-foreground">
               Loading…
             </p>
@@ -91,8 +71,8 @@ export function PeopleDialog({
               {error}
             </p>
           )}
-          {next && !loading && (
-            <Button variant="secondary" className="mt-2 w-full" onClick={() => load(next)}>
+          {hasMore && !loading && !loadingMore && (
+            <Button variant="secondary" className="mt-2 w-full" onClick={loadMore}>
               Show more
             </Button>
           )}

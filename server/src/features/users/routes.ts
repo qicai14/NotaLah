@@ -130,7 +130,7 @@ usersRouter.get('/:id', optionalAuth, async (req, res) => {
   const own = profile.id === viewerId(req);
   const [notes, likeCount, draftCount] = await Promise.all([
     listNotesByAuthor(profile.id, viewerId(req), { cursor: null, limit: PROFILE_NOTES }),
-    countLikesReceived(profile.id),
+    countLikesReceived(profile.id, viewerId(req)),
     own ? countDrafts(profile.id) : undefined,
   ]);
   // the first page is embedded; GET /:id/notes?cursor=<notesNextCursor> continues it (D40)

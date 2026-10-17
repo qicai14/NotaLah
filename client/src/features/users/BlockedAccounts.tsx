@@ -1,34 +1,28 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { api } from '@/lib/api';
 import { useAction } from '@/lib/useAction';
-import { useFetch } from '@/lib/useFetch';
+import { usePaged } from '@/lib/usePaged';
 import type { BlockedUser } from '@/types';
-
-type Page = { users: BlockedUser[]; nextCursor: string | null };
 
 /** The people the user blocked, each with Unblock (D49). Lives in Edit profile. */
 export function BlockedAccounts() {
-  const { data, setData, error, loading } = useFetch<Page>('/users/me/blocks');
-  const [extra, setExtra] = useState<{ users: BlockedUser[]; next: string | null } | null>(null);
+  const {
+    items: users,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadMore,
+    remove,
+  } = usePaged<BlockedUser>('/users/me/blocks', 'users');
   const { run, pending, error: actionError } = useAction();
-
-  const users = [...(data?.users ?? []), ...(extra?.users ?? [])];
-  const next = extra ? extra.next : (data?.nextCursor ?? null);
 
   const unblock = (id: number) =>
     run(async () => {
       await api(`/users/${id}/block`, { method: 'DELETE' });
-      setData((d) => d && { ...d, users: d.users.filter((u) => u.id !== id) });
-      setExtra((e) => e && { ...e, users: e.users.filter((u) => u.id !== id) });
-    });
-
-  const more = () =>
-    run(async () => {
-      const r = await api<Page>(`/users/me/blocks?cursor=${next}`);
-      setExtra((e) => ({ users: [...(e?.users ?? []), ...r.users], next: r.nextCursor }));
+      remove((u) => u.id === id);
     });
 
   return (
@@ -49,7 +43,7 @@ export function BlockedAccounts() {
           {error ?? actionError}
         </p>
       )}
-      {data && users.length === 0 && (
+      {!loading && !error && users.length === 0 && (
         <p className="mt-3 text-body text-muted-foreground">You have not blocked anyone.</p>
       )}
       <ul className="mt-3 flex flex-col gap-1">
@@ -71,8 +65,8 @@ export function BlockedAccounts() {
           </li>
         ))}
       </ul>
-      {next && (
-        <Button variant="secondary" className="mt-2" disabled={pending} onClick={more}>
+      {hasMore && (
+        <Button variant="secondary" className="mt-2" disabled={loadingMore} onClick={loadMore}>
           Show more
         </Button>
       )}
