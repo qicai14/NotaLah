@@ -4,8 +4,7 @@ import multer from 'multer';
 import { idParam } from '../../lib/validation';
 import { storage } from '../../lib/storage';
 import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
-import { uploadLimiter } from '../auth/rateLimit';
-import { env } from '../../lib/env';
+import { fileLimiter, uploadLimiter } from '../auth/rateLimit';
 import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl } from './config';
 import { reencodeImage } from './image';
@@ -31,10 +30,7 @@ const readUpload: RequestHandler = (req, res, next) =>
   });
 
 // requireAuth, requireActive and the write limiter (app.ts) run before the body is read; CSRF runs before them all.
-const uploadsOpen: RequestHandler = (_req, res, next) =>
-  env.UPLOADS_DISABLED ? void res.status(503).json({ error: 'Uploads are turned off' }) : next();
-
-assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, uploadsOpen, readUpload, async (req, res) => {
+assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUpload, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
   const result = await reencodeImage(req.file.buffer);
   if (!result.ok) return res.status(400).json({ error: result.error });
@@ -67,7 +63,7 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, uploadsO
   res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
 });
 
-assetsRouter.get('/:id/file', optionalAuth, async (req, res) => {
+assetsRouter.get('/:id/file', optionalAuth, fileLimiter, async (req, res) => {
   const asset = await getReadableAsset(Number(req.params.id), viewerId(req));
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
   await sendAsset(res, asset);

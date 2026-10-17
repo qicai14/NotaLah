@@ -1,13 +1,15 @@
-import { rm } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
+import path from 'node:path';
 import sharp from 'sharp';
 import request from 'supertest';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../../src/app';
 import { clearUnsplashCache } from '../../src/features/unsplash/service';
-import { capFromEnv, FREE, METRICS, STORAGE_CAP_BYTES } from '../../src/features/usage/config';
+import { capFromEnv, FREE, METRICS, SHARE, STORAGE_CAP_BYTES } from '../../src/features/usage/config';
 import { consume, periodKey } from '../../src/features/usage/service';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
+import { storage } from '../../src/lib/storage';
 import { asUser, insertUser, truncateAll } from '../helpers';
 
 beforeEach(async () => {
@@ -142,8 +144,8 @@ describe('free-tier cost guard (R34, D57)', () => {
     expect(res.status).toBe(200);
     const byMetric = Object.fromEntries(res.body.usage.map((r: { metric: string }) => [r.metric, r]));
     expect(Object.keys(byMetric).sort()).toEqual(['class_a', 'class_b', 'storage_bytes', 'unsplash']);
-    expect(byMetric.class_a).toMatchObject({ used: 3, cap: 800_000 });
-    expect(byMetric.unsplash.cap).toBe(40);
+    expect(byMetric.class_a).toMatchObject({ used: 3, cap: 500_000 });
+    expect(byMetric.unsplash.cap).toBe(25);
     expect(byMetric.storage_bytes).toMatchObject({
       used: 0,
       cap: 8_000_000_000,
@@ -151,11 +153,30 @@ describe('free-tier cost guard (R34, D57)', () => {
     });
   });
 
-  it('USE-TC8: an env cap above the free figure is clamped to it; bad values use the default', () => {
-    expect(capFromEnv('X', FREE.classA, undefined)).toBe(800_000);
-    expect(capFromEnv('X', FREE.classA, '5000')).toBe(5000);
-    expect(capFromEnv('X', FREE.classA, '999999999')).toBe(FREE.classA);
-    expect(capFromEnv('X', FREE.unsplash, '-1')).toBe(40);
-    expect(capFromEnv('X', FREE.unsplash, 'lots')).toBe(40);
+  it('USE-TC8: an env cap can lower the safe default but never raise it', () => {
+    expect(capFromEnv('X', FREE.classA, SHARE.classA, undefined)).toBe(500_000);
+    expect(capFromEnv('X', FREE.classA, SHARE.classA, '5000')).toBe(5000);
+    expect(capFromEnv('X', FREE.classA, SHARE.classA, '600000')).toBe(500_000);
+    expect(capFromEnv('X', FREE.classA, SHARE.classA, '999999999')).toBe(500_000);
+    expect(capFromEnv('X', FREE.unsplash, SHARE.unsplash, '-1')).toBe(25);
+    expect(capFromEnv('X', FREE.unsplash, SHARE.unsplash, 'lots')).toBe(25);
+    expect(capFromEnv('X', FREE.storageBytes, SHARE.storage, '9000000000')).toBe(8_000_000_000);
+  });
+
+  it('USE-TC9: a counter failure stops uploads and file serving with 500 but not deletes', async () => {
+    const uid = await insertUser();
+    const id = (await upload(uid)).body.asset.id;
+    const key = (await pool.query(`SELECT ast_key FROM "ASSET_T" WHERE ast_id = $1`, [id])).rows[0].ast_key;
+    await pool.query(`ALTER TABLE "USAGE_COUNTER_T" RENAME TO "USAGE_COUNTER_OFF"`);
+    try {
+      const files = await readdir(path.join(env.STORAGE_DIR, 'i'));
+      expect((await upload(uid)).status).toBe(500);
+      expect(await readdir(path.join(env.STORAGE_DIR, 'i'))).toEqual(files);
+      expect((await request(app).get(`/api/assets/${id}/file`).set(asUser(uid))).status).toBe(500);
+      await storage.remove(key);
+      expect(await readdir(path.join(env.STORAGE_DIR, 'i'))).toHaveLength(files.length - 1);
+    } finally {
+      await pool.query(`ALTER TABLE "USAGE_COUNTER_OFF" RENAME TO "USAGE_COUNTER_T"`);
+    }
   });
 });

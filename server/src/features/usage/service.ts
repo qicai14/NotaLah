@@ -18,7 +18,11 @@ export async function consumeOrThrow(metric: Metric, message: string): Promise<v
   if (!(await consume(metric))) throw new UsageLimitError(message);
 }
 
-/** True when a new file of `bytes` still fits under the global storage cap. */
+/**
+ * shortcut: read-then-write, so concurrent uploads can each pass and overshoot by their combined size (a few 5 MB
+ * files at most); the 2 GB headroom under the 10 GB allowance absorbs it. Use an atomic reserve if uploads grow large.
+ * True when a new file of `bytes` still fits under the global storage cap.
+ */
 export async function storageFits(bytes: number): Promise<boolean> {
   return (await storedBytes()) + bytes <= STORAGE_CAP_BYTES;
 }

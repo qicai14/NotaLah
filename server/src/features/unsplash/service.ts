@@ -11,6 +11,11 @@ const PER_PAGE = 20;
 const UTM = 'utm_source=notalah&utm_medium=referral';
 
 export class UnsplashUnavailable extends Error {}
+
+/** Counts `n` outbound calls against the app-wide hourly cap before any is made (R34, D57). */
+async function reserve(n: number): Promise<void> {
+  if (!(await consume('unsplash', n))) throw new UnsplashUnavailable('Unsplash is busy. Try again later');
+}
 export class UnsplashNotFound extends Error {}
 
 export interface UnsplashPhoto {
@@ -32,7 +37,6 @@ export interface UnsplashPage {
 async function call(path: string): Promise<unknown> {
   const key = env.UNSPLASH_ACCESS_KEY;
   if (!key) throw new UnsplashUnavailable('Unsplash is not configured');
-  if (!(await consume('unsplash'))) throw new UnsplashUnavailable('Unsplash search is busy. Try again later');
   let res: Response;
   try {
     res = await fetch(path.startsWith('https://') ? path : `${API}${path}`, {
@@ -88,6 +92,7 @@ export async function searchPhotos(query: string, page: number): Promise<Unsplas
   const cacheKey = `${query.toLowerCase()}|${page}`;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.page;
+  await reserve(1);
   const params = new URLSearchParams({
     query,
     page: String(page),
@@ -108,6 +113,7 @@ export async function searchPhotos(query: string, page: number): Promise<Unsplas
 
 /** Tells Unsplash the photo was used, as their guidelines require. The URL comes from Unsplash's own response, never from the client. */
 export async function trackDownload(photoId: string): Promise<void> {
+  await reserve(2);
   const photo = (await call(`/photos/${photoId}`)) as {
     links?: { download_location?: unknown };
   };
