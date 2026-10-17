@@ -99,7 +99,7 @@ describe('Video upload (R29)', () => {
     }
   });
 
-  it('NOTE-TC39: a playlist that points at an http segment is refused without a network call', async () => {
+  it('NOTE-TC68: a playlist that points at an http segment is refused without a network call', async () => {
     const hits: string[] = [];
     const server = createServer((req, res) => {
       hits.push(req.url ?? '');
@@ -119,7 +119,7 @@ http://127.0.0.1:${port}/seg.ts
     expect(hits).toEqual([]);
   });
 
-  it('NOTE-TC39: refuses before reading the body when uploads are disabled', async () => {
+  it('NOTE-TC69: refuses before reading the body when uploads are disabled', async () => {
     env.UPLOADS_DISABLED = true;
     try {
       const res = await upload(await insertUser(), readFileSync(file('short.mp4')));
@@ -130,23 +130,23 @@ http://127.0.0.1:${port}/seg.ts
     }
   });
 
-  it('refuses a body over 50 MB with 413', async () => {
+  it('NOTE-TC71: refuses a body over 50 MB with 413', async () => {
     const res = await upload(await insertUser(), Buffer.alloc(VIDEO.maxBytes + 1024));
     expect(res.status).toBe(413);
   });
 
-  it('scales a video above 1080p down to fit', async () => {
+  it('NOTE-TC70: scales a video above 1080p down to fit', async () => {
     const asset = await ready(await insertUser(), 'big.mp4');
     expect(asset.width).toBeLessThanOrEqual(VIDEO.maxWidth);
     expect(asset.height).toBeLessThanOrEqual(VIDEO.maxHeight);
   });
 
-  it('NOTE-TC39: a rotated 1920x1080 clip is stored as the 1080x1920 portrait it displays as', async () => {
+  it('NOTE-TC70: a rotated 1920x1080 clip is stored as the 1080x1920 portrait it displays as', async () => {
     const asset = await ready(await insertUser(), 'portrait.mp4');
     expect([asset.width, asset.height]).toEqual([1080, 1920]);
   });
 
-  it('strips metadata from both containers', async () => {
+  it('NOTE-TC72: strips metadata from both containers', async () => {
     const uid = await insertUser();
     for (const name of ['short.mp4', 'short.webm']) {
       const asset = await ready(uid, name);
@@ -161,7 +161,7 @@ http://127.0.0.1:${port}/seg.ts
     }
   });
 
-  it('serves byte ranges with 206 and refuses an unsatisfiable one with 416', async () => {
+  it('NOTE-TC73: serves byte ranges with 206 and refuses an unsatisfiable one with 416', async () => {
     const uid = await insertUser();
     const asset = await ready(uid, 'short.mp4');
     const size = ((await bytesOf(uid, asset.url)).body as Buffer).length;
@@ -185,7 +185,7 @@ http://127.0.0.1:${port}/seg.ts
     expect(parseRange('bytes=0-1,5-6', size)).toBeNull();
   });
 
-  it('removes its temp directory after success, rejection and an oversized body', async () => {
+  it('NOTE-TC74: removes its temp directory after success, rejection and an oversized body', async () => {
     const uid = await insertUser();
     await upload(uid, readFileSync(file('short.mp4')));
     await upload(uid, Buffer.from('garbage'));
@@ -194,7 +194,7 @@ http://127.0.0.1:${port}/seg.ts
     expect(tmpDirs()).toEqual([]);
   });
 
-  it('kills ffmpeg that runs past the timeout and reports it', async () => {
+  it('NOTE-TC75: kills ffmpeg that runs past the timeout and reports it', async () => {
     const started = Date.now();
     const endless = [
       '-v',
@@ -217,7 +217,7 @@ http://127.0.0.1:${port}/seg.ts
     });
   });
 
-  it('a ready video can be used in a note', async () => {
+  it('NOTE-TC76: a ready video can be used in a note', async () => {
     const uid = await insertUser();
     const asset = await ready(uid, 'short.webm');
     const element = {
@@ -242,5 +242,46 @@ http://127.0.0.1:${port}/seg.ts
         slides: [{ background: { kind: 'color', color: '#ffffff' }, elements: [element], notes: '' }],
       });
     expect(res.status).toBe(201);
+  });
+
+  it('NOTE-TC77: a poster follows the video access rules: stranger 404, view link 200', async () => {
+    const owner = await insertUser();
+    const asset = await ready(owner, 'short.mp4');
+    const element = {
+      id: 'abcdef01-0000-4000-8000-000000000001',
+      x: 0,
+      y: 0,
+      w: 300,
+      h: 200,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      type: 'video',
+      assetId: asset.id,
+      loop: false,
+    };
+    const note = await request(app)
+      .post('/api/notes')
+      .set(asUser(owner))
+      .send({
+        title: 'Deck',
+        status: 'draft',
+        slides: [{ background: { kind: 'color', color: '#ffffff' }, elements: [element], notes: '' }],
+      });
+    const link = await request(app)
+      .post(`/api/notes/${note.body.note.id}/links`)
+      .set(asUser(owner))
+      .send({ role: 'view' });
+    const poster = `?poster=1`;
+    expect(
+      (
+        await request(app)
+          .get(asset.url + poster)
+          .set(asUser(await insertUser()))
+      ).status,
+    ).toBe(404);
+    const shared = await request(app).get(`/api/share/${link.body.token}/assets/${asset.id}${poster}`);
+    expect(shared.status).toBe(200);
+    expect(shared.headers['content-type']).toBe('image/webp');
   });
 });
