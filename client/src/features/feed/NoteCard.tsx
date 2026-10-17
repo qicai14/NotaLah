@@ -1,5 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
 import { SlideCarousel } from '../../components/board/SlideCarousel';
@@ -57,12 +58,20 @@ export const NoteCard = memo(function NoteCard({
   const [item, setItem] = useState(initial);
   const ref = useViewLogger(item.id, guest);
   const titleId = `note-${item.id}-title`;
+  const desktop = useMediaQuery(DESKTOP);
+  const actions = (
+    <NoteActions
+      note={item}
+      onOpenComments={() => onOpenComments(item)}
+      onChange={(v) => setItem((n) => ({ ...n, ...v }))}
+    />
+  );
 
   return (
     <article
       ref={ref}
       aria-labelledby={titleId}
-      className="flex h-full snap-start snap-always items-end justify-center gap-2 px-3 pt-topbar pb-3 md:gap-5 md:px-6 md:pb-6"
+      className="flex h-full snap-start snap-always items-end justify-center gap-2 px-2 pt-topbar pb-3 md:gap-5 md:px-6 md:pb-6"
     >
       <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-(--shadow-card) md:aspect-[9/16] md:max-w-[34rem] md:flex-none md:rounded-2xl">
         {(item.verified || (item.components && weights)) && (
@@ -80,9 +89,9 @@ export const NoteCard = memo(function NoteCard({
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col justify-center px-4 py-2 md:px-6">
+        <div className="relative flex min-h-0 flex-1 flex-col justify-center py-2 max-md:bg-media-backdrop md:px-6">
           {item.module && (
-            <p className="mb-2 text-caption font-semibold text-muted-foreground">
+            <p className="mb-2 text-caption font-semibold text-muted-foreground max-md:hidden">
               {item.module.code}
               <span className="sr-only">, {item.module.name}</span>
             </p>
@@ -90,6 +99,7 @@ export const NoteCard = memo(function NoteCard({
           <div className="min-h-0 flex-1">
             <SlideCarousel slides={item.slides} aspect={item.aspect} assets={item.assets} />
           </div>
+          {!desktop && <div className="absolute right-0.5 bottom-2 z-10">{actions}</div>}
         </div>
 
         <footer className="border-t bg-surface px-4 py-3.5 md:px-5 md:py-4">
@@ -125,13 +135,7 @@ export const NoteCard = memo(function NoteCard({
         </footer>
       </div>
 
-      <div className="relative shrink-0 pb-1">
-        <NoteActions
-          note={item}
-          onOpenComments={() => onOpenComments(item)}
-          onVerify={(v) => setItem((n) => ({ ...n, ...v }))}
-        />
-      </div>
+      {desktop && <div className="relative shrink-0 pb-1">{actions}</div>}
     </article>
   );
 });
