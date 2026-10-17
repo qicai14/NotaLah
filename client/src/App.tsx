@@ -9,6 +9,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute';
 // One chunk per page, so the first load carries only the shell and the screen being opened.
 const Welcome = lazy(() => import('./features/auth/Welcome'));
 const Feed = lazy(() => import('./features/feed/Feed'));
+const Search = lazy(() => import('./features/search/Search'));
 const Saved = lazy(() => import('./features/feed/Saved'));
 const Drafts = lazy(() => import('./features/notes/Drafts'));
 const NoteDetail = lazy(() => import('./features/notes/NoteDetail'));
@@ -46,6 +47,7 @@ function ShellRoutes() {
       <Suspense fallback={pageFallback}>
         <Routes>
           <Route path="/" element={<FeedRoute />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/notes/:id" element={<NoteDetail />} />
           <Route path="/drafts" element={signedIn(<Drafts />)} />
           <Route path="/saved" element={signedIn(<Saved />)} />

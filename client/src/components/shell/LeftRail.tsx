@@ -110,7 +110,9 @@ export function LeftRail() {
           </>
         ) : (
           <>
-            <RailLink item={RAIL[0]!} collapsed={collapsed} />
+            {RAIL.slice(0, 2).map((item) => (
+              <RailLink key={item.to} item={item} collapsed={collapsed} />
+            ))}
             {!collapsed && (
               <div className="mt-4 flex flex-col gap-2 border-t px-1 pt-5">
                 <p className="px-2 pb-1 text-body-sm text-muted-foreground">

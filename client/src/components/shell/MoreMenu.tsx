@@ -1,4 +1,4 @@
-import { LogOut, Menu, Monitor, Moon, MoreHorizontal, Sun } from 'lucide-react';
+import { Bookmark, LogOut, Menu, Monitor, Moon, MoreHorizontal, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -75,6 +75,12 @@ export function MoreMenu({ variant, collapsed = false }: { variant: 'rail' | 'ic
           {user && (
             <>
               <DropdownMenuSeparator />
+              {variant === 'icon' && (
+                <DropdownMenuItem className="h-10 rounded-sm" onSelect={() => navigate('/saved')}>
+                  <Bookmark className="size-4" aria-hidden="true" />
+                  Saved
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem className="h-10 rounded-sm" onSelect={logOut}>
                 <LogOut className="size-4" aria-hidden="true" />
                 Log out

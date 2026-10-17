@@ -1206,6 +1206,14 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Test IDs:** NOTE-TC33, 34, 37, 38, 40 as in the R21 spec (TC34 stays R21a's URL spoofing; the proxy is NOTE-TC51), plus NOTE-TC49 (quota), TC50 (file access incl. share links), TC52 (purge), TC53 (request checks), TC54 (asset links) and TC55 (co-author assets). The quota lock is `pg_advisory_xact_lock(hashtext('asset_quota'), user)`.
 - **Reversibility:** Easy: the down step drops both tables; uploaded files stay on disk.
 
+## D55 - Search screen navigation (Sprint 4, 17 Oct 2026)
+- **Context:** the search UI (wireframes 07, 37 to 39, D48) needs an entry on phones, where the tab bar has five slots.
+- **Decision:** Search replaces Saved in the phone tab bar (Home, Search, Create, Drafts, Profile); Saved moves to the
+  phone More menu and stays in the desktop rail. Guests get a search icon in the phone header. Hashtag and module results
+  have no page yet, so they open a notes search for that tag (`#tag`) or module (`module=<id>`). A lecturer filter set
+  from a person result reads "One lecturer", because the search API returns no lecturer name for the chip.
+- **Reversibility:** Easy. Discover and Inbox (wireframe 13) replace Search and Drafts later.
+
 ## D56 - Slide editor core, first slice (R21c, 17 Oct 2026)
 - **Built:** `client/src/features/editor/`: zustand 5.0.15 store (13 Aug 2026, over two weeks old) with `{deck, selection,
   activeSlide, past, future, dirty, saveState}` plus `meta` (title, module, hashtags, status, visibility, noteId,
