@@ -99,7 +99,7 @@ export default function Drafts() {
                 </p>
               </div>
             </Link>
-            <div className="mt-auto flex items-center justify-between gap-2 px-3 pb-3">
+            <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 pb-3">
               <Button asChild variant="secondary" size="xs">
                 <Link to={`/notes/${n.id}/edit`} aria-label={`Continue editing ${n.title}`}>
                   Continue editing
