@@ -11,6 +11,8 @@ export const ASSETS = Object.freeze({
   quotaBytes: 500 * 1024 * 1024,
   /** Image uploads per user per hour. */
   uploadsPerHour: 30,
+  /** Video uploads per user per hour; each one costs CPU for ffprobe and ffmpeg (R29, D59). */
+  videoUploadsPerHour: 6,
   /** Unsplash searches per user per hour. */
   unsplashSearchesPerHour: 20,
   /** An asset no note references is removed once it is this old. */
@@ -25,3 +27,18 @@ export const assetUrl = (id: number) => `/api/assets/${id}/file`;
 
 /** The same file through a share link, for a holder who may not pass the asset route's note checks. */
 export const shareAssetUrl = (token: string, id: number | string) => `/api/share/${token}/assets/${id}`;
+
+/** Video limits (R29, D59). Bytes and seconds are checked on the upload, edges on the probed stream. */
+export const VIDEO = Object.freeze({
+  maxBytes: 50 * 1024 * 1024,
+  maxSeconds: 90,
+  /** Larger input edges are refused as absurd; anything above 1080p but within this is scaled down. */
+  maxInputEdge: 4096,
+  maxWidth: 1920,
+  maxHeight: 1080,
+  /** A hung ffprobe or ffmpeg is killed after this long. */
+  toolTimeoutMs: 60_000,
+  /** Videos processed at once; further uploads get 503 so a burst cannot starve the API of CPU. */
+  maxConcurrent: 2,
+  tmpPrefix: 'parp-video-',
+});

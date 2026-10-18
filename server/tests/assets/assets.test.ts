@@ -93,7 +93,7 @@ async function noteWithImage(visibility = 'public') {
 }
 
 describe('Image upload (R22)', () => {
-  it('NOTE-TC73: Your uploads lists only your own ready images, newest first, in pages', async () => {
+  it('NOTE-TC83: Your uploads lists only your own ready images, newest first, in pages', async () => {
     const me = await insertUser();
     const other = await insertUser();
     const a = await uploadOk(me);

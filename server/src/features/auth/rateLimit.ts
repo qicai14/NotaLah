@@ -13,6 +13,8 @@ export const RATE_LIMITS = Object.freeze({
   writes: 120,
   /** Guest-readable GETs per client IP per window (R31, D45); keyed on req.ip, so it needs `trust proxy` set for the host (D35). */
   guestReads: 120,
+  /** Asset file requests per signed-in user (or IP) per window (R34): each one is a counted storage read. */
+  files: 300,
 });
 
 /**
@@ -81,6 +83,18 @@ export const uploadLimiter = rateLimit({
   message: { error: 'Too many uploads. Try again later.' },
 });
 
+/** Video uploads per signed-in user per hour (R29, D59); a separate, lower cap because each one runs ffmpeg. */
+export const videoUploadLimiter = rateLimit({
+  windowMs: 60 * 60_000,
+  limit: ASSETS.videoUploadsPerHour,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('video:'),
+  keyGenerator: (req: Request) => `user:${req.user?.id ?? ''}`,
+  skip: testing,
+  message: { error: 'Too many video uploads. Try again later.' },
+});
+
 /** Unsplash searches per signed-in user per hour (R22); the demo tier allows 50 an hour for the whole app. */
 export const unsplashLimiter = rateLimit({
   windowMs: 60 * 60_000,
@@ -91,6 +105,21 @@ export const unsplashLimiter = rateLimit({
   keyGenerator: (req: Request) => `user:${req.user?.id ?? ''}`,
   skip: testing,
   message: { error: 'Too many searches. Try again later.' },
+});
+
+/** Asset file requests, on both file routes (R34, D57); keyed like the write limiter. */
+export const fileLimiter = rateLimit({
+  windowMs: RATE_LIMITS.windowMs,
+  limit: RATE_LIMITS.files,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  store: new PgStore('file:'),
+  keyGenerator: (req: Request) => {
+    const user = tokenSubject(req);
+    return user ? `user:${user}` : ipKeyGenerator(req.ip ?? '');
+  },
+  skip: testing,
+  message: { error: 'Too many requests. Try again in a minute.' },
 });
 
 /** Applied by optionalAuth to signed-out requests only. */

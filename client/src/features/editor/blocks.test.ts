@@ -3,7 +3,7 @@ import { LIMITS } from '@parp/shared';
 import { makeImage, resizeTable } from './elements';
 
 describe('code, table and image blocks', () => {
-  it('NOTE-TC74: tables grow and shrink within the schema limits, keeping typed cells', () => {
+  it('NOTE-TC84: tables grow and shrink within the schema limits, keeping typed cells', () => {
     const cells = [
       ['Form', 'Rule'],
       ['1NF', 'Atomic'],
@@ -16,7 +16,7 @@ describe('code, table and image blocks', () => {
     expect(resizeTable(cells, 99, 99)?.[0].length).toBe(LIMITS.tableCols);
   });
 
-  it('NOTE-TC74: an image keeps its own ratio, fits the slide and clips long alt text', () => {
+  it('NOTE-TC84: an image keeps its own ratio, fits the slide and clips long alt text', () => {
     const img = makeImage(1250, { kind: 'upload', assetId: 3 }, 1200, 800, 'x'.repeat(400));
     expect(img.w / img.h).toBeCloseTo(1.5, 1);
     expect(img.w).toBeLessThanOrEqual(700);

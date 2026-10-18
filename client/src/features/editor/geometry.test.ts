@@ -71,7 +71,7 @@ describe('editor group geometry', () => {
   const b: Box = { x: 300, y: 100, w: 50, h: 50, rotation: 0 };
   const c: Box = { x: 120, y: 200, w: 100, h: 100, rotation: 0 };
 
-  it('NOTE-TC68: the group frame, alignment and even spacing follow the rotated bounds', () => {
+  it('NOTE-TC78: the group frame, alignment and even spacing follow the rotated bounds', () => {
     expect(groupBounds([a, b, c])).toEqual({ x: 0, y: 0, w: 350, h: 300 });
     const turned = groupBounds([{ ...a, rotation: 90 }]); // 100 x 50 turned on its centre (50, 25)
     expect(turned.w).toBeCloseTo(50);
@@ -88,7 +88,7 @@ describe('editor group geometry', () => {
     expect(distributeBoxes([a, b], 'x')).toEqual([a, b]); // two boxes have nothing to space
   });
 
-  it('NOTE-TC68: group scale keeps the opposite corner, rotation turns about the frame centre, marquee hits', () => {
+  it('NOTE-TC78: group scale keeps the opposite corner, rotation turns about the frame centre, marquee hits', () => {
     const frame = groupBounds([a, b]); // 0,0 350 x 150
     const { k, anchor } = groupScale(frame, 'se', { x: 700, y: 150 });
     expect(k).toBe(2);

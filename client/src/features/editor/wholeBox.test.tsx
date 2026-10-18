@@ -16,7 +16,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('whole-box text styling', () => {
-  it('NOTE-TC70: marks apply to every character of a closed box and report their state', () => {
+  it('NOTE-TC80: marks apply to every character of a closed box and report their state', () => {
     expect(wholeBoxHas('<p>Hash <strong>tables</strong></p>', 'bold')).toBe(false);
     const italic = styleWholeBox('<p>Hash <strong>tables</strong></p>', 'italic', true);
     expect(wholeBoxHas(italic, 'italic')).toBe(true);
@@ -28,7 +28,7 @@ describe('whole-box text styling', () => {
     expect(wholeBoxHas('', 'bold')).toBe(false);
   });
 
-  it('NOTE-TC70: the toolbar says it styles the whole box and Bold uses the box weight', () => {
+  it('NOTE-TC80: the toolbar says it styles the whole box and Bold uses the box weight', () => {
     render(<ElementBar />);
     expect(screen.getByText('Whole box')).toBeTruthy();
     const bold = screen.getByRole('button', { name: 'Bold (whole box)' });

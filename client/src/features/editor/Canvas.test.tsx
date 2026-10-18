@@ -69,7 +69,7 @@ describe('editor canvas', () => {
     expect(s().deck.slides[0].elements.map((e) => e.id)).toEqual(['el-0000002', 'el-0000001']);
   });
 
-  it('NOTE-TC69: Shift-click builds a selection that nudges, aligns, duplicates and deletes as one', () => {
+  it('NOTE-TC79: Shift-click builds a selection that nudges, aligns, duplicates and deletes as one', () => {
     const { container } = render(<Canvas compact={false} />);
     const one = container.querySelector<HTMLElement>('[data-id="el-0000001"]')!;
     const two = container.querySelector<HTMLElement>('[data-id="el-0000002"]')!;

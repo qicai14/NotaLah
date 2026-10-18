@@ -19,6 +19,7 @@ import { notesRouter } from './features/notes/routes';
 import { notificationsRouter } from './features/notifications/routes';
 import { searchRouter } from './features/search/routes';
 import { unsplashRouter } from './features/unsplash/routes';
+import { usageRouter } from './features/usage/routes';
 import { usersRouter } from './features/users/routes';
 import { verificationRouter } from './features/verification/routes';
 
@@ -53,6 +54,7 @@ app.use(passport.initialize());
 
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/admin/usage', usageRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/modules', modulesRouter);
 app.use('/api/programmes', programmesRouter);

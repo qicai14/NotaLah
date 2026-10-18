@@ -31,7 +31,7 @@ afterEach(() => {
 const flush = () => act(async () => {});
 
 describe('editor soft lock', () => {
-  it('NOTE-TC72: takes, renews and releases the lock; waits read-only while another editor holds it', async () => {
+  it('NOTE-TC82: takes, renews and releases the lock; waits read-only while another editor holds it', async () => {
     const holder = { id: 9, displayName: 'Aina Rahman' };
     reply = () => ({ status: 423, body: { error: 'Another collaborator is editing this note', lockedBy: holder } });
     const onAcquired = vi.fn();
@@ -49,7 +49,7 @@ describe('editor soft lock', () => {
     expect(calls.at(-1)).toBe('DELETE /api/notes/5/lock');
   });
 
-  it('NOTE-TC72: a new note takes no lock, and the notice names the holder with Try again', async () => {
+  it('NOTE-TC82: a new note takes no lock, and the notice names the holder with Try again', async () => {
     reply = () => ({ status: 200 });
     renderHook(() => useEditLock(null, () => {}));
     await flush();

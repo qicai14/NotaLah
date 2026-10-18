@@ -51,6 +51,10 @@
   --board-code-dark-foreground: #e9ebf2;
   --board-credit: rgb(0 0 0 / 0.6);
   --board-credit-foreground: #ffffff;
+  --media: #ffffff;
+  --media-dim: rgb(255 255 255 / 0.5);
+  --media-shadow: rgb(0 0 0 / 0.7);
+  --media-backdrop: #0b0c10;
   --editor-guide: #e5167a;
   --editor-canvas: #eceef2;
   --shadow-color: 220 20% 10%;
@@ -98,6 +102,10 @@
   --board-code-dark-foreground: #e9ebf2;
   --board-credit: rgb(0 0 0 / 0.6);
   --board-credit-foreground: #ffffff;
+  --media: #ffffff;
+  --media-dim: rgb(255 255 255 / 0.5);
+  --media-shadow: rgb(0 0 0 / 0.7);
+  --media-backdrop: #0b0c10;
   --editor-guide: #ff5fae;
   --editor-canvas: #0a0b0f;
   --shadow-color: 0 0% 0%;
@@ -136,6 +144,9 @@
   --color-slide-foreground: var(--slide-foreground);
   --color-board-credit: var(--board-credit);
   --color-board-credit-foreground: var(--board-credit-foreground);
+  --color-media: var(--media);
+  --color-media-dim: var(--media-dim);
+  --color-media-backdrop: var(--media-backdrop);
   --color-editor-guide: var(--editor-guide);
   --color-editor-canvas: var(--editor-canvas);
 }
@@ -229,6 +240,12 @@
       border-color var(--duration-slow) var(--ease-in-out-soft),
       color var(--duration-slow) var(--ease-in-out-soft) !important;
   }
+}
+
+/* Icons and text drawn straight over a slide (action rail on phones, carousel arrows and dots): a soft dark halo keeps
+ * white readable on a white slide. Not a column or a scrim. */
+@utility media-shadow {
+  filter: drop-shadow(0 1px 2px var(--media-shadow)) drop-shadow(0 0 6px var(--media-shadow));
 }
 
 @utility scrollbar-none {

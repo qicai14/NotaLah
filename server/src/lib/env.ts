@@ -23,6 +23,11 @@ const schema = z.object({
   STORAGE_DIR: z.string().min(1).default(path.resolve(__dirname, '../../../uploads')),
   // Unsplash search proxy (R22); empty means the routes answer 503.
   UNSPLASH_ACCESS_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+  // Kill switch (R34): true refuses every upload with 503.
+  UPLOADS_DISABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
   // Secure auth cookie (D35); defaults to on in production only, since local http would drop it.
   COOKIE_SECURE: z
     .enum(['true', 'false'])

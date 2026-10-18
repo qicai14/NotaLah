@@ -65,7 +65,7 @@ export default function NoteDetail() {
       layout={desktop ? 'rail' : 'bar'}
       showAuthor={false}
       commentsLink={false}
-      onVerify={(v) => setData((d) => d && { note: { ...d.note, ...v } })}
+      onChange={(v) => setData((d) => d && { note: { ...d.note, ...v } })}
     />
   );
 

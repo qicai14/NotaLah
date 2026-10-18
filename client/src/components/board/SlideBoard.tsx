@@ -361,7 +361,7 @@ export function SlideBoard({
             ))}
           </div>
           {credits.length > 0 && (
-            <p className="absolute bottom-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
+            <p className="absolute top-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
               Photo by{' '}
               {credits.map((c, i) => (
                 <span key={c.name}>

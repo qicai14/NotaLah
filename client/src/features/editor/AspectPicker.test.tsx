@@ -10,7 +10,7 @@ beforeEach(() => s().load(emptyDeck()));
 afterEach(cleanup);
 
 describe('slide size picker', () => {
-  it('NOTE-TC71: choosing a size waits for Resize; Cancel leaves the deck alone', () => {
+  it('NOTE-TC81: choosing a size waits for Resize; Cancel leaves the deck alone', () => {
     render(<AspectPicker compact={false} />);
     fireEvent.click(screen.getByRole('button', { name: /4:5 Portrait/ }));
     expect(screen.getByText(/Content is scaled to fit and centred/)).toBeTruthy();
