@@ -1,4 +1,4 @@
-# Handover — 18 Oct 2026, early morning (Sprint D under way)
+# Handover — 18 Oct 2026, late morning (Sprint D under way; awaiting user review)
 
 NotaLah (formerly PARP). Read with `../PLAN.md` (backlog R0-R33), `docs/DECISIONS.md` (D1-D56),
 `docs/specs/SprintD_spec.md` (agreed 17 Oct, D52), `docs/specs/R21_editor_data_model.md` and
@@ -24,9 +24,14 @@ NotaLah (formerly PARP). Read with `../PLAN.md` (backlog R0-R33), `docs/DECISION
 - Open branch `feat/r21c-editor-2` (worktree r21c2): R21c slice 2 steps 1-6, unreviewed; renumber its NOTE-TC68-74 to NOTE-TC78-84 (clash with R29); then step 7 (draft thumbnails, publish preview).
 - User decisions 18 Oct: host on **Render free web service** (Fly.io dropped: no free tier, no cap); R35 photo import on Gemini Flash-Lite free tier; R36 dictation on Cloudflare Workers AI Whisper; never exceed a free tier. R2 credentials are in `.env`; Gemini and Workers AI keys coming.
 
+## 18 Oct morning window (08:24-10:30)
+- Merged: #32 R2 storage driver (D60; aws4fetch, streamed, metered, no retries), #33 R21c slice 2 (D58; multi-select, blocks, Uploads/Photos, locks, owner publish route, draft thumbnails, publish preview), #34 R30 collaboration UI, #35 messaging UI (if CI green; else merge it first).
+- Security: R2 driver and editor slice 2 got a /security-review-style pass (no findings); messaging got the reviewer's security pass (XSS, socket auth, origin) — no findings.
+- **User steps:** `R2_BUCKET` in `.env` is 73 characters (bucket names max 63; probably a URL) → set the bare bucket name, run the live check once (`cd worktrees` not needed: from `FYP_Project/server`, `R2_LIVE_TEST=1 npx vp test run tests/lib/r2Storage.test.ts`), then set `STORAGE_DRIVER=r2`. Add `GEMINI_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN` for R35/R36.
+- Follow-ups: logout should disconnect sockets in other tabs (server); CLI-TC rows in 4.5 are not in numeric order in places.
+
 ## Next work, in order
-0. **R2 storage driver** (S3 API, stream through the server, single PutObject, ranged reads; D57).
-1. **R21c slice 2 (rest):** multi-select, inline styling outside an open box, handles clipped at board edge, aspect-change
+1. **R21d** templates, themes, self-hosted fonts; then R29 client (video picker in the editor, feed player with muted autoplay) and R22 leftovers. Earlier R21c slice-2 list for reference: multi-select, inline styling outside an open box, handles clipped at board edge, aspect-change
    confirm (wireframe 23), locked-editor screens (28/29), code/table/image/video editing UI, draft thumbnails and the
    publish preview with `SlideBoard`. Then **R21d** templates, themes, self-hosted fonts.
 2. **R22 client** (upload panel, my uploads, Unsplash panel once `UNSPLASH_ACCESS_KEY` is set) and **R29 video** (needs
