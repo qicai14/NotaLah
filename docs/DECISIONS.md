@@ -1295,9 +1295,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   changes dropped) when the editor turns read-only. Shift+Space toggles the focused element. Each Unsplash photo is
   reported once a session; late search replies are dropped. If the locked publish fails on module or hashtags, the
   error says to add them once the note is free (Details stays closed while locked).
-- **Not built:** video stays a disabled tile in Elements until R29 (a video element needs a real video asset to save);
-  draft thumbnails and the publish preview (step 7) are next.
-- **Test IDs:** NOTE-TC78 to TC88, COL-TC25; COL-TC4 now expects 409.
+- **Drafts and publish preview:** the drafts list now returns `aspect`, `slideCount`, the first slide as `cover` (no page
+  notes) and `assets`, as the profile notes query does (`ASSETS_COL`); the Drafts page shows tiles with that slide in a
+  `SlideBoard` (wireframe 30, Edit and Delete only: the wireframe's Publish, Share and Duplicate wait for their flows).
+  The publish dialog shows the first slide, title, slide count and size (wireframe 26).
+- **Not built:** video stays a disabled tile in Elements until the R29 client lands (a video element needs a real video
+  asset to save).
+- **Test IDs:** NOTE-TC78 to TC90, COL-TC25; COL-TC4 now expects 409.
 - **Reversibility:** Easy: client changes plus two additive routes.
 
 ## D59 - Video upload on the server (R29, 18 Oct 2026)

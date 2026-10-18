@@ -177,6 +177,11 @@ export interface DraftSummary {
   module: { id: number; code: string; name: string } | null;
   hashtags: string[];
   updatedAt: Date;
+  aspect: Aspect;
+  slideCount: number;
+  /** The first slide without its page notes, for the thumbnail (as on profile notes). */
+  cover: { background: Fill; elements: SlideElement[] } | null;
+  assets: Record<string, string>;
 }
 
 /** One page of the author's drafts, last edited first; keyset on (updated_at, id), D40. */
@@ -188,7 +193,12 @@ export async function listDrafts(
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
             ${MODULE_COL},
             ${HASHTAGS_COL},
-            p.pst_updated_at AS "updatedAt", ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
+            p.pst_updated_at AS "updatedAt", p.pst_aspect AS "aspect",
+            (SELECT COUNT(*)::INT FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id) AS "slideCount",
+            (SELECT json_build_object('background', s.sld_doc -> 'background', 'elements', s.sld_doc -> 'elements')
+             FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id ORDER BY s.sld_position LIMIT 1) AS "cover",
+            ${ASSETS_COL},
+            ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
        AND ($2::BIGINT IS NULL OR (p.pst_updated_at, p.pst_id) < (${fromMicros('$2')}, $3::INT))

@@ -104,6 +104,11 @@ export interface DraftSummary {
   module: ModuleRef | null;
   hashtags: string[];
   updatedAt: string;
+  aspect: Aspect;
+  slideCount: number;
+  /** First slide for the thumbnail; null for a draft with no slides yet. */
+  cover: Pick<Slide, 'background' | 'elements'> | null;
+  assets: Record<string, string>;
 }
 
 export interface NoteSummary {

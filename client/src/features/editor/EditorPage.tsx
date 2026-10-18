@@ -487,6 +487,13 @@ export default function EditorPage() {
       note={readOnly ? `${holder?.displayName ?? 'The editor'}'s unsaved changes are not included.` : undefined}
       onClose={() => setDialog(false)}
       onChoose={readOnly ? publishSaved : (c) => run(() => saveNote(c), c !== 'draft')}
+      preview={{
+        title: meta.title,
+        slide: useEditor.getState().deck.slides[0],
+        aspect: useEditor.getState().deck.aspect,
+        slides: useEditor.getState().deck.slides.length,
+        assets: useEditor.getState().assets,
+      }}
     />
   );
   const lockNotice = holder && <LockedNotice holder={holder} owner={owner && !published} onRetry={lock.retry} />;
