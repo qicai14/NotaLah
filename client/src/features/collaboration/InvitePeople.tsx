@@ -68,8 +68,14 @@ export function InvitePeople({ noteId, skip, onInvited }: { noteId: number; skip
             <li key={p.id} className="flex items-center gap-3 py-1.5">
               <UserAvatar name={p.displayName} />
               <span className="min-w-0 flex-1 truncate text-body font-semibold">{p.displayName}</span>
-              <Button size="sm" variant="secondary" disabled={pending} onClick={() => invite(p)}>
-                Invite<span className="sr-only"> {p.displayName}</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={pending}
+                aria-label={`Invite ${p.displayName}`}
+                onClick={() => invite(p)}
+              >
+                Invite
               </Button>
             </li>
           ))}

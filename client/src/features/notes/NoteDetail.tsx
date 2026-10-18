@@ -92,7 +92,8 @@ export default function NoteDetail() {
                 {n.author.isVerifiedLecturer && <LecturerBadge />}
               </p>
               <p className="text-body-sm text-muted-foreground">
-                {timeAgo(n.publishedAt ?? n.updatedAt)}, {visibilityLabel(n.visibility)} <Coauthors people={n.coauthors} />
+                {timeAgo(n.publishedAt ?? n.updatedAt)}, {visibilityLabel(n.visibility)}{' '}
+                <Coauthors people={n.coauthors} />
               </p>
             </div>
             {n.myRole === 'view' && (
