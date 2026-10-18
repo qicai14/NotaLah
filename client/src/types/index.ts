@@ -59,6 +59,27 @@ export interface Note {
   verifiedBy: string | null;
   /** The viewer has Super Liked this note. */
   verifiedByMe: boolean;
+  /** Edit collaborators who have saved a change (R30); the owner is `author`. */
+  coauthors?: CollabPerson[];
+  /** A title or slide edit came after the verification, so it no longer counts (R30). Only on notes the viewer can read. */
+  editedSinceVerification?: boolean;
+  /** The viewer's role on this note; only sent by GET /notes/:id. */
+  myRole?: NoteRole | null;
+}
+
+export interface CollabPerson {
+  id: number;
+  displayName: string;
+}
+
+export type CollabRole = 'view' | 'edit';
+export type NoteRole = 'owner' | CollabRole;
+
+/** GET /notes/:id/access (owner only): who can reach the note and by which route. Link tokens are never included. */
+export interface NoteAccess {
+  collaborators: { user: CollabPerson; role: CollabRole; addedAt: string }[];
+  links: { role: CollabRole; createdAt: string }[];
+  requests: { id: number; user: CollabPerson; message: string | null; createdAt: string }[];
 }
 
 /** The four ranking scores, each 0 to 1 (IR 2.3.4): engagement, recency, lecturer validation, hashtag match. */

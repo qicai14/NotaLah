@@ -1,9 +1,12 @@
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, UserPlus } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { VerifiedPill } from '@/components/VerifiedPill';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
+import { Coauthors } from '../../components/Coauthors';
+import { EditedBadge } from '../../components/EditedBadge';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
 import { SlideCarousel } from '../../components/board/SlideCarousel';
@@ -11,6 +14,7 @@ import { timeAgo, visibilityLabel } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 import type { Note } from '../../types';
 import { useAuth } from '../auth/AuthContext';
+import { RequestDialog } from '../collaboration/RequestDialog';
 import { CommentPanel } from './CommentPanel';
 
 function BackBar() {
@@ -32,6 +36,7 @@ export default function NoteDetail() {
   const { user } = useAuth();
   const { data, setData, error, loading } = useFetch<{ note: Note }>(`/notes/${id}`);
   const desktop = useMediaQuery(DESKTOP);
+  const [requesting, setRequesting] = useState(false);
 
   if (loading)
     return (
@@ -87,10 +92,16 @@ export default function NoteDetail() {
                 {n.author.isVerifiedLecturer && <LecturerBadge />}
               </p>
               <p className="text-body-sm text-muted-foreground">
-                {timeAgo(n.publishedAt ?? n.updatedAt)}, {visibilityLabel(n.visibility)}
+                {timeAgo(n.publishedAt ?? n.updatedAt)}, {visibilityLabel(n.visibility)} <Coauthors people={n.coauthors} />
               </p>
             </div>
-            {n.author.id === user?.id && (
+            {n.myRole === 'view' && (
+              <Button variant="secondary" onClick={() => setRequesting(true)}>
+                <UserPlus aria-hidden="true" />
+                Request to collaborate
+              </Button>
+            )}
+            {(n.author.id === user?.id || n.myRole === 'edit') && (
               <Button asChild variant="secondary">
                 <Link to={`/notes/${n.id}/edit`}>
                   <Pencil aria-hidden="true" />
@@ -131,6 +142,15 @@ export default function NoteDetail() {
             ))}
           </div>
           {n.verified && <VerifiedPill by={n.verifiedBy} className="self-start" />}
+          {!n.verified && n.editedSinceVerification && (
+            <div className="flex flex-col gap-1.5 self-start">
+              <EditedBadge />
+              <p className="text-body-sm text-muted-foreground">
+                This note was changed after a lecturer verified it, so the verification no longer counts until a
+                lecturer confirms it again.
+              </p>
+            </div>
+          )}
         </div>
         {published && (
           <CommentPanel
@@ -141,6 +161,14 @@ export default function NoteDetail() {
           />
         )}
       </aside>
+      {requesting && (
+        <RequestDialog
+          noteId={n.id}
+          title={n.title}
+          ownerName={n.author.displayName}
+          onClose={() => setRequesting(false)}
+        />
+      )}
     </article>
   );
 }
