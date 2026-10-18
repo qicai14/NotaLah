@@ -59,6 +59,8 @@ export interface Note {
   verifiedBy: string | null;
   /** The viewer has Super Liked this note. */
   verifiedByMe: boolean;
+  /** The viewer's part in the note (R30): its owner, a co-author who may edit, or a viewer; null for anyone else. */
+  myRole?: 'owner' | 'edit' | 'view' | null;
 }
 
 /** The four ranking scores, each 0 to 1 (IR 2.3.4): engagement, recency, lecturer validation, hashtag match. */
@@ -102,6 +104,11 @@ export interface DraftSummary {
   module: ModuleRef | null;
   hashtags: string[];
   updatedAt: string;
+  aspect: Aspect;
+  slideCount: number;
+  /** First slide for the thumbnail; null for a draft with no slides yet. */
+  cover: Pick<Slide, 'background' | 'elements'> | null;
+  assets: Record<string, string>;
 }
 
 export interface NoteSummary {

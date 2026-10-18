@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BACKUP_PREFIX, clearAllBackups } from './backup';
-import { autosaveDelay, readBackup, saveNote, writeBackup } from './save';
+import { autosaveDelay, keepMine, readBackup, saveNote, writeBackup } from './save';
 import { emptyDeck, emptyMeta, useEditor } from './store';
 
 const s = () => useEditor.getState();
@@ -169,5 +169,36 @@ describe('editor save', () => {
     );
     await queued;
     expect(s().meta.noteId).toBeNull();
+  });
+
+  it('NOTE-TC85: Keep mine for a co-author adopts the owner-only fields the server now has', async () => {
+    s().load(emptyDeck(), { ...emptyMeta(), noteId: 4, title: 'Week 6', moduleId: '1', baseUpdatedAt: 'old' });
+    const server = {
+      id: 4,
+      title: 'Week 6',
+      updatedAt: 'new',
+      status: 'published',
+      visibility: 'contacts',
+      module: { id: 2, code: 'CT2', name: 'Two' },
+      hashtags: ['sql'],
+    };
+    const calls: { url: string; init?: RequestInit }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        calls.push({ url, init });
+        return new Response(
+          JSON.stringify({ note: { ...server, updatedAt: init?.method === 'PUT' ? 'saved' : 'new' } }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+      }),
+    );
+    expect((await keepMine(true)).ok).toBe(true);
+    const sent = JSON.parse(String(calls[1].init?.body));
+    expect(calls[1].init?.method).toBe('PUT');
+    expect(sent).toMatchObject({ status: 'published', visibility: 'contacts', moduleId: 2, baseUpdatedAt: 'new' });
   });
 });

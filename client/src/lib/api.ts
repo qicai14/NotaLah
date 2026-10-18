@@ -12,6 +12,8 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public errors: Record<string, string> = {},
+    /** The whole error body, for routes that answer with more than a message (a 423 names the lock holder). */
+    public data: Record<string, unknown> = {},
   ) {
     super(message);
   }
@@ -38,7 +40,8 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     signedIn = false;
     window.location.assign('/login?expired=1'); // full reload also drops in-memory auth state
   }
-  if (!res.ok) throw new ApiError(res.status, data.error ?? 'Something went wrong. Please try again.', data.errors);
+  if (!res.ok)
+    throw new ApiError(res.status, data.error ?? 'Something went wrong. Please try again.', data.errors, data);
   return data as T;
 }
 

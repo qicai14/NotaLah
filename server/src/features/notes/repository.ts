@@ -177,6 +177,11 @@ export interface DraftSummary {
   module: { id: number; code: string; name: string } | null;
   hashtags: string[];
   updatedAt: Date;
+  aspect: Aspect;
+  slideCount: number;
+  /** The first slide without its page notes, for the thumbnail (as on profile notes). */
+  cover: { background: Fill; elements: SlideElement[] } | null;
+  assets: Record<string, string>;
 }
 
 /** One page of the author's drafts, last edited first; keyset on (updated_at, id), D40. */
@@ -188,7 +193,12 @@ export async function listDrafts(
     `SELECT p.pst_id AS "id", p.pst_title AS "title",
             ${MODULE_COL},
             ${HASHTAGS_COL},
-            p.pst_updated_at AS "updatedAt", ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
+            p.pst_updated_at AS "updatedAt", p.pst_aspect AS "aspect",
+            (SELECT COUNT(*)::INT FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id) AS "slideCount",
+            (SELECT json_build_object('background', s.sld_doc -> 'background', 'elements', s.sld_doc -> 'elements')
+             FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id ORDER BY s.sld_position LIMIT 1) AS "cover",
+            ${ASSETS_COL},
+            ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
        AND ($2::BIGINT IS NULL OR (p.pst_updated_at, p.pst_id) < (${fromMicros('$2')}, $3::INT))
@@ -313,12 +323,14 @@ export type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
  * live soft lock, with 'stale' when `baseUpdatedAt` is given and differs from pst_updated_at, and with 'forbidden' when the
  * editor lost edit access since the route checked it (R30). A co-author's first save starts their credit (clb_edited_at, D46). An edit never moves
  * pst_published_at; a title or slide change to a published note stamps pst_content_edited_at, which voids older Super Likes.
+ * `ignoreLock` is only for the owner publishing the last saved version while a co-author holds the lock (D58).
  */
 export function replaceNote(
   id: number,
   n: NoteInput,
   editorId: number,
   baseUpdatedAt: Date | null,
+  { ignoreLock = false }: { ignoreLock?: boolean } = {},
 ): Promise<ReplaceResult> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{
@@ -340,7 +352,7 @@ export function replaceNote(
     const cur = rows[0];
     if (!cur) return 'gone'; // deleted or hidden since the permission check
     if (cur.role !== 'owner' && cur.role !== 'edit') return 'forbidden';
-    if (cur.lockedByOther) return 'locked';
+    if (cur.lockedByOther && !ignoreLock) return 'locked';
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
     const contentEdited =

@@ -12,7 +12,8 @@ import { fileLimiter, uploadLimiter, videoUploadLimiter } from '../auth/rateLimi
 import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl, VIDEO } from './config';
 import { reencodeImage } from './image';
-import { getReadableAsset, insertAsset } from './repository';
+import { parseKeyset } from '../../lib/keyset';
+import { getReadableAsset, insertAsset, listMyImages } from './repository';
 import { sendAsset } from './service';
 import { processVideo } from './video';
 
@@ -74,6 +75,13 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
     });
   }
   res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
+});
+
+assetsRouter.get('/images', requireAuth, async (req, res) => {
+  const page = parseKeyset(req, res, 2, 30);
+  if (!page) return;
+  const { items, nextCursor } = await listMyImages(me(req).id, page);
+  res.json({ assets: items.map((a) => ({ ...a, url: assetUrl(a.id) })), nextCursor });
 });
 
 // Videos stream to a temp file, not memory; the directory is removed when the response ends, however it ends (R29, D59).

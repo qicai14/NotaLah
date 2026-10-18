@@ -2,7 +2,7 @@ import { LIMITS } from '@parp/shared';
 import { mapSlide, useEditor } from './store';
 
 /** Private page notes for the active slide (R21 spec 1.2); typing is one undo step per visit to the box. */
-export function PageNotes() {
+export function PageNotes({ readOnly = false }: { readOnly?: boolean }) {
   const active = useEditor((s) => s.activeSlide);
   const notes = useEditor((s) => s.deck.slides[s.activeSlide].notes);
   return (
@@ -15,6 +15,7 @@ export function PageNotes() {
         rows={2}
         maxLength={LIMITS.pageNotes}
         value={notes}
+        readOnly={readOnly}
         placeholder="What to say about this slide"
         onChange={(e) => {
           const text = e.target.value;

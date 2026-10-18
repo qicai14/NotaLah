@@ -94,6 +94,23 @@ async function noteWithImage(visibility = 'public') {
 }
 
 describe('Image upload (R22)', () => {
+  it('NOTE-TC83: Your uploads lists only your own ready images, newest first, in pages', async () => {
+    const me = await insertUser();
+    const other = await insertUser();
+    const a = await uploadOk(me);
+    const b = await uploadOk(me);
+    await uploadOk(other);
+    await pool.query(`UPDATE "ASSET_T" SET ast_status = 'deleted' WHERE ast_id = $1`, [a]);
+    const c = await uploadOk(me);
+    const first = await request(app).get('/api/assets/images?limit=1').set(asUser(me));
+    expect(first.status).toBe(200);
+    expect(first.body.assets).toEqual([expect.objectContaining({ id: c, url: `/api/assets/${c}/file` })]);
+    const next = await request(app).get(`/api/assets/images?limit=1&cursor=${first.body.nextCursor}`).set(asUser(me));
+    expect(next.body.assets.map((x: { id: number }) => x.id)).toEqual([b]);
+    expect(next.body.nextCursor).toBeNull();
+    expect((await request(app).get('/api/assets/images')).status).toBe(401);
+  });
+
   it('NOTE-TC38: rejects a file over 5 MB with 413', async () => {
     const res = await upload(await insertUser(), Buffer.alloc(5 * 1024 * 1024 + 1, 1));
     expect(res.status).toBe(413);

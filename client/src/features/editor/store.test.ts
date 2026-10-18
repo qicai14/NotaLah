@@ -34,7 +34,7 @@ describe('editor store', () => {
     expect(s().deck.slides[0].elements[0].x).toBe(100);
     s().undo();
     expect(s().deck.slides[0].elements).toHaveLength(0);
-    expect(s().selection).toBeNull();
+    expect(s().selection).toEqual([]);
     s().redo();
     s().redo();
     expect(s().deck.slides[0].elements[0].x).toBe(150);

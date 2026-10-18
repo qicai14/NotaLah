@@ -1,3 +1,4 @@
+import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { READABLE, SHAREABLE, VISIBLE_OR_ADMIN } from '../notes/repository';
 import { ASSETS } from './config';
@@ -111,4 +112,21 @@ export async function takeUnlinkedAssets(): Promise<{ key: string; posterKey: st
     [ASSETS.unlinkedAgeHours],
   );
   return rows;
+}
+
+/** One page of the user's ready images, newest first, for the editor's "Your uploads"; keyset on (created_at, id), D40. */
+export async function listMyImages(
+  userId: number,
+  { cursor, limit }: KeysetPage,
+): Promise<{ items: Asset[]; nextCursor: string | null }> {
+  const { rows } = await pool.query<Asset & { cursor: string }>(
+    `SELECT ${ASSET_COLS}, ${micros('ast_created_at')} || '_' || ast_id AS "cursor"
+     FROM "ASSET_T"
+     WHERE ast_usr_id = $1 AND ast_kind = 'image' AND ast_status = 'ready'
+       AND ($2::BIGINT IS NULL OR (ast_created_at, ast_id) < (${fromMicros('$2')}, $3::INT))
+     ORDER BY ast_created_at DESC, ast_id DESC
+     LIMIT $4`,
+    [userId, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
+  );
+  return toPage(rows, limit);
 }

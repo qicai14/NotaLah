@@ -1260,6 +1260,50 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Admin:** `GET /api/admin/usage` (admin only) returns used, cap and period for each metric and nothing else exposes it. Tests USE-TC1 to TC9.
 - **Reversibility:** Easy: the down step drops the table; the wrapper and checks are small call-site changes.
 
+
+## D58 - Slide editor, second slice (R21c, 18 Oct 2026)
+- **Built:** multi-select (Shift or Ctrl click, marquee drag from the slide or the grey canvas, Ctrl+A) with group move,
+  scale from the frame's corners and rotation about its centre, and an Arrange popover (align six ways; space evenly
+  across or down for three or more); whole-box text styling while a box is closed; selection frames and handles drawn
+  outside the clipped board; a Slide size confirm (wireframe 23); the locked editor (wireframes 28 and 29); code and
+  table editing; Uploads and Photos panels with crop, flip, corner and alt text for images.
+- **Choices the spec left open:** the store's `selection` is a list (the first id drives single-element tools); group
+  scaling always keeps the ratio, because a rotated member cannot be stretched along the board's axes without skewing;
+  align with one element selected aligns it to the slide; locked elements stay put but count towards the frame. Grouping
+  (a saved group id) was left out: it needs a schema field, and multi-select covers moving things together.
+  Bold on a closed box is its weight (700 or 400; turning it off also removes bold runs inside); italic, underline,
+  strike and lists go through a detached TipTap editor over the whole HTML, so the result matches what typing makes;
+  the toolbar shows "Whole box" or "Selected text". Crop trims each side up to 45 % and resizes the frame's height so
+  the photo is never stretched. Code is plain text in a monospace textarea (no highlighting; the language is a label).
+- **Lock (D46):** the editor takes the note's lock on open, renews it every 45 s and releases it on leave (keepalive
+  DELETE on `pagehide`). A 423 makes the editor read-only (view-mode board, no panels, strip without add or reorder,
+  "View only" in the header) and retries every 20 s, so an expired lock is taken over without asking; winning it after
+  a wait reloads the note. Co-authors (`myRole: edit`) can now open the editor: they edit content, cannot change the
+  module, and see a disabled Publish ("Only the owner can publish"). The wireframe's "Notify me" and "On this note now"
+  list need presence and notification APIs that do not exist, so the notice offers "Try again" instead.
+- **Server additions:** `POST /api/notes/:id/publish {visibility}` lets the owner publish the last saved version of a
+  draft while a co-author holds the lock (wireframe 29). It re-validates the stored note as PUT does and saves only if
+  nothing was saved since it was read (409), so the co-author's next save gets the usual 409 rather than overwriting
+  the publish; `replaceNote` takes `ignoreLock` for this route only. `GET /api/assets/images` lists the caller's ready
+  images newest first (keyset, 30 a page) for "Your uploads", which had no list route.
+- **Review fixes (18 Oct):** a co-author's PUT whose status, visibility or module differ from the server's is now a
+  409 (was 403), because after the owner publishes those fields differ through no fault of the co-author; "Keep mine"
+  adopts the server's status and visibility (and module for a co-author) before saving. Winning the lock after a wait
+  reloads only when nothing is unsaved, else it raises the conflict banner. Lock runs are counted per note, so only the
+  last to close releases (StrictMode, retry, remount). Pastes stop at the image and video caps; group scaling is clamped
+  so no member goes under the 8-unit box or past font 400 or 4000 units. A drag in progress is cancelled (its live
+  changes dropped) when the editor turns read-only. Shift+Space toggles the focused element. Each Unsplash photo is
+  reported once a session; late search replies are dropped. If the locked publish fails on module or hashtags, the
+  error says to add them once the note is free (Details stays closed while locked).
+- **Drafts and publish preview:** the drafts list now returns `aspect`, `slideCount`, the first slide as `cover` (no page
+  notes) and `assets`, as the profile notes query does (`ASSETS_COL`); the Drafts page shows tiles with that slide in a
+  `SlideBoard` (wireframe 30, Edit and Delete only: the wireframe's Publish, Share and Duplicate wait for their flows).
+  The publish dialog shows the first slide, title, slide count and size (wireframe 26).
+- **Not built:** video stays a disabled tile in Elements until the R29 client lands (a video element needs a real video
+  asset to save).
+- **Test IDs:** NOTE-TC78 to TC90, COL-TC25; COL-TC4 now expects 409.
+- **Reversibility:** Easy: client changes plus two additive routes.
+
 ## D59 - Video upload on the server (R29, 18 Oct 2026)
 - **Context:** R29 adds video elements (D32: one per slide). D57 forbids presigned URLs and browser-direct uploads, so the spec's presign step (R21 spec 2.4) is replaced by a server upload. This is the server half; the client player and upload UI come later.
 - **Upload:** `POST /api/assets/videos`, multipart field `file`, streamed by multer to a temp file in a per-request directory under the OS temp dir, never held in memory. Over 50 MB is 413 (same status as images). The directory is removed when the response closes, so success, rejection, abort and timeout all clean up.
