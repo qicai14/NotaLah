@@ -7,6 +7,7 @@ import { app } from '../../src/app';
 import { purgeUnlinkedAssets } from '../../src/features/assets/service';
 import { clearUnsplashCache } from '../../src/features/unsplash/service';
 import { env } from '../../src/lib/env';
+import { storage } from '../../src/lib/storage';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, CSRF, insertUser, truncateAll } from '../helpers';
 
@@ -502,4 +503,15 @@ describe('Unsplash proxy (R22)', () => {
     expect((await request(app).post('/api/unsplash/abc_123/download').set(asUser(uid))).status).toBe(503);
     expect((await request(app).post('/api/unsplash/..%2Fme/download').set(asUser(uid))).status).toBe(404);
   });
+});
+
+it('STO-TC14: an image put that fails (such as an R2 timeout) removes the key it may have written', async () => {
+  const uid = await insertUser();
+  const put = vi.spyOn(storage, 'put').mockRejectedValueOnce(new Error('timed out'));
+  const remove = vi.spyOn(storage, 'remove');
+  const res = await upload(uid, await png());
+  expect(res.status).toBe(500);
+  expect(remove).toHaveBeenCalledWith(put.mock.calls[0]![0]);
+  put.mockRestore();
+  remove.mockRestore();
 });
