@@ -10,8 +10,9 @@ import { BottomTabs } from './BottomTabs';
 import { LeftRail } from './LeftRail';
 import { MoreMenu } from './MoreMenu';
 
-/** Screens that draw edge to edge and bring their own phone header (the feed, a note). */
-const isFullBleed = (pathname: string) => pathname === '/' || /^\/notes\/\d+$/.test(pathname);
+/** Screens that draw edge to edge and bring their own phone header (the feed, a note, messages). */
+const isFullBleed = (pathname: string) =>
+  pathname === '/' || /^\/notes\/\d+$/.test(pathname) || pathname === '/messages' || pathname.startsWith('/messages/');
 
 function MobileTopBar() {
   const { user } = useAuth();

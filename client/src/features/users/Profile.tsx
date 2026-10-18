@@ -1,5 +1,5 @@
 import { BOARD_WIDTH, boardHeight } from '@parp/shared';
-import { ArrowLeft, Ban, MoreHorizontal, Pencil } from 'lucide-react';
+import { ArrowLeft, Ban, MessageSquareText, MoreHorizontal, Pencil } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SlideBoard } from '@/components/board/SlideBoard';
@@ -248,7 +248,23 @@ function Loaded({
                 >
                   {followLabel}
                 </Button>
-                {/* shortcut: Message button hidden until the messaging UI lands; it must read ?to=<id> */}
+                {p.role !== 'admin' &&
+                  (user ? (
+                    <Button asChild variant="outline">
+                      <Link to={`/messages?to=${p.id}`}>
+                        <MessageSquareText aria-hidden="true" />
+                        Message
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => askToLogIn({ action: 'message', returnTo: `/messages?to=${p.id}` })}
+                    >
+                      <MessageSquareText aria-hidden="true" />
+                      Message
+                    </Button>
+                  ))}
                 {user && p.role !== 'admin' && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

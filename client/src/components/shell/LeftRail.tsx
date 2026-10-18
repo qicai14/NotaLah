@@ -5,6 +5,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useUnread } from '@/features/messaging/MessagingContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { MoreMenu } from './MoreMenu';
@@ -23,11 +24,13 @@ function RailLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const { pathname, search } = useLocation();
   const active = isActive(item, pathname, search);
   const Icon = item.icon;
+  const unread = useUnread();
+  const count = item.to === '/messages' ? unread : 0;
   const link = (
     <Link
       to={item.to}
       aria-current={active ? 'page' : undefined}
-      aria-label={collapsed ? item.label : undefined}
+      aria-label={collapsed || count ? `${item.label}${count ? `, ${count} unread` : ''}` : undefined}
       className={cn(
         'flex h-12 items-center gap-4 rounded-md px-3 text-body font-medium transition-colors duration-(--duration-fast)',
         active ? 'bg-surface-strong font-bold text-foreground' : 'text-foreground/85 hover:bg-accent',
@@ -39,9 +42,25 @@ function RailLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
           <Icon className="size-4" strokeWidth={2.75} aria-hidden="true" />
         </span>
       ) : (
-        <Icon className="size-6 shrink-0" strokeWidth={active ? 2.4 : 1.9} aria-hidden="true" />
+        <span className="relative shrink-0">
+          <Icon className="size-6" strokeWidth={active ? 2.4 : 1.9} aria-hidden="true" />
+          {collapsed && count > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-0.5 -right-1 size-2.5 rounded-full bg-primary ring-2 ring-rail"
+            />
+          )}
+        </span>
       )}
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && count > 0 && (
+        <span
+          aria-hidden="true"
+          className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1.5 text-caption font-bold text-background tabular-nums"
+        >
+          {count > 99 ? '99+' : count}
+        </span>
+      )}
     </Link>
   );
   if (!collapsed) return link;
