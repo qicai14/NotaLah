@@ -18,6 +18,19 @@ const TAGS: Record<BoxMark | BoxList, string> = {
  * without mounting an editor, so the toolbar can show the whole-box state of the selected box (D43).
  */
 export function wholeBoxHas(html: string, name: BoxMark | BoxList): boolean {
+  const key = `${name}|${html}`;
+  const hit = seen.get(key);
+  if (hit !== undefined) return hit;
+  const result = scan(html, name);
+  if (seen.size >= 200) seen.delete(seen.keys().next().value!); // the oldest goes first
+  seen.set(key, result);
+  return result;
+}
+
+/** The toolbar asks for six states on every render; the answers depend only on the HTML, so they are kept. */
+const seen = new Map<string, boolean>();
+
+function scan(html: string, name: BoxMark | BoxList): boolean {
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
   const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
   let any = false;

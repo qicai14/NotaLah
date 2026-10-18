@@ -22,7 +22,14 @@ import {
   type SlideElement,
   snapMove,
 } from '@parp/shared';
-import { type KeyboardEvent, type PointerEvent as ReactPointerEvent, useCallback, useRef, useState } from 'react';
+import {
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { SlideBoard } from '@/components/board/SlideBoard';
 import { cn } from '@/lib/utils';
 import { boxOf } from './arrange';
@@ -99,6 +106,11 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
   const frame = useRef<HTMLDivElement>(null);
   /** The pointer driving the current gesture; a second finger or pen is ignored until it ends. */
   const activePointer = useRef<number | null>(null);
+  /** Ends the gesture in progress and undoes its live changes (the editor turned read-only under it). */
+  const stopGesture = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (readOnly) stopGesture.current?.();
+  }, [readOnly]);
   /** Focus moved by a press, which has already set the selection itself. */
   const pressing = useRef(false);
   const editing = editingId && selected?.id === editingId && OPENS.has(selected.type) ? selected : null;
@@ -114,6 +126,16 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
   /** Tracks one gesture on window, so it keeps going when the pointer leaves the board. */
   function track(g: Gesture, down: ReactPointerEvent) {
     activePointer.current = down.pointerId;
+    stopGesture.current = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      activePointer.current = null;
+      stopGesture.current = null;
+      setGuides({ x: [], y: [] });
+      setMarquee(null);
+      useEditor.getState().cancelPreview();
+    };
     const moving = g.kind === 'move' ? new Set(g.starts.map((e) => e.id)) : null;
     const others = slide.elements.filter((e) => !moving?.has(e.id)).map(boxOf);
     const downAt = { x: down.clientX, y: down.clientY };
@@ -199,6 +221,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
       activePointer.current = null;
+      stopGesture.current = null;
       setGuides({ x: [], y: [] });
       setMarquee(null);
       useEditor.getState().commit();
@@ -277,6 +300,12 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
       return;
     }
     const target = (e.target as HTMLElement).dataset.id;
+    // Shift+Space adds the focused element to the selection or takes it out: the keyboard's Shift-click.
+    if (e.key === ' ' && e.shiftKey && target) {
+      e.preventDefault();
+      useEditor.getState().toggleSelect(target);
+      return;
+    }
     const onSelection = target ? selection.includes(target) : e.target === frame.current && picked.length > 0;
     if (!onSelection) return;
     const free = picked.filter((p) => !p.locked);

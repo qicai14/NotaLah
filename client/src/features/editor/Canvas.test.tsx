@@ -5,7 +5,7 @@ import type { SlideElement } from '@parp/shared';
 import { arrange } from './arrange';
 import { Canvas } from './Canvas';
 import { PanelBody } from './Panels';
-import { emptyDeck, useEditor } from './store';
+import { emptyDeck, patchElement, useEditor } from './store';
 
 const rect = (id: string, x: number): SlideElement => ({
   id,
@@ -95,5 +95,23 @@ describe('editor canvas', () => {
     });
     fireEvent.pointerDown(container.querySelector('[data-id="el-0000001"]')!, { button: 0, ctrlKey: true });
     expect(s().selection).toEqual([]); // Ctrl-click on a selected element takes it out
+  });
+
+  it('NOTE-TC88: Shift+Space toggles the focused element, and a cancelled drag leaves no trace', () => {
+    const { container } = render(<Canvas compact={false} />);
+    const one = container.querySelector<HTMLElement>('[data-id="el-0000001"]')!;
+    const two = container.querySelector<HTMLElement>('[data-id="el-0000002"]')!;
+    fireEvent.focus(one);
+    fireEvent.keyDown(two, { key: ' ', shiftKey: true });
+    expect(s().selection).toEqual(['el-0000001', 'el-0000002']);
+    fireEvent.keyDown(two, { key: ' ', shiftKey: true });
+    expect(s().selection).toEqual(['el-0000001']);
+    const before = s().deck;
+    act(() => {
+      s().preview((d) => patchElement(d, 0, 'el-0000001', { x: 600 }));
+      s().cancelPreview(); // what the canvas does when the lock is lost mid-drag
+    });
+    expect(s().deck).toBe(before);
+    expect(s().past).toHaveLength(0);
   });
 });

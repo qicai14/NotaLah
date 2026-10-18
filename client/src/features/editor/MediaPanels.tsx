@@ -51,6 +51,9 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
   return data.asset as UploadedImage;
 }
 
+/** Photos already reported to Unsplash in this session: its terms ask for one download event per use, not per click. */
+const reported = new Set<string>();
+
 const absolute = (url: string) => (url.startsWith('/') ? apiOrigin() + url : url);
 
 /** Places an image on the active slide; false when the slide already holds the most images the server allows. */
@@ -150,11 +153,13 @@ export function UploadsPanel({ onAdd }: { onAdd?: () => void }) {
           <p className="text-body-sm text-muted-foreground">Nothing yet. Images you upload appear here for any note.</p>
         )}
         <ul className="grid grid-cols-2 gap-2">
-          {all.map((a) => (
+          {all.map((a, i) => (
             <li key={a.id}>
               <button type="button" className={cn(tile, 'aspect-square w-full')} onClick={() => use(a)}>
                 <img src={absolute(a.url)} alt="" loading="lazy" className="size-full object-cover" draggable={false} />
-                <span className="sr-only">Add upload {a.id}</span>
+                <span className="sr-only">
+                  Add your upload, {i + 1} of {all.length}
+                </span>
               </button>
             </li>
           ))}
@@ -181,22 +186,27 @@ export function PhotosPanel({ onAdd }: { onAdd?: () => void }) {
   const [totalPages, setTotalPages] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Only the newest search may write results, so a slow earlier reply never replaces a later one. */
+  const latest = useRef(0);
 
   async function search(text: string, p: number) {
+    const ticket = ++latest.current;
     setBusy(true);
     setError(null);
     try {
       const r = await api<{ results: UnsplashPhoto[]; totalPages: number }>(
         `/unsplash/search?q=${encodeURIComponent(text)}&page=${p}`,
       );
+      if (ticket !== latest.current) return;
       setResults((prev) => (p === 1 ? r.results : [...prev, ...r.results]));
       setTotalPages(r.totalPages);
       setQuery(text);
       setPage(p);
     } catch (e) {
+      if (ticket !== latest.current) return;
       setError(e instanceof ApiError && e.status === 503 ? 'Photo search is not available right now.' : errorText(e));
     } finally {
-      setBusy(false);
+      if (ticket === latest.current) setBusy(false);
     }
   }
 
@@ -214,7 +224,12 @@ export function PhotosPanel({ onAdd }: { onAdd?: () => void }) {
       p.alt,
     );
     if (!placed) return setError(FULL);
-    void api(`/unsplash/${encodeURIComponent(p.photoId)}/download`, { method: 'POST' }).catch(() => {});
+    if (!reported.has(p.photoId)) {
+      reported.add(p.photoId);
+      void api(`/unsplash/${encodeURIComponent(p.photoId)}/download`, { method: 'POST' }).catch(() =>
+        reported.delete(p.photoId),
+      );
+    }
     onAdd?.();
   }
 

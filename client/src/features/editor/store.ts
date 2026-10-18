@@ -205,6 +205,8 @@ interface Actions {
   preview: (recipe: (deck: Deck) => Deck) => void;
   /** Ends the live changes: everything since the first `preview` becomes one undo step. */
   commit: () => void;
+  /** Drops the live changes in progress, back to the deck before the first `preview`. */
+  cancelPreview: () => void;
   undo: () => void;
   redo: () => void;
   /** Selects exactly these elements (none for null). */
@@ -277,6 +279,10 @@ export const useEditor = create<EditorStore>()((set, get) => {
           ? { previewBase: null }
           : { past: capped(past, previewBase), future: [], previewBase: null },
       );
+    },
+    cancelPreview: () => {
+      const { previewBase } = get();
+      if (previewBase) set({ deck: previewBase, previewBase: null, rev: get().rev + 1 });
     },
     undo: () => {
       get().commit(); // live changes in progress are the step that undo takes back

@@ -320,7 +320,11 @@ export default function EditorPage() {
       navigate(`/notes/${meta.noteId}`);
     } catch (e) {
       setDialog(false);
-      setErrors(e instanceof ApiError && Object.keys(e.errors).length ? e.errors : { form: errorText(e) });
+      const fields: Record<string, string> = e instanceof ApiError ? e.errors : {};
+      // Details cannot be edited while someone else holds the lock, so say how the missing ones get filled in.
+      const later: Record<string, string> =
+        fields.moduleId || fields.hashtags ? { lock: 'Add them once the note is free to edit, then publish.' } : {};
+      setErrors(Object.keys(fields).length ? { ...fields, ...later } : { form: errorText(e) });
     } finally {
       setBusy(false);
     }
@@ -473,27 +477,18 @@ export default function EditorPage() {
   );
   const holder = lock.state.kind === 'locked' ? lock.state.holder : null;
 
-  const dialogEl =
-    dialog &&
-    (readOnly ? (
-      <PublishDialog
-        initial="public"
-        alreadyPublished
-        busy={busy}
-        title="Publish the last saved version"
-        note={`${holder?.displayName ?? 'The editor'}'s unsaved changes are not included.`}
-        onClose={() => setDialog(false)}
-        onChoose={publishSaved}
-      />
-    ) : (
-      <PublishDialog
-        initial={meta.visibility}
-        alreadyPublished={published}
-        busy={busy}
-        onClose={() => setDialog(false)}
-        onChoose={(c) => run(() => saveNote(c), c !== 'draft')}
-      />
-    ));
+  // While locked the owner publishes the last saved version as it is (wireframe 29); otherwise this editor's state.
+  const dialogEl = dialog && (
+    <PublishDialog
+      initial={readOnly ? 'public' : meta.visibility}
+      alreadyPublished={readOnly || published}
+      busy={busy}
+      title={readOnly ? 'Publish the last saved version' : undefined}
+      note={readOnly ? `${holder?.displayName ?? 'The editor'}'s unsaved changes are not included.` : undefined}
+      onClose={() => setDialog(false)}
+      onChoose={readOnly ? publishSaved : (c) => run(() => saveNote(c), c !== 'draft')}
+    />
+  );
   const lockNotice = holder && <LockedNotice holder={holder} owner={owner && !published} onRetry={lock.retry} />;
   const coAuthorHint = !owner && !published && !readOnly && (
     <span className="hidden text-caption whitespace-nowrap text-muted-foreground lg:inline">

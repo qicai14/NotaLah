@@ -1286,9 +1286,18 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   nothing was saved since it was read (409), so the co-author's next save gets the usual 409 rather than overwriting
   the publish; `replaceNote` takes `ignoreLock` for this route only. `GET /api/assets/images` lists the caller's ready
   images newest first (keyset, 30 a page) for "Your uploads", which had no list route.
+- **Review fixes (18 Oct):** a co-author's PUT whose status, visibility or module differ from the server's is now a
+  409 (was 403), because after the owner publishes those fields differ through no fault of the co-author; "Keep mine"
+  adopts the server's status and visibility (and module for a co-author) before saving. Winning the lock after a wait
+  reloads only when nothing is unsaved, else it raises the conflict banner. Lock runs are counted per note, so only the
+  last to close releases (StrictMode, retry, remount). Pastes stop at the image and video caps; group scaling is clamped
+  so no member goes under the 8-unit box or past font 400 or 4000 units. A drag in progress is cancelled (its live
+  changes dropped) when the editor turns read-only. Shift+Space toggles the focused element. Each Unsplash photo is
+  reported once a session; late search replies are dropped. If the locked publish fails on module or hashtags, the
+  error says to add them once the note is free (Details stays closed while locked).
 - **Not built:** video stays a disabled tile in Elements until R29 (a video element needs a real video asset to save);
   draft thumbnails and the publish preview (step 7) are next.
-- **Test IDs:** NOTE-TC78 to TC84, COL-TC25.
+- **Test IDs:** NOTE-TC78 to TC88, COL-TC25; COL-TC4 now expects 409.
 - **Reversibility:** Easy: client changes plus two additive routes.
 
 ## D59 - Video upload on the server (R29, 18 Oct 2026)
