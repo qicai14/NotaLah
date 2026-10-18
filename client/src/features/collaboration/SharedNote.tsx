@@ -69,6 +69,7 @@ export default function SharedNote() {
   }
 
   const { role, note: n } = data;
+  const own = user?.id === n.author.id;
   const joinAsEditor = async () => {
     const r = await join.run(() => api<{ noteId: number }>(`/share/${encodeURIComponent(token)}`, { method: 'POST' }));
     if (r) navigate(`/notes/${r.noteId}`, { replace: true });
@@ -83,7 +84,9 @@ export default function SharedNote() {
           <Eye className="size-5 shrink-0" aria-hidden="true" />
         )}
         <p className="min-w-0 flex-1 basis-56 text-body-sm">
-          {role === 'edit' ? (
+          {own ? (
+            <>This is your note.</>
+          ) : role === 'edit' ? (
             <>
               <strong className="font-bold">{n.author.displayName}</strong> invited you to edit this note.
             </>
@@ -93,13 +96,18 @@ export default function SharedNote() {
             </>
           )}
         </p>
-        {role === 'edit' && (
+        {own && (
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/notes/${n.id}`}>Open note</Link>
+          </Button>
+        )}
+        {role === 'edit' && !own && (
           <Button onClick={joinAsEditor} disabled={join.pending}>
             {join.pending ? 'Joining…' : 'Join as editor'}
           </Button>
         )}
         {role === 'view' && !user && (
-          <Button asChild variant="secondary" size="sm">
+          <Button asChild variant="outline" size="sm">
             <Link to="/login" state={{ from: location.pathname }}>
               Log in
             </Link>

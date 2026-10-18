@@ -92,9 +92,13 @@ export default function NoteDetail() {
                 {n.author.isVerifiedLecturer && <LecturerBadge />}
               </p>
               <p className="text-body-sm text-muted-foreground">
-                {timeAgo(n.publishedAt ?? n.updatedAt)}, {visibilityLabel(n.visibility)}{' '}
-                <Coauthors people={n.coauthors} />
+                {timeAgo(n.publishedAt ?? n.updatedAt)}, {visibilityLabel(n.visibility)}
               </p>
+              {n.coauthors?.length ? (
+                <p className="text-body-sm">
+                  <Coauthors people={n.coauthors} />
+                </p>
+              ) : null}
             </div>
             {n.myRole === 'view' && (
               <Button variant="secondary" onClick={() => setRequesting(true)}>
