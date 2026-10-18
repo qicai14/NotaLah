@@ -391,7 +391,7 @@ export default function EditorPage() {
           >
             Reload
           </Button>
-          <Button size="xs" onClick={() => run(() => keepMine(resaveChoice), published)}>
+          <Button size="xs" onClick={() => run(() => keepMine(!owner), published)}>
             Keep mine
           </Button>
         </Banner>

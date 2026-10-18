@@ -60,12 +60,15 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
     });
   }
   const n = parsed.data;
-  // Co-authors edit content only (D44): publishing, visibility and module stay with the owner.
+  // Co-authors edit content only (D44): publishing, visibility and module stay with the owner. A difference means the
+  // owner changed them since this editor loaded the note, so it is a 409 the editor recovers from like any other.
   if (
     meta.role === 'edit' &&
     (n.status !== meta.status || n.visibility !== meta.visibility || n.moduleId !== meta.moduleId)
   ) {
-    return res.status(403).json({ error: 'Only the owner can change status, visibility or module' });
+    return res
+      .status(409)
+      .json({ error: 'The owner changed who can see this note or its module. Reload to see the latest version' });
   }
   if (meta.status === 'published' && n.status === 'draft') {
     return res.status(400).json({
