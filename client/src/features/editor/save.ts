@@ -109,12 +109,24 @@ async function send(choice: SaveChoice, { deck, meta, rev, session }: Snapshot):
   }
 }
 
-/** "Keep mine" after a 409: take the server's current version as the base and save over it. */
-export async function keepMine(choice: SaveChoice): Promise<SaveOutcome> {
+/**
+ * "Keep mine" after a 409: take the server's current version as the base and save this editor's content over it. The
+ * owner-only fields come from the server too (status and visibility always, the module for a co-author), because the
+ * owner may have published or moved the note meanwhile and a co-author may not change them (D44, D58).
+ */
+export async function keepMine(coAuthor = false): Promise<SaveOutcome> {
   const { meta, setMeta } = useEditor.getState();
+  let choice: SaveChoice;
   try {
     const { note } = await api<{ note: Note }>(`/notes/${meta.noteId}`);
-    setMeta({ baseUpdatedAt: note.updatedAt });
+    const server = noteToMeta(note);
+    setMeta({
+      baseUpdatedAt: note.updatedAt,
+      status: server.status,
+      visibility: server.visibility,
+      ...(coAuthor ? { moduleId: server.moduleId } : {}),
+    });
+    choice = server.status === 'published' ? (server.visibility ?? 'public') : 'draft';
   } catch (e) {
     return { ok: false, errors: { form: errorText(e) } };
   }

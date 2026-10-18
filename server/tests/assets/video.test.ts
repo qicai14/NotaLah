@@ -5,12 +5,12 @@ import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../../src/app';
 import { VIDEO } from '../../src/features/assets/config';
 import { processVideo, runTool } from '../../src/features/assets/video';
 import { env } from '../../src/lib/env';
-import { parseRange } from '../../src/lib/storage';
+import { parseRange, storage } from '../../src/lib/storage';
 import { pool } from '../../src/lib/pool';
 import { asUser, insertUser, truncateAll } from '../helpers';
 
@@ -284,4 +284,16 @@ http://127.0.0.1:${port}/seg.ts
     expect(shared.status).toBe(200);
     expect(shared.headers['content-type']).toBe('image/webp');
   });
+});
+
+it('STO-TC15: a video put that fails removes the key it may have written', async () => {
+  const uid = await insertUser();
+  const put = vi.spyOn(storage, 'put').mockRejectedValueOnce(new Error('timed out'));
+  const remove = vi.spyOn(storage, 'remove');
+  const res = await upload(uid, readFileSync(file('short.mp4')));
+  expect(res.status).toBe(500);
+  expect(remove).toHaveBeenCalledWith(put.mock.calls[0]![0]);
+  expect(put.mock.calls[0]![0]).toMatch(/^v\//);
+  put.mockRestore();
+  remove.mockRestore();
 });

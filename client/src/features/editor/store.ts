@@ -18,8 +18,8 @@ export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict' | 'lo
 
 export interface EditorState {
   deck: Deck;
-  /** Selected element id on the active slide. */
-  selection: string | null;
+  /** Selected element ids on the active slide, in the order they were picked (the first drives single-element tools). */
+  selection: string[];
   activeSlide: number;
   past: Deck[];
   future: Deck[];
@@ -36,6 +36,10 @@ export interface EditorState {
   previewBase: Deck | null;
   /** The TipTap instance of the text box being edited, so the toolbar can format inside it. */
   textEditor: TipTapEditor | null;
+  /** Upload id to file URL for the board (the note's `assets` map plus anything uploaded since); not in undo. */
+  assets: Record<string, string>;
+  /** The text box, code block or table open for typing (at most one, and only while it is the sole selection). */
+  editingId: string | null;
 }
 
 export interface NoteMeta {
@@ -64,7 +68,7 @@ export const emptyDeck = (): Deck => ({ aspect: '4:5', theme: 'plain', slides: [
 
 const initial = (): EditorState => ({
   deck: emptyDeck(),
-  selection: null,
+  selection: [],
   activeSlide: 0,
   past: [],
   future: [],
@@ -75,6 +79,8 @@ const initial = (): EditorState => ({
   session: 0,
   previewBase: null,
   textEditor: null,
+  assets: {},
+  editingId: null,
 });
 
 export const newId = (): string => crypto.randomUUID();
@@ -111,14 +117,43 @@ export const patchElement = (deck: Deck, slide: number, id: string, patch: Parti
   }));
 
 /** Keeps the active slide and selection valid after the deck changes under them (undo, delete). */
-function settle(deck: Deck, activeSlide: number, selection: string | null) {
+function settle(deck: Deck, activeSlide: number, selection: string[]) {
   const active = Math.min(activeSlide, deck.slides.length - 1);
-  const keep = selection && deck.slides[active].elements.some((e) => e.id === selection) ? selection : null;
-  return { activeSlide: active, selection: keep };
+  const ids = new Set(deck.slides[active].elements.map((e) => e.id));
+  const keep = selection.filter((id) => ids.has(id));
+  return { activeSlide: active, selection: keep.length === selection.length ? selection : keep };
 }
 
+/** The deck with every listed element on one slide replaced by `fn(element)`. */
+export const mapElements = (
+  deck: Deck,
+  slide: number,
+  ids: readonly string[],
+  fn: (e: SlideElement) => SlideElement,
+): Deck => {
+  const set = new Set(ids);
+  return mapSlide(deck, slide, (s) => ({ ...s, elements: s.elements.map((e) => (set.has(e.id) ? fn(e) : e)) }));
+};
+
 /** Scales an element's geometry and its board-unit sizes by `s`, then shifts it by (dx, dy). */
-function scaleElement(e: SlideElement, s: number, dx: number, dy: number): SlideElement {
+/** Largest font any text, code or table may have (the schema's limit). */
+const MAX_FONT = 400;
+/** Largest width or height the schema allows. */
+const MAX_SIZE = 4000;
+
+/** The range a group may be scaled by so no member drops below the minimum box or passes the schema's size limits. */
+export function groupScaleRange(els: SlideElement[], minBox: number): { min: number; max: number } {
+  let min = 0;
+  let max = Infinity;
+  for (const e of els) {
+    min = Math.max(min, minBox / Math.min(e.w, e.h));
+    max = Math.min(max, MAX_SIZE / Math.max(e.w, e.h));
+    if (e.type === 'text' || e.type === 'code' || e.type === 'table') max = Math.min(max, MAX_FONT / e.size);
+  }
+  return { min, max: Math.max(min, max) };
+}
+
+export function scaleElement(e: SlideElement, s: number, dx: number, dy: number): SlideElement {
   const g = { x: round1(e.x * s + dx), y: round1(e.y * s + dy), w: round1(e.w * s), h: round1(e.h * s) };
   const font = (n: number) => Math.max(8, round1(n * s));
   switch (e.type) {
@@ -157,7 +192,11 @@ export function reaspect(deck: Deck, aspect: Aspect): Deck {
 
 interface Actions {
   /** Replaces everything with a loaded (or new) deck; history is cleared. */
-  load: (deck: Deck, meta?: NoteMeta) => void;
+  load: (deck: Deck, meta?: NoteMeta, assets?: Record<string, string>) => void;
+  /** Opens an element for typing, or closes the open one (null). */
+  setEditing: (id: string | null) => void;
+  /** Makes an upload drawable on the board. */
+  addAsset: (id: number, url: string) => void;
   /** Detail edits (title, module, hashtags) mark the note dirty without an undo step. */
   setMeta: (patch: Partial<NoteMeta>) => void;
   /** One undoable change. */
@@ -166,9 +205,14 @@ interface Actions {
   preview: (recipe: (deck: Deck) => Deck) => void;
   /** Ends the live changes: everything since the first `preview` becomes one undo step. */
   commit: () => void;
+  /** Drops the live changes in progress, back to the deck before the first `preview`. */
+  cancelPreview: () => void;
   undo: () => void;
   redo: () => void;
-  select: (id: string | null) => void;
+  /** Selects exactly these elements (none for null). */
+  select: (id: string | string[] | null) => void;
+  /** Shift or Ctrl click: adds the element to the selection, or takes it out. */
+  toggleSelect: (id: string) => void;
   setActiveSlide: (index: number) => void;
   addSlide: () => void;
   duplicateSlide: (index: number) => void;
@@ -176,8 +220,12 @@ interface Actions {
   moveSlide: (from: number, to: number) => void;
   setAspect: (aspect: Aspect) => void;
   addElement: (el: SlideElement) => void;
+  /** Adds several elements as one step (paste, duplicate of a selection) and selects them; stops at the slide limit. */
+  addElements: (els: SlideElement[]) => void;
   updateElement: (id: string, patch: Partial<SlideElement>) => void;
   deleteElement: (id: string) => void;
+  /** Deletes every unlocked element in the selection as one step. */
+  deleteSelected: () => void;
   setSaveState: (s: SaveState) => void;
   /**
    * The server confirmed the state at `sentRev` of `session`; the note stays dirty if it changed while the save was in
@@ -195,11 +243,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
     if (next === deck) return;
     // Live changes still in progress become their own step first, so this change undoes on its own.
     const settled = previewBase && previewBase !== deck ? capped(past, previewBase) : past;
-    const pos = settle(
-      next,
-      extra.activeSlide ?? activeSlide,
-      'selection' in extra ? (extra.selection ?? null) : selection,
-    );
+    const pos = settle(next, extra.activeSlide ?? activeSlide, extra.selection ?? selection);
     set({
       ...extra,
       ...pos,
@@ -216,7 +260,10 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
   return {
     ...initial(),
-    load: (deck, meta = emptyMeta()) => set({ ...initial(), deck, meta, session: get().session + 1 }),
+    load: (deck, meta = emptyMeta(), assets = {}) =>
+      set({ ...initial(), deck, meta, assets, session: get().session + 1 }),
+    setEditing: (editingId) => set({ editingId }),
+    addAsset: (id, url) => set({ assets: { ...get().assets, [String(id)]: url } }),
     setMeta: (patch) => set({ meta: { ...get().meta, ...patch }, dirty: true, rev: get().rev + 1 }),
     apply: (recipe) => apply(recipe),
     preview: (recipe) => {
@@ -232,6 +279,10 @@ export const useEditor = create<EditorStore>()((set, get) => {
           ? { previewBase: null }
           : { past: capped(past, previewBase), future: [], previewBase: null },
       );
+    },
+    cancelPreview: () => {
+      const { previewBase } = get();
+      if (previewBase) set({ deck: previewBase, previewBase: null, rev: get().rev + 1 });
     },
     undo: () => {
       get().commit(); // live changes in progress are the step that undo takes back
@@ -261,24 +312,28 @@ export const useEditor = create<EditorStore>()((set, get) => {
         ...settle(next, activeSlide, selection),
       });
     },
-    select: (id) => set({ selection: id }),
-    setActiveSlide: (index) => set({ activeSlide: Math.max(0, Math.min(index, slideCount() - 1)), selection: null }),
+    select: (id) => set({ selection: id === null ? [] : Array.isArray(id) ? id : [id] }),
+    toggleSelect: (id) => {
+      const sel = get().selection;
+      set({ selection: sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id] });
+    },
+    setActiveSlide: (index) => set({ activeSlide: Math.max(0, Math.min(index, slideCount() - 1)), selection: [] }),
     addSlide: () => {
       if (slideCount() >= LIMITS.slides) return;
       const at = active() + 1;
-      apply((d) => ({ ...d, slides: spliced(d.slides, at, 0, blankSlide()) }), { activeSlide: at, selection: null });
+      apply((d) => ({ ...d, slides: spliced(d.slides, at, 0, blankSlide()) }), { activeSlide: at, selection: [] });
     },
     duplicateSlide: (index) => {
       if (slideCount() >= LIMITS.slides) return;
       apply((d) => ({ ...d, slides: spliced(d.slides, index + 1, 0, withNewIds(d.slides[index])) }), {
         activeSlide: index + 1,
-        selection: null,
+        selection: [],
       });
     },
     deleteSlide: (index) => {
       apply((d) => ({ ...d, slides: d.slides.length === 1 ? [blankSlide()] : spliced(d.slides, index, 1) }), {
         activeSlide: Math.max(0, index - (index >= slideCount() - 1 ? 1 : 0)),
-        selection: null,
+        selection: [],
       });
     },
     moveSlide: (from, to) => {
@@ -294,15 +349,40 @@ export const useEditor = create<EditorStore>()((set, get) => {
     setAspect: (aspect) => {
       if (aspect !== get().deck.aspect) apply((d) => reaspect(d, aspect));
     },
-    addElement: (el) => {
-      if (get().deck.slides[active()].elements.length >= LIMITS.elementsPerSlide) return;
-      apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: [...s.elements, el] })), { selection: el.id });
+    addElement: (el) => get().addElements([el]),
+    addElements: (els) => {
+      const current = get().deck.slides[active()].elements;
+      const room = LIMITS.elementsPerSlide - current.length;
+      // Images and videos have their own per-slide caps (D32); extra ones in a paste are left out, not saved and refused.
+      let images = current.filter((e) => e.type === 'image').length;
+      let videos = current.filter((e) => e.type === 'video').length;
+      const fits = els.filter((e) => {
+        if (e.type === 'image') return ++images <= LIMITS.imagesPerSlide;
+        if (e.type === 'video') return ++videos <= LIMITS.videosPerSlide;
+        return true;
+      });
+      const add = fits.slice(0, Math.max(0, room));
+      if (!add.length) return;
+      apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: [...s.elements, ...add] })), {
+        selection: add.map((e) => e.id),
+      });
     },
     updateElement: (id, patch) => apply((d) => patchElement(d, active(), id, patch)),
     deleteElement: (id) =>
       apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== id) })), {
-        selection: null,
+        selection: get().selection.filter((x) => x !== id),
       }),
+    deleteSelected: () => {
+      const gone = new Set(
+        get()
+          .deck.slides[active()].elements.filter((e) => get().selection.includes(e.id) && !e.locked)
+          .map((e) => e.id),
+      );
+      if (!gone.size) return;
+      apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: s.elements.filter((e) => !gone.has(e.id)) })), {
+        selection: get().selection.filter((x) => !gone.has(x)),
+      });
+    },
     setSaveState: (saveState) => set({ saveState }),
     markSaved: (session, sentRev, meta) => {
       if (session !== get().session) return;

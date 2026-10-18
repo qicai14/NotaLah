@@ -12,7 +12,8 @@ import { fileLimiter, uploadLimiter, videoUploadLimiter } from '../auth/rateLimi
 import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl, VIDEO } from './config';
 import { reencodeImage } from './image';
-import { getReadableAsset, insertAsset } from './repository';
+import { parseKeyset } from '../../lib/keyset';
+import { getReadableAsset, insertAsset, listMyImages } from './repository';
 import { sendAsset } from './service';
 import { processVideo } from './video';
 
@@ -50,6 +51,7 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
     await storage.put(key, data);
   } catch (err) {
     if (err instanceof UsageLimitError) return res.status(503).json({ error: err.message });
+    await storage.remove(key).catch(() => {});
     throw err;
   }
   let asset;
@@ -73,6 +75,13 @@ assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUplo
     });
   }
   res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
+});
+
+assetsRouter.get('/images', requireAuth, async (req, res) => {
+  const page = parseKeyset(req, res, 2, 30);
+  if (!page) return;
+  const { items, nextCursor } = await listMyImages(me(req).id, page);
+  res.json({ assets: items.map((a) => ({ ...a, url: assetUrl(a.id) })), nextCursor });
 });
 
 // Videos stream to a temp file, not memory; the directory is removed when the response ends, however it ends (R29, D59).
@@ -144,10 +153,10 @@ assetsRouter.post(
     const posterKey = `p/${id}.webp`;
     const stored: string[] = [];
     try {
-      await storage.put(key, await readFile(video.file));
       stored.push(key);
-      await storage.put(posterKey, video.poster);
+      await storage.put(key, await readFile(video.file));
       stored.push(posterKey);
+      await storage.put(posterKey, video.poster);
       const asset = await insertAsset(me(req).id, {
         kind: 'video',
         key,
@@ -164,7 +173,7 @@ assetsRouter.post(
       await Promise.all(stored.map((k) => storage.remove(k)));
       return res.status(413).json({ error: 'Storage limit of 500 MB reached. Delete notes or media to free space' });
     } catch (err) {
-      await Promise.all(stored.map((k) => storage.remove(k)));
+      await Promise.all(stored.map((k) => storage.remove(k).catch(() => {})));
       if (err instanceof UsageLimitError) return res.status(503).json({ error: err.message });
       throw err;
     }

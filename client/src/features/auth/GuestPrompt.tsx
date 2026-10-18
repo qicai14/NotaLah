@@ -1,4 +1,4 @@
-import { Bookmark, Flag, Heart, type LucideIcon, MessageCircle, UserPlus } from 'lucide-react';
+import { Bookmark, Flag, Heart, type LucideIcon, MessageCircle, UserPlus, Users } from 'lucide-react';
 import { createContext, type ReactNode, useCallback, useContext, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 
-export type GuestAction = 'like' | 'save' | 'comment' | 'report' | 'follow' | 'message';
+export type GuestAction = 'like' | 'save' | 'comment' | 'report' | 'follow' | 'message' | 'collaborate';
 
 const COPY: Record<GuestAction, { title: string; icon: LucideIcon }> = {
   like: { title: 'Log in to like this note', icon: Heart },
@@ -15,6 +15,7 @@ const COPY: Record<GuestAction, { title: string; icon: LucideIcon }> = {
   report: { title: 'Log in to report this note', icon: Flag },
   follow: { title: 'Log in to follow people', icon: UserPlus },
   message: { title: 'Log in to send a message', icon: MessageCircle },
+  collaborate: { title: 'Log in to ask to collaborate', icon: Users },
 };
 
 interface Ask {
