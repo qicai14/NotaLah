@@ -9,7 +9,7 @@ import { api, ApiError } from '@/lib/api';
 import { useAction } from '@/lib/useAction';
 import { cn } from '@/lib/utils';
 import type { PersonRow } from '@/types';
-import { GROUP_MAX, GROUP_MIN_OTHERS, useFriends } from './helpers';
+import { GROUP_MAX, GROUP_MIN_OTHERS, GROUP_NAME_MAX, useFriends } from './helpers';
 import { useMessaging } from './MessagingContext';
 import type { Conversation } from './types';
 
@@ -147,7 +147,7 @@ export function NewGroup({ onBack }: { onBack(): void }) {
           label="Group name"
           name="group-name"
           value={name}
-          maxLength={80}
+          maxLength={GROUP_NAME_MAX}
           onChange={(e) => setName(e.target.value)}
           error={fieldErrors.name}
           autoComplete="off"

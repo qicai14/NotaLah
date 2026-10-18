@@ -6,12 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyInbox, inboxReducer } from './inboxReducer';
 import { StartChat } from './StartChat';
 
-const dispatch = vi.fn();
 const inbox = inboxReducer(emptyInbox, { type: 'conversations', items: [], next: null });
 
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 vi.mock('./MessagingContext', () => ({
-  useMessaging: () => ({ inbox, dispatch, loadMoreConversations: vi.fn() }),
+  useMessaging: () => ({ inbox, loadMoreConversations: vi.fn() }),
   useSocketEvent: () => {},
 }));
 
@@ -77,12 +76,10 @@ describe('starting a chat', () => {
   it('CLI-TC68: a friend sends straight into a conversation and the view moves to it; a pending request shows its error', async () => {
     replies['GET /users/2'] = { status: 200, body: profile(true) };
     replies['POST /messages'] = { status: 201, body: { conversationId: 9, message: { id: 1 } } };
-    replies['GET /conversations/9'] = { status: 200, body: { conversation: { id: 9 } } };
     mount();
     expect(await screen.findByText('You are friends. Say hello.')).toBeTruthy();
     await userEvent.type(screen.getByLabelText('Message'), 'Hi{Enter}');
     expect(await screen.findByText('at /messages/9')).toBeTruthy();
-    expect(dispatch).toHaveBeenCalledWith({ type: 'upsert', conversation: { id: 9 } });
 
     cleanup();
     replies['GET /users/2'] = { status: 200, body: profile(false) };

@@ -22,7 +22,6 @@ export type InboxAction =
   | { type: 'message'; message: Message; me: number; open: boolean }
   | { type: 'deleted'; conversationId: number; messageId: number }
   | { type: 'read'; conversationId: number; userId: number; messageId: number | null; me: number }
-  | { type: 'renamed'; conversationId: number; name: string }
   | { type: 'removed'; conversationId: number }
   | { type: 'request'; request: MessageRequest }
   | { type: 'requestGone'; id: number }
@@ -106,8 +105,6 @@ export function inboxReducer(s: InboxState, a: InboxAction): InboxState {
             : m,
         ),
       }));
-    case 'renamed':
-      return patch(s, a.conversationId, (c) => ({ ...c, name: a.name }));
     case 'removed':
       return withConversation(
         s,

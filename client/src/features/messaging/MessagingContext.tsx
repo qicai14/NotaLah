@@ -68,7 +68,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         api<{ conversations: Conversation[]; nextCursor: string | null }>('/conversations'),
         api<{ requests: MessageRequest[]; nextCursor: string | null }>('/message-requests'),
       ]);
-      dispatch({ type: 'conversations', items: c.conversations, next: c.nextCursor, append: true });
+      dispatch({ type: 'conversations', items: c.conversations, next: c.nextCursor });
       dispatch({ type: 'requests', items: r.requests, next: r.nextCursor });
       setError(null);
     } catch (e) {
@@ -85,7 +85,9 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     // WebSocket only: a same-origin polling request carries no Origin header, which the server refuses (D50, D35).
     const s = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
     setSocket(s);
+    s.on('connect_error', () => setError('Live updates are offline. Refresh to try again.'));
     s.on('connect', () => {
+      setError(null);
       setConnections((n) => n + 1);
       void loadFirst(); // on a reconnect this also catches up on events missed while offline
     });

@@ -1,14 +1,17 @@
+import { MESSAGING_LIMITS } from '@parp/shared';
 import { useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { usePaged } from '@/lib/usePaged';
 import type { PersonRow } from '@/types';
 import type { Conversation, Member } from './types';
 
-export const GROUP_MAX = 30;
-export const GROUP_MIN_OTHERS = 2;
-export const BODY_MAX = 2000;
-/** The server relays one typing event per conversation per 2 s (D50); asking more often only wastes sends. */
-export const TYPING_MS = 2000;
+export const GROUP_MAX = MESSAGING_LIMITS.groupMax;
+export const GROUP_MIN_OTHERS = MESSAGING_LIMITS.groupMinOthers;
+export const GROUP_NAME_MAX = MESSAGING_LIMITS.groupNameMax;
+export const BODY_MAX = MESSAGING_LIMITS.bodyMax;
+export const TYPING_MS = MESSAGING_LIMITS.typingThrottleMs;
+/** Conversation page size, so a deep link can stop paging at a sensible depth. */
+export const LIST_PAGE = MESSAGING_LIMITS.listPage;
 
 export const otherMember = (c: Conversation, me: number): Member | undefined => c.members.find((m) => m.id !== me);
 

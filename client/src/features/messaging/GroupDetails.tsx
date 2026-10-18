@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 import { useAction } from '@/lib/useAction';
 import { useMediaQuery, DESKTOP } from '@/hooks/useMediaQuery';
 import { useAuth } from '../auth/AuthContext';
-import { GROUP_MAX, useFriends } from './helpers';
+import { GROUP_MAX, GROUP_NAME_MAX, useFriends } from './helpers';
 import { useMessaging } from './MessagingContext';
 import type { Conversation } from './types';
 
@@ -84,7 +84,7 @@ export function GroupDetails({
                 <input
                   id="group-name"
                   value={name}
-                  maxLength={80}
+                  maxLength={GROUP_NAME_MAX}
                   onChange={(e) => setName(e.target.value)}
                   className={inputClass}
                 />

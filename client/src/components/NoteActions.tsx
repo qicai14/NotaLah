@@ -164,7 +164,7 @@ export function NoteActions({
     });
 
   const report = () => (user ? setReporting(true) : askToLogIn({ action: 'report', returnTo }));
-  const messageHref = `/messages?to=${note.author.id}&note=${note.id}&noteTitle=${encodeURIComponent(note.title.slice(0, 120))}`;
+  const messageHref = `/messages?to=${note.author.id}&note=${note.id}`;
   const messageAuthor = () => (user ? navigate(messageHref) : askToLogIn({ action: 'message', returnTo: messageHref }));
   const comments = note.counts.comments;
   const owner = note.author.id === user?.id;

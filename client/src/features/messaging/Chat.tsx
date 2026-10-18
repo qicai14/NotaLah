@@ -55,6 +55,7 @@ export function Chat({
   const [cannotSend, setCannotSend] = useState(false);
   const [typers, setTypers] = useState<Record<number, number>>({});
   const [details, setDetails] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
   const send = useAction();
   const older = useAction();
   const remove = useAction();
@@ -77,6 +78,8 @@ export function Chat({
     };
   }, [id, conversation, fetchConversation]);
 
+  // The first connection is not a reconnect: nothing was missed before it, so it must not refetch the history.
+  const reconnects = Math.max(connections - 1, 0);
   useEffect(() => {
     let live = true;
     api<{ messages: Message[]; nextCursor: string | null }>(`/conversations/${id}/messages`)
@@ -93,11 +96,12 @@ export function Chat({
     return () => {
       live = false;
     };
-  }, [id, connections]);
+  }, [id, reconnects]);
 
   useSocketEvent<{ conversationId: number; message: Message }>('message:new', ({ conversationId, message }) => {
     if (conversationId !== id) return;
     dispatch({ type: 'new', message });
+    if (message.sender.id !== me) setAnnouncement(`New message from ${message.sender.displayName}`);
     setTypers((t) => Object.fromEntries(Object.entries(t).filter(([k]) => Number(k) !== message.sender.id)));
   });
   useSocketEvent<{ conversationId: number; messageId: number }>('message:deleted', (p) => {
@@ -146,7 +150,7 @@ export function Chat({
 
   const typing = useRef(typingThrottle(() => {}, TYPING_MS));
   useEffect(() => {
-    typing.current = typingThrottle(() => socket?.emit('typing', { conversationId: id }), TYPING_MS);
+    typing.current = typingThrottle(() => socket?.volatile.emit('typing', { conversationId: id }), TYPING_MS);
   }, [socket, id]);
 
   const onSend = async (body: string) => {
@@ -278,7 +282,10 @@ export function Chat({
         {chat.loaded && chat.messages.length === 0 && (
           <p className="py-10 text-center text-body text-muted-foreground">No messages yet. Say hello.</p>
         )}
-        <ul role="log" aria-label={`Messages with ${title}`} className="flex flex-col gap-1.5">
+        <p aria-live="polite" className="sr-only">
+          {announcement}
+        </p>
+        <ul aria-label={`Messages with ${title}`} className="flex flex-col gap-1.5">
           {chat.messages.map((m, i) => {
             const prev = chat.messages[i - 1];
             const nxt = chat.messages[i + 1];
@@ -323,6 +330,7 @@ export function Chat({
         note={note}
         onRemoveNote={() => setNote(null)}
         pending={send.pending}
+        autoFocus
         disabled={cannotSend}
         placeholder={cannotSend ? 'You cannot message this person' : 'Write a message'}
       />

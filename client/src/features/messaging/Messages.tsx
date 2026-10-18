@@ -22,7 +22,7 @@ export default function Messages() {
 
   const to = positive(params.get('to'));
   const noteId = positive(params.get('note'));
-  const note: Attachment | null = noteId ? { id: noteId, title: params.get('noteTitle')?.slice(0, 120) || null } : null;
+  const note: Attachment | null = noteId ? { id: noteId, title: null } : null;
   const tab: InboxTab = params.get('tab') === 'requests' ? 'requests' : 'chats';
 
   const segment = rest.split('/')[0] ?? '';

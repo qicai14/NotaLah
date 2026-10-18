@@ -8,10 +8,11 @@ import { useAction } from '@/lib/useAction';
 import { useFetch } from '@/lib/useFetch';
 import type { BlockedProfile, Profile } from '@/types';
 import { useAuth } from '../auth/AuthContext';
+import { LIST_PAGE } from './helpers';
 import { Composer, type Attachment } from './Composer';
 import { Gone } from './Chat';
-import { useMessaging, useSocketEvent } from './MessagingContext';
-import type { Conversation, Message } from './types';
+import { useMessaging } from './MessagingContext';
+import type { Message } from './types';
 
 const MAX_PAGES = 10;
 
@@ -19,7 +20,7 @@ const MAX_PAGES = 10;
 export function StartChat({ toId, note, onBack }: { toId: number; note: Attachment | null; onBack(): void }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { inbox, loadMoreConversations, dispatch } = useMessaging();
+  const { inbox, loadMoreConversations } = useMessaging();
   const { data, errorStatus, error, loading } = useFetch<{ user: Profile | BlockedProfile }>(`/users/${toId}`);
   const [attached, setAttached] = useState(note);
   const [sent, setSent] = useState<{ body: string; note: Attachment | null } | null>(null);
@@ -28,19 +29,16 @@ export function StartChat({ toId, note, onBack }: { toId: number; note: Attachme
   // The person may already have a chat with this user on a page of the inbox that is not loaded yet.
   const { items, next } = inbox.conversations;
   const existing = items.find((c) => c.type === 'direct' && c.members.some((m) => m.id === toId));
-  const capped = items.length >= MAX_PAGES * 20;
-  const searching = !existing && (!inbox.conversationsLoaded || (next !== null && !capped));
+  const capped = items.length >= MAX_PAGES * LIST_PAGE;
+  // If paging fails, fall through to the composer: sending still opens or creates the right chat.
+  const [searchFailed, setSearchFailed] = useState(false);
+  const searching = !existing && !searchFailed && (!inbox.conversationsLoaded || (next !== null && !capped));
   useEffect(() => {
-    if (!existing && inbox.conversationsLoaded && next !== null && !capped)
-      void loadMoreConversations().catch(() => {});
-  }, [existing, inbox.conversationsLoaded, next, capped, loadMoreConversations]);
+    if (!existing && !searchFailed && inbox.conversationsLoaded && next !== null && !capped)
+      loadMoreConversations().catch(() => setSearchFailed(true));
+  }, [existing, searchFailed, inbox.conversationsLoaded, next, capped, loadMoreConversations]);
 
-  // The recipient accepted the request: continue in the conversation.
-  useSocketEvent<{ conversationId: number }>('request:accepted', ({ conversationId }) => {
-    if (sent) navigate(`/messages/${conversationId}`, { replace: true });
-  });
-
-  const suffix = attached ? `?note=${attached.id}&noteTitle=${encodeURIComponent(attached.title ?? '')}` : '';
+  const suffix = attached ? `?note=${attached.id}` : '';
   if (toId === user?.id) return <Navigate to="/messages" replace />;
   if (existing) return <Navigate to={`/messages/${existing.id}${suffix}`} replace />;
   if (loading || searching)
@@ -92,8 +90,6 @@ export function StartChat({ toId, note, onBack }: { toId: number; note: Attachme
       setAttached(null);
       return true;
     }
-    const { conversation } = await api<{ conversation: Conversation }>(`/conversations/${r.conversationId}`);
-    dispatch({ type: 'upsert', conversation });
     navigate(`/messages/${r.conversationId}`, { replace: true });
     return true;
   };
@@ -128,9 +124,7 @@ export function StartChat({ toId, note, onBack }: { toId: number; note: Attachme
                 {sent.body}
               </p>
               {sent.note && (
-                <p className="text-caption text-muted-foreground">
-                  Shared note: {sent.note.title ?? `Note ${sent.note.id}`}
-                </p>
+                <p className="text-caption text-muted-foreground">Shared note: {sent.note.title ?? 'Note attached'}</p>
               )}
               <p className="text-caption text-muted-foreground">Waiting for {profile.displayName}</p>
             </div>

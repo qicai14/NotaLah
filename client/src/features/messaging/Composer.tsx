@@ -77,7 +77,7 @@ export function Composer({
         <div className="mb-2 flex items-center gap-2 rounded-md bg-surface px-3 py-2">
           <FileText aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
           <p className="min-w-0 flex-1 truncate text-body-sm">
-            <span className="font-semibold">Sharing note:</span> {note.title ?? `Note ${note.id}`}
+            <span className="font-semibold">Sharing note:</span> {note.title ?? 'Note attached'}
           </p>
           <Button type="button" variant="ghost" size="icon-sm" aria-label="Remove note" onClick={onRemoveNote}>
             <X aria-hidden="true" />
