@@ -1,10 +1,9 @@
 import { type FormEvent, type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { COLLAB_REQUEST_MESSAGE_MAX as MAX } from '@parp/shared';
 import { useAction } from '@/lib/useAction';
 import { api } from '../../lib/api';
-
-export const REQUEST_MESSAGE_MAX = 300;
 
 /** Ask the owner to collaborate (wireframe 17); the message is optional. */
 export function RequestDialog({
@@ -26,8 +25,8 @@ export function RequestDialog({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (message.length > REQUEST_MESSAGE_MAX) {
-      return setError(`Message must be at most ${REQUEST_MESSAGE_MAX} characters`);
+    if (message.trim().length > MAX) {
+      return setError(`Message must be at most ${MAX} characters`);
     }
     const ok = await run(async () => {
       await api(`/notes/${noteId}/requests`, { method: 'POST', body: { message: message.trim() || null } });
@@ -76,9 +75,9 @@ export function RequestDialog({
               />
               <span
                 id="request-count"
-                className={`self-end text-caption tabular-nums ${message.length > REQUEST_MESSAGE_MAX ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}
+                className={`self-end text-caption tabular-nums ${message.trim().length > MAX ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}
               >
-                {message.length} / {REQUEST_MESSAGE_MAX}
+                {message.trim().length} / {MAX}
               </span>
             </div>
             {error && (

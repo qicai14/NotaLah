@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAction } from '@/lib/useAction';
-import { api } from '../../lib/api';
+import { api, ApiError } from '../../lib/api';
 import type { CollabRole } from '../../types';
 import { RoleSelect } from './RoleSelect';
 
@@ -25,7 +25,11 @@ export function CollabRequestActions({
 
   const decide = async (decision: 'approve' | 'decline') => {
     const ok = await run(async () => {
-      await api(`/notes/${noteId}/requests/${requestId}`, { method: 'POST', body: { decision, role } });
+      try {
+        await api(`/notes/${noteId}/requests/${requestId}`, { method: 'POST', body: { decision, role } });
+      } catch (e) {
+        if (!(e instanceof ApiError && e.status === 409)) throw e; // already decided elsewhere: drop the row
+      }
       return true;
     });
     if (ok) onDecided(decision);

@@ -165,7 +165,7 @@ export function NoteActions({
   const report = () => (user ? setReporting(true) : askToLogIn({ action: 'report', returnTo }));
   const comments = note.counts.comments;
   const owner = note.author.id === user?.id;
-  const canRequest = !owner && note.myRole !== 'edit';
+  const canRequest = !owner && note.myRole !== undefined && note.myRole !== 'edit'; // feed cards carry no role
   const requestAccess = () => (user ? setRequesting(true) : askToLogIn({ action: 'collaborate', returnTo }));
 
   return (

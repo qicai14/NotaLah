@@ -1,5 +1,6 @@
 import { Eye, LogIn, Pencil } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { PageMessage } from '@/components/PageMessage';
 import { Coauthors } from '@/components/Coauthors';
 import { SlideCarousel } from '@/components/board/SlideCarousel';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -9,16 +10,6 @@ import { useAuth } from '../auth/AuthContext';
 import { api } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
 import type { CollabRole, Note } from '../../types';
-
-function Message({ title, text, children }: { title: string; text: string; children?: React.ReactNode }) {
-  return (
-    <div className="mx-auto max-w-sm py-16 text-center">
-      <h1 className="text-title font-bold">{title}</h1>
-      <p className="mt-2 text-body text-muted-foreground">{text}</p>
-      {children && <div className="mt-5 flex flex-col items-center gap-2">{children}</div>}
-    </div>
-  );
-}
 
 /**
  * The page behind a share link (R30, D46). A view link opens the note read-only, guests included. An edit link needs
@@ -44,27 +35,38 @@ export default function SharedNote() {
 
   if (errorStatus === 401) {
     return (
-      <Message title="Log in to edit this note" text="This link lets you join as an editor, which needs an account.">
-        <Button size="lg" onClick={() => navigate('/login', { state: { from: location.pathname } })}>
-          <LogIn aria-hidden="true" />
-          Log in
-        </Button>
-        <Button size="lg" variant="ghost" onClick={() => navigate('/register', { state: { from: location.pathname } })}>
-          Register
-        </Button>
-      </Message>
+      <PageMessage
+        title="Log in to edit this note"
+        body="This link lets you join as an editor, which needs an account."
+        action={
+          <>
+            <Button size="lg" onClick={() => navigate('/login', { state: { from: location.pathname } })}>
+              <LogIn aria-hidden="true" />
+              Log in
+            </Button>
+            <Button
+              size="lg"
+              variant="ghost"
+              onClick={() => navigate('/register', { state: { from: location.pathname } })}
+            >
+              Register
+            </Button>
+          </>
+        }
+      />
     );
   }
   if (error || !data?.note) {
     return (
-      <Message
+      <PageMessage
         title="This link does not work"
-        text={error ?? 'The link was revoked, or the note is no longer available.'}
-      >
-        <Button asChild variant="secondary">
-          <Link to="/">Back to Feed</Link>
-        </Button>
-      </Message>
+        body={error ?? 'The link was revoked, or the note is no longer available.'}
+        action={
+          <Button asChild variant="secondary">
+            <Link to="/">Back to Feed</Link>
+          </Button>
+        }
+      />
     );
   }
 
@@ -77,6 +79,7 @@ export default function SharedNote() {
 
   return (
     <article aria-labelledby="shared-title" className="mx-auto flex max-w-3xl flex-col gap-4">
+      <meta name="referrer" content="no-referrer" />
       <div className="flex flex-wrap items-center gap-3 rounded-xl bg-surface px-4 py-3">
         {role === 'edit' ? (
           <Pencil className="size-5 shrink-0" aria-hidden="true" />

@@ -25,14 +25,17 @@ function LinkRow({
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const { run, pending, error } = useAction();
   const { title, hint } = COPY[role];
+  const isActive = Boolean(active || url);
 
   const make = async () => {
     const r = await run(() => api<{ url: string }>(`/notes/${noteId}/links`, { method: 'POST', body: { role } }));
     if (!r) return;
     setUrl(r.url);
     setCopied(false);
+    setCopyFailed(false);
     onChanged();
   };
   const revoke = async () => {
@@ -50,6 +53,7 @@ function LinkRow({
       await navigator.clipboard.writeText(url);
       setCopied(true);
     } catch {
+      setCopyFailed(true);
       document.getElementById(`link-${role}`)?.focus();
     }
   };
@@ -64,13 +68,13 @@ function LinkRow({
           </p>
           <p className="text-caption text-muted-foreground">{hint}</p>
         </div>
-        {!active && (
+        {!isActive && (
           <Button size="sm" variant="secondary" disabled={pending} onClick={make}>
             Create link
           </Button>
         )}
       </div>
-      {active && (
+      {isActive && (
         <>
           {url ? (
             <div className="flex items-center gap-2">
@@ -89,8 +93,13 @@ function LinkRow({
             </div>
           ) : (
             <p className="text-caption text-muted-foreground">
-              Active since {new Date(active.createdAt).toLocaleDateString()}. The address is shown only when you create
-              it; regenerate to get a new one.
+              Active{active ? ` since ${new Date(active.createdAt).toLocaleDateString()}` : ''}. The address is shown
+              only when you create it; regenerate to get a new one.
+            </p>
+          )}
+          {copyFailed && (
+            <p role="status" className="text-caption text-muted-foreground">
+              Press Ctrl+C to copy.
             </p>
           )}
           <div className="flex flex-wrap items-center gap-1">
@@ -98,7 +107,7 @@ function LinkRow({
               <RefreshCw aria-hidden="true" />
               Regenerate
             </Button>
-            <ConfirmButton label="Revoke" disabled={pending} onConfirm={revoke} />
+            <ConfirmButton label="Revoke" focusMain={false} disabled={pending} onConfirm={revoke} />
           </div>
         </>
       )}

@@ -134,7 +134,12 @@ export function ShareDialog({
                       disabled={change.pending}
                       onChange={(role) => setRole(c.user.id, role)}
                     />
-                    <ConfirmButton label="Remove" disabled={change.pending} onConfirm={() => remove(c.user.id)} />
+                    <ConfirmButton
+                      label="Remove"
+                      focusMain={false}
+                      disabled={change.pending}
+                      onConfirm={() => remove(c.user.id)}
+                    />
                   </li>
                 ))}
               </ul>

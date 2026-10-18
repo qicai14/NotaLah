@@ -144,11 +144,17 @@ describe('collaboration UI', () => {
     await open(note({ myRole: 'edit' }));
     expect(await screen.findByRole('menuitem', { name: 'Report' })).toBeTruthy();
     expect(screen.queryByRole('menuitem', { name: 'Request to collaborate' })).toBeNull();
+    cleanup();
+
+    // A feed card carries no role, so the server decides; the menu does not offer a request that may be refused.
+    await open(note());
+    expect(await screen.findByRole('menuitem', { name: 'Report' })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: 'Request to collaborate' })).toBeNull();
   });
 
   it('CLI-TC49: a guest who chooses Request to collaborate is asked to log in', async () => {
     signedIn = null;
-    inRouter(<NoteActions note={note({ author: { ...note().author, id: 7 } })} onChange={() => {}} />);
+    inRouter(<NoteActions note={note({ author: { ...note().author, id: 7 }, myRole: null })} onChange={() => {}} />);
     await userEvent.click(screen.getByRole('button', { name: 'More actions' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Request to collaborate' }));
     expect(askToLogIn).toHaveBeenCalledWith({ action: 'collaborate', returnTo: '/notes/9' });
@@ -283,7 +289,7 @@ describe('collaboration UI', () => {
     signedIn = null;
     handlers['GET /share/tok'] = () => ({ status: 401, body: { error: 'Log in to edit this note' } });
     share();
-    expect(await screen.findByRole('heading', { name: 'Log in to edit this note' })).toBeTruthy();
+    expect(await screen.findByText('Log in to edit this note')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
     expect(screen.queryByTestId('slides')).toBeNull();
   });
@@ -314,7 +320,7 @@ describe('collaboration UI', () => {
     expect(screen.queryByRole('button', { name: 'Join as editor' })).toBeNull();
     cleanup();
     share('/share/gone');
-    expect(await screen.findByRole('heading', { name: 'This link does not work' })).toBeTruthy();
+    expect(await screen.findByText('This link does not work')).toBeTruthy();
     expect(screen.getByText('This link is invalid or was revoked')).toBeTruthy();
   });
 

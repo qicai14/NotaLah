@@ -14,7 +14,9 @@ export function InvitePeople({ noteId, skip, onInvited }: { noteId: number; skip
   const [query, setQuery] = useState('');
   const [role, setRole] = useState<CollabRole>('edit');
   const q = useDebouncedValue(query.trim(), 250);
-  const found = useFetch<{ items: CollabPerson[] }>(q ? `/search?tab=people&q=${encodeURIComponent(q)}` : null);
+  const found = useFetch<{ items: (CollabPerson & { avatarUrl?: string | null })[] }>(
+    q ? `/search?tab=people&q=${encodeURIComponent(q)}` : null,
+  );
   const { run, pending, error } = useAction();
   const people = (found.data?.items ?? []).filter((p) => !skip.has(p.id)).slice(0, 6);
 
@@ -49,10 +51,19 @@ export function InvitePeople({ noteId, skip, onInvited }: { noteId: number; skip
           {error}
         </p>
       )}
+      <p role="status" className="sr-only">
+        {!q || found.error
+          ? ''
+          : found.loading
+            ? 'Searching…'
+            : people.length === 0
+              ? `No one new matches “${q}”`
+              : `${people.length} ${people.length === 1 ? 'person' : 'people'} found`}
+      </p>
       {q && (
         <ul aria-label="Search results" className="flex flex-col">
           {found.loading && (
-            <li role="status" className="py-2 text-body-sm text-muted-foreground">
+            <li aria-hidden="true" className="py-2 text-body-sm text-muted-foreground">
               Searching…
             </li>
           )}
@@ -66,7 +77,7 @@ export function InvitePeople({ noteId, skip, onInvited }: { noteId: number; skip
           )}
           {people.map((p) => (
             <li key={p.id} className="flex items-center gap-3 py-1.5">
-              <UserAvatar name={p.displayName} />
+              <UserAvatar name={p.displayName} src={p.avatarUrl} />
               <span className="min-w-0 flex-1 truncate text-body font-semibold">{p.displayName}</span>
               <Button
                 size="sm"

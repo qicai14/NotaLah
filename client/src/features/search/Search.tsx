@@ -1,3 +1,4 @@
+import { PageMessage } from '@/components/PageMessage';
 import { Search as SearchIcon, SlidersHorizontal, X } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -92,16 +93,6 @@ function Chip({ children, onRemove, name }: { children: string; onRemove(): void
         <X className="size-3.5" aria-hidden="true" />
       </button>
     </li>
-  );
-}
-
-function Message({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) {
-  return (
-    <div className="mx-auto max-w-sm py-16 text-center">
-      <p className="text-title font-bold">{title}</p>
-      <p className="mt-2 text-body text-muted-foreground">{body}</p>
-      {action && <div className="mt-5 flex justify-center">{action}</div>}
-    </div>
   );
 }
 
@@ -273,7 +264,7 @@ export default function Search() {
         </p>
 
         {blank && (
-          <Message
+          <PageMessage
             title="Find notes, people and modules"
             body="Type a subject, module code, lecturer name or #hashtag. Quote a phrase to match it exactly."
           />
@@ -304,7 +295,7 @@ export default function Search() {
         )}
 
         {nothing && (
-          <Message
+          <PageMessage
             title={`No results for "${state.q.trim()}"`}
             body={
               filterCount > 0
