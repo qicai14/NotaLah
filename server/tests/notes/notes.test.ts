@@ -71,6 +71,20 @@ describe('Notes', () => {
     expect((await get(await insertUser(), res.body.note.id)).status).toBe(404);
   });
 
+  it('NOTE-TC89: the drafts list carries the first slide, slide count, aspect and assets for thumbnails', async () => {
+    const uid = await insertUser();
+    const slides = ['<p>cover</p>', '<p>two</p>'].map((h, i) => ({ ...textSlide(h), notes: i ? '' : 'say this' }));
+    await post(uid, { title: 'With slides', status: 'draft', aspect: '16:9', slides });
+    const res = await request(app).get('/api/notes/drafts').set(asUser(uid));
+    const [d] = res.body.notes;
+    expect(d).toMatchObject({ title: 'With slides', aspect: '16:9', slideCount: 2, assets: {} });
+    expect(d.cover.elements[0].html).toBe('<p>cover</p>');
+    expect(d.cover.notes).toBeUndefined(); // page notes never travel with the thumbnail
+    await post(uid, { title: 'Empty', status: 'draft' });
+    const empty = (await request(app).get('/api/notes/drafts').set(asUser(uid))).body.notes[0];
+    expect(empty).toMatchObject({ title: 'Empty', slideCount: 0, cover: null });
+  });
+
   it('NOTE-TC6: valid public note is published with normalised hashtags and ordered slides', async () => {
     const uid = await insertUser({ displayName: 'Author' });
     const res = await post(uid, await publishBody());

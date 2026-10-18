@@ -7,6 +7,7 @@ import { app } from '../../src/app';
 import { purgeUnlinkedAssets } from '../../src/features/assets/service';
 import { clearUnsplashCache } from '../../src/features/unsplash/service';
 import { env } from '../../src/lib/env';
+import { storage } from '../../src/lib/storage';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, CSRF, insertUser, truncateAll } from '../helpers';
 
@@ -93,6 +94,23 @@ async function noteWithImage(visibility = 'public') {
 }
 
 describe('Image upload (R22)', () => {
+  it('NOTE-TC83: Your uploads lists only your own ready images, newest first, in pages', async () => {
+    const me = await insertUser();
+    const other = await insertUser();
+    const a = await uploadOk(me);
+    const b = await uploadOk(me);
+    await uploadOk(other);
+    await pool.query(`UPDATE "ASSET_T" SET ast_status = 'deleted' WHERE ast_id = $1`, [a]);
+    const c = await uploadOk(me);
+    const first = await request(app).get('/api/assets/images?limit=1').set(asUser(me));
+    expect(first.status).toBe(200);
+    expect(first.body.assets).toEqual([expect.objectContaining({ id: c, url: `/api/assets/${c}/file` })]);
+    const next = await request(app).get(`/api/assets/images?limit=1&cursor=${first.body.nextCursor}`).set(asUser(me));
+    expect(next.body.assets.map((x: { id: number }) => x.id)).toEqual([b]);
+    expect(next.body.nextCursor).toBeNull();
+    expect((await request(app).get('/api/assets/images')).status).toBe(401);
+  });
+
   it('NOTE-TC38: rejects a file over 5 MB with 413', async () => {
     const res = await upload(await insertUser(), Buffer.alloc(5 * 1024 * 1024 + 1, 1));
     expect(res.status).toBe(413);
@@ -485,4 +503,15 @@ describe('Unsplash proxy (R22)', () => {
     expect((await request(app).post('/api/unsplash/abc_123/download').set(asUser(uid))).status).toBe(503);
     expect((await request(app).post('/api/unsplash/..%2Fme/download').set(asUser(uid))).status).toBe(404);
   });
+});
+
+it('STO-TC14: an image put that fails (such as an R2 timeout) removes the key it may have written', async () => {
+  const uid = await insertUser();
+  const put = vi.spyOn(storage, 'put').mockRejectedValueOnce(new Error('timed out'));
+  const remove = vi.spyOn(storage, 'remove');
+  const res = await upload(uid, await png());
+  expect(res.status).toBe(500);
+  expect(remove).toHaveBeenCalledWith(put.mock.calls[0]![0]);
+  put.mockRestore();
+  remove.mockRestore();
 });

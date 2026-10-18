@@ -3,6 +3,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../../src/app';
 import { replaceNote } from '../../src/features/notes/repository';
+import { parseNoteBody } from '../../src/features/notes/service';
 import { getCandidates } from '../../src/features/ranking/repository';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, CSRF, follow, insertNote, insertUser, slidesOf, textSlide, truncateAll } from '../helpers';
@@ -121,14 +122,16 @@ describe('Collaboration (R30)', () => {
     expect((await api.del(c.owner, url)).status).toBe(204);
   });
 
-  it('COL-TC4: an editor cannot change status, visibility or module and must send baseUpdatedAt', async () => {
+  it('COL-TC4: an editor status, visibility or module change is a 409 and baseUpdatedAt is required', async () => {
     const c = await cast('published');
     const url = `/api/notes/${c.note}`;
     const other = (await pool.query(`SELECT mod_id FROM "MODULE_T" ORDER BY mod_id DESC LIMIT 1`)).rows[0].mod_id;
     for (const over of [{ visibility: 'contacts' }, { moduleId: other }, { status: 'draft' }]) {
       const res = await api.put(c.editor, url, await editBody(c.owner, c.note, over));
-      expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Only the owner can change status, visibility or module');
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe(
+        'The owner changed who can see this note or its module. Reload to see the latest version',
+      );
     }
     const noBase = await api.put(c.editor, url, await editBody(c.owner, c.note, { baseUpdatedAt: undefined }));
     expect(noBase.status).toBe(400);
@@ -150,7 +153,7 @@ describe('Collaboration (R30)', () => {
           }),
         )
       ).status,
-    ).toBe(403);
+    ).toBe(409); // a co-author cannot publish; the client never sends it (D58)
   });
 
   it('COL-TC5: a stale baseUpdatedAt is refused with 409; the owner may still omit it', async () => {
@@ -350,6 +353,44 @@ describe('Collaboration (R30)', () => {
     expect((await api.post(c.editor, lock)).status).toBe(200);
     await api.del(c.owner, `/api/notes/${c.note}/collaborators/${c.editor}`); // removing an editor frees their lock
     expect((await api.post(c.owner, lock)).status).toBe(200);
+  });
+
+  it('COL-TC25: the owner publishes the last saved version while an editor holds the lock', async () => {
+    const c = await cast();
+    const publish = `/api/notes/${c.note}/publish`;
+    expect((await api.post(c.editor, `/api/notes/${c.note}/lock`)).status).toBe(200);
+    expect((await api.post(c.owner, publish, { visibility: 'public' })).body.errors).toEqual({
+      hashtags: 'At least one hashtag is required',
+    });
+    const saved = await api.put(c.editor, `/api/notes/${c.note}`, await editBody(c.owner, c.note));
+    expect(saved.status).toBe(200);
+    const draftBody = await editBody(c.owner, c.note);
+    expect((await api.post(c.editor, publish, { visibility: 'public' })).status).toBe(403);
+    expect((await api.post(c.stranger, publish, { visibility: 'public' })).status).toBe(404);
+    expect((await api.post(c.owner, publish, { visibility: 'everyone' })).status).toBe(400);
+    const res = await api.post(c.owner, publish, { visibility: 'contacts' });
+    expect(res.status).toBe(200);
+    expect(res.body.note).toMatchObject({ status: 'published', visibility: 'contacts', hashtags: ['notes'] });
+    expect(res.body.note.slides).toHaveLength(saved.body.note.slides.length);
+    expect((await api.post(c.owner, publish, { visibility: 'public' })).status).toBe(400); // already published
+    // The editor's next save still carries the draft status, so it gets a 409 (reload or keep mine), never a 403.
+    expect((await api.put(c.editor, `/api/notes/${c.note}`, draftBody)).status).toBe(409);
+    // Keep mine: the editor adopts the server's status, visibility and updatedAt, and saves over the publish.
+    const now = (await api.get(c.editor, `/api/notes/${c.note}`)).body.note;
+    const kept = { ...draftBody, status: now.status, visibility: now.visibility, baseUpdatedAt: now.updatedAt };
+    expect((await api.put(c.editor, `/api/notes/${c.note}`, kept)).status).toBe(200);
+    // The publish route's write: a save between its read and its write makes it stale (409), even with the lock ignored.
+    const again = await cast();
+    const read = (await api.get(again.owner, `/api/notes/${again.note}`)).body.note;
+    await api.put(again.editor, `/api/notes/${again.note}`, await editBody(again.owner, again.note));
+    const body = parseNoteBody({
+      ...(await editBody(again.owner, again.note)),
+      status: 'published',
+      visibility: 'public',
+    });
+    if (!body.ok) throw new Error('fixture');
+    const ignore = { ignoreLock: true };
+    expect(await replaceNote(again.note, body.data, again.owner, new Date(read.updatedAt), ignore)).toBe('stale');
   });
 
   it('COL-TC15: a slide edit removes V until the lecturer re-confirms', async () => {

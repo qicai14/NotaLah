@@ -14,10 +14,18 @@ import { cn } from '@/lib/utils';
 import { useEditor } from './store';
 
 /** A slide preview that re-renders only when its own slide changes (unchanged slides keep their object identity). */
-const Thumb = memo(function Thumb({ slide, aspect }: { slide: Slide; aspect: Aspect }) {
+const Thumb = memo(function Thumb({
+  slide,
+  aspect,
+  assets,
+}: {
+  slide: Slide;
+  aspect: Aspect;
+  assets: Record<string, string>;
+}) {
   return (
     <span className="pointer-events-none block size-full" aria-hidden="true">
-      <SlideBoard slide={slide} aspect={aspect} />
+      <SlideBoard slide={slide} aspect={aspect} assets={assets} />
     </span>
   );
 });
@@ -26,9 +34,10 @@ const Thumb = memo(function Thumb({ slide, aspect }: { slide: Slide; aspect: Asp
  * Thumbnails of every slide: click to open, drag with a mouse to reorder (the menu's Move left/right is the single-pointer and
  * keyboard alternative), and add, duplicate or delete.
  */
-export function SlideStrip({ compact }: { compact: boolean }) {
+export function SlideStrip({ compact, readOnly = false }: { compact: boolean; readOnly?: boolean }) {
   const deck = useEditor((s) => s.deck);
   const active = useEditor((s) => s.activeSlide);
+  const assets = useEditor((s) => s.assets);
   const { setActiveSlide, addSlide, duplicateSlide, deleteSlide, moveSlide } = useEditor.getState();
   const [drag, setDrag] = useState<{ from: number; over: number } | null>(null);
   const list = useRef<HTMLOListElement>(null);
@@ -38,7 +47,7 @@ export function SlideStrip({ compact }: { compact: boolean }) {
 
   function startDrag(e: ReactPointerEvent, from: number) {
     // Touch drags scroll the strip; phones reorder from the slide menu instead.
-    if (e.button !== 0 || e.pointerType !== 'mouse') return;
+    if (e.button !== 0 || e.pointerType !== 'mouse' || readOnly) return;
     const x0 = e.clientX;
     let dragging = false;
     dragged.current = false;
@@ -86,12 +95,12 @@ export function SlideStrip({ compact }: { compact: boolean }) {
                 drag?.from === i && 'opacity-50',
               )}
             >
-              <Thumb slide={s} aspect={deck.aspect} />
+              <Thumb slide={s} aspect={deck.aspect} assets={assets} />
             </button>
             <span className="pointer-events-none absolute bottom-1 left-1 rounded-sm bg-board-credit px-1 text-caption tabular-nums text-board-credit-foreground">
               {i + 1}
             </span>
-            {!compact && (
+            {!compact && !readOnly && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -123,18 +132,20 @@ export function SlideStrip({ compact }: { compact: boolean }) {
           </li>
         ))}
       </ol>
-      <Button
-        variant="secondary"
-        size={compact ? 'icon-sm' : 'icon'}
-        aria-label="Add slide"
-        title="Add slide"
-        disabled={full}
-        onClick={addSlide}
-        className="shrink-0 rounded-md"
-      >
-        <Plus />
-      </Button>
-      {compact && (
+      {!readOnly && (
+        <Button
+          variant="secondary"
+          size={compact ? 'icon-sm' : 'icon'}
+          aria-label="Add slide"
+          title="Add slide"
+          disabled={full}
+          onClick={addSlide}
+          className="shrink-0 rounded-md"
+        >
+          <Plus />
+        </Button>
+      )}
+      {compact && !readOnly && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
