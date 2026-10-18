@@ -14,7 +14,7 @@ import { PublishDialog, type PublishChoice } from '../notes/PublishDialog';
 import { selectedElements } from './arrange';
 import { AspectPicker } from './AspectPicker';
 import { Canvas } from './Canvas';
-import { useEditLock } from './lock';
+import { afterLockWon, useEditLock } from './lock';
 import { LockedNotice, ViewOnly } from './LockedNotice';
 import { ElementBar } from './ElementBar';
 import { type Details, PanelBody, type PanelId, PANELS } from './Panels';
@@ -144,10 +144,12 @@ export default function EditorPage() {
   userId.current = user?.id;
   // The soft lock (D46): while someone else holds it, this editor is read-only. Winning it after a wait reloads the
   // note, so editing starts from what the other editor saved.
-  const lock = useEditLock(ready && !loadError && !notMine ? meta.noteId : null, () => {
-    const noteId = useEditor.getState().meta.noteId;
-    if (noteId) fetchAndLoad(noteId).catch((e) => setLoadError(errorText(e)));
-  });
+  const lock = useEditLock(ready && !loadError && !notMine ? meta.noteId : null, () =>
+    afterLockWon(() => {
+      const noteId = useEditor.getState().meta.noteId;
+      if (noteId) fetchAndLoad(noteId).catch((e) => setLoadError(errorText(e)));
+    }),
+  );
   const readOnly = lock.state.kind === 'locked';
   const readOnlyRef = useRef(readOnly);
   readOnlyRef.current = readOnly;

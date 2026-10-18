@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LOCK_RENEW_MS, LOCK_RETRY_MS, useEditLock } from './lock';
+import { afterLockWon, LOCK_RENEW_MS, LOCK_RETRY_MS, useEditLock } from './lock';
+import { emptyDeck, useEditor } from './store';
 import { LockedNotice } from './LockedNotice';
 
 type Reply = { status: number; body?: unknown };
@@ -60,5 +61,25 @@ describe('editor soft lock', () => {
     expect(screen.getByText(/publish the last saved version/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retry).toHaveBeenCalled();
+  });
+
+  it('NOTE-TC86: winning the lock back keeps unsaved edits, and only the last of two runs releases', async () => {
+    useEditor.getState().load(emptyDeck());
+    const reload = vi.fn();
+    afterLockWon(reload);
+    expect(reload).toHaveBeenCalledTimes(1); // nothing unsaved: load what the other editor saved
+    useEditor.getState().setMeta({ title: 'typed while waiting' });
+    afterLockWon(reload);
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(useEditor.getState().saveState).toBe('conflict'); // Reload or Keep mine, never a silent wipe
+
+    reply = () => ({ status: 200, body: {} });
+    const a = renderHook(() => useEditLock(6, () => {}));
+    const b = renderHook(() => useEditLock(6, () => {}));
+    await flush();
+    a.unmount();
+    expect(calls.filter((c) => c.startsWith('DELETE'))).toEqual([]); // the other run still holds it
+    b.unmount();
+    expect(calls.filter((c) => c.startsWith('DELETE'))).toEqual(['DELETE /api/notes/6/lock']);
   });
 });

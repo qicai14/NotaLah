@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, apiOrigin, ApiError } from '@/lib/api';
+import { useEditor } from './store';
 
 /** The server's lock lasts 120 s (D46); renew well inside it so a slow network never lets it lapse. */
 export const LOCK_RENEW_MS = 45_000;
@@ -16,6 +17,30 @@ export type LockState =
   | { kind: 'held' }
   | { kind: 'locked'; holder: LockHolder; checkedAt: number }
   | { kind: 'error' };
+
+/**
+ * Lock runs alive per note in this tab. React's StrictMode, a retry and the remount after a note's first save all start
+ * a new run before or after the old one stops; only the last run to stop releases, so none frees a lock another still uses.
+ */
+const live = new Map<number, number>();
+const start = (id: number) => live.set(id, (live.get(id) ?? 0) + 1);
+/** Ends one run; true when it was the last for that note. */
+const stop = (id: number) => {
+  const n = (live.get(id) ?? 1) - 1;
+  if (n > 0) live.set(id, n);
+  else live.delete(id);
+  return n <= 0;
+};
+
+/**
+ * After waiting for the lock: reload the note to start from what the other editor saved, unless this editor somehow
+ * has unsaved changes, which a reload would wipe; those go to the conflict banner (Reload or Keep mine) instead.
+ */
+export function afterLockWon(reload: () => void): void {
+  const st = useEditor.getState();
+  if (st.dirty) st.setSaveState('conflict');
+  else reload();
+}
 
 /** Frees the lock even while the page unloads (keepalive), so the next editor need not wait for the TTL. */
 function release(noteId: number) {
@@ -42,13 +67,17 @@ export function useEditLock(noteId: number | null, onAcquired: () => void) {
 
   useEffect(() => {
     if (!noteId) return;
+    start(noteId);
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let held = false;
     const take = async () => {
       try {
         await api(`/notes/${noteId}/lock`, { method: 'POST' });
-        if (!alive) return release(noteId); // closed while the request was out
+        if (!alive) {
+          if (!live.has(noteId)) release(noteId); // closed while the request was out, and no other run needs it
+          return;
+        }
         held = true;
         if (waited.current) {
           waited.current = false;
@@ -78,7 +107,7 @@ export function useEditLock(noteId: number | null, onAcquired: () => void) {
       alive = false;
       clearTimeout(timer);
       window.removeEventListener('pagehide', onHide);
-      if (held) release(noteId);
+      if (stop(noteId) && held) release(noteId);
     };
   }, [noteId, attempt]);
 
