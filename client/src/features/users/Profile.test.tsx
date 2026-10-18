@@ -175,11 +175,17 @@ describe('profile page', () => {
     expect(calls.every((c) => c.method === 'GET')).toBe(true);
   });
 
-  it('CLI-TC36: the Message button is hidden until the inbox exists', async () => {
+  it('CLI-TC36: Message links to the chat for a member and opens the log-in sheet for a guest', async () => {
     handlers['GET /users/2'] = () => ({ status: 200, body: { user: profile() } });
     mount();
     await screen.findByRole('button', { name: 'Follow' });
-    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Message' }).getAttribute('href')).toBe('/messages?to=2');
+    cleanup();
+
+    signedIn = null;
+    mount();
+    await userEvent.click(await screen.findByRole('button', { name: 'Message' }));
+    expect(askToLogIn).toHaveBeenCalledWith({ action: 'message', returnTo: '/messages?to=2' });
   });
 
   it('CLI-TC39: an administrator profile has no More menu, so it cannot be blocked from the UI', async () => {

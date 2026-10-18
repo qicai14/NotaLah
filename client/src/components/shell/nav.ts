@@ -5,6 +5,7 @@ import {
   GraduationCap,
   House,
   type LucideIcon,
+  MessageCircle,
   Plus,
   Search,
   User,
@@ -22,12 +23,13 @@ export interface NavItem {
 
 /**
  * Desktop left rail, in order. Add a screen here (and to TABS when it belongs in the phone tab bar) so both stay in
- * step. Explore, Messages and Notifications join when their branches land (see client/DESIGN.md).
+ * step. Explore and Notifications join when their branches land (see client/DESIGN.md).
  */
 export const RAIL: NavItem[] = [
   { to: '/', label: 'Feed', icon: House },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/?tab=following', label: 'Following', icon: UsersRound },
+  { to: '/messages', label: 'Messages', icon: MessageCircle },
   { to: '/notes/new', label: 'Create', icon: Plus, primary: true },
   { to: '/drafts', label: 'Drafts', icon: FileText },
   { to: '/saved', label: 'Saved', icon: Bookmark },
@@ -45,7 +47,7 @@ export const TABS: NavItem[] = [
   { to: '/', label: 'Home', icon: House },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/notes/new', label: 'Create', icon: Plus, primary: true },
-  { to: '/drafts', label: 'Drafts', icon: FileText },
+  { to: '/messages', label: 'Inbox', icon: MessageCircle },
   { to: '/profile', label: 'Profile', icon: User },
 ];
 

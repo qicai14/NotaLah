@@ -10,7 +10,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { type ReactNode, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,6 +122,7 @@ export function NoteActions({
 }) {
   const { user } = useAuth();
   const askToLogIn = useGuestPrompt();
+  const navigate = useNavigate();
   const bar = layout === 'bar';
   const canSuperLike = isApprovedLecturer(user) && note.author.id !== user.id;
   const [superLiking, setSuperLiking] = useState(false);
@@ -163,6 +164,8 @@ export function NoteActions({
     });
 
   const report = () => (user ? setReporting(true) : askToLogIn({ action: 'report', returnTo }));
+  const messageHref = `/messages?to=${note.author.id}&note=${note.id}`;
+  const messageAuthor = () => (user ? navigate(messageHref) : askToLogIn({ action: 'message', returnTo: messageHref }));
   const comments = note.counts.comments;
   const owner = note.author.id === user?.id;
   const canRequest = !owner && note.myRole !== undefined && note.myRole !== 'edit'; // feed cards carry no role
@@ -271,10 +274,12 @@ export function NoteActions({
                 Report
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem className="h-10 rounded-sm" disabled>
-              <MessageSquareText className="size-4" aria-hidden="true" />
-              Message author (coming soon)
-            </DropdownMenuItem>
+            {note.author.id !== user?.id && (
+              <DropdownMenuItem className="h-10 rounded-sm" onSelect={messageAuthor}>
+                <MessageSquareText className="size-4" aria-hidden="true" />
+                Message author
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
