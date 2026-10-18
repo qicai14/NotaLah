@@ -82,7 +82,8 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       setSocket(null);
       return;
     }
-    const s = io(apiOrigin() || undefined, { withCredentials: true });
+    // WebSocket only: a same-origin polling request carries no Origin header, which the server refuses (D50, D35).
+    const s = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
     setSocket(s);
     s.on('connect', () => {
       setConnections((n) => n + 1);

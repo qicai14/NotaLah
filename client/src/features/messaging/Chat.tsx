@@ -318,7 +318,7 @@ export function Chat({
       <Composer
         onSend={onSend}
         onTyping={() => typing.current()}
-        replyTo={reply && { name: nameOf(reply.sender.id), body: reply.body }}
+        replyTo={reply && { id: reply.id, name: nameOf(reply.sender.id), body: reply.body }}
         onCancelReply={() => setReply(null)}
         note={note}
         onRemoveNote={() => setNote(null)}

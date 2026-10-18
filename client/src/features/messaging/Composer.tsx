@@ -1,5 +1,5 @@
 import { FileText, Send, X } from 'lucide-react';
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BODY_MAX } from './helpers';
 
@@ -26,7 +26,7 @@ export function Composer({
 }: {
   onSend(body: string): Promise<boolean>;
   onTyping?(): void;
-  replyTo?: { name: string; body: string | null } | null;
+  replyTo?: { id: number; name: string; body: string | null } | null;
   onCancelReply?(): void;
   note?: Attachment | null;
   onRemoveNote?(): void;
@@ -37,6 +37,11 @@ export function Composer({
 }) {
   const [text, setText] = useState('');
   const box = useRef<HTMLTextAreaElement>(null);
+  // Choosing Reply moves the cursor into the box, so the answer can be typed at once.
+  const replyId = replyTo?.id;
+  useEffect(() => {
+    if (replyId !== undefined) box.current?.focus();
+  }, [replyId]);
   const body = text.trim();
   const near = text.length > BODY_MAX - 200;
 
