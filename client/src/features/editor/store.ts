@@ -136,6 +136,23 @@ export const mapElements = (
 };
 
 /** Scales an element's geometry and its board-unit sizes by `s`, then shifts it by (dx, dy). */
+/** Largest font any text, code or table may have (the schema's limit). */
+const MAX_FONT = 400;
+/** Largest width or height the schema allows. */
+const MAX_SIZE = 4000;
+
+/** The range a group may be scaled by so no member drops below the minimum box or passes the schema's size limits. */
+export function groupScaleRange(els: SlideElement[], minBox: number): { min: number; max: number } {
+  let min = 0;
+  let max = Infinity;
+  for (const e of els) {
+    min = Math.max(min, minBox / Math.min(e.w, e.h));
+    max = Math.min(max, MAX_SIZE / Math.max(e.w, e.h));
+    if (e.type === 'text' || e.type === 'code' || e.type === 'table') max = Math.min(max, MAX_FONT / e.size);
+  }
+  return { min, max: Math.max(min, max) };
+}
+
 export function scaleElement(e: SlideElement, s: number, dx: number, dy: number): SlideElement {
   const g = { x: round1(e.x * s + dx), y: round1(e.y * s + dy), w: round1(e.w * s), h: round1(e.h * s) };
   const font = (n: number) => Math.max(8, round1(n * s));
@@ -328,8 +345,17 @@ export const useEditor = create<EditorStore>()((set, get) => {
     },
     addElement: (el) => get().addElements([el]),
     addElements: (els) => {
-      const room = LIMITS.elementsPerSlide - get().deck.slides[active()].elements.length;
-      const add = els.slice(0, Math.max(0, room));
+      const current = get().deck.slides[active()].elements;
+      const room = LIMITS.elementsPerSlide - current.length;
+      // Images and videos have their own per-slide caps (D32); extra ones in a paste are left out, not saved and refused.
+      let images = current.filter((e) => e.type === 'image').length;
+      let videos = current.filter((e) => e.type === 'video').length;
+      const fits = els.filter((e) => {
+        if (e.type === 'image') return ++images <= LIMITS.imagesPerSlide;
+        if (e.type === 'video') return ++videos <= LIMITS.videosPerSlide;
+        return true;
+      });
+      const add = fits.slice(0, Math.max(0, room));
       if (!add.length) return;
       apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: [...s.elements, ...add] })), {
         selection: add.map((e) => e.id),

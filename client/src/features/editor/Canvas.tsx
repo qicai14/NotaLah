@@ -9,6 +9,7 @@ import {
   type Guides,
   type Handle,
   HANDLES,
+  MIN_BOX,
   moveBox,
   normaliseAngle,
   type Point,
@@ -26,7 +27,7 @@ import { SlideBoard } from '@/components/board/SlideBoard';
 import { cn } from '@/lib/utils';
 import { boxOf } from './arrange';
 import { elementLabel } from './elements';
-import { mapElements, patchElement, scaleElement, useEditor } from './store';
+import { groupScaleRange, mapElements, patchElement, scaleElement, useEditor } from './store';
 import { TextEditing } from './TextEditing';
 import { CodeEditing, TableEditing } from './BlockEditing';
 
@@ -151,7 +152,10 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
           preview((d) => patchElement(d, active, g.id, { rotation: rotationFromPointer(g.start, pt, !ev.altKey) }));
           return;
         case 'group-resize': {
-          const { k, anchor } = groupScale(g.frame, g.handle, pt);
+          const raw = groupScale(g.frame, g.handle, pt);
+          const range = groupScaleRange(g.starts, MIN_BOX);
+          const k = Math.min(range.max, Math.max(range.min, raw.k));
+          const anchor = raw.anchor;
           const byId = new Map(g.starts.map((e) => [e.id, e]));
           preview((d) =>
             mapElements(d, active, [...byId.keys()], (e) =>
