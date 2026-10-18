@@ -103,7 +103,6 @@ export function r2StorageDriver(cfg: R2Config, fetchImpl: typeof fetch = fetch):
     secretAccessKey: cfg.secretAccessKey,
     service: 's3',
     region: 'auto',
-    retries: 0,
   });
   const base = `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}/`;
   /** Signs and sends; the timer covers the wait for response headers, not the body stream that follows. */
@@ -117,14 +116,18 @@ export function r2StorageDriver(cfg: R2Config, fetchImpl: typeof fetch = fetch):
       clearTimeout(timer);
     }
   };
-  const drop = (res: Response) => void res.body?.cancel();
+  const drop = (res: Response) => void res.body?.cancel().catch(() => {});
   const fail = (op: string, res: Response) => {
     drop(res);
     return new Error(`R2 ${op} failed with status ${res.status}`);
   };
   return {
     async put(key, body) {
-      const res = await call(key, { method: 'PUT', body: new Uint8Array(body) }, R2_TIMEOUT_MS.put);
+      const res = await call(
+        key,
+        { method: 'PUT', body: new Uint8Array(body.buffer as ArrayBuffer, body.byteOffset, body.byteLength) },
+        R2_TIMEOUT_MS.put,
+      );
       if (!res.ok) throw fail('put', res);
       drop(res);
     },
@@ -137,17 +140,22 @@ export function r2StorageDriver(cfg: R2Config, fetchImpl: typeof fetch = fetch):
       }
       if (res.status === 416) {
         drop(res);
-        return { unsatisfiable: Number(/\/(\d+)$/.exec(res.headers.get('content-range') ?? '')?.[1] ?? 0) };
+        const total = /\/(\d+)$/.exec(res.headers.get('content-range') ?? '')?.[1];
+        if (total === undefined) throw new Error('R2 read failed: 416 without a Content-Range size');
+        return { unsatisfiable: Number(total) };
       }
       if (!res.ok || !res.body) throw fail('read', res);
-      const stream = Readable.fromWeb(res.body as never);
+      let info: { size: number; start: number; end: number; partial: boolean };
       if (res.status === 206) {
         const m = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(res.headers.get('content-range') ?? '');
         if (!m) throw fail('read', res);
-        return { size: Number(m[3]), start: Number(m[1]), end: Number(m[2]), partial: true, stream };
+        info = { size: Number(m[3]), start: Number(m[1]), end: Number(m[2]), partial: true };
+      } else {
+        const size = Number(res.headers.get('content-length'));
+        if (!Number.isFinite(size) || size < 0) throw fail('read', res);
+        info = { size, start: 0, end: size - 1, partial: false };
       }
-      const size = Number(res.headers.get('content-length'));
-      return { size, start: 0, end: size - 1, partial: false, stream };
+      return { ...info, stream: Readable.fromWeb(res.body as never) };
     },
     async remove(key) {
       const res = await call(key, { method: 'DELETE' }, R2_TIMEOUT_MS.remove);

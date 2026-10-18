@@ -77,6 +77,15 @@ describe('R2 storage driver', () => {
     await expect(driver(() => new Response(null, { status: 500 })).store.remove(KEY)).rejects.toThrow('status 500');
   });
 
+  it('STO-TC13: malformed 206 or 200 headers fail cleanly before streaming; 416 without a size throws', async () => {
+    const noRange = driver(() => new Response('x', { status: 206 }));
+    await expect(noRange.store.read(KEY, 'bytes=0-0')).rejects.toThrow('R2 read failed with status 206');
+    const noLen = driver(() => new Response('x', { status: 200, headers: { 'content-length': 'abc' } }));
+    await expect(noLen.store.read(KEY)).rejects.toThrow('R2 read failed with status 200');
+    const bad = driver(() => new Response('', { status: 416 }));
+    await expect(bad.store.read(KEY, 'bytes=9-')).rejects.toThrow('416');
+  });
+
   it('STO-TC8: a key the server did not generate never reaches R2', async () => {
     const { fetchMock, store } = driver(() => new Response(null, { status: 200 }));
     await expect(store.put('../x', Buffer.from('x'))).rejects.toThrow('Invalid storage key');
@@ -143,6 +152,7 @@ describe.skipIf(process.env.R2_LIVE_TEST !== '1')('R2 live smoke', () => {
     const key = 't/00000000-0000-0000-0000-0000000057e5.txt';
     await store.put(key, Buffer.from('hello'));
     try {
+      expect(await store.read(key, 'bytes=99-')).toEqual({ unsatisfiable: 5 });
       const r = await store.read(key, 'bytes=1-3');
       expect(r).toMatchObject({ size: 5, start: 1, end: 3, partial: true });
       expect(await text((r as { stream: Readable }).stream)).toBe('ell');
