@@ -20,6 +20,7 @@
   "dependencies": {
     "@parp/shared": "0.1.0",
     "@sentry/node": "10.75.3",
+    "aws4fetch": "1.0.20",
     "bcryptjs": "3.0.3",
     "cors": "2.8.6",
     "express": "5.2.1",
