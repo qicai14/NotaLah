@@ -47,3 +47,6 @@ export const LIMITS = {
   tableCols: 8,
   tableCell: 200,
 } as const;
+
+/** Longest message on a request to collaborate (R30). */
+export const COLLAB_REQUEST_MESSAGE_MAX = 300;

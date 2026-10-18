@@ -13,6 +13,7 @@ const Search = lazy(() => import('./features/search/Search'));
 const Saved = lazy(() => import('./features/feed/Saved'));
 const Drafts = lazy(() => import('./features/notes/Drafts'));
 const NoteDetail = lazy(() => import('./features/notes/NoteDetail'));
+const SharedNote = lazy(() => import('./features/collaboration/SharedNote'));
 const EditorPage = lazy(() => import('./features/editor/EditorPage'));
 const EditProfile = lazy(() => import('./features/users/EditProfile'));
 const Profile = lazy(() => import('./features/users/Profile'));
@@ -49,6 +50,7 @@ function ShellRoutes() {
           <Route path="/" element={<FeedRoute />} />
           <Route path="/search" element={<Search />} />
           <Route path="/notes/:id" element={<NoteDetail />} />
+          <Route path="/share/:token" element={<SharedNote />} />
           <Route path="/drafts" element={signedIn(<Drafts />)} />
           <Route path="/saved" element={signedIn(<Saved />)} />
           <Route path="/profile" element={signedIn(<Profile />)} />

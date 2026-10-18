@@ -1,4 +1,14 @@
-import { Bookmark, Flag, Heart, Highlighter, MessageCircle, MessageSquareText, MoreHorizontal } from 'lucide-react';
+import {
+  Bookmark,
+  Flag,
+  Heart,
+  Highlighter,
+  MessageCircle,
+  MessageSquareText,
+  MoreHorizontal,
+  Share2,
+  UserPlus,
+} from 'lucide-react';
 import { type ReactNode, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -14,6 +24,8 @@ import { useAuth } from '../features/auth/AuthContext';
 import { api } from '../lib/api';
 import { isApprovedLecturer } from '../lib/roles';
 import type { Note } from '../types';
+import { RequestDialog } from '../features/collaboration/RequestDialog';
+import { ShareDialog } from '../features/collaboration/ShareDialog';
 import { SuperLikeDialog } from '../features/verification/SuperLikeDialog';
 import { ReportDialog } from './ReportDialog';
 import { UserAvatar } from './UserAvatar';
@@ -117,6 +129,8 @@ export function NoteActions({
   const [likes, setLikes] = useState(note.counts.likes);
   const [saved, setSaved] = useState(note.bookmarked);
   const [reporting, setReporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [requesting, setRequesting] = useState(false);
   const moreTrigger = useRef<HTMLButtonElement>(null);
   const { run, pending, error } = useAction();
   const returnTo = `/notes/${note.id}`;
@@ -150,6 +164,9 @@ export function NoteActions({
 
   const report = () => (user ? setReporting(true) : askToLogIn({ action: 'report', returnTo }));
   const comments = note.counts.comments;
+  const owner = note.author.id === user?.id;
+  const canRequest = !owner && note.myRole !== undefined && note.myRole !== 'edit'; // feed cards carry no role
+  const requestAccess = () => (user ? setRequesting(true) : askToLogIn({ action: 'collaborate', returnTo }));
 
   return (
     <>
@@ -236,7 +253,19 @@ export function NoteActions({
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent side={bar ? 'bottom' : 'left'} align="end" className="w-56 rounded-lg p-1.5">
-            {note.author.id !== user?.id && (
+            {owner && (
+              <DropdownMenuItem className="h-10 rounded-sm" onSelect={() => setSharing(true)}>
+                <Share2 className="size-4" aria-hidden="true" />
+                Share
+              </DropdownMenuItem>
+            )}
+            {canRequest && (
+              <DropdownMenuItem className="h-10 rounded-sm" onSelect={requestAccess}>
+                <UserPlus className="size-4" aria-hidden="true" />
+                Request to collaborate
+              </DropdownMenuItem>
+            )}
+            {!owner && (
               <DropdownMenuItem className="h-10 rounded-sm" onSelect={report}>
                 <Flag className="size-4" aria-hidden="true" />
                 Report
@@ -261,6 +290,25 @@ export function NoteActions({
         </p>
       )}
       {reporting && <ReportDialog noteId={note.id} onClose={() => setReporting(false)} returnFocus={moreTrigger} />}
+      {sharing && user && (
+        <ShareDialog
+          noteId={note.id}
+          title={note.title}
+          ownerId={user.id}
+          ownerName={user.displayName}
+          onClose={() => setSharing(false)}
+          returnFocus={moreTrigger}
+        />
+      )}
+      {requesting && (
+        <RequestDialog
+          noteId={note.id}
+          title={note.title}
+          ownerName={note.author.displayName}
+          onClose={() => setRequesting(false)}
+          returnFocus={moreTrigger}
+        />
+      )}
       {superLiking && (
         <SuperLikeDialog
           noteId={note.id}

@@ -1,6 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
+import { Coauthors } from '../../components/Coauthors';
+import { EditedBadge } from '../../components/EditedBadge';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
 import { SlideCarousel } from '../../components/board/SlideCarousel';
@@ -74,9 +76,15 @@ export const NoteCard = memo(function NoteCard({
       className="flex h-full snap-start snap-always items-end justify-center gap-2 px-2 pt-topbar pb-3 md:gap-5 md:px-6 md:pb-6"
     >
       <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-(--shadow-card) md:aspect-[9/16] md:max-w-[34rem] md:flex-none md:rounded-2xl">
-        {(item.verified || (item.components && weights)) && (
+        {(item.verified || item.editedSinceVerification || (item.components && weights)) && (
           <div className="flex min-h-14 items-center justify-between gap-2 px-3 pt-3">
-            {item.verified ? <VerifiedPill by={item.verifiedBy} /> : <span />}
+            {item.verified ? (
+              <VerifiedPill by={item.verifiedBy} />
+            ) : item.editedSinceVerification ? (
+              <EditedBadge />
+            ) : (
+              <span />
+            )}
             {item.components && weights && item.score !== undefined && (
               <WhyThisNote
                 score={item.score}
@@ -112,6 +120,7 @@ export const NoteCard = memo(function NoteCard({
               {timeAgo(item.publishedAt)}
               {item.visibility === 'contacts' && `, ${visibilityLabel(item.visibility)}`}
             </span>
+            <Coauthors people={item.coauthors} />
           </p>
           <h2 id={titleId} className="mt-1 line-clamp-2 text-title-sm font-semibold">
             <Link to={`/notes/${item.id}`} className="hover:underline">

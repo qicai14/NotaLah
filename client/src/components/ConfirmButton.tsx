@@ -5,10 +5,13 @@ export function ConfirmButton({
   label,
   onConfirm,
   disabled,
+  focusMain = true,
 }: {
   label: string;
   onConfirm(): void;
   disabled?: boolean;
+  /** Move focus to <main> after a confirm (the row is gone); false inside a dialog, which keeps its own focus. */
+  focusMain?: boolean;
 }) {
   const [asking, setAsking] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -46,7 +49,7 @@ export function ConfirmButton({
         onClick={() => {
           wasAsking.current = false; // do not refocus the trigger; the item is about to disappear
           setAsking(false);
-          document.getElementById('main')?.focus();
+          if (focusMain) document.getElementById('main')?.focus();
           onConfirm();
         }}
         className="rounded-full bg-destructive px-3 py-1 font-semibold text-destructive-foreground"
