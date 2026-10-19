@@ -16,7 +16,6 @@ assertWeightsSumToOne(RANKING.searchWeights);
 void initErrorReporting().catch((err) => logger.error({ err }, 'error reporting failed to start'));
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, 'server listening'));
 const io = attachSocket(server);
-// The video worker shares this process on the free tier; a paid deploy turns it off and runs server#worker instead (R40, D67).
 const videoWorker = env.VIDEO_WORKER_IN_PROCESS ? startVideoWorker() : undefined;
 
 const purge = () =>

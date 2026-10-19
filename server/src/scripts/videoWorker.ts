@@ -2,7 +2,6 @@ import { startVideoWorker } from '../features/assets/worker';
 import { logger } from '../lib/logger';
 import { pool } from '../lib/pool';
 
-// The video worker as its own service (R40, D67): same code as the in-process loop, for a deploy that sets VIDEO_WORKER_IN_PROCESS=false on the API.
 const worker = startVideoWorker();
 
 let stopping = false;

@@ -134,7 +134,6 @@ export function startVideoWorker(profile: VideoProfile = activeVideoProfile): { 
   const loops = Array.from({ length: profile.concurrency }, loop);
   logger.info({ profile: profile.name, concurrency: profile.concurrency }, 'video worker started');
   return {
-    // A job in flight finishes first; one cut short by a hard exit is claimed again when its lease lapses.
     stop: async () => {
       stopped = true;
       wakeVideoWorker();
