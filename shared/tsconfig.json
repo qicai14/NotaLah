@@ -4,11 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "declaration": true,
+    "noEmit": true,
     "skipLibCheck": true,
-    "rootDir": "src",
-    "outDir": "dist",
     "types": []
   },
-  "include": ["src"]
+  "include": ["src", "vite.config.ts"]
 }

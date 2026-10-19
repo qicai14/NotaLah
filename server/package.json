@@ -15,8 +15,8 @@
     "db:rollback": "dbmate --env-file ../.env --no-dump-schema rollback",
     "db:migrate:test": "dbmate --env-file ../.env --env TEST_DATABASE_URL --no-dump-schema up",
     "db:status": "dbmate --env-file ../.env --no-dump-schema status",
-    "pretest": "tsc -p ../shared",
-    "pretypecheck": "tsc -p ../shared"
+    "pretest": "pnpm --filter @parp/shared build",
+    "pretypecheck": "pnpm --filter @parp/shared build"
   },
   "dependencies": {
     "@parp/shared": "workspace:*",
