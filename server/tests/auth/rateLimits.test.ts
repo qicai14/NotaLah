@@ -46,6 +46,17 @@ describe('Proxy trust and rate-limit keys (R37)', () => {
     expect(remaining(b1)).toBe(RATE_LIMITS.guestReads - 1);
   });
 
+  it('DEP-TC11: with TRUST_PROXY=1 a client-forged entry before the proxy-appended address is ignored', async () => {
+    vi.stubEnv('RATE_LIMIT_UNDER_TEST', 'guest');
+    const uid = await insertUser();
+    const res = await request(fromPeer('10.0.0.1'))
+      .get(`/api/users/${uid}`)
+      .set('X-Forwarded-For', '6.6.6.6, 203.0.113.5');
+    expect(res.status).toBe(200);
+    const { rows } = await pool.query(`SELECT rlt_key FROM "RATE_LIMIT_T"`);
+    expect(rows).toEqual([{ rlt_key: 'guest:203.0.113.5' }]);
+  });
+
   it('DEP-TC4: with loopback trust a forged X-Forwarded-For from a public peer is ignored', async () => {
     vi.stubEnv('RATE_LIMIT_UNDER_TEST', 'guest');
     app.set('trust proxy', 'loopback');

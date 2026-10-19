@@ -33,7 +33,7 @@ describe('Deploy configuration (R37)', () => {
     }
   });
 
-  it('DEP-TC2: production refuses local storage, an http origin, insecure cookies and loopback trust, naming only the variables', () => {
+  it('DEP-TC2: production (NODE_ENV or RENDER) refuses local storage, an http origin, insecure cookies and loopback or zero trust, naming only the variables', () => {
     const msg = errorOf({
       ...base,
       NODE_ENV: 'production',
@@ -46,19 +46,26 @@ describe('Deploy configuration (R37)', () => {
     expect(msg).toContain('TRUST_PROXY must be the proxy hop count');
     expect(msg).not.toContain('secret-origin');
 
-    const good = parseEnv({
+    const valid = {
       ...base,
       NODE_ENV: 'production',
       CLIENT_ORIGIN: 'https://app.example.com',
-      COOKIE_SECURE: 'true',
       TRUST_PROXY: '1',
       STORAGE_DRIVER: 'r2',
       R2_ACCOUNT_ID: 'a',
       R2_ACCESS_KEY_ID: 'b',
       R2_SECRET_ACCESS_KEY: 'c',
       R2_BUCKET: 'd',
-    });
+    };
+    const good = parseEnv(valid);
     expect(good.TRUST_PROXY).toBe(1);
+    expect(good.COOKIE_SECURE).toBe(true); // the default follows the parsed NODE_ENV
+    expect(errorOf({ ...valid, TRUST_PROXY: '0' })).toContain('TRUST_PROXY must be the proxy hop count');
+    // RENDER=true counts as production even without NODE_ENV.
+    const onRender = errorOf({ ...base, RENDER: 'true' });
+    expect(onRender).toContain('STORAGE_DRIVER must be r2 in production');
+    expect(onRender).toContain('TRUST_PROXY must be the proxy hop count');
+    expect(onRender).not.toContain('COOKIE_SECURE');
     // The same bad values outside production still parse, so local development is unaffected.
     expect(parseEnv({ ...base, CLIENT_ORIGIN: 'http://localhost:5173', COOKIE_SECURE: 'false' }).STORAGE_DRIVER).toBe(
       'local',
@@ -80,12 +87,13 @@ describe('Deploy configuration (R37)', () => {
 });
 
 describe('Sliding session (R37)', () => {
-  const cookieFor = (id: number, expiresIn: number) =>
-    `notalah_token=${jwt.sign({ role: 'student' }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(id), expiresIn })}`;
+  const now = () => Math.floor(Date.now() / 1000);
+  const cookieFor = (id: number, expiresIn: number, authTime: number | null = now() - 3000) =>
+    `notalah_token=${jwt.sign({ role: 'student', ...(authTime === null ? {} : { auth_time: authTime }) }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(id), expiresIn })}`;
   const authCookie = (res: request.Response) =>
     ([] as string[]).concat(res.headers['set-cookie'] ?? []).find((c) => c.startsWith('notalah_token='));
 
-  it('DEP-TC8: a token with under 15 minutes left is re-issued for a fresh hour; a fresh token is not', async () => {
+  it('DEP-TC8: a token with under 15 minutes left is re-issued for a fresh hour, up to the session cap; a fresh token is not', async () => {
     const id = await insertUser();
     const near = await request(app)
       .get('/api/auth/me')
@@ -96,8 +104,10 @@ describe('Sliding session (R37)', () => {
     expect(renewed).toMatch(/HttpOnly/);
     expect(renewed).toMatch(/SameSite=Lax/);
     const token = /^notalah_token=([^;]+)/.exec(renewed!)![1];
-    const { exp } = jwt.decode(token, { json: true })!;
-    expect(exp! * 1000 - Date.now()).toBeGreaterThan(55 * 60_000);
+    const payload = jwt.decode(token, { json: true })!;
+    expect(payload.exp! * 1000 - Date.now()).toBeGreaterThan(55 * 60_000);
+    // The renewed token keeps the original login time, so the cap counts from login.
+    expect(payload.auth_time).toBeLessThanOrEqual(now() - 3000);
 
     // The guest-readable path (optionalAuth) slides too.
     const guestPath = await request(app)
@@ -108,5 +118,16 @@ describe('Sliding session (R37)', () => {
     const fresh = await request(app).get('/api/auth/me').set(asUser(id));
     expect(fresh.status).toBe(200);
     expect(authCookie(fresh)).toBeUndefined();
+
+    // Past MAX_SESSION_HOURS (12) since login, or with no login time (a pre-R37 token): still valid, never renewed.
+    const capped = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', cookieFor(id, 10 * 60, now() - (env.MAX_SESSION_HOURS * 3600 + 60)));
+    expect(capped.status).toBe(200);
+    expect(authCookie(capped)).toBeUndefined();
+    const legacy = await request(app)
+      .get('/api/auth/me')
+      .set('Cookie', cookieFor(id, 10 * 60, null));
+    expect(authCookie(legacy)).toBeUndefined();
   });
 });
