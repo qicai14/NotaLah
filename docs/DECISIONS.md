@@ -1406,3 +1406,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   4.63). The check's own type step is tsgolint in both, so the difference is mostly the shared `.d.ts` emit and noise.
 - **Alternatives:** stay on 5.9.3 (rejected by the user); `isolatedDeclarations` for shared (not needed).
 - **Reversibility:** High: revert the catalog entry and the three `catalog:` references, then `vp install`.
+
+## D64 - Sentry SDK 11 (20 Oct 2026)
+
+- **Decision (user, 20 Oct):** upgrade `@sentry/node` from 10.75.3 to 11.8.0. No behaviour change: D41 still holds
+  (Sentry is imported only when `SENTRY_DSN` is set, only 5xx errors are reported, tagged with the request id, with the
+  request URL, headers, cookies and body stripped).
+- **What changed:** `server/src/lib/errorReporting.ts` replaces `sendDefaultPii: false` with an explicit
+  `dataCollection` block. v11 removed `sendDefaultPii` and now collects everything unless told otherwise (user info,
+  cookies, headers, HTTP bodies, query params, database query data, queue arguments, local variables), so every
+  category is switched off (`userInfo`, `cookies`, `httpHeaders`, `urlQueryParams`, `databaseQueryData`, `queues`,
+  `stackFrameVariables` false; `httpBodies: []`). `beforeSend` still deletes `event.request`. `init`, `withScope`,
+  `setTag` and `captureException` are unchanged in v11.
+- **Checked:** tracing stays off because no `tracesSampleRate` or `tracesSampler` is set, so v11's span streaming and
+  new HTTP attributes never run. Source context lines now default to 5 (was 7), which sends less. Node 20.19 minimum is
+  met. New test `OPS-TC6` asserts the `dataCollection` options, the `request` stripping and the request-id tag.
+  Not verified against a real DSN (none available).
+- **Alternatives:** keep `sendDefaultPii: false` (silently ignored in v11, so everything would be collected); stay on v10.
+- **Reversibility:** High: pin 10.75.3 and restore `sendDefaultPii: false`.
