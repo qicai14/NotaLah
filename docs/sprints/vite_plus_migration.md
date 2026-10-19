@@ -49,3 +49,64 @@ Plain Vite is origin/main (Vite 8.3.1, Vitest 5.0.2) in a second worktree; Vite+
 Verdict: the same speed within noise. The 10 percent slowdown seen with 1.0.0 (measured non-interleaved) does not reproduce: build and server tests are level, and the client suite is about 0.4 s slower in the median, which is the `vp` start-up wrapper, with one 23 s outlier that was machine load. Vite+ is not faster; its benefit stays fewer tools and configs (lint, format, one CLI), as D47 states.
 
 Earlier 1.0.0 figures, non-interleaved on a quieter machine (plain 5.94 s build, 3.00 s client, 32.5 s server; Vite+ 6.54 s, 3.30 s, 35.8 s), are kept for history only.
+
+## Native migration, 20 Oct
+
+Branch `chore/vite-plus-native` (D61). The toolchain now runs on Vite+ end to end instead of Vite+ sitting on top of npm scripts.
+
+### What changed
+
+- `vp migrate --full --no-interactive --no-agent` (global vp 1.3.0) ran first, after the npm-to-pnpm switch. It moved `vite`,
+  `vitest` and `vite-plus` into a pnpm catalog with `vite@*`/`vitest@*` overrides, rewrote 52 test files to import from
+  `vite-plus/test`, added the `.vite-hooks/pre-commit` hook (`vp staged`) and a `staged` block. It wrote no editor files,
+  so `.vscode/` was added by hand. Agent files were declined (`--no-agent`).
+- pnpm 12.9.1 workspaces (`pnpm-workspace.yaml`), `workspace:*` for `@parp/shared`, `pnpm-lock.yaml` from `vp install`.
+  Only `esbuild` needs its install script (`allowBuilds`); sharp 0.35 and dbmate ship prebuilt binaries with no script.
+  Node 24.21.0 is pinned in `.node-version` and pnpm in `packageManager` by `vp env pin`; `engines.node` is `^24.15.0`.
+  Node 24.22.0 and pnpm 12.10+ were under two weeks old on 20 Oct, so the previous releases were pinned.
+- Server is ESM (`"type": "module"`, `moduleResolution: bundler`), built by `vp pack` (tsdown) unbundled into `dist/`.
+  `__dirname` became `import.meta.dirname`, `require.main === module` became `import.meta.main`. `node dist/server.js`
+  starts and `/api/health` answers `{"status":"ok","db":"up"}`.
+- `shared` is built by `vp pack` (ESM plus `index.d.ts`) instead of `tsc`.
+- `vp check` runs format, lint, type-aware lint and the type check (tsgolint). With type-aware rules on, lint reported 140 warnings in
+  app code, all fixed: 77 `unbound-method` (callback props declared as methods are now property signatures), 35
+  `require-array-sort-compare` (test sorts of ids), 14 `no-floating-promises` (`void navigate(...)`), 8
+  `no-base-to-string`, 3 `no-meaningless-void-operator`, 2 unused test bindings, plus the `no-control-regex` in messaging,
+  which keeps one commented suppression because matching control characters is its purpose. `docs/` is excluded from lint,
+  as it already was from fmt.
+- Tests: direct `vitest` dependencies dropped; `server/vitest.config.ts` folded into `server/vite.config.ts`.
+- Tasks: `concurrently` and the `pretest`/`pretypecheck`/`prepare` build hooks are gone. Cached `run.tasks`: root `check`,
+  `build` in each package, client `test`. Server `test` has `cache: false`. Each depends on the shared build.
+  `vp run dev` builds shared, then runs shared watch, server and client in parallel. Shared watch uses `--no-clean`,
+  because cleaning `dist/` on start crashed the server with `ERR_MODULE_NOT_FOUND`.
+- Client: `resolve.tsconfigPaths` replaces the hand-written `@` alias; there are no `rollupOptions` or `manualChunks`.
+- CI: `voidzero-dev/setup-vp@v1.21.1` (21 Sep; v1.21.2 was under two weeks old), Vite Task cache restore and save,
+  `pnpm audit --prod --audit-level high`. First run on the branch: green in 2m49s.
+
+### Timings, 20 Oct
+
+Same worktree and machine, median of 3, wall clock in seconds. "Before" is main (npm, tsc, concurrently); "after" is this
+branch. Uncached runs use `vp run --no-cache`; cached runs are an immediate rerun with nothing changed.
+
+| Task | Before (command) | Before runs | After (command) | After runs | Median before | Median after |
+|---|---|---|---|---|---|---|
+| Install (no node_modules, warm store) | `npm ci` | 110.53, 94.57, 92.03 | `vp install` | 14.94, 10.54, 10.10 | 94.57 | 10.54 |
+| Static checks | `npm run typecheck && npm run lint && npm run format:check` | 21.00, 17.67, 16.52 | `vp run --no-cache check` | 5.08, 5.19, 4.98 | 17.67 | 5.08 |
+| Static checks, cached | - | - | `vp run check` | 0.72, 0.73 (first run 5.41) | - | 0.73 |
+| Client tests | `npm test -w client` | 17.02, 13.40, 14.70 | `vp run --no-cache client#test` | 16.62, 15.67, 15.28 | 14.70 | 15.67 |
+| Client tests, cached | - | - | `vp run client#test` | 0.78, 0.85 (first run 17.40) | - | 0.85 |
+| Server tests | `npm test -w server` | 87.79, 97.15, 93.16 | `vp run server#test` (never cached) | 92.97, 85.04, 84.47 | 93.16 | 85.04 |
+| Build | `npm run build` | 14.59, 11.82, 13.35 | `vp run --no-cache -r build` | 3.35, 3.20, 3.40 | 13.35 | 3.35 |
+| Build, cached | - | - | `vp run -r build` | 0.94, 0.92 (first run 2.42) | - | 0.94 |
+| Dev cold start to ready | concurrently (shared tsc -w, tsx watch, vp dev) | 3.25, 3.35, 3.43 | `vp run dev` | 2.50, 2.01, 2.31 | 3.35 | 2.31 |
+
+Notes: the old build ran `tsc --noEmit` before `vp build` and built shared and server with `tsc`; type checking now lives
+in `vp run check`, so the build number is not like for like. Server and client test times are within noise; their gain is
+only the cached shared build. Dev ready is measured until the server logs "server listening" and Vite prints "ready in",
+on ports 4300/5373. Install is with a warm npm cache and a warm pnpm store respectively.
+
+### Verification
+
+`vp install`, `vp run check` (0 warnings, 0 errors), `vp run -r test` (server 367 passed and 2 skipped, client 113 passed),
+`vp run -r build`, `vp run server#start` with a health check, `vp run dev` (both apps up, `/api` proxy 200), and the
+pre-commit hook (fires on a staged `.ts` change and blocks a type error; docs-only commits skip it). Test counts match main.
