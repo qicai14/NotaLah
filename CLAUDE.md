@@ -1,33 +1,28 @@
-# NotaLah code (FYP_Project, formerly PARP)
+# NotaLah code (FYP_Project)
 
-npm workspaces: `client/` (React, Vite, TS, Tailwind v4), `server/` (Express 5, TS strict, pg, zod) and `shared/`
-(`@parp/shared`: the zod deck schema, types and limits; ESM, compiled to `shared/dist` by `tsc` before server and client
-typecheck, test and build, and on `npm install`).
-Postgres 17 in Docker on host port 5433; databases `parp` and `parp_test`. Config in root `.env`
-(copy `.env.example`).
+pnpm workspaces run through Vite+ (`vp`): `client/` (React 19, Tailwind v4, shadcn/ui), `server/` (Express 5 ESM, pg,
+zod, Socket.io) and `shared/` (`@parp/shared`, the zod deck schema; built by `vp pack`). Postgres 17 in Docker on
+port 5433 (`parp`, `parp_test`); config in the root `.env`.
 
-## Commands (from this folder)
-- `npm run db:up` / `db:down` — start/stop Postgres
-- `npm run db:migrate -w server`, `db:rollback`, `db:status`, `db:migrate:test` — dbmate
-- `npm run dev` — server :4000 + client :5173
-- `npm test` — server tests (global setup migrates `parp_test`)
-- `npm run build`, `npm run typecheck`
+## Commands
+Use `vp`, never npm/npx. Tasks are cached; server tests never are.
+- `vp install` · `vp run db:up` · `vp run server#db:migrate` · `vp run dev` (API :4000, client :5173)
+- `vp run check` (format, lint, types) · `vp run -r test` · `vp run -r build`
+- Full list and operations: `README.md`. The pre-commit hook runs `vp check --fix` on staged files.
 
-## Layout (details: `docs/ARCHITECTURE.md`)
-- `server/src/{app,server}.ts`; `lib/` (logger, errorReporting, validation, keyset, purge, pool, env, health); `types/`; `scripts/` (createAdmin, purgeInteractions).
-- `server/src/features/<feature>/` for auth, users, moderation, verification, ranking, modules, notes, feed, engagement, search,
-  messaging, notifications. Request order: auth `middleware.ts` (`requireAuth`, `requireRole(...)`, role/status always read
-  from the DB) -> `routes.ts` -> `repository.ts` (the only SQL). Empty features hold a README naming their FRs and sprint.
-- `server/tests/<feature>/` mirrors features; `helpers.ts` and `globalSetup.ts` are shared.
-- `client/src/features/<feature>/` holds pages and components per feature; shared `components/`, `lib/` (api, roles, useFetch), `types/`.
-- `server/db/migrations/` dbmate migrations; `docs/` decisions, chapter4-6, testing/{unit,uat}, screenshots,
-  code-snippets, sprints.
+## Layout
+`server/src/features/<feature>/` and `client/src/features/<feature>/` per feature; SQL only in `repository.ts`;
+migrations in `server/db/migrations/`; tests mirror features. Map: `docs/ARCHITECTURE.md`.
 
-## Conventions
-- Tables are UPPERCASE `_T` and always double-quoted in SQL (`"POST_T"`); columns lowercase with a table prefix.
-- SQL keywords UPPERCASE. No ORM; parameterised `pg` queries.
-- Schema changes only through new dbmate migration files (`-- migrate:up` / `-- migrate:down`); never edit an applied one.
-- Ranking constants live only in `server/src/features/ranking/config.ts` (NFR5).
-- Test names start with the TC ID from `docs/chapter4/4.5_test_cases.md` (e.g. `AUTH-TC3: ...`).
-- Work on a feature branch, never `main`; PR to `main`, merge only when conflict-free and tests pass.
-- Short commit subjects (< ~60 chars); no `Co-Authored-By` lines.
+## Rules
+- Tables UPPERCASE `_T`, always double-quoted (`"POST_T"`); columns lowercase with a table prefix; SQL keywords
+  UPPERCASE; parameterised `pg` only, no ORM.
+- Schema changes only through a new dbmate migration (`-- migrate:up` / `-- migrate:down`); never edit an applied one.
+- Ranking weights and constants only in `server/src/features/ranking/config.ts` (NFR5).
+- Test names start with their TC ID from `docs/chapter4/4.5_test_cases.md`.
+- Never commit to `main`: branch, PR, merge when CI is green. Short subjects, no AI attribution lines.
+
+## When you are
+- Changing UI: read `client/DESIGN.md` first (tokens, components; no raw colours).
+- Making a decision the user hasn't: stop and ask; log agreed ones in `docs/DECISIONS.md`.
+- Picking up work: `docs/HANDOVER.md`.
