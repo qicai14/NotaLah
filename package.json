@@ -5,16 +5,9 @@
   "scripts": {
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
-    "dev": "concurrently -n shared,server,client -c yellow,blue,green \"pnpm --filter @parp/shared dev\" \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
-    "test": "pnpm --filter server test && pnpm --filter client test",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "vp lint",
-    "format:check": "vp fmt --check",
-    "prepare": "vp config && pnpm --filter @parp/shared build"
+    "prepare": "vp config"
   },
   "devDependencies": {
-    "concurrently": "10.0.5",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },

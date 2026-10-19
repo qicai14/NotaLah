@@ -12,9 +12,7 @@
     }
   },
   "scripts": {
-    "build": "vp pack",
-    "typecheck": "tsc --noEmit",
-    "dev": "vp pack --watch"
+    "dev": "vp pack --watch --no-clean"
   },
   "dependencies": {
     "zod": "4.6.5"

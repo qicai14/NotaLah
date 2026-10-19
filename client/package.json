@@ -5,12 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev",
-    "build": "tsc --noEmit && vp build",
-    "typecheck": "tsc --noEmit",
-    "preview": "vp preview",
-    "test": "vp test run",
-    "pretest": "pnpm --filter @parp/shared build",
-    "pretypecheck": "pnpm --filter @parp/shared build"
+    "preview": "vp preview"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "5.3.0",
