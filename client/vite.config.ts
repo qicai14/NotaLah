@@ -21,7 +21,7 @@ export default defineConfig({
       test: {
         command: 'vp test run',
         dependsOn: afterShared,
-        cache: { env: ['NODE_ENV'], untrackedEnv: ['GITHUB_ACTIONS'] },
+        cache: { env: ['NODE_ENV'] },
       },
     },
   },

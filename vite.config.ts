@@ -4,6 +4,7 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
   staged: {
     '*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}': 'vp check --fix',
+    '*.{json,jsonc,yaml,yml,css}': 'vp fmt',
   },
   lint: { ignorePatterns: ['docs/**'], options: { typeAware: true, typeCheck: true } },
   fmt: { singleQuote: true, printWidth: 120, ignorePatterns: ['docs/**', '**/*.md', 'pnpm-lock.yaml'] },

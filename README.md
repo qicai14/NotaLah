@@ -59,7 +59,7 @@ survive restyling.
   a second signal or the timeout exits 1.
 
 ## CI
-`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `setup-vp`, `vp install`, `vp run check`,
+`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `setup-vp`, `vp install`, `vp run --no-cache check`,
 `vp run -r test` (against a `postgres:17-alpine` service with a fresh `parp_test`), `vp run -r build`, then
 `pnpm audit --prod --audit-level high`. The Vite Task cache is restored after install and saved after a green run.
 Open the failing step in the Actions run: typecheck errors show the file and line, test failures show the Vitest diff,

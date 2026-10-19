@@ -39,7 +39,7 @@ jobs:
       PGPASSWORD: parp
     steps:
       - uses: actions/checkout@v4
-      - uses: voidzero-dev/setup-vp@v1.21.1
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version: '24'
           cache: true
@@ -59,7 +59,7 @@ jobs:
       - name: Create test database
         run: psql -h localhost -U parp -d postgres -c "CREATE DATABASE parp_test"
       - name: Check (format, lint, types)
-        run: vp run check
+        run: vp run --no-cache check
       - name: Test (server and client)
         run: vp run -r test
       - name: Build

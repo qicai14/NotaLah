@@ -1357,6 +1357,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   | Build | 13.35 (included `tsc --noEmit`) | 3.35 (types moved to check) | 0.94 |
   | Dev cold start to ready | 3.35 | 2.31 | - |
 
+- **CI check uncached:** CI runs `vp run --no-cache check`, because it is not proven that the task fingerprint covers every file tsgolint reads; build and client tests stay cached.
 - **IR stack:** unchanged. Vite (8.3.4 inside Vite+) is still the bundler and dev server for the React + TypeScript +
   Tailwind client, Vitest still runs the tests, and the server is still Node.js + Express + PostgreSQL + Socket.io with
   dbmate migrations. Vite+ is the command line that drives those tools, plus Oxlint, Oxfmt and tsdown, which replace the
