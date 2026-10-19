@@ -41,7 +41,6 @@
     "jsdom": "30.1.1",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "vite-plus": "catalog:",
-    "vitest": "catalog:"
+    "vite-plus": "catalog:"
   }
 }
