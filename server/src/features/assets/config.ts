@@ -28,17 +28,54 @@ export const assetUrl = (id: number) => `/api/assets/${id}/file`;
 /** The same file through a share link, for a holder who may not pass the asset route's note checks. */
 export const shareAssetUrl = (token: string, id: number | string) => `/api/share/${token}/assets/${id}`;
 
-/** Video limits (R29, D59). Bytes and seconds are checked on the upload, edges on the probed stream. */
+/** Statuses of an asset a note may reference: a video still processing or one that failed stays linkable, so saving the note never drops it (R40). */
+export const LINKABLE_STATUSES = `('processing', 'ready', 'failed')`;
+
+/** Video limits (R29, D59) and the async pipeline (R40, D67). Bytes and seconds are checked on the upload, edges by the worker. */
 export const VIDEO = Object.freeze({
   maxBytes: 50 * 1024 * 1024,
   maxSeconds: 90,
-  /** Larger input edges are refused as absurd; anything above 1080p but within this is scaled down. */
+  /** Larger input edges are refused as absurd; anything above the profile's box but within this is scaled down. */
   maxInputEdge: 4096,
-  maxWidth: 1920,
-  maxHeight: 1080,
-  /** A hung ffprobe or ffmpeg is killed after this long. */
+  /** A hung ffprobe at upload is killed after this long. */
   toolTimeoutMs: 60_000,
-  /** Videos processed at once; further uploads get 503 so a burst cannot starve the API of CPU. */
-  maxConcurrent: 2,
+  /** A hung ffmpeg in the worker is killed after this long; a free instance encodes slowly, and nobody waits on it. */
+  encodeTimeoutMs: 10 * 60_000,
+  /** A claimed job's lease; the worker renews it every `heartbeatMs`, so it lapses only when the process died. */
+  leaseMs: 2 * 60_000,
+  heartbeatMs: 30_000,
+  /** Claims of one job before it is marked failed; an unexpected error waits `retryDelayMs` times the attempt before the next. */
+  maxAttempts: 3,
+  retryDelayMs: 30_000,
+  /** A job held back by the free-tier usage cap (D57) waits this long, without using up an attempt. */
+  usageLimitDelayMs: 60 * 60_000,
+  /** How often an idle worker looks for a job; an upload in the same process wakes it at once. */
+  idlePollMs: 30_000,
   tmpPrefix: 'notalah-video-',
 });
+
+export type VideoProfileName = 'free' | 'standard';
+
+export interface VideoProfile {
+  name: VideoProfileName;
+  /** The output box: long edge at most `maxWidth`, short edge at most `maxHeight`. */
+  maxWidth: number;
+  maxHeight: number;
+  /** Jobs one worker process runs at once. */
+  concurrency: number;
+  /** ffmpeg decoder and encoder threads per job. */
+  threads: number;
+}
+
+/** `VIDEO_PROFILE` presets (R40, D67): `free` suits a shared 0.1-CPU instance, `standard` a paid one. */
+export function videoProfile({
+  profile,
+  concurrency,
+}: {
+  profile: VideoProfileName;
+  concurrency: number;
+}): VideoProfile {
+  return profile === 'free'
+    ? { name: 'free', maxWidth: 1280, maxHeight: 720, concurrency: 1, threads: 1 }
+    : { name: 'standard', maxWidth: 1920, maxHeight: 1080, concurrency, threads: 2 };
+}

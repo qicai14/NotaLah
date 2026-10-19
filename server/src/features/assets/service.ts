@@ -29,6 +29,13 @@ export async function purgeUnlinkedAssets(): Promise<{ assets: number; orphanedF
  * the cap nothing is served. Readability depends on who asks, so shared caches must not keep it; the viewer's browser may for a few minutes.
  */
 export async function sendAsset(req: Request, res: Response, asset: StoredFile): Promise<void> {
+  // A video has no file until the worker finishes (R40): 409 while it may still come, 404 once it never will.
+  if (asset.status === 'processing') {
+    return void res.status(409).json({ error: 'Video is still processing', status: asset.status });
+  }
+  if (asset.status === 'failed') {
+    return void res.status(404).json({ error: 'Video could not be processed', status: asset.status });
+  }
   const poster = req.query.poster === '1' && asset.posterKey !== null;
   let found;
   try {

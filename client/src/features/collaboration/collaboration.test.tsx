@@ -36,6 +36,7 @@ const note = (over: Partial<Note> = {}): Note => ({
   aspect: '4:5',
   music: null,
   assets: {},
+  videoStatus: {},
   status: 'published',
   visibility: 'public',
   module: null,

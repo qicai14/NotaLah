@@ -91,6 +91,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
   const active = useEditor((s) => s.activeSlide);
   const selection = useEditor((s) => s.selection);
   const assets = useEditor((s) => s.assets);
+  const videoStatus = useEditor((s) => s.videoStatus);
   const slide = deck.slides[active];
   const boardH = boardHeight(deck.aspect);
   const picked = slide.elements.filter((e) => selection.includes(e.id));
@@ -469,6 +470,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
           slide={slide}
           aspect={deck.aspect}
           assets={assets}
+          videoStatus={videoStatus}
           label={`Slide ${active + 1} of ${deck.slides.length}, read only`}
         />
       </div>
@@ -494,6 +496,7 @@ export function Canvas({ compact, readOnly = false }: { compact: boolean; readOn
           slide={slide}
           aspect={deck.aspect}
           assets={assets}
+          videoStatus={videoStatus}
           mode="edit"
           label={`Slide ${active + 1} of ${deck.slides.length}`}
           editing={{

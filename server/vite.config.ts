@@ -6,7 +6,12 @@ const afterShared = [{ task: 'build', from: 'dependencies' as const }];
 
 export default defineConfig({
   // Unbundled so dist/ mirrors src/ and env.ts still finds the root .env three levels up.
-  pack: { entry: ['src/server.ts'], unbundle: true, format: ['esm'], fixedExtension: false },
+  pack: {
+    entry: ['src/server.ts', 'src/scripts/videoWorker.ts'],
+    unbundle: true,
+    format: ['esm'],
+    fixedExtension: false,
+  },
   test: {
     // Guards truncateAll against ever pointing at the dev DB when the shell sets NODE_ENV.
     env: { NODE_ENV: 'test', STORAGE_DIR: path.join(os.tmpdir(), 'notalah-uploads-test') },
@@ -21,6 +26,8 @@ export default defineConfig({
       test: { command: 'vp test run', dependsOn: afterShared, cache: false },
       // The daily purge (R37); run by .github/workflows/purge.yml against production. Never cached: it changes the database.
       'db:purge': { command: 'tsx src/scripts/purge.ts', cache: false },
+      // The video worker as a separate service after a build (R40, D67); the API runs the same loop in-process unless VIDEO_WORKER_IN_PROCESS=false.
+      worker: { command: 'node dist/scripts/videoWorker.js', cache: false },
     },
   },
 });

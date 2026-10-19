@@ -126,7 +126,12 @@ export default function AdminReports() {
             </Link>
           </p>
           <div className="h-[min(30rem,60dvh)]">
-            <SlideCarousel slides={open.slides} aspect={open.aspect} assets={open.assets} />
+            <SlideCarousel
+              slides={open.slides}
+              aspect={open.aspect}
+              assets={open.assets}
+              videoStatus={open.videoStatus}
+            />
           </div>
           <h3 className="mt-4 font-medium">Reports</h3>
           <ul className="mb-4 flex flex-col gap-1 text-sm">

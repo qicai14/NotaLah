@@ -35,6 +35,9 @@ export interface AdminUser extends Pick<User, 'id' | 'displayName' | 'email' | '
 
 export type Visibility = 'public' | 'contacts';
 
+/** A video's place in the upload pipeline (R40); only a ready one has a file. */
+export type VideoStatus = 'processing' | 'ready' | 'failed';
+
 export interface Note {
   id: number;
   title: string;
@@ -42,6 +45,8 @@ export interface Note {
   aspect: Aspect;
   music: { trackId: number; title: string | null; artist: string | null; cover: string | null; volume: number } | null;
   assets: Record<string, string>;
+  /** Every video the note uses, by asset id. */
+  videoStatus: Record<string, VideoStatus>;
   status: 'draft' | 'published' | 'hidden' | 'deleted';
   visibility: Visibility | null;
   module: ModuleRef | null;

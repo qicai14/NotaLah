@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Aspect } from '@notalah/shared';
+import type { VideoStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { type BoardSlide, SlideBoard } from './SlideBoard';
 
@@ -37,10 +38,12 @@ export function SlideCarousel({
   slides,
   aspect,
   assets,
+  videoStatus,
 }: {
   slides: BoardSlide[];
   aspect: Aspect;
   assets: Record<string, string>;
+  videoStatus?: Record<string, VideoStatus>;
 }) {
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
@@ -90,7 +93,13 @@ export function SlideCarousel({
                 i === cur ? 'size-full rounded-lg' : 'pointer-events-none absolute inset-0 rounded-lg opacity-0'
               }
             >
-              <SlideBoard slide={slide} aspect={aspect} assets={assets} label={`Slide ${i + 1} of ${slides.length}`} />
+              <SlideBoard
+                slide={slide}
+                aspect={aspect}
+                assets={assets}
+                videoStatus={videoStatus}
+                label={`Slide ${i + 1} of ${slides.length}`}
+              />
             </div>
           ),
         )}

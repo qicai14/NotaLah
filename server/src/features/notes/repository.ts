@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
+import { LINKABLE_STATUSES } from '../assets/config';
 import { approvedLecturer, blockedWith, countingLecturer, friends, userRef, viewerIsAdmin } from '../users/repository';
 import { assetRefs, type NoteInput } from './service';
 
@@ -48,6 +49,12 @@ export const ASSETS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/ap
                    FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
                    WHERE pa.pas_pst_id = p.pst_id AND a.ast_status = 'ready'), '{}'::JSON) AS "assets"`;
 
+/** Every video the note references as asset id -> 'processing', 'ready' or 'failed', so a player can say why there is no file yet (R40). */
+export const VIDEO_STATUS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, a.ast_status)
+                   FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
+                   WHERE pa.pas_pst_id = p.pst_id AND a.ast_kind = 'video'
+                     AND a.ast_status IN ${LINKABLE_STATUSES}), '{}'::JSON) AS "videoStatus"`;
+
 export interface Note {
   id: number;
   title: string;
@@ -55,6 +62,7 @@ export interface Note {
   aspect: Aspect;
   music: { trackId: number; title: string | null; artist: string | null; cover: string | null; volume: number } | null;
   assets: Record<string, string>;
+  videoStatus: Record<string, 'processing' | 'ready' | 'failed'>;
   status: string;
   visibility: string | null;
   module: { id: number; code: string; name: string } | null;
@@ -77,6 +85,7 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
                                      'artist', p.pst_music_artist, 'cover', p.pst_music_cover,
                                      'volume', p.pst_music_volume) END AS "music",
          ${ASSETS_COL},
+         ${VIDEO_STATUS_COL},
          p.pst_visibility AS "visibility",
          ${MODULE_COL},
          ${HASHTAGS_COL},
@@ -182,6 +191,7 @@ export interface DraftSummary {
   /** The first slide without its page notes, for the thumbnail (as on profile notes). */
   cover: { background: Fill; elements: SlideElement[] } | null;
   assets: Record<string, string>;
+  videoStatus: Note['videoStatus'];
 }
 
 /** One page of the author's drafts, last edited first; keyset on (updated_at, id), D40. */
@@ -198,6 +208,7 @@ export async function listDrafts(
             (SELECT json_build_object('background', s.sld_doc -> 'background', 'elements', s.sld_doc -> 'elements')
              FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id ORDER BY s.sld_position LIMIT 1) AS "cover",
             ${ASSETS_COL},
+            ${VIDEO_STATUS_COL},
             ${micros('p.pst_updated_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $1 AND p.pst_status = 'draft'
@@ -252,7 +263,7 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
     // FOR SHARE locks the asset rows, so a purge in flight skips them (SKIP LOCKED) and one already committed shows as a short count.
     const { rowCount } = await client.query(
       `INSERT INTO "POST_ASSET_T" (pas_pst_id, pas_ast_id)
-       SELECT $1, ast_id FROM "ASSET_T" WHERE ast_id = ANY($2::INT[]) AND ast_status = 'ready' FOR SHARE`,
+       SELECT $1, ast_id FROM "ASSET_T" WHERE ast_id = ANY($2::INT[]) AND ast_status IN ${LINKABLE_STATUSES} FOR SHARE`,
       [postId, assetIds],
     );
     if (rowCount !== assetIds.length) throw Object.assign(new Error('Image not found'), { status: 400 });
@@ -405,6 +416,7 @@ export interface ProfileNote extends NoteSummary {
   likes: number;
   cover: { background: Fill; elements: SlideElement[] } | null;
   assets: Record<string, string>;
+  videoStatus: Note['videoStatus'];
 }
 
 /** One page of an author's published notes that the viewer may see, newest first; keyset on (published_at, id), D40. */
@@ -419,6 +431,7 @@ export async function listNotesByAuthor(
             (SELECT json_build_object('background', s.sld_doc -> 'background', 'elements', s.sld_doc -> 'elements')
              FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id ORDER BY s.sld_position LIMIT 1) AS "cover",
             ${ASSETS_COL},
+            ${VIDEO_STATUS_COL},
             ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor"
      FROM "POST_T" p LEFT JOIN "MODULE_T" m ON m.mod_id = p.pst_mod_id
      WHERE p.pst_usr_id = $2 AND p.pst_status = 'published' AND ${VISIBLE_OR_ADMIN}

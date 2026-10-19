@@ -15,7 +15,7 @@ export async function addIfUnder(metric: string, period: string, n: number, cap:
 /** Bytes held by every asset that still has a file, across all users. */
 export async function storedBytes(): Promise<number> {
   const { rows } = await pool.query<{ used: string }>(
-    `SELECT COALESCE(SUM(ast_bytes), 0)::BIGINT AS used FROM "ASSET_T" WHERE ast_status IN ('pending', 'ready')`,
+    `SELECT COALESCE(SUM(ast_bytes), 0)::BIGINT AS used FROM "ASSET_T" WHERE ast_status IN ('pending', 'processing', 'ready')`,
   );
   return Number(rows[0].used);
 }

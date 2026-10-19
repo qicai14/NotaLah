@@ -1,14 +1,12 @@
 import { execFile } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { VIDEO } from './config';
+import { VIDEO, type VideoProfile } from './config';
 import { reencodeImage } from './image';
 
 export interface ProcessedVideo {
   /** Path of the cleaned file inside the work directory. */
   file: string;
-  mime: 'video/mp4' | 'video/webm';
-  ext: 'mp4' | 'webm';
   bytes: number;
   width: number;
   height: number;
@@ -20,13 +18,30 @@ export type VideoResult = { ok: true; video: ProcessedVideo } | { ok: false; err
 
 class Rejected extends Error {}
 
-/** execFile takes an argument array (no shell) and kills the child on timeout. */
-export function runTool(cmd: string, args: string[], timeoutMs: number): Promise<string> {
+export interface ToolLimits {
+  timeoutMs: number;
+  /** Aborting kills the child, for a worker that lost its lease or is stopping. */
+  signal?: AbortSignal;
+}
+
+/**
+ * execFile takes an argument array (no shell) and kills the child on timeout. A timeout or a failing exit is the file's
+ * fault (`Rejected`); an abort, or a kill from outside such as the OOM killer, is a plain Error the worker retries (R40).
+ */
+export function runTool(cmd: string, args: string[], { timeoutMs, signal }: ToolLimits): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024, windowsHide: true }, (err, stdout) => {
-      if (!err) return resolve(stdout);
-      reject(new Rejected(err.killed ? 'Video processing took too long' : 'Not a valid video'));
-    });
+    execFile(
+      cmd,
+      args,
+      { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024, windowsHide: true, signal },
+      (err, stdout) => {
+        if (!err) return resolve(stdout);
+        if (signal?.aborted) return reject(new Error('Video processing was stopped'));
+        if (err.killed) return reject(new Rejected('Video processing took too long'));
+        if (err.signal) return reject(new Error(`${cmd} was killed by ${err.signal}`));
+        reject(new Rejected('Not a valid video'));
+      },
+    );
   });
 }
 
@@ -54,74 +69,127 @@ function displayed(s: Stream): { w: number; h: number } {
   return quarter ? { w: s.height!, h: s.width! } : { w: s.width!, h: s.height! };
 }
 
-const probe = async (file: string, timeoutMs: number) =>
+const probe = async (file: string, limits: ToolLimits) =>
   JSON.parse(
     await runTool(
       'ffprobe',
       ['-v', 'error', ...SAFE_INPUT, '-print_format', 'json', '-show_format', '-show_streams', `file:${file}`],
-      timeoutMs,
+      limits,
     ),
   ) as Probe;
 
+interface Inspected {
+  video: Stream;
+  audio: Stream | undefined;
+  isMp4: boolean;
+  /** Width and height as displayed. */
+  w: number;
+  h: number;
+  /** From the header; browser-recorded WebM has none. */
+  durationMs: number | null;
+}
+
+/** Checks the container from the bytes with ffprobe, never the filename or MIME header, against the size, length and edge limits. */
+async function inspect(file: string, limits: ToolLimits): Promise<Inspected> {
+  const found = await probe(file, limits);
+  const video = found.streams.find((s) => s.codec_type === 'video');
+  const audio = found.streams.find((s) => s.codec_type === 'audio');
+  const names = (found.format.format_name ?? '').split(',');
+  // MOV shares the mp4 demuxer and Matroska the webm one, so both pass here; the output is always MP4.
+  const isMp4 = names.includes('mp4');
+  if (!video?.width || !video.height || (!isMp4 && !names.includes('webm'))) {
+    throw new Rejected('Only MP4 and WebM videos are accepted');
+  }
+  // Only a present duration can reject here; -t caps the rest.
+  const declared = Number(found.format.duration);
+  if (Number.isFinite(declared) && declared > VIDEO.maxSeconds) {
+    throw new Rejected(`Video must be at most ${VIDEO.maxSeconds} seconds`);
+  }
+  if (Math.max(video.width, video.height) > VIDEO.maxInputEdge) throw new Rejected('Video dimensions are too large');
+  const { w, h } = displayed(video);
+  const durationMs = Number.isFinite(declared) && declared > 0 ? Math.max(1, Math.round(declared * 1000)) : null;
+  return { video, audio, isMp4, w, h, durationMs };
+}
+
+/** The upload-time check (R40): ffprobe only, so the request returns before any encoding. */
+export async function inspectVideo(
+  file: string,
+): Promise<{ ok: true; width: number; height: number; durationMs: number | null } | { ok: false; error: string }> {
+  try {
+    const { w, h, durationMs } = await inspect(file, { timeoutMs: VIDEO.toolTimeoutMs });
+    return { ok: true, width: w, height: h, durationMs };
+  } catch (err) {
+    if (err instanceof Rejected) return { ok: false, error: err.message };
+    if (err instanceof SyntaxError) return { ok: false, error: 'Not a valid video' };
+    throw err;
+  }
+}
+
+export interface EncodePlan {
+  copyVideo: boolean;
+  copyAudio: boolean;
+  /** The scale box (width, height) for a re-encode, turned to match a portrait input. */
+  box: [number, number];
+}
+
+/** Stream-copy a browser-ready H.264 MP4 that fits the profile's box; re-encode anything else into it (R40, D67). */
+export function planEncode(
+  { video, audio, isMp4, w, h }: Pick<Inspected, 'video' | 'audio' | 'isMp4' | 'w' | 'h'>,
+  profile: Pick<VideoProfile, 'maxWidth' | 'maxHeight'>,
+): EncodePlan {
+  const fits = Math.max(w, h) <= profile.maxWidth && Math.min(w, h) <= profile.maxHeight;
+  return {
+    copyVideo: fits && isMp4 && video.codec_name === 'h264' && video.pix_fmt === 'yuv420p',
+    copyAudio: !audio || audio.codec_name === 'aac',
+    box: w < h ? [profile.maxHeight, profile.maxWidth] : [profile.maxWidth, profile.maxHeight],
+  };
+}
+
 /**
- * Checks the container from the bytes with ffprobe, never the filename or MIME header, then writes a cleaned copy:
- * first video and audio stream only, no metadata or chapters, H.264/AAC MP4 or VP9/Opus WebM, at most 1080p. Streams
- * that already comply are copied, not re-encoded. Also returns a WebP poster frame (R29, D59).
+ * The worker's step (R29, R40): checks the file again, then writes a cleaned H.264/AAC MP4 inside the profile's box:
+ * first video and audio stream only, no metadata or chapters, streams that already comply copied rather than
+ * re-encoded. Also returns a WebP poster frame (D59, D67).
  */
 export async function processVideo(
   input: string,
   workDir: string,
-  timeoutMs: number = VIDEO.toolTimeoutMs,
+  {
+    profile,
+    timeoutMs = VIDEO.encodeTimeoutMs,
+    signal,
+  }: { profile: VideoProfile; timeoutMs?: number; signal?: AbortSignal },
 ): Promise<VideoResult> {
+  const limits = { timeoutMs, signal };
+  const threads = String(profile.threads);
   try {
-    const found = await probe(input, timeoutMs);
-    const video = found.streams.find((s) => s.codec_type === 'video');
-    const audio = found.streams.find((s) => s.codec_type === 'audio');
-    const names = (found.format.format_name ?? '').split(',');
-    // Matroska and WebM share a demuxer name, so a Matroska file passes here and leaves as WebM.
-    const isMp4 = names.includes('mp4');
-    if (!video?.width || !video.height || (!isMp4 && !names.includes('webm'))) {
-      throw new Rejected('Only MP4 and WebM videos are accepted');
-    }
-    // Browser-recorded WebM has no duration in the header, so only a present duration can reject here; -t caps the rest.
-    const declared = Number(found.format.duration);
-    if (Number.isFinite(declared) && declared > VIDEO.maxSeconds) {
-      throw new Rejected(`Video must be at most ${VIDEO.maxSeconds} seconds`);
-    }
-    if (Math.max(video.width, video.height) > VIDEO.maxInputEdge) throw new Rejected('Video dimensions are too large');
-
-    const { w, h } = displayed(video);
-    const longEdge = Math.max(w, h);
-    const shortEdge = Math.min(w, h);
-    const oversize = longEdge > VIDEO.maxWidth || shortEdge > VIDEO.maxHeight;
-    const ext = isMp4 ? 'mp4' : 'webm';
-    const out = path.join(workDir, `clean.${ext}`);
-    const copyVideo =
-      !oversize &&
-      (isMp4
-        ? video.codec_name === 'h264' && video.pix_fmt === 'yuv420p'
-        : ['vp8', 'vp9'].includes(video.codec_name ?? ''));
-    const copyAudio = !audio || audio.codec_name === (isMp4 ? 'aac' : 'opus');
-    const args = ['-v', 'error', '-y', '-threads', '2', '-filter_threads', '1', ...SAFE_INPUT, '-i', `file:${input}`];
+    const found = await inspect(input, limits);
+    const plan = planEncode(found, profile);
+    const out = path.join(workDir, 'clean.mp4');
+    const args = [
+      '-v',
+      'error',
+      '-y',
+      '-threads',
+      threads,
+      '-filter_threads',
+      '1',
+      ...SAFE_INPUT,
+      '-i',
+      `file:${input}`,
+    ];
     args.push('-map', '0:v:0', '-map', '0:a:0?', '-t', String(VIDEO.maxSeconds));
-    args.push('-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact', '-threads', '2');
-    if (copyVideo) args.push('-c:v', 'copy');
+    args.push('-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact', '-threads', threads);
+    if (plan.copyVideo) args.push('-c:v', 'copy');
     else {
-      const box = w < h ? [VIDEO.maxHeight, VIDEO.maxWidth] : [VIDEO.maxWidth, VIDEO.maxHeight];
-      args.push('-vf', `scale=${box[0]}:${box[1]}:force_original_aspect_ratio=decrease:force_divisible_by=2`);
-      args.push(
-        ...(isMp4
-          ? ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast']
-          : ['-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '8', '-row-mt', '1']),
-      );
+      args.push('-vf', `scale=${plan.box[0]}:${plan.box[1]}:force_original_aspect_ratio=decrease:force_divisible_by=2`);
+      args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast');
     }
-    args.push('-c:a', copyAudio ? 'copy' : isMp4 ? 'aac' : 'libopus');
-    if (isMp4) args.push('-movflags', '+faststart');
-    await runTool('ffmpeg', [...args, out], timeoutMs);
+    args.push('-c:a', plan.copyAudio ? 'copy' : 'aac', '-movflags', '+faststart');
+    await runTool('ffmpeg', [...args, out], limits);
 
     const { size } = await stat(out);
     if (size > VIDEO.maxBytes) throw new Rejected('Video is still over 50 MB after processing');
-    const result = await probe(out, timeoutMs);
+    const result = await probe(out, limits);
     const cleaned = result.streams.find((s) => s.codec_type === 'video');
     const seconds = Number(result.format.duration);
     if (!cleaned?.width || !cleaned.height || !Number.isFinite(seconds) || seconds <= 0) {
@@ -134,7 +202,7 @@ export async function processVideo(
     await runTool(
       'ffmpeg',
       ['-v', 'error', '-y', '-ss', at, ...SAFE_INPUT, '-i', `file:${out}`, '-frames:v', '1', frame],
-      timeoutMs,
+      limits,
     );
     const poster = await reencodeImage(await readFile(frame));
     if (!poster.ok) throw new Rejected('Could not read a frame from the video');
@@ -143,8 +211,6 @@ export async function processVideo(
       ok: true,
       video: {
         file: out,
-        mime: isMp4 ? 'video/mp4' : 'video/webm',
-        ext,
         bytes: size,
         width: shown.w,
         height: shown.h,
@@ -153,6 +219,7 @@ export async function processVideo(
       },
     };
   } catch (err) {
-    return { ok: false, error: err instanceof Rejected ? err.message : 'Not a valid video' };
+    if (err instanceof Rejected) return { ok: false, error: err.message };
+    throw err;
   }
 }

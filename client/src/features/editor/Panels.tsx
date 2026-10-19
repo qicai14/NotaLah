@@ -4,7 +4,6 @@ import {
   ChevronUp,
   Circle,
   Diamond,
-  Film,
   ImageIcon,
   Info,
   Layers,
@@ -23,7 +22,7 @@ import { cn } from '@/lib/utils';
 import type { ModuleRef } from '@/types';
 import { HashtagInput } from '../notes/HashtagInput';
 import { elementLabel, makeCode, makeLine, makeShape, makeTable, makeText, SHAPES, TEXT_PRESETS } from './elements';
-import { PhotosPanel, UploadsPanel } from './MediaPanels';
+import { PhotosPanel, UploadsPanel, VideoPicker } from './MediaPanels';
 import { mapSlide, useEditor } from './store';
 
 export type PanelId = 'text' | 'elements' | 'uploads' | 'photos' | 'background' | 'layers' | 'details';
@@ -152,16 +151,7 @@ function ElementsPanel({ onAdd }: { onAdd?: () => void }) {
             <span className="text-body-sm font-semibold">Table</span>
             <span className="text-caption text-muted-foreground">Up to 20 rows and 8 columns</span>
           </button>
-          <div
-            aria-disabled="true"
-            className="col-span-2 flex h-14 items-center gap-3 rounded-md border border-dashed border-input px-3 text-muted-foreground"
-          >
-            <Film className="size-5 shrink-0" aria-hidden="true" />
-            <span className="flex flex-col">
-              <span className="text-body-sm font-semibold">Video</span>
-              <span className="text-caption">Short clips arrive with video uploads.</span>
-            </span>
-          </div>
+          <VideoPicker onAdd={onAdd} />
         </div>
       </Section>
       <Section title="Lines">

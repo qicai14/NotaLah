@@ -1,11 +1,12 @@
 import { boardHeight, type ImageSource, LIMITS } from '@notalah/shared';
-import { ImageUp, LoaderCircle, Search } from 'lucide-react';
-import { type FormEvent, useRef, useState } from 'react';
+import { Film, ImageUp, LoaderCircle, Search } from 'lucide-react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { api, apiOrigin, ApiError, errorText } from '@/lib/api';
 import { usePaged } from '@/lib/usePaged';
 import { cn } from '@/lib/utils';
-import { makeImage } from './elements';
+import type { VideoStatus } from '@/types';
+import { makeImage, makeVideo } from './elements';
 import { useEditor } from './store';
 
 export interface UploadedImage {
@@ -30,14 +31,13 @@ interface UnsplashPhoto {
 export const IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/gif';
 const MAX_BYTES = 5 * 1024 * 1024;
 
-/** Sends one image as multipart (the JSON `api` helper cannot), with the CSRF header every write needs (D35). */
-export async function uploadImage(file: File): Promise<UploadedImage> {
-  if (file.size > MAX_BYTES) throw new ApiError(413, 'Image must be at most 5 MB');
+/** Sends one file as multipart (the JSON `api` helper cannot), with the CSRF header every write needs (D35). */
+async function postFile<T>(path: string, file: File): Promise<T> {
   const body = new FormData();
   body.append('file', file);
   let res: Response;
   try {
-    res = await fetch(`${apiOrigin()}/api/assets/images`, {
+    res = await fetch(`${apiOrigin()}/api${path}`, {
       method: 'POST',
       headers: { 'X-Requested-With': 'notalah' },
       credentials: 'include',
@@ -48,7 +48,12 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, data.error ?? 'Upload failed. Please try again.');
-  return data.asset as UploadedImage;
+  return data.asset as T;
+}
+
+export async function uploadImage(file: File): Promise<UploadedImage> {
+  if (file.size > MAX_BYTES) throw new ApiError(413, 'Image must be at most 5 MB');
+  return postFile<UploadedImage>('/assets/images', file);
 }
 
 /** Photos already reported to Unsplash in this session: its terms ask for one download event per use, not per click. */
@@ -303,4 +308,147 @@ export function PhotosPanel({ onAdd }: { onAdd?: () => void }) {
       )}
     </div>
   );
+}
+
+interface VideoLimits {
+  profile: 'free' | 'standard';
+  maxSeconds: number;
+  maxBytes: number;
+  maxHeight: number;
+}
+
+interface VideoAsset {
+  id: number;
+  status: VideoStatus;
+  width: number | null;
+  height: number | null;
+  url: string;
+  error?: string | null;
+}
+
+/** The limits the server enforces, worded for the picker; the free profile is the demo deploy (R40, D67). */
+export const limitsText = (l: VideoLimits) =>
+  `${l.profile === 'free' ? 'Demo server: videos' : 'Videos'} up to ${l.maxSeconds} s, ${Math.round(l.maxBytes / 1024 / 1024)} MB, ${l.maxHeight}p.`;
+
+/** MP4, MOV or WebM; the server checks the real type and turns it into an H.264 MP4 (D59, D67). */
+const VIDEO_TYPES = 'video/mp4,video/quicktime,video/webm';
+const VIDEO_FULL = `A slide holds at most ${LIMITS.videosPerSlide} video. Add a new slide for another.`;
+
+/** Uploads a video and places it at once; the board shows it as processing until the worker finishes (R29, R40). */
+export function VideoPicker({ onAdd }: { onAdd?: () => void }) {
+  const [limits, setLimits] = useState<VideoLimits | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let live = true;
+    api<{ limits: VideoLimits }>('/assets/videos/limits')
+      .then((r) => live && setLimits(r.limits))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  async function send(file: File | undefined) {
+    if (!file) return;
+    const st = useEditor.getState();
+    if (st.deck.slides[st.activeSlide].elements.some((e) => e.type === 'video')) return setError(VIDEO_FULL);
+    if (limits && file.size > limits.maxBytes) {
+      return setError(
+        `${file.name} was not added. Video must be at most ${Math.round(limits.maxBytes / 1024 / 1024)} MB`,
+      );
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const a = await postFile<VideoAsset>('/assets/videos', file);
+      const now = useEditor.getState();
+      now.setVideoStatus(a.id, a.status);
+      // The slide may have gained a video, or another slide become active, while the upload ran.
+      if (now.deck.slides[now.activeSlide].elements.some((e) => e.type === 'video')) return setError(VIDEO_FULL);
+      now.addElement(makeVideo(boardHeight(now.deck.aspect), a.id, a.width ?? 640, a.height ?? 360));
+      onAdd?.();
+    } catch (e) {
+      setError(`${file.name} was not added. ${errorText(e)}`);
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = '';
+    }
+  }
+
+  return (
+    <div className="col-span-2 flex flex-col gap-2">
+      <label
+        className={cn(
+          'flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-input px-3 py-2.5 transition-colors duration-(--duration-fast) hover:border-primary hover:bg-surface has-focus-visible:ring-[3px] has-focus-visible:ring-ring/25',
+          busy && 'pointer-events-none opacity-60',
+        )}
+      >
+        {busy ? (
+          <LoaderCircle
+            className="size-5 shrink-0 animate-spin text-primary motion-reduce:animate-none"
+            aria-hidden="true"
+          />
+        ) : (
+          <Film className="size-5 shrink-0 text-primary" aria-hidden="true" />
+        )}
+        <span className="flex flex-col">
+          <span className="text-body-sm font-semibold">{busy ? 'Uploading…' : 'Upload a video'}</span>
+          <span className="text-caption text-muted-foreground">
+            MP4, MOV or WebM. {limits ? limitsText(limits) : ''}
+          </span>
+        </span>
+        <input
+          ref={input}
+          type="file"
+          accept={VIDEO_TYPES}
+          className="sr-only"
+          disabled={busy}
+          onChange={(e) => void send(e.target.files?.[0])}
+        />
+      </label>
+      {error && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-body-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const POLL_MS = 4000;
+
+/**
+ * Polls each video in the open deck that is still processing until the server says ready (its file URL joins the
+ * board's assets) or failed (R40). Only the uploader may ask, so a co-author's processing video stays as it is.
+ */
+export function useVideoPolling() {
+  const pending = useEditor((s) =>
+    Object.entries(s.videoStatus)
+      .filter(([, v]) => v === 'processing')
+      .map(([id]) => id)
+      .join(','),
+  );
+  const notMine = useRef(new Set<string>());
+  useEffect(() => {
+    if (!pending) return;
+    const timer = setInterval(() => {
+      for (const id of pending.split(',')) {
+        if (notMine.current.has(id)) continue;
+        api<{ asset: VideoAsset }>(`/assets/${id}`).then(
+          ({ asset }) => {
+            const st = useEditor.getState();
+            if (asset.status === 'ready') st.addAsset(asset.id, asset.url);
+            if (asset.status !== 'processing') st.setVideoStatus(asset.id, asset.status);
+          },
+          (e: unknown) => {
+            if (e instanceof ApiError && e.status === 404) notMine.current.add(id);
+          },
+        );
+      }
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [pending]);
 }

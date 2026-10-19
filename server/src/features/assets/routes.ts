@@ -13,9 +13,10 @@ import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl, VIDEO } from './config';
 import { reencodeImage } from './image';
 import { parseKeyset } from '../../lib/keyset';
-import { getReadableAsset, insertAsset, listMyImages } from './repository';
+import { getOwnAsset, getReadableAsset, insertAsset, listMyImages } from './repository';
 import { sendAsset } from './service';
-import { processVideo } from './video';
+import { inspectVideo } from './video';
+import { activeVideoProfile, wakeVideoWorker } from './worker';
 
 export const assetsRouter = Router();
 assetsRouter.param('id', idParam('Asset not found'));
@@ -118,8 +119,22 @@ const videoAllowed: RequestHandler = async (_req, res, next) => {
   next();
 };
 
-let processing = 0;
+/** The active video limits, for the editor's picker to state (R40, D67). */
+assetsRouter.get('/videos/limits', requireAuth, (_req, res) => {
+  res.json({
+    limits: {
+      profile: activeVideoProfile.name,
+      maxSeconds: VIDEO.maxSeconds,
+      maxBytes: VIDEO.maxBytes,
+      maxHeight: activeVideoProfile.maxHeight,
+    },
+  });
+});
 
+/**
+ * Checks the upload with ffprobe only, stores the original as uploaded (metered like any put) and queues a job; the
+ * answer is 202 with status 'processing' before any encoding (R40, D67). The worker makes it 'ready' or 'failed'.
+ */
 assetsRouter.post(
   '/videos',
   requireAuth,
@@ -130,50 +145,32 @@ assetsRouter.post(
   readVideo,
   async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No video uploaded' });
-    if (processing >= VIDEO.maxConcurrent) {
-      return res.status(503).json({ error: 'Video processing is busy. Try again shortly' });
-    }
-    processing++;
-    let result;
-    try {
-      result = await processVideo(req.file.path, res.locals.workDir as string);
-    } finally {
-      processing--;
-    }
-    if (!result.ok) return res.status(400).json({ error: result.error });
-    const { video } = result;
-
-    const total = video.bytes + video.poster.length;
-    if (!(await storageFits(total))) {
+    const checked = await inspectVideo(req.file.path);
+    if (!checked.ok) return res.status(400).json({ error: checked.error });
+    if (!(await storageFits(req.file.size))) {
       return res.status(507).json({ error: 'Video storage is full. Uploads are paused' });
     }
 
-    const id = randomUUID();
-    const key = `v/${id}.${video.ext}`;
-    const posterKey = `p/${id}.webp`;
-    const stored: string[] = [];
+    const key = `o/${randomUUID()}.orig`;
     try {
-      stored.push(key);
-      await storage.put(key, await readFile(video.file));
-      stored.push(posterKey);
-      await storage.put(posterKey, video.poster);
+      await storage.put(key, await readFile(req.file.path));
       const asset = await insertAsset(me(req).id, {
         kind: 'video',
         key,
-        posterKey,
-        mime: video.mime,
-        bytes: total,
-        width: video.width,
-        height: video.height,
-        durationMs: video.durationMs,
+        mime: 'video/mp4',
+        bytes: req.file.size,
+        width: checked.width,
+        height: checked.height,
+        durationMs: checked.durationMs,
       });
-      if (asset !== 'quota') {
-        return res.status(201).json({ asset: { ...asset, url: assetUrl(asset.id) } });
+      if (asset === 'quota') {
+        await storage.remove(key);
+        return res.status(413).json({ error: 'Storage limit of 500 MB reached. Delete notes or media to free space' });
       }
-      await Promise.all(stored.map((k) => storage.remove(k)));
-      return res.status(413).json({ error: 'Storage limit of 500 MB reached. Delete notes or media to free space' });
+      wakeVideoWorker();
+      return res.status(202).json({ asset: { ...asset, url: assetUrl(asset.id) } });
     } catch (err) {
-      await Promise.all(stored.map((k) => storage.remove(k).catch(() => {})));
+      await storage.remove(key).catch(() => {});
       if (err instanceof UsageLimitError) return res.status(503).json({ error: err.message });
       throw err;
     }
@@ -184,4 +181,11 @@ assetsRouter.get('/:id/file', optionalAuthForFiles, fileLimiter, async (req, res
   const asset = await getReadableAsset(Number(req.params.id), viewerId(req));
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
   await sendAsset(req, res, asset);
+});
+
+/** The owner's view of one upload, which the editor polls while a video is processing (R40). */
+assetsRouter.get('/:id', requireAuth, async (req, res) => {
+  const asset = await getOwnAsset(Number(req.params.id), me(req).id);
+  if (!asset) return res.status(404).json({ error: 'Asset not found' });
+  res.json({ asset: { ...asset, url: assetUrl(asset.id) } });
 });

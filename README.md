@@ -87,6 +87,9 @@ API environment on Render (the server refuses to start in production when a guar
 | `MAX_SESSION_HOURS` | optional; default `12`, the longest a login is renewed |
 | `DEBUG_PROXY` | `1` for the first deploy only, see below |
 | `PORT` | leave unset; Render provides it |
+| `VIDEO_PROFILE` | `free` on the free instance: compatible H.264 MP4 is stream-copied, anything else re-encoded to at most 720p, one job at a time; `standard` on a paid instance (1080p) (D67) |
+| `VIDEO_CONCURRENCY` | jobs a worker runs at once under `standard` (default 2, 1-8); `free` always runs 1 |
+| `VIDEO_WORKER_IN_PROCESS` | `true` (default): the API runs the video worker itself. Set `false` once a separate Render background worker runs `vp run server#worker` with the same environment |
 | `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `USAGE_CAP_*`, `PG_*` | optional, as in `.env.example` |
 
 Client build on Cloudflare Pages: `VITE_API_URL=https://api.<domain>`.
@@ -105,6 +108,11 @@ Neon with `vp run server#db:migrate` (with `DATABASE_URL` pointing at Neon) befo
 `.github/workflows/purge.yml` (03:30 MYT, or Run workflow by hand). It needs repository secrets `PROD_DATABASE_URL` and the
 four `R2_*` values (unlinked assets are deleted from R2 too); without `PROD_DATABASE_URL` it skips with a notice. The
 server's in-process daily timer remains as a best-effort fallback.
+
+Video uploads return 202 at once and are converted by the worker (D67); the server and any worker need `ffmpeg` and
+`ffprobe` on the PATH. A job held by an instance that slept or restarted is picked up again within two minutes.
+Scale-up path: a paid instance with `VIDEO_PROFILE=standard`, then a separate worker service
+(`VIDEO_WORKER_IN_PROCESS=false` on the API), then a managed video service behind the same job table if volume demands it.
 
 ## Layout (full map in `docs/ARCHITECTURE.md`)
 - `client/src/` — `App.tsx` routes; `features/<feature>/` pages and components; `components/`, `lib/`, `types/` shared

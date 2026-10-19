@@ -105,7 +105,12 @@ export const NoteCard = memo(function NoteCard({
             </p>
           )}
           <div className="min-h-0 flex-1">
-            <SlideCarousel slides={item.slides} aspect={item.aspect} assets={item.assets} />
+            <SlideCarousel
+              slides={item.slides}
+              aspect={item.aspect}
+              assets={item.assets}
+              videoStatus={item.videoStatus}
+            />
           </div>
           {!desktop && <div className="absolute right-0.5 bottom-2 z-10">{actions}</div>}
         </div>

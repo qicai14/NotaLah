@@ -436,6 +436,8 @@
 
 	Three entities were added in Sprint 4. TERM_T holds the academic terms (name, start date and end date) that the search filter offers beside lecturer and module (FR15, D2, D47). Terms are maintained by administrators and may overlap, because the start dates of intakes differ between programmes; a check requires the start date to precede the end date, and a note belongs to a term when its publication time falls inside the range, so no column is added to POST_T and a change to a term needs no data migration. It is drawn as a standalone entity. BLOCK_T records that one user has blocked another (D49). Its composite primary key allows one row per direction, a check prevents a user from blocking themselves, and an index on the blocked user lets the queries that hide content in both directions find the blockers of a viewer as quickly as their blocked list. A block removes follows, pending collaboration requests and edit locks between the two users, and every feed, search, profile, comment, messaging and collaboration query excludes blocked pairs through one shared condition. NOTIFICATION_T stores the in-app notifications of R8 (D51). Each row names its recipient, an optional actor (moderation outcomes have none, so an administrator is not named), a type from a fixed list of eleven (mention, Super Like, follow, lecturer approval or rejection, hidden note, message request, collaboration request and its two outcomes, and edited since verification), and nullable references to the note, comment, collaboration request or message request concerned. Separate nullable columns are used instead of a JSON payload so that every reference is a foreign key; deleting the referenced row deletes the notification, so a request removed by a block takes its notification with it. A check prevents a user from notifying themselves, and the read time is null until the recipient opens the notification, which gives the unread count.
 
+	Two entities hold uploaded media (R22, R29) and a third queues video processing (R40, D67). ASSET_T records each uploaded image or video: its owner, the storage key of the file (the file itself is kept in object storage, not in the database), its type, size and dimensions, and a status. POST_ASSET_T links a note to every asset its slides use, so that an asset is served only to readers of such a note and an asset no note uses can be purged. A video is not usable the moment it arrives: the upload is checked and stored as it was sent with the status processing, and a row in VIDEO_JOB_T asks a background worker to convert it. A worker claims the oldest open job with SELECT ... FOR UPDATE SKIP LOCKED, so several workers never take the same job, and holds it under a lease (vjb_locked_until) that it renews while it works; a job whose worker stopped, for example when the free host restarts, is claimed again once the lease lapses. The worker then marks the asset ready, or failed after three attempts with the reason in vjb_last_error. The attempt count also serves as the claim token, so a worker whose lease lapsed cannot complete a job that another worker has taken.
+
 ## 4.3.2 Database Schema
 
 	Table 4.23 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
@@ -600,6 +602,28 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | ntf_mrq_id | INTEGER | | FK → MESSAGE_REQUEST_T, ON DELETE CASCADE | Message request concerned |
 | | ntf_read_at | TIMESTAMPTZ | | | Time the recipient read it; null while unread |
 | | ntf_created_at | TIMESTAMPTZ | | NOT NULL | Time created |
+| ASSET_T | ast_id | INTEGER (identity) | | PK, NOT NULL | Unique asset identifier |
+| | ast_usr_id | INTEGER | | FK → USER_T, NOT NULL; indexed with ast_created_at | Uploader |
+| | ast_kind | VARCHAR | 5 | NOT NULL, CHECK (image, video) | Media type |
+| | ast_key | VARCHAR | 100 | NOT NULL, UNIQUE | Storage key of the file; the original upload while a video is processing |
+| | ast_poster_key | VARCHAR | 100 | Videos only | Storage key of a video's poster frame |
+| | ast_mime | VARCHAR | 30 | NOT NULL | Content type served |
+| | ast_bytes | INTEGER | | NOT NULL, CHECK > 0 | Stored size counted against the 500 MB quota |
+| | ast_width | SMALLINT | | | Width in pixels as displayed |
+| | ast_height | SMALLINT | | | Height in pixels as displayed |
+| | ast_duration_ms | INTEGER | | CHECK 1 to 90500; videos only | Video length |
+| | ast_status | VARCHAR | 10 | NOT NULL, CHECK (pending, processing, ready, failed, rejected, deleted) | processing until the video worker finishes, then ready or failed (R40); deleted once purged |
+| | ast_created_at | TIMESTAMPTZ | | NOT NULL | Time uploaded |
+| POST_ASSET_T | pas_pst_id | INTEGER | | PK, FK → POST_T, ON DELETE CASCADE | Note using the asset |
+| | pas_ast_id | INTEGER | | PK, FK → ASSET_T; indexed | Asset used |
+| VIDEO_JOB_T | vjb_id | INTEGER (identity) | | PK, NOT NULL | Unique job identifier |
+| | vjb_ast_id | INTEGER | | FK → ASSET_T, NOT NULL, UNIQUE | Video to process |
+| | vjb_status | VARCHAR | 10 | NOT NULL, CHECK (queued, running, done, failed) | Job state |
+| | vjb_attempts | SMALLINT | | NOT NULL, CHECK >= 0 | Claims so far; also the claim token |
+| | vjb_last_error | VARCHAR | 200 | | Reason of the last failure, shown to the uploader once failed |
+| | vjb_locked_until | TIMESTAMPTZ | | NOT NULL; indexed while open | Lease end, or when a retry may start; a lapsed lease is claimable |
+| | vjb_created_at | TIMESTAMPTZ | | NOT NULL | Time queued |
+| | vjb_updated_at | TIMESTAMPTZ | | NOT NULL | Last change |
 
 	The schema is created by the versioned migration file `server/db/migrations/20261013000001_initial_schema.sql`, so that every later change is recorded as a new migration rather than an edit to the live database. Indexes are defined for the access paths that determine performance: published posts ordered by publication time for the feed, the GIN index on pst_search_doc and the hashtag index on POST_HASHTAG_T for the sub-three-second search target (FR5, NFR1), and the user and time index on INTERACTION_T for building interest vectors. Migrations added after the initial schema create further indexes, each for one access path:
 
@@ -620,6 +644,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 - `notification_recipient_idx` on NOTIFICATION_T (ntf_usr_id, ntf_created_at DESC, ntf_id DESC): lists a user's notifications newest first with a stable page cursor.
 - `notification_unread_idx` on NOTIFICATION_T (ntf_usr_id), partial on unread: counts unread notifications.
 - `notification_collab_request_idx` on NOTIFICATION_T (ntf_crq_id), partial on notifications that reference a collaboration request: indexes the cascade when a request is deleted.
+- `video_job_open_idx` on VIDEO_JOB_T (vjb_locked_until), partial on queued and running jobs: lets a worker find the next claimable job without scanning finished ones.
 
 # 4.4 Interface Design
 
@@ -1101,10 +1126,10 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC65 | Editor late save reply (client) | a save still in flight when a new note is loaded | The reply does not give the new note an id or change its save state | | |
 | NOTE-TC66 | Editor untitled and locked saves (client) | draft with a blank title; save answered 423 | Saved as "Untitled note"; a 423 sets the locked state and keeps the changes | | |
 | NOTE-TC67 | Editor queued save after closing a new note (client) | a new note's first save in flight, a second save of it queued, then another note loaded before the first reply | The queued save PUTs to the id the first save received instead of POSTing a duplicate, and neither reply touches the newly loaded note | | |
-| NOTE-TC39 | Video validation and acceptance | 91 s MP4; non-video bytes; AVI named .mp4; 4100 px wide MP4; a short MP4 and a short WebM | 400 each for the first four; 201 for the last two with status ready, a poster key and a WebP poster at ?poster=1 | | |
+| NOTE-TC39 | Video validation and acceptance | 91 s MP4; non-video bytes; AVI named .mp4; 4100 px wide MP4; a short MP4 and a short WebM | 400 each for the first four; 202 for the last two, and after the worker runs both are ready H.264 MP4s with a poster key and a WebP poster at ?poster=1 (R40) | | |
 | NOTE-TC68 | Playlist upload makes no network call | an #EXTM3U playlist whose segment is an http URL on a local test server, uploaded as clip.mp4 | 400 and the test server receives no request | | |
 | NOTE-TC69 | Early refusal | UPLOADS_DISABLED true; a video upload | 503 before the body is read and no temp directory is left | | |
-| NOTE-TC70 | Orientation and 1080p | 1920x1080 clip with a 90 degree display matrix; 2000x1100 clip | Stored 1080x1920; the 2000x1100 clip is scaled to fit 1920x1080 | | |
+| NOTE-TC70 | Orientation and profile box | 1920x1080 clip with a 90 degree display matrix; 2000x1100 clip; default `free` profile | Stored as the portrait 720x1280; the 2000x1100 clip is scaled to fit 1280x720 (1080p under `standard`, R40) | | |
 | NOTE-TC71 | Video over 50 MB | 51 MB body | 413 | | |
 | NOTE-TC72 | Video metadata stripped | MP4 and WebM tagged with title and comment | The served file has no title, comment or SECRET text | | |
 | NOTE-TC73 | Range requests | Range bytes=0-99, bytes=-50, bytes=size- | 206 with Content-Range and 100 bytes; 206 for the tail; 416 with bytes */size; Accept-Ranges bytes | | |
@@ -1522,7 +1547,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | STO-TC12 | Live smoke (opt-in, `R2_LIVE_TEST=1`) | put 5 bytes under `t/`, read `bytes=99-`, read `bytes=1-3`, delete | `bytes=99-` gives unsatisfiable with size 5; read returns "ell" as a partial 5-byte object; the object is removed | | |
 | STO-TC13 | Malformed read responses | 206 without Content-Range; 200 with a non-numeric content-length; 416 without a size | Each throws before any stream is created | | |
 | STO-TC14 | Image put fails | `storage.put` rejects (timeout) on an image upload | 500; `storage.remove` is called with the key the put used | | |
-| STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `v/` key | | |
+| STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `o/` key of the original (R40) | | |
 
 *Table 4.40: Deploy readiness test cases (DEP)*
 
@@ -1540,11 +1565,31 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | DEP-TC10 | Purge cannot remove a file | An unlinked asset 2 days old; `storage.remove` fails with R2 status 500 | 1 asset purged, 1 orphaned file counted; the row stays deleted; the key is logged and `db:purge` exits 1 | | |
 | DEP-TC11 | Forged entry in a forwarded chain | `TRUST_PROXY=1`, proxy peer 10.0.0.1, `X-Forwarded-For: 6.6.6.6, 203.0.113.5` | 200; the only counter key is `guest:203.0.113.5` | | |
 
+*Table 4.41: Async video pipeline test cases (VID)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| VID-TC1 | Upload returns at once | a valid 1 s MP4 | 202 with `status: processing`; the asset holds the original under an `o/` key at its upload size; one job, queued, 0 attempts | | |
+| VID-TC2 | Serving before the video is ready | file route while processing; save a note using it; mark it failed | 409 with `status: processing`; the note saves, its `videoStatus` says processing and `assets` is empty; then 404 with `status: failed` and `videoStatus` failed | | |
+| VID-TC3 | Claim with SKIP LOCKED | two workers claim at the same time, one job queued | Exactly one claim returns the job | | |
+| VID-TC4 | Lease expiry | claim a job; claim again; let the lease lapse; claim again | Second claim finds nothing; the third returns the same job with attempts 2, running under a new lease | | |
+| VID-TC5 | Retry then failed | storage reads fail on every attempt | After attempts 1 and 2 the job is queued with the error and a delay (not claimable at once); attempt 3 marks job and asset failed and the owner sees "Video processing failed. Try uploading it again" | | |
+| VID-TC6 | Copy or re-encode decision | 1280x720 H.264/AAC MP4; no audio; 1920x1080; portrait 720x1280; WebM; HEVC; yuv444p; Opus audio; 1920x1080 under `standard` | Copy for the fitting H.264 MP4 (and its portrait, box turned), copy audio when absent or AAC; re-encode for the rest; `standard` copies 1080p | | |
+| VID-TC7 | Profile parsing | `VIDEO_PROFILE` unset, `standard`, `huge`; `VIDEO_CONCURRENCY` 4, 3, 0; `VIDEO_WORKER_IN_PROCESS` unset, `false` | free 1280x720 with concurrency 1 (even with 4) and 1 ffmpeg thread; standard 1920x1080 with 2 threads and concurrency 2, then 3; `huge` and 0 fail startup naming the variable; in-process true, then false | | |
+| VID-TC8 | Limits route | `GET /api/assets/videos/limits` | `{ profile: free, maxSeconds: 90, maxBytes: 52428800, maxHeight: 720 }` | | |
+| VID-TC9 | Worker loop end to end | start the in-process worker, upload a valid MP4 | The job reaches done on attempt 1, the file route answers 200 and the original is gone from storage | | |
+| VID-TC10 | Player states (client) | a video element with status processing; failed; ready with a URL; ready in the editor | "Processing…" tile; "Video could not be processed" tile; a `<video>` with the file and `?poster=1` poster; the poster image only while editing | | |
+| VID-TC11 | Picker and polling (client) | limits answered for `free`; choose an MP4 (202 processing); choose another on the same slide; poll after 4 s answers ready | The picker shows "Demo server: videos up to 90 s, 50 MB, 720p."; the element is placed and marked processing; the second is refused with an alert; polling marks it ready and adds its file URL | | |
+| VID-TC12 | Late worker after a takeover | worker A claims; its lease lapses; worker B claims; A then tries to complete and to fail the job | Both of A's calls return false; the job stays running with attempts 2 and no error; the asset stays processing with its `o/` key | | |
+| VID-TC13 | Usage cap holds a job back | storage read throws the usage-cap error during a job | The job is queued again with attempts 0, the cap message and a lease about an hour away; the asset stays processing and the original is kept | | |
+| VID-TC14 | Abort kills ffmpeg | an endless ffmpeg run aborted after 200 ms; `processVideo` with an aborted signal | Both reject with "Video processing was stopped" (a retryable error, not a bad-file result) within 5 s | | |
+| VID-TC15 | Video added during the upload (client) | an empty slide; choose an MP4; a video is added to the slide before the upload answers | The picker shows an alert and the slide still holds one video | | |
+
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.41: UAT tester details*
+*Table 4.42: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1552,7 +1597,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.42: UAT scenario tasks*
+*Table 4.43: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1571,7 +1616,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.43: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.44: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1581,7 +1626,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.44: UAT feedback and developer response*
+*Table 4.45: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1592,7 +1637,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.45: Ranking weight re-evaluation (NFR5)*
+*Table 4.46: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

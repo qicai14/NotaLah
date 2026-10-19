@@ -43,6 +43,14 @@ const schema = z
       .enum(['true', 'false'])
       .optional()
       .transform((v) => v === 'true'),
+    // Video pipeline (R40, D67): `free` stream-copies compatible MP4 and re-encodes the rest at most 720p, one job at a time;
+    // `standard` allows 1080p and VIDEO_CONCURRENCY jobs. Turn the in-process worker off when a separate worker service runs.
+    VIDEO_PROFILE: z.enum(['free', 'standard']).default('free'),
+    VIDEO_CONCURRENCY: z.coerce.number().int().min(1).max(8).default(2),
+    VIDEO_WORKER_IN_PROCESS: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((v) => v === 'true'),
     // Express `trust proxy` (R37, D65): a hop count, or `loopback` for the Vite dev proxy. Never `true`, which lets a client forge X-Forwarded-For.
     TRUST_PROXY: z.preprocess(
       (v) => (v === '' ? undefined : v),
