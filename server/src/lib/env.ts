@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 // Load the monorepo-root .env; real environment variables (CI, Docker) win over the file.
 try {
-  process.loadEnvFile(path.resolve(__dirname, '../../../.env'));
+  process.loadEnvFile(path.resolve(import.meta.dirname, '../../../.env'));
 } catch {
   /* no .env file: rely on the process environment */
 }
@@ -23,7 +23,10 @@ const schema = z
     SENTRY_DSN: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
     CLIENT_ORIGIN: z.string().min(1).default('http://localhost:5173'),
     // Where the local-disk storage driver keeps uploads (D54); the default is gitignored.
-    STORAGE_DIR: z.string().min(1).default(path.resolve(__dirname, '../../../uploads')),
+    STORAGE_DIR: z
+      .string()
+      .min(1)
+      .default(path.resolve(import.meta.dirname, '../../../uploads')),
     // Which storage driver serves uploads (D60); r2 needs the four R2_* values below.
     STORAGE_DRIVER: z.enum(['local', 'r2']).default('local'),
     R2_ACCOUNT_ID: z.string().optional(),

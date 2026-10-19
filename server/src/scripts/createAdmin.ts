@@ -30,7 +30,7 @@ export async function createAdmin(input: Record<string, string | undefined>): Pr
   return upsertAdmin(ADMIN_EMAIL, await bcrypt.hash(ADMIN_PASSWORD, BCRYPT_COST), ADMIN_NAME);
 }
 
-if (require.main === module) {
+if (import.meta.main) {
   createAdmin(process.env)
     .then((u) => console.log(`Admin ready: ${u.email} (id ${u.id})`))
     .catch((err: Error) => {
