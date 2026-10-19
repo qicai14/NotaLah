@@ -1387,4 +1387,4 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   that say PARP, the comment in the applied initial migration, and the GitHub repository URL, which keeps its old name.
 - **Alternatives:** keep accepting `parp_token` for a release (rejected, extra code for no users); leave the database
   names as they were (rejected by the user).
-- **Reversibility:** Medium: revert the branch and run the guide's commands backwards.
+- **Reversibility:** Medium: the old volume is never modified, so before it is deleted, `git checkout main` with the old compose file and `.env` values restores the old setup; after that, revert the branch and rename the role and databases back.
