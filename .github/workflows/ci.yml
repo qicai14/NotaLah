@@ -39,26 +39,36 @@ jobs:
       PGPASSWORD: parp
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: voidzero-dev/setup-vp@v1.21.1
         with:
-          node-version: 24
-          cache: npm
+          node-version: '24'
+          cache: true
       - name: Install ffmpeg (video upload tests)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - run: npm ci
+      - run: vp install
+      - name: Restore Vite Task cache
+        id: vite-task-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: vite-task-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            vite-task-${{ runner.os }}-${{ runner.arch }}-
       - name: Create empty .env (dbmate scripts require the file; values come from job env)
         run: touch .env
       - name: Create test database
         run: psql -h localhost -U parp -d postgres -c "CREATE DATABASE parp_test"
-      - name: Lint
-        run: npm run lint
-      - name: Format check
-        run: npm run format:check
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Test
-        run: npm test
+      - name: Check (format, lint, types)
+        run: vp run check
+      - name: Test (server and client)
+        run: vp run -r test
       - name: Build
-        run: npm run build
+        run: vp run -r build
+      - name: Save Vite Task cache
+        if: success()
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules/.vite/task-cache
+          key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
       - name: Audit production dependencies
-        run: npm audit --audit-level=high --omit=dev
+        run: pnpm audit --prod --audit-level high
