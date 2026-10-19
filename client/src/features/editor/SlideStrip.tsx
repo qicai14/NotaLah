@@ -1,4 +1,4 @@
-import { type Aspect, LIMITS, type Slide } from '@parp/shared';
+import { type Aspect, LIMITS, type Slide } from '@notalah/shared';
 import { ArrowLeft, ArrowRight, Copy, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import { memo, type PointerEvent as ReactPointerEvent, useRef, useState } from 'react';
 import { SlideBoard } from '@/components/board/SlideBoard';

@@ -1,4 +1,4 @@
-import { MESSAGING_LIMITS } from '@parp/shared';
+import { MESSAGING_LIMITS } from '@notalah/shared';
 import { useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { usePaged } from '@/lib/usePaged';

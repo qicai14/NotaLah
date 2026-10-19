@@ -23,7 +23,7 @@ const secret = ['-metadata', 'title=SECRETTITLE', '-metadata', 'comment=SECRETCO
 const h264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p'];
 
 beforeAll(() => {
-  dir = mkdtempSync(path.join(os.tmpdir(), 'parp-fixtures-'));
+  dir = mkdtempSync(path.join(os.tmpdir(), 'notalah-fixtures-'));
   ffmpeg(...src('160x120', 10), ...tone, '-t', '2', ...h264, '-c:a', 'aac', ...secret, file('short.mp4'));
   ffmpeg(
     ...src('160x120', 10),

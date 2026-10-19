@@ -40,5 +40,5 @@ export const VIDEO = Object.freeze({
   toolTimeoutMs: 60_000,
   /** Videos processed at once; further uploads get 503 so a burst cannot starve the API of CPU. */
   maxConcurrent: 2,
-  tmpPrefix: 'parp-video-',
+  tmpPrefix: 'notalah-video-',
 });

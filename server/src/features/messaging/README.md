@@ -10,7 +10,7 @@ gets the CSRF check, the shared write limiter and `requireActive`), `socket.ts` 
 rooms, typing relay, and the `emit`/`joinConversation` helpers routes use for live delivery).
 
 Auth (D35): `allowRequest` refuses any engine request whose `Origin` is not `CLIENT_ORIGIN`, because WebSockets are not
-covered by CORS or the CSRF header check. The handshake then runs passport-jwt on the `parp_token` cookie and reloads
+covered by CORS or the CSRF header check. The handshake then runs passport-jwt on the `notalah_token` cookie and reloads
 the user, so suspended and deleted accounts are refused. Sockets close when the token expires, and an admin suspension
 or deletion disconnects them at once. `io.close()` runs on shutdown before the HTTP server closes (D41).
 

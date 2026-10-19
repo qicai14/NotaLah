@@ -1019,12 +1019,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC8 | Log in with wrong password | test1@mail.apu.edu.my / "wrong" | 401 with the same generic message as an unknown email; no token issued | | |
 | AUTH-TC9 | Log in with valid credentials | test1@mail.apu.edu.my / "Passw0rd!" | 200; signed JWT containing user ID and role; GET /api/auth/me returns the user | | |
 | AUTH-TC10 | Access protected route without, with tampered and with valid token; suspended and deleted users log in | no header; altered token; valid token; suspended account; deleted account | 401; 401; 200; suspended login returns 403 "This account is suspended"; deleted login returns 401 "Invalid email or password" | | |
-| AUTH-TC11 | Log in and register with valid details | test1@mail.apu.edu.my / "Passw0rd!"; a new student | Login 200 with Set-Cookie `parp_token` (HttpOnly, SameSite=Lax, Path=/, Max-Age=3600); register 201 with no cookie; no token in either response body | | |
+| AUTH-TC11 | Log in and register with valid details | test1@mail.apu.edu.my / "Passw0rd!"; a new student | Login 200 with Set-Cookie `notalah_token` (HttpOnly, SameSite=Lax, Path=/, Max-Age=3600); register 201 with no cookie; no token in either response body | | |
 | AUTH-TC12 | Access a protected route with only an `Authorization: Bearer` header | valid JWT sent as a bearer header, no cookie | 401 "Unauthorized" | | |
-| AUTH-TC13 | Log out with a valid and with an invalid cookie | valid `parp_token`; `parp_token=garbage` | 204 both times; Set-Cookie clears `parp_token` (empty value, expired) with the same attributes | | |
+| AUTH-TC13 | Log out with a valid and with an invalid cookie | valid `notalah_token`; `notalah_token=garbage` | 204 both times; Set-Cookie clears `notalah_token` (empty value, expired) with the same attributes | | |
 | AUTH-TC14 | Send state-changing requests without the CSRF header | POST login, POST like, DELETE note with no or a wrong `X-Requested-With` | 403 "Forbidden"; no cookie issued; GET requests are unaffected | | |
 | AUTH-TC15 | Log in with COOKIE_SECURE=true | COOKIE_SECURE = true | Set-Cookie includes the Secure flag | | |
-| AUTH-TC16 | Send several cookies whose names resemble the auth cookie | `xparp_token=garbage; other=1; parp_token=<valid>`; `xparp_token=<valid>` only | 200 (only the exact `parp_token` is read); 401 | | |
+| AUTH-TC16 | Send several cookies whose names resemble the auth cookie | `xnotalah_token=garbage; other=1; notalah_token=<valid>`; `xnotalah_token=<valid>` only | 200 (only the exact `notalah_token` is read); 401 | | |
 | AUTH-TC17 | List programmes | GET /api/programmes with no login; extra module added in an existing programme | 200; `items` holds each catalogue programme once, sorted | | |
 | AUTH-TC18 | Register with a programme outside the catalogue | programme "Underwater Basket Weaving" | 400 "Choose a programme from the list"; no account created | | |
 | AUTH-TC19 | Shared rate-limit store | two store instances; key k hit twice, another key once; one decrement; window start moved back 61 s; reset; purge; a test limiter of 2 per minute on the store | Hits 1 then 2 across instances (reset time about a minute ahead); the other key counts 1; decrement leaves 1; next hit starts a new window at 1; reset deletes the row; purge removes the expired counter; the third request to the test limiter gets 429 | | |
@@ -1061,7 +1061,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC25 | Template choices | template "fancy"; "howto"; none | 400 "Invalid template"; stored as howto; defaults to plain | | |
 | NOTE-TC24 | Hashtag input rules (client) | Add `#Algebra, maths, Algebra`, then an invalid tag, then a sixth tag | `#` stripped, lowercased, duplicates ignored, invalid tag and a sixth tag rejected with a message | | |
 | NOTE-TC26 | Drafts keyset paging | 5 drafts with one shared edit time; GET /api/notes/drafts?limit=2, following nextCursor; limit 101 | Pages of 2, 2 and 1 list every draft once, highest id first; nextCursor null on the last page; 400 for limit 101 | | |
-| NOTE-TC27 | Guest opens notes | no cookie: a public note, a contacts-only note, a hidden note, a draft, a note by a suspended author; `parp_token=garbage`; an expired but validly signed token of the friend; a suspended author's valid cookie on their own draft | Public note 200 with liked and bookmarked false; 404 for each of the others; an invalid cookie is treated as a guest (200 public with `X-Viewer: guest`, 404 contacts-only); the author's friend gets the contacts-only note with no `X-Viewer` header; the expired token gets 404; the suspended author gets 404 | | |
+| NOTE-TC27 | Guest opens notes | no cookie: a public note, a contacts-only note, a hidden note, a draft, a note by a suspended author; `notalah_token=garbage`; an expired but validly signed token of the friend; a suspended author's valid cookie on their own draft | Public note 200 with liked and bookmarked false; 404 for each of the others; an invalid cookie is treated as a guest (200 public with `X-Viewer: guest`, 404 contacts-only); the author's friend gets the contacts-only note with no `X-Viewer` header; the expired token gets 404; the suspended author gets 404 | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -1347,14 +1347,14 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC1 | Health check with the database up | GET /api/health | 200 with status ok, db up | | |
 | OPS-TC2 | Health check with the database unreachable | GET /api/health while the database query fails | 503 with status degraded, db down | | |
 | OPS-TC3 | Request id reused or replaced | no X-Request-Id; "abc-123"; "bad id<script>" | Response carries a generated UUID; "abc-123" echoed; a new UUID instead of the unsafe value | | |
-| OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie parp_token header and a body with a password | Log output shows [redacted] and contains neither the parp_token value nor the password | | |
+| OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie notalah_token header and a body with a password | Log output shows [redacted] and contains neither the notalah_token value nor the password | | |
 | OPS-TC5 | Share-link tokens kept out of the request log | paths /api/share/AbC_-123?x=1, /api/notes/5?cursor=abc, no URL | /api/share/[token]; /api/notes/5; undefined | | |
 
 *Table 4.37: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
-| CLI-TC1 | API calls send the cookie and CSRF header | GET, POST, PUT, PATCH and DELETE through the api wrapper | Every request has credentials include and X-Requested-With parp; bodies carry Content-Type application/json | | |
+| CLI-TC1 | API calls send the cookie and CSRF header | GET, POST, PUT, PATCH and DELETE through the api wrapper | Every request has credentials include and X-Requested-With notalah; bodies carry Content-Type application/json | | |
 | CLI-TC2 | API base URL prefix | VITE_API_URL set to a host; VITE_API_URL empty | Request goes to the host plus /api/notes; to /api/notes when empty | | |
 | CLI-TC3 | Expired session while signed in | 401 on an authenticated call after sign-in, twice | Browser is sent to /login?expired=1 once; both calls reject | | |
 | CLI-TC4 | 401 while signed out | 401 from /auth/me with nobody signed in | Call rejects and there is no redirect, so no loop | | |

@@ -14,7 +14,7 @@
     "db:status": "dbmate --env-file ../.env --no-dump-schema status"
   },
   "dependencies": {
-    "@parp/shared": "workspace:*",
+    "@notalah/shared": "workspace:*",
     "@sentry/node": "10.75.3",
     "aws4fetch": "1.0.20",
     "bcryptjs": "3.0.3",

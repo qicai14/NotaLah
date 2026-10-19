@@ -1,4 +1,4 @@
-import type { SlideElement } from '@parp/shared';
+import type { SlideElement } from '@notalah/shared';
 import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Redo2, Undo2, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';

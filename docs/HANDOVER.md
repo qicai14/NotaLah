@@ -6,7 +6,7 @@ NotaLah (formerly PARP). Read with `../PLAN.md` (backlog R0-R33), `docs/DECISION
 
 ## State
 - `main` holds PRs #1-#25 (plus #26 R21c slice 1 if merged), all CI green. Sprint D so far:
-  - #19 Sprint D spec (D52). #20 R21a slides as element documents, `@parp/shared` (D53).
+  - #19 Sprint D spec (D52). #20 R21a slides as element documents, `@notalah/shared` (D53).
   - #21 R19 design system: light/dark tokens in `client/src/index.css` (swappable palette), shadcn/ui, `client/DESIGN.md`,
     shell, feed, note detail, welcome/auth, guest sheet; `X-Viewer: user` fix (AUTH-TC22); feed returns `weights`.
   - #22 R22 server: uploads (sharp → WebP, EXIF stripped, 5 MB, 500 MB quota), local-disk storage, asset access by note
@@ -14,9 +14,9 @@ NotaLah (formerly PARP). Read with `../PLAN.md` (backlog R0-R33), `docs/DECISION
   - #23 R21b `SlideBoard`/`SlideCarousel` replace SlideViewer. #24 Search UI (D55). #25 Profiles + blocking UI.
   - #26 R21c slice 1: new editor (store/undo, geometry, canvas, strip, text/shapes, autosave, backup) (D56).
 - Tests: server 329, client 68; typecheck, lint (0 errors), format, build clean.
-- Dev DB `parp` needs the two new migrations: run `npm run db:migrate -w server` in `FYP_Project`.
+- Dev DB `notalah` needs the two new migrations: run `npm run db:migrate -w server` in `FYP_Project`.
 - Blast Radius plugin is off (it held every `db:migrate*` command and failed in the desktop app).
-- Private test DBs `parp_test_<branch>` exist for live worktrees; drop them when the worktree goes.
+- Private test DBs `notalah_test_<branch>` exist for live worktrees; drop them when the worktree goes.
 
 ## 18 Oct additions
 - #28 R34 free-tier cost guard (D57): caps at 80% storage / 50% monthly R2 ops / Unsplash 25 per hour, Postgres counters, kill switch, admin `GET /api/admin/usage`; files always stream through the server (no presigned URLs).

@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useState } from 'react';
 
-import { LIMITS } from '@parp/shared';
+import { LIMITS } from '@notalah/shared';
 import { addHashtags } from '../../lib/hashtags';
 
 /** Chip input: Enter or comma adds a tag, '#' is stripped, tags are lowercased and unique. */

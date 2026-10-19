@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { LIMITS } from '@parp/shared';
+import { LIMITS } from '@notalah/shared';
 import { makeImage, makeText, resizeTable } from './elements';
 import { emptyDeck, groupScaleRange, useEditor } from './store';
 

@@ -42,7 +42,7 @@ app.use(
 // CSRF (D35): a cross-site page cannot add this header without a preflight, which CORS refuses for other origins.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 app.use('/api', (req, res, next) => {
-  if (SAFE_METHODS.has(req.method) || req.get('X-Requested-With') === 'parp') return next();
+  if (SAFE_METHODS.has(req.method) || req.get('X-Requested-With') === 'notalah') return next();
   res.status(403).json({ error: 'Forbidden' });
 });
 // Write limit per user, or per IP when signed out, counted in Postgres so it holds across instances (D40).

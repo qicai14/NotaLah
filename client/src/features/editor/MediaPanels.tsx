@@ -1,4 +1,4 @@
-import { boardHeight, type ImageSource, LIMITS } from '@parp/shared';
+import { boardHeight, type ImageSource, LIMITS } from '@notalah/shared';
 import { ImageUp, LoaderCircle, Search } from 'lucide-react';
 import { type FormEvent, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ export async function uploadImage(file: File): Promise<UploadedImage> {
   try {
     res = await fetch(`${apiOrigin()}/api/assets/images`, {
       method: 'POST',
-      headers: { 'X-Requested-With': 'parp' },
+      headers: { 'X-Requested-With': 'notalah' },
       credentials: 'include',
       body,
     });

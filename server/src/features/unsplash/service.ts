@@ -1,4 +1,4 @@
-import { imageSourceSchema } from '@parp/shared';
+import { imageSourceSchema } from '@notalah/shared';
 import { env } from '../../lib/env';
 import { consume } from '../usage/service';
 

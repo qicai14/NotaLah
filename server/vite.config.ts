@@ -9,7 +9,7 @@ export default defineConfig({
   pack: { entry: ['src/server.ts'], unbundle: true, format: ['esm'], fixedExtension: false },
   test: {
     // Guards truncateAll against ever pointing at the dev DB when the shell sets NODE_ENV.
-    env: { NODE_ENV: 'test', STORAGE_DIR: path.join(os.tmpdir(), 'parp-uploads-test') },
+    env: { NODE_ENV: 'test', STORAGE_DIR: path.join(os.tmpdir(), 'notalah-uploads-test') },
     globalSetup: ['tests/globalSetup.ts'],
     // Tests share one database, so files must not run in parallel.
     fileParallelism: false,

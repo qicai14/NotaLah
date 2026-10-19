@@ -22,7 +22,7 @@ const roleOf = async (id: number) =>
 describe('admin lecturer approval (UC22)', () => {
   let admin: Record<string, string>;
   beforeEach(async () => {
-    admin = asUser(await insertUser({ role: 'admin', email: 'admin@parp.test' }));
+    admin = asUser(await insertUser({ role: 'admin', email: 'admin@notalah.test' }));
   });
 
   it('ADM-TC1: student and lecturer tokens get 403 on every admin endpoint', async () => {
@@ -130,7 +130,7 @@ describe('admin lecturer approval (UC22)', () => {
 });
 
 describe('admin:create bootstrap script', () => {
-  const valid = { ADMIN_EMAIL: ' Root@PARP.test ', ADMIN_PASSWORD: 'Str0ngAdminPass', ADMIN_NAME: 'Root' };
+  const valid = { ADMIN_EMAIL: ' Root@NOTALAH.test ', ADMIN_PASSWORD: 'Str0ngAdminPass', ADMIN_NAME: 'Root' };
 
   it('ADM-TC13: refuses missing or weak values', async () => {
     await expect(createAdmin({})).rejects.toThrow(/ADMIN_EMAIL/);
@@ -139,7 +139,7 @@ describe('admin:create bootstrap script', () => {
   });
 
   it('ADM-TC15: a suspended or deleted applicant is not listed and cannot be approved', async () => {
-    const admin = asUser(await insertUser({ role: 'admin', email: 'admin@parp.test' }));
+    const admin = asUser(await insertUser({ role: 'admin', email: 'admin@notalah.test' }));
     const active = await insertUser({ lecturerStatus: 'pending', staffId: 'S1' });
     const suspended = await insertUser({ lecturerStatus: 'pending', staffId: 'S2', status: 'suspended' });
     const deleted = await insertUser({ lecturerStatus: 'pending', staffId: 'S3', status: 'deleted' });
@@ -153,13 +153,13 @@ describe('admin:create bootstrap script', () => {
   });
 
   it('ADM-TC14: creates an admin, and promotes an existing account with the same email', async () => {
-    const id = await insertUser({ email: 'root@parp.test', lecturerStatus: 'pending' });
+    const id = await insertUser({ email: 'root@notalah.test', lecturerStatus: 'pending' });
     const user = await createAdmin(valid);
-    expect(user).toMatchObject({ id, email: 'root@parp.test', role: 'admin', lecturerStatus: null });
+    expect(user).toMatchObject({ id, email: 'root@notalah.test', role: 'admin', lecturerStatus: null });
     const res = await request(app)
       .post('/api/auth/login')
       .set(CSRF)
-      .send({ email: 'root@parp.test', password: 'Str0ngAdminPass' });
+      .send({ email: 'root@notalah.test', password: 'Str0ngAdminPass' });
     expect(res.status).toBe(200);
     expect(res.body.user.role).toBe('admin');
   });
@@ -171,7 +171,7 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
   let author: number;
   let note: number;
   beforeEach(async () => {
-    adminId = await insertUser({ role: 'admin', email: 'admin@parp.test' });
+    adminId = await insertUser({ role: 'admin', email: 'admin@notalah.test' });
     admin = asUser(adminId);
     author = await insertUser({ displayName: 'Author A' });
     note = await insertNote(author, { title: 'Reported note' });
@@ -284,7 +284,7 @@ describe('admin report queue (UC20) and account actions (UC21)', () => {
   });
 
   it('ADM-TC8: acting on an administrator returns 403 and leaves the status unchanged', async () => {
-    const other = await insertUser({ role: 'admin', email: 'admin2@parp.test' });
+    const other = await insertUser({ role: 'admin', email: 'admin2@notalah.test' });
     for (const action of ['suspend', 'restrict', 'delete']) {
       expect((await act(other, action, { reason: 'Test' })).status).toBe(403);
     }

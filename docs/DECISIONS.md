@@ -1368,3 +1368,23 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `tsc` emit step. pnpm replaces npm as the package manager, which the IR does not fix.
 - **Reversibility:** Medium: revert the branch; the app code changes are type-only or lint fixes and survive a revert of
   the tooling.
+
+## D62 - Rename to NotaLah (20 Oct 2026)
+
+- **Decision (user, 20 Oct: "Everything"):** the code repository now says NotaLah instead of PARP. No feature change.
+- **What changed:** packages `parp` to `notalah` and `@parp/shared` to `@notalah/shared`; auth cookie `parp_token` to
+  `notalah_token`; CSRF header value `X-Requested-With: parp` to `notalah`; Docker role, database and test database
+  `parp`, `parp_test` to `notalah`, `notalah_test`; volume `parp_pgdata` to `notalah_pgdata`; `.env.example`, CI
+  service and `CREATE DATABASE`, test temp directories (`notalah-uploads-test`, `notalah-video-`), test e-mail
+  domains (`@notalah.test`), README, CLAUDE.md, ARCHITECTURE and the Chapter 4 test-case rows that quote the cookie and
+  header. Host port 5433 is unchanged.
+- **Forced re-login:** the server now reads only `notalah_token`, so every existing session cookie is ignored and every
+  user is logged out once. Tokens are not migrated: the app is pre-launch and a second cookie name would linger in
+  the code.
+- **Dev data:** to keep an existing dev database, follow `docker/rename-from-parp.md` (rename role and databases, copy
+  the volume, update `.env`). A fresh clone needs nothing.
+- **Left as history:** D1-D61, sprint reviews, specs, dated walkthroughs, the Chapter 4 prose, figures and wireframes
+  that say PARP, the comment in the applied initial migration, and the GitHub repository URL, which keeps its old name.
+- **Alternatives:** keep accepting `parp_token` for a release (rejected, extra code for no users); leave the database
+  names as they were (rejected by the user).
+- **Reversibility:** Medium: the old volume is never modified, so before it is deleted, `git checkout main` with the old compose file and `.env` values restores the old setup; after that, revert the branch and rename the role and databases back.

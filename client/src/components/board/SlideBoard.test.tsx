@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vite-plus/test';
-import type { Slide, SlideElement } from '@parp/shared';
+import type { Slide, SlideElement } from '@notalah/shared';
 import { cropBox, fitScale, inReadingOrder } from './geometry';
 import { SlideBoard } from './SlideBoard';
 import { SlideCarousel } from './SlideCarousel';

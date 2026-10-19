@@ -1,4 +1,4 @@
-import { LIMITS } from '@parp/shared';
+import { LIMITS } from '@notalah/shared';
 
 const VALID = /^[a-z0-9_]{1,50}$/;
 

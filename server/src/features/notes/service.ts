@@ -7,7 +7,7 @@ import {
   type Aspect,
   type MusicRef,
   type Slide,
-} from '@parp/shared';
+} from '@notalah/shared';
 import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';

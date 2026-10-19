@@ -24,7 +24,7 @@ export class ApiError extends Error {
  * guard the server requires on state-changing requests (D35). A 401 on an authenticated call ends the session (UC03 1a).
  */
 export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
-  const headers: Record<string, string> = { 'X-Requested-With': 'parp' };
+  const headers: Record<string, string> = { 'X-Requested-With': 'notalah' };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
   const res = await fetch(`${apiOrigin()}/api${path}`, {

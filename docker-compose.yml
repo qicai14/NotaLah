@@ -4,11 +4,11 @@ services:
     ports:
       - '127.0.0.1:5433:5432'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-parp}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parp}
-      POSTGRES_DB: ${POSTGRES_DB:-parp}
+      POSTGRES_USER: ${POSTGRES_USER:-notalah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notalah}
+      POSTGRES_DB: ${POSTGRES_DB:-notalah}
     volumes:
-      - parp_pgdata:/var/lib/postgresql/data
+      - notalah_pgdata:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
@@ -17,4 +17,4 @@ services:
       retries: 10
 
 volumes:
-  parp_pgdata:
+  notalah_pgdata:

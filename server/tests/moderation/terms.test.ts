@@ -10,7 +10,7 @@ const SEM = { name: 'Semester 2 2026', startDate: '2026-09-01', endDate: '2026-1
 let admin: Record<string, string>;
 beforeEach(async () => {
   await truncateAll();
-  admin = asUser(await insertUser({ role: 'admin', email: 'admin@parp.test' }));
+  admin = asUser(await insertUser({ role: 'admin', email: 'admin@notalah.test' }));
 });
 
 const post = (body: object, h = admin) => request(app).post('/api/admin/terms').set(h).send(body);

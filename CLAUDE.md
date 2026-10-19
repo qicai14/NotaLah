@@ -1,8 +1,8 @@
 # NotaLah code (FYP_Project)
 
 pnpm workspaces run through Vite+ (`vp`): `client/` (React 19, Tailwind v4, shadcn/ui), `server/` (Express 5 ESM, pg,
-zod, Socket.io) and `shared/` (`@parp/shared`, the zod deck schema; built by `vp pack`). Postgres 17 in Docker on
-port 5433 (`parp`, `parp_test`); config in the root `.env`.
+zod, Socket.io) and `shared/` (`@notalah/shared`, the zod deck schema; built by `vp pack`). Postgres 17 in Docker on
+port 5433 (`notalah`, `notalah_test`); config in the root `.env`.
 
 ## Commands
 Use `vp`, never npm/npx. Tasks are cached; server tests never are.

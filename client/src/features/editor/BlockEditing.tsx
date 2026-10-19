@@ -1,4 +1,4 @@
-import { LIMITS, type SlideElement } from '@parp/shared';
+import { LIMITS, type SlideElement } from '@notalah/shared';
 import { type CSSProperties, useEffect, useRef } from 'react';
 import { FONT_STACK } from '@/components/board/geometry';
 import { patchElement, useEditor } from './store';

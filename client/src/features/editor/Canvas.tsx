@@ -21,7 +21,7 @@ import {
   round1,
   type SlideElement,
   snapMove,
-} from '@parp/shared';
+} from '@notalah/shared';
 import {
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,

@@ -1,4 +1,4 @@
-import { BOARD_WIDTH, boardHeight } from '@parp/shared';
+import { BOARD_WIDTH, boardHeight } from '@notalah/shared';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';

@@ -1,4 +1,4 @@
-import type { Aspect } from '@parp/shared';
+import type { Aspect } from '@notalah/shared';
 import { ChevronDown, Proportions } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
