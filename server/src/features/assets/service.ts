@@ -5,13 +5,22 @@ import { storage } from '../../lib/storage';
 import { UsageLimitError } from '../usage/service';
 import { takeUnlinkedAssets, type StoredFile } from './repository';
 
-/** Deletes assets that no live note references after a day (R21 spec 2.4); returns how many were removed. */
-export async function purgeUnlinkedAssets(): Promise<number> {
+/**
+ * Deletes assets that no live note references after a day (R21 spec 2.4). Rows are marked deleted before their files go,
+ * so a note cannot link an asset whose file is being removed; a file that fails to go is logged as orphaned (R37).
+ */
+export async function purgeUnlinkedAssets(): Promise<{ assets: number; orphanedFiles: number }> {
   const assets = await takeUnlinkedAssets();
+  const orphaned: string[] = [];
   for (const key of assets.flatMap((a) => (a.posterKey ? [a.key, a.posterKey] : [a.key]))) {
-    await storage.remove(key).catch((err: unknown) => logger.error({ err, key }, 'asset file removal failed'));
+    await storage.remove(key).catch((err: unknown) => {
+      orphaned.push(key);
+      logger.error({ err, key }, 'asset file removal failed');
+    });
   }
-  return assets.length;
+  if (orphaned.length > 0)
+    logger.error({ keys: orphaned }, 'purge left orphaned asset files; remove them from storage');
+  return { assets: assets.length, orphanedFiles: orphaned.length };
 }
 
 /**

@@ -30,8 +30,9 @@ async function rank(viewerId: number, cutoff: Date): Promise<RankedEntry[]> {
     .map(({ id, score, components }) => ({ id, score, components }));
 }
 
-// shortcut: the guest ranking cache is per process, so it is not shared across Fly machines (R27); a later page served by
-// another machine is re-ranked and can skip or repeat a note. Move it to Postgres if guests page across machines.
+// shortcut: the guest ranking cache is per process, so it is not shared across instances (R27) and a restart (Render's
+// sleep, D65) empties it; a later page served by another process is re-ranked and can skip or repeat a note. Move it to
+// Postgres if guests page across instances.
 const guestRankings = new Map<number, RankedEntry[]>();
 
 function rememberGuestRanking(cutoff: Date, ranked: RankedEntry[]): void {

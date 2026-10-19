@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import type { CookieOptions, Request } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import passport from 'passport';
 import { Strategy as JwtStrategy } from 'passport-jwt';
@@ -23,8 +23,9 @@ const BLOCKED_STATUSES = new Set(['suspended', 'deleted']);
 // the event loop; compared against when the email is unknown, so timing does not reveal which accounts exist.
 const DUMMY_HASH = '$2b$12$RlrI9iOSRzy3g1iXWWluwuttoBLEuxgVYd7SRuC8cOnhMVrJEseEW';
 
-export function signToken(user: AuthUser): string {
-  return jwt.sign({ role: user.role }, env.JWT_SECRET, {
+/** `authTime` (seconds) is when the user logged in; a renewed token carries the original so the session cap holds (R37). */
+export function signToken(user: AuthUser, authTime = Math.floor(Date.now() / 1000)): string {
+  return jwt.sign({ role: user.role, auth_time: authTime }, env.JWT_SECRET, {
     algorithm: 'HS256',
     subject: String(user.id),
     expiresIn: TOKEN_TTL_SECONDS,
@@ -34,6 +35,28 @@ export function signToken(user: AuthUser): string {
 /** Attributes shared by setting and clearing the auth cookie (D35); read per call so tests can flip COOKIE_SECURE. */
 export function authCookieOptions(): CookieOptions {
   return { httpOnly: true, sameSite: 'lax', path: '/', secure: env.COOKIE_SECURE };
+}
+
+export function setAuthCookie(res: Response, user: AuthUser, authTime?: number): void {
+  res.cookie(AUTH_COOKIE, signToken(user, authTime), { ...authCookieOptions(), maxAge: TOKEN_TTL_SECONDS * 1000 });
+}
+
+/** Sliding session (R37, D65): a token with less than this left is re-issued by the next authenticated request. */
+export const REFRESH_BELOW_SECONDS = 15 * 60;
+
+/**
+ * Use after the JWT strategy accepted the request's cookie: re-issues it with a fresh hour when it is near expiry, unless
+ * the login is older than MAX_SESSION_HOURS. A token without `auth_time` (issued before R37) is left to expire.
+ */
+export function slideSession(req: Request, res: Response, user: AuthUser): void {
+  const payload = jwt.decode(fromAuthCookie(req) ?? '', { json: true });
+  const exp = payload?.exp;
+  const authTime: unknown = payload?.auth_time;
+  if (exp === undefined || typeof authTime !== 'number') return;
+  const now = Date.now();
+  if (exp * 1000 - now >= REFRESH_BELOW_SECONDS * 1000) return;
+  if (now - authTime * 1000 > env.MAX_SESSION_HOURS * 3_600_000) return;
+  setAuthCookie(res, user, authTime);
 }
 
 // The token is read from the httpOnly cookie only, never a bearer header, so page script can never hold it (D35).

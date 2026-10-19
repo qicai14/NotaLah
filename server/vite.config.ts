@@ -19,6 +19,8 @@ export default defineConfig({
       build: { command: 'vp pack', dependsOn: afterShared },
       // Never cached: the result depends on the Postgres state, so a replay would hide a real failure.
       test: { command: 'vp test run', dependsOn: afterShared, cache: false },
+      // The daily purge (R37); run by .github/workflows/purge.yml against production. Never cached: it changes the database.
+      'db:purge': { command: 'tsx src/scripts/purge.ts', cache: false },
     },
   },
 });

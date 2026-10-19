@@ -1425,6 +1425,60 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** keep `sendDefaultPii: false` (silently ignored in v11, so everything would be collected); stay on v10.
 - **Reversibility:** High: pin 10.75.3 and restore `sendDefaultPii: false`.
 
+## D65 - Hosting on Render free tier (supersedes D29's Fly.io choice) (R37, 20 Oct 2026)
+
+- **Decision (user, 18 and 20 Oct):** the API runs as one Render free web service at `api.<domain>`; the client stays on
+  Cloudflare Pages at `app.<domain>`, the database on Neon and uploads on R2 (D60). D29's Fly.io backend is dropped.
+- **Why:** Fly.io no longer has a free tier and cannot cap spending, and the project must never exceed a free tier.
+  Render's free web service costs nothing and stops rather than bills.
+- **Constraints of the free instance, and how R37 answers each:**
+  - *Sleeps after 15 idle minutes, about a minute to wake:* the in-process daily purge timer can miss its slot, so
+    `.github/workflows/purge.yml` runs `vp run server#db:purge` daily (and on demand) against `PROD_DATABASE_URL`; it skips
+    with a notice when the secret is absent. The timer stays as a best-effort fallback. The Neon pool timeout (D34) already
+    tolerates a cold database.
+  - *Behind Render's proxy (one hop):* `trust proxy` now comes from `TRUST_PROXY`, a hop count or `loopback` (dev default),
+    never `true`, which would let a client forge `X-Forwarded-For`. Production sets `1`, so `req.ip` is the client and each
+    guest gets its own rate-limit bucket (the D35 and D44 pre-deploy item). `1` holds only while `api.<domain>` is
+    DNS-only (grey cloud) in Cloudflare; proxied through Cloudflare (orange cloud) it is two hops, so `2`. The guards
+    refuse `loopback` and `0` but cannot tell 1 from 2, so the first deploy is checked by hand: with `DEBUG_PROXY=1`
+    each `GET /api/health` logs `req.ip` beside the raw `X-Forwarded-For`, and the logged ip must be the caller's own
+    public address. The flag is unset afterwards.
+  - *Ephemeral disk:* production refuses `STORAGE_DRIVER=local` at startup.
+  - *One instance, 512 MB:* Socket.io rooms and the guest ranking cache stay in process (D50, D44); comments now name
+    Render. Video transcoding (ffmpeg) is the heaviest memory user and moves off the API under R40.
+  - *Campus lab behind one IP:* the per-IP login and register cap rises from 10 to 60 per minute, and a second limiter
+    counts failed logins per IP and normalised email (10 per minute; a successful login takes its hit back), so one
+    account's guesses do not lock out a lab. Asset file GETs are counted only by the file limiter, not also by the guest
+    read limiter. Accepted trade-off: the per-IP cap is still shared, so one person in a lab sending 60 attempts in a
+    minute blocks logins for everyone on that IP for the rest of the minute; a per-account limit alone would let one
+    IP guess across many accounts.
+  - *Purge accuracy:* each rate-limit key prefix is purged after its own window, so the hourly upload, video and Unsplash
+    counters are no longer wiped by the one-minute window. An asset row is still marked deleted before its files are
+    removed (so a note cannot link a file being removed); a file that fails to go is logged with its key as orphaned,
+    and `db:purge` then exits 1 so the workflow run shows red.
+- **Startup guards:** with `NODE_ENV=production`, or `RENDER=true` (set by Render on its services), the server refuses
+  to start when `STORAGE_DRIVER` is `local`, `CLIENT_ORIGIN` is not `https://`, `COOKIE_SECURE` is not true or
+  `TRUST_PROXY` is `loopback` or `0`. Each message names the variable, never its value. The `COOKIE_SECURE` default
+  follows that parsed production flag rather than reading `process.env` separately.
+- **Sliding session:** the JWT still lasts one hour, but a request whose token has under 15 minutes left gets a fresh
+  cookie (same flags, new hour), so an active user is not logged out mid-session. Tokens carry an `auth_time` claim (the
+  login time), copied into each renewal; past `MAX_SESSION_HOURS` (default 12) since login the cookie is no longer
+  renewed, so a session left open on a shared lab PC ends within 13 hours. Tokens issued before R37 have no `auth_time`
+  and simply expire. The server still cuts a socket when its token expires; the client reconnects after a server-side
+  disconnect, after a random 1-3 s delay so tabs do not reconnect at once, and the handshake reads the renewed cookie,
+  so socket expiry follows the new token.
+- **Domain requirement:** both `pages.dev` and `onrender.com` are on the Public Suffix List, so `*.pages.dev` and
+  `*.onrender.com` are different sites: the SameSite=Lax login cookie set by the API would not be sent from the client's
+  requests. The app therefore needs its own domain with `app.` and `api.` subdomains before the live deploy.
+- **Under R27:** a keep-awake ping (to hide the cold start during UAT and the demo) and a k6 load test of the free instance.
+- **Supply chain:** `actions/checkout` is pinned by commit SHA with `persist-credentials: false` in both workflows, and
+  the purge workflow gives its secrets only to the gate and purge steps.
+- **Tests:** DEP-TC1 to DEP-TC11.
+- **Alternatives:** Fly.io (rejected: no free tier or spending cap); a paid always-on instance (rejected: never exceed a
+  free tier).
+- **Reversibility:** Medium: the app is a plain Node process, so another host needs only its env values (`TRUST_PROXY`
+  set to that host's hop count) and a start command.
+
 ## D66 - Architecture review decisions (20 Oct 2026)
 - **Context:** a read-only whole-codebase audit and a review of the planned deployment scored the code 59/100 and the
   planned system design 55/100 across eleven quality attributes. The user decided each design question on 20 Oct.

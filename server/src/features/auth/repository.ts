@@ -22,11 +22,14 @@ export async function resetRateLimit(key: string): Promise<void> {
   await pool.query(`DELETE FROM "RATE_LIMIT_T" WHERE rlt_key = $1`, [key]);
 }
 
-/** Deletes counters whose window ended more than `windowMs` ago; run by the daily purge job (D40). Idempotent. */
-export async function purgeRateLimits(windowMs: number): Promise<number> {
+/** Deletes counters whose window ended, each by its key prefix's own window; run by the daily purge job (D40, R37). Idempotent. */
+export async function purgeRateLimits(windows: [prefix: string, windowMs: number][]): Promise<number> {
   const { rowCount } = await pool.query(
-    `DELETE FROM "RATE_LIMIT_T" WHERE rlt_window_start < NOW() - $1::INT * INTERVAL '1 millisecond'`,
-    [windowMs],
+    `DELETE FROM "RATE_LIMIT_T" r
+     USING UNNEST($1::TEXT[], $2::INT[]) AS w(prefix, window_ms)
+     WHERE STARTS_WITH(r.rlt_key, w.prefix)
+       AND r.rlt_window_start < NOW() - w.window_ms * INTERVAL '1 millisecond'`,
+    [windows.map(([prefix]) => prefix), windows.map(([, ms]) => ms)],
   );
   return rowCount ?? 0;
 }

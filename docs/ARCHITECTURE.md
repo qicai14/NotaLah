@@ -24,7 +24,7 @@ server/src/lib/                   env.ts (validated config), pool.ts (pg pool), 
                                   validation.ts (zod issue map, id params, body guard), logger.ts (pino, redaction), errorReporting.ts,
                                   purge.ts (the daily purge set)
 server/src/types/                 types shared by several features
-server/src/scripts/               one-off CLIs (createAdmin.ts, vp run server#admin:create; purgeInteractions.ts, vp run server#db:purge-interactions)
+server/src/scripts/               one-off CLIs (createAdmin.ts, vp run server#admin:create; purge.ts, vp run server#db:purge)
 server/src/features/auth/         passport strategies, JWT cookie (D35), requireAuth/requireRole, register/login/logout/me routes,
                                   rate limits on a Postgres store (rateLimit.ts, "RATE_LIMIT_T", D40)
 server/src/features/users/        USER_T repository, profiles, follows and follower lists ("FOLLOW_T", D38)

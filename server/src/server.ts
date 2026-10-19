@@ -21,13 +21,15 @@ const purge = () =>
     (counts) => logger.info(counts, 'daily purge done'),
     (err) => logger.error({ err }, 'daily purge failed'),
   );
+// Fallback only: Render free sleeps after 15 idle minutes, so this timer is best-effort there; the GitHub purge workflow
+// is the dependable daily run (R37, D65).
 let purgeInterval: NodeJS.Timeout | undefined;
 const purgeStart = setTimeout(() => {
   void purge();
   purgeInterval = setInterval(purge, DAY_MS).unref();
 }, 60_000).unref();
 
-// Fly sends SIGINT/SIGTERM on deploy: drain in-flight requests, close the pool, exit 0; a second signal or the timeout exits 1.
+// Render sends SIGTERM on deploy (D65): drain in-flight requests, close the pool, exit 0; a second signal or the timeout exits 1.
 let shuttingDown = false;
 function shutdown(signal: string): void {
   if (shuttingDown) {

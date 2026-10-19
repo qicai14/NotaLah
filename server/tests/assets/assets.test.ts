@@ -392,7 +392,7 @@ describe('Asset file access (R22)', () => {
     const orphan = await uploadOk(await insertUser());
     const fresh = await uploadOk(await insertUser());
     await pool.query(`UPDATE "ASSET_T" SET ast_created_at = NOW() - INTERVAL '2 days' WHERE ast_id <> $1`, [fresh]);
-    expect(await purgeUnlinkedAssets()).toBe(1);
+    expect(await purgeUnlinkedAssets()).toEqual({ assets: 1, orphanedFiles: 0 });
     const { rows } = await pool.query<{ ast_id: number; ast_status: string }>(
       `SELECT ast_id, ast_status FROM "ASSET_T"`,
     );
@@ -514,4 +514,14 @@ it('STO-TC14: an image put that fails (such as an R2 timeout) removes the key it
   expect(remove).toHaveBeenCalledWith(put.mock.calls[0]![0]);
   put.mockRestore();
   remove.mockRestore();
+});
+
+it('DEP-TC10: a file the purge cannot remove is counted as orphaned while its row stays deleted', async () => {
+  const orphan = await uploadOk(await insertUser());
+  await pool.query(`UPDATE "ASSET_T" SET ast_created_at = NOW() - INTERVAL '2 days'`);
+  const remove = vi.spyOn(storage, 'remove').mockRejectedValueOnce(new Error('R2 delete failed with status 500'));
+  expect(await purgeUnlinkedAssets()).toEqual({ assets: 1, orphanedFiles: 1 });
+  remove.mockRestore();
+  const { rows } = await pool.query(`SELECT ast_status FROM "ASSET_T" WHERE ast_id = $1`, [orphan]);
+  expect(rows).toEqual([{ ast_status: 'deleted' }]);
 });
