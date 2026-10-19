@@ -14,7 +14,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy.
 - **User review (14 Oct):** Keep.
 
-## D2 — FR15 filter by lecturer and academic term: **rework**
+## D2 — FR15 filter by lecturer and academic term: **rework** (restored in full by the user, 14 Oct; see User review)
 - **Rework:** search results get two filters: *lecturer content* (posts authored by, or Super-Liked
   by, a lecturer) and *published date range*. "Academic term" is not modelled as an entity; APU
   intakes and terms differ per programme, so a date range expresses the same need without a term
@@ -24,7 +24,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy (filters are query parameters).
 - **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR. Shape confirmed 14 Oct: the lecturer filter also offers one named lecturer.
 
-## D3 — FR17 background audio on slide notes: **cut (future work)**
+## D3 — FR17 background audio on slide notes: ~~cut~~ **restored by the user, 14 Oct** (Jamendo, D43)
 - **Alternatives:** keep as Sprint 4 stretch; rework as a link to external audio.
 - **Why:** lowest-supported feature (53.1% useful, 18.8% below moderate, IR §3.3.3.3 already flags it
   as deferrable). It needs file upload, storage, size limits and copyright moderation of audio, none of
@@ -33,7 +33,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Medium (adds an upload pipeline later; schema change is one nullable column).
 - **User review (14 Oct):** **Reverse.** FR17 is built. The author searches Deezer from the editor (through a server proxy: the Deezer API needs no key but sends no CORS headers) and attaches one track; the note stores provider, track id, title, artist and cover only, with no audio stored on our side. The slide viewer loops the 30-second preview behind the slides with a play/pause control; the preview URL is signed and expires, so it is fetched fresh when the note plays. If Deezer is unreachable the note works without audio. 30-second previews are acceptable (user). Alternatives considered: own upload (storage and copyright moderation), Spotify (new apps get no preview URLs, playback only through the visible embed), MusicBrainz (metadata only, no audio), YouTube (quota of about 100 searches a day; its policies forbid audio-only playback).
 
-## D4 — FR18 peer/lecturer annotation of notes: **cut (covered by comments)**
+## D4 — FR18 peer/lecturer annotation of notes: ~~cut~~ **restored by the user, 14 Oct** (text-anchored, R10)
 - **Alternatives:** inline annotations anchored to slide text ranges.
 - **Why:** proposed by one respondent and already marked "Low, deferred" in the IR. The underlying
   need (lecturer feedback on a specific note) is met by slide-referenced comments plus automatic
@@ -74,7 +74,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy.
 - **User review (14 Oct):** Keep.
 
-## D9 — "Contact" is created by an accepted message request
+## D9 — "Contact" is created by an accepted message request (superseded by follows, D38)
 - **Decision:** there is no separate friend-request feature. When a recipient accepts a message
   request (FR6), both users become contacts, and contacts-only posts (FR10) are visible to them.
 - **Alternatives:** separate add-friend flow (rejected: two approval mechanisms for one idea).
@@ -464,7 +464,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (before Chapter 4) to `…_2345`.
 - **User review (14 Oct):** Keep.
 
-## D29 — Live deployment with CI/CD (user decision, 14 Oct 2026)
+## D29 — Live deployment with CI/CD (user decision, 14 Oct 2026; host superseded by Render, D65)
 - **Decision:** the final demonstration and UAT run on a live deployment. Frontend: Cloudflare Pages on `app.<domain>`.
   Backend: Express + Socket.io on Fly.io (shared-cpu-1x, about $3/month, no cold starts) at `api.<domain>`. Database:
   Neon free Postgres. Domain: the free `.me` domain from the GitHub Student Developer Pack. Both hosts sit under one
@@ -1424,3 +1424,27 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   Not verified against a real DSN (none available).
 - **Alternatives:** keep `sendDefaultPii: false` (silently ignored in v11, so everything would be collected); stay on v10.
 - **Reversibility:** High: pin 10.75.3 and restore `sendDefaultPii: false`.
+
+## D66 - Architecture review decisions (20 Oct 2026)
+- **Context:** a read-only whole-codebase audit and a review of the planned deployment scored the code 59/100 and the
+  planned system design 55/100 across eleven quality attributes. The user decided each design question on 20 Oct.
+- **Domain:** claim the GitHub Student Pack `.me` domain before R11. The client (`app.`) and API (`api.`) must share
+  one registrable domain, because `pages.dev` and `onrender.com` are on the Public Suffix List and the SameSite=Lax
+  login cookie would never reach the API.
+- **Video (R40):** uploads return at once with status `processing`; a Postgres job table and worker loop transcode
+  (inside the API on the free tier, a separate worker later with no code change). `VIDEO_PROFILE=free` stream-copies
+  compatible MP4 and otherwise re-encodes at most 720p, one job at a time; `standard` allows 1080p and several jobs.
+  The editor shows the limits as a disclaimer, and Chapter 6 records the scale-up path.
+- **Public media:** media of public notes is served from a CDN-cached public R2 custom domain; friends-only and draft
+  media stay behind the API's visibility checks.
+- **AI vendors:** keep Groq (R28), Gemini Flash-Lite (R35) and Workers AI Whisper (R36); users are told that
+  Gemini's free tier may use uploads.
+- **R27** becomes live-site evidence: a k6 load test for NFR1, a keep-awake ping within Render's 750 free hours
+  (after checking Render's terms) and one Neon restore drill. Two-instance scale-out is future work.
+- **Follow-ups logged in PLAN:** R37 deploy readiness, R38 clean-up, R39 feed payload, R40 video pipeline.
+- **Housekeeping:** wireframes v3 (generator, SVG, PNG) moved to the report repo (`FYP_Submissions/wireframes/`);
+  placeholder feature READMEs, `docs/PROGRESS.md` and `docs/system-design-review.html` deleted; `docs/README.md`
+  indexes the docs; nested `client/CLAUDE.md` and `server/CLAUDE.md` added.
+- **Alternatives:** proxy `/api` through Cloudflare without a domain; keep 1080p synchronous transcoding; stream all
+  media through the API; drop R27.
+- **Reversibility:** High for all items; none changes an FR or the fixed stack.
