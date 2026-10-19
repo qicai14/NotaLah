@@ -1331,7 +1331,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Context:** D47 added Vite+ 1.3.0 on top of npm workspaces, `tsc` builds, `concurrently` and npm pre-hooks, with
   type-aware lint off because the CommonJS server tsconfig was rejected by tsgolint. The user approved finishing the move
   on 20 Oct. No app behaviour changes.
-- **What changed:** pnpm 12.9.1 workspaces with a catalog for `vite`/`vitest`/`vite-plus`; the server is ESM and built by
+- **What changed:** pnpm 12.14.0 workspaces with a catalog for `vite`/`vitest`/`vite-plus`; the server is ESM and built by
   `vp pack` (tsdown); `shared` is built by `vp pack` (ESM plus `.d.ts`); `vp check` runs format, lint, type-aware lint and
   the type check; tests import from `vite-plus/test` and Vitest comes only through Vite+ (pinned 5.0.5); `run.tasks`
   replace npm scripts, `concurrently` and the pre-hooks; git hooks run `vp check --fix` on staged JS/TS; CI uses
@@ -1343,8 +1343,8 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Vite+ features used:** `vp migrate --full` (catalog, overrides, import rewrite, hooks); `vp check` with `typeAware`
   and `typeCheck`; Vite Task cache locally (`run.tasks`, `dependsOn`, `cache.env`, `untrackedEnv`, `cache: false` for the
   DB-backed server tests) and in CI (`actions/cache` restore/save of `node_modules/.vite/task-cache`); `vp hooks` with a
-  `staged` block; `vp pack` for `shared` and the server; `vp env pin` (`.node-version` 24.21.0, `packageManager`
-  pnpm@12.9.1); VS Code settings for the Vite+ extension pack with Oxc as formatter and fixer; Vite 8
+  `staged` block; `vp pack` for `shared` and the server; `vp env pin` (`.node-version` 24.22.0, `packageManager`
+  pnpm@12.14.0); VS Code settings for the Vite+ extension pack with Oxc as formatter and fixer; Vite 8
   `resolve.tsconfigPaths` in the client.
 - **Timings (median of 3, seconds, same machine):**
 
@@ -1357,6 +1357,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   | Build | 13.35 (included `tsc --noEmit`) | 3.35 (types moved to check) | 0.94 |
   | Dev cold start to ready | 3.35 | 2.31 | - |
 
+- **Version policy (user, 20 Oct):** newest releases, exact pins, pnpm `minimumReleaseAge` 3 days (4320 minutes) for npm
+  packages, Vite+ toolchain excluded (`vite-plus`, `vite`, `vitest`, `@voidzero-dev/*`, oxlint, oxfmt, tsdown, rolldown);
+  Node on the newest LTS (24.22.0). Patch and minor updates from `vp outdated -r` were applied; majors left for a
+  decision: `@sentry/node` 10.75.3 → 11.8.0, `typescript` 5.9.3 → 7.0.2, `@types/node` 24.19.2 → 26.6.5 (tracks Node 26).
 - **CI check uncached:** CI runs `vp run --no-cache check`, because it is not proven that the task fingerprint covers every file tsgolint reads; build and client tests stay cached.
 - **IR stack:** unchanged. Vite (8.3.4 inside Vite+) is still the bundler and dev server for the React + TypeScript +
   Tailwind client, Vitest still runs the tests, and the server is still Node.js + Express + PostgreSQL + Socket.io with

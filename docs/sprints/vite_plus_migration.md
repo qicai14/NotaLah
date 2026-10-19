@@ -60,10 +60,14 @@ Branch `chore/vite-plus-native` (D61). The toolchain now runs on Vite+ end to en
   `vitest` and `vite-plus` into a pnpm catalog with `vite@*`/`vitest@*` overrides, rewrote 52 test files to import from
   `vite-plus/test`, added the `.vite-hooks/pre-commit` hook (`vp staged`) and a `staged` block. It wrote no editor files,
   so `.vscode/` was added by hand. Agent files were declined (`--no-agent`).
-- pnpm 12.9.1 workspaces (`pnpm-workspace.yaml`), `workspace:*` for `@parp/shared`, `pnpm-lock.yaml` from `vp install`.
+- pnpm 12.14.0 workspaces (`pnpm-workspace.yaml`), `workspace:*` for `@parp/shared`, `pnpm-lock.yaml` from `vp install`.
   Only `esbuild` needs its install script (`allowBuilds`); sharp 0.35 and dbmate ship prebuilt binaries with no script.
-  Node 24.21.0 is pinned in `.node-version` and pnpm in `packageManager` by `vp env pin`; `engines.node` is `^24.15.0`.
-  Node 24.22.0 and pnpm 12.10+ were under two weeks old on 20 Oct, so the previous releases were pinned.
+  Node 24.22.0 (newest LTS) is pinned in `.node-version` and pnpm in `packageManager` by `vp env pin`; `engines.node` is
+  `^24.22.0`. Version policy (user, 20 Oct): newest releases, exact pins, pnpm `minimumReleaseAge` 3 days for npm
+  packages with the Vite+ toolchain excluded; this replaces the two-week rule. The guard rejected one transitive jsdom
+  dependency (`@asamuzakjp/css-color` 7.1.7, published 17 Oct), which now resolves to 7.1.6. Patch and minor updates were
+  applied (React 19.3.1, Express 5.3.0, tiptap 3.32.0 with its overrides, radix-ui 1.8.1, lucide-react 1.58.0, zod 4.6.7,
+  pino 10.4.0, sanitize-html 2.18.1 and others).
 - Server is ESM (`"type": "module"`, `moduleResolution: bundler`), built by `vp pack` (tsdown) unbundled into `dist/`.
   `__dirname` became `import.meta.dirname`, `require.main === module` became `import.meta.main`. `node dist/server.js`
   starts and `/api/health` answers `{"status":"ok","db":"up"}`.
@@ -80,7 +84,7 @@ Branch `chore/vite-plus-native` (D61). The toolchain now runs on Vite+ end to en
   `vp run dev` builds shared, then runs shared watch, server and client in parallel. Shared watch uses `--no-clean`,
   because cleaning `dist/` on start crashed the server with `ERR_MODULE_NOT_FOUND`.
 - Client: `resolve.tsconfigPaths` replaces the hand-written `@` alias; there are no `rollupOptions` or `manualChunks`.
-- CI: `voidzero-dev/setup-vp@v1.21.1` (21 Sep; v1.21.2 was under two weeks old), Vite Task cache restore and save,
+- CI: `voidzero-dev/setup-vp` v1.21.2 pinned by commit SHA, Vite Task cache restore and save,
   `pnpm audit --prod --audit-level high`. First run on the branch: green in 2m49s.
 
 ### Timings, 20 Oct

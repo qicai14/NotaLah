@@ -9,9 +9,9 @@ catalog:
 overrides:
   vite@*: 'catalog:'
   vitest@*: 'catalog:'
-  '@tiptap/core': 3.31.3
-  '@tiptap/extension-bubble-menu': 3.31.3
-  '@tiptap/extension-floating-menu': 3.31.3
+  '@tiptap/core': 3.32.0
+  '@tiptap/extension-bubble-menu': 3.32.0
+  '@tiptap/extension-floating-menu': 3.32.0
 peerDependencyRules:
   allowAny:
     - vite
@@ -21,3 +21,18 @@ peerDependencyRules:
     vitest: '*'
 allowBuilds:
   esbuild: true
+# Supply-chain guard: npm releases must be 3 days old (minutes); the Vite+ toolchain stays on its newest release.
+minimumReleaseAge: 4320
+minimumReleaseAgeExclude:
+  - vite-plus
+  - vite
+  - vitest
+  - '@voidzero-dev/*'
+  - 'oxlint*'
+  - '@oxlint/*'
+  - '@oxlint-tsgolint/*'
+  - 'oxfmt'
+  - '@oxfmt/*'
+  - tsdown
+  - rolldown
+  - '@rolldown/*'
