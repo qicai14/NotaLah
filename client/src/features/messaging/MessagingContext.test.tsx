@@ -137,13 +137,28 @@ describe('messaging provider', () => {
     expect(screen.getByText('chats 1 unread 2')).toBeTruthy();
   });
 
-  it('DEP-TC9: a socket the server cut (token expiry) reconnects; a dropped transport is left to socket.io', async () => {
+  it('DEP-TC9: a socket the server cut (token expiry) reconnects after 1-3 s; a dropped transport is left to socket.io; logout cancels', async () => {
     signedIn = sam;
-    render(tree());
+    const view = render(tree());
     await act(async () => sockets[0]!.fire('connect'));
-    sockets[0]!.fire('disconnect', 'transport close');
-    expect(sockets[0]!.connects).toBe(0);
-    sockets[0]!.fire('disconnect', 'io server disconnect');
-    expect(sockets[0]!.connects).toBe(1);
+    vi.useFakeTimers();
+    try {
+      sockets[0]!.fire('disconnect', 'transport close');
+      vi.advanceTimersByTime(5000);
+      expect(sockets[0]!.connects).toBe(0);
+      sockets[0]!.fire('disconnect', 'io server disconnect');
+      vi.advanceTimersByTime(999);
+      expect(sockets[0]!.connects).toBe(0);
+      vi.advanceTimersByTime(2001);
+      expect(sockets[0]!.connects).toBe(1);
+
+      sockets[0]!.fire('disconnect', 'io server disconnect');
+      signedIn = null;
+      view.rerender(tree());
+      vi.advanceTimersByTime(5000);
+      expect(sockets[0]!.connects).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
