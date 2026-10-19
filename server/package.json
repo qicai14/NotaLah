@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@notalah/shared": "workspace:*",
-    "@sentry/node": "10.75.3",
+    "@sentry/node": "11.8.0",
     "aws4fetch": "1.0.20",
     "bcryptjs": "3.0.3",
     "cors": "2.8.6",

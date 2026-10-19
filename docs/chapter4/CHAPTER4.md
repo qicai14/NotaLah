@@ -623,55 +623,55 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 # 4.4 Interface Design
 
-	The wireframes below were produced before implementation to fix the layout and navigation of NotaLah. There are 57 screens: 49 desktop screens at 1440 by 900 pixels and 8 mobile screens at 390 by 844 pixels for the views most affected by NFR2. They are deliberately low fidelity and greyscale: avatars, slides and images are crossed placeholders, descriptive copy is lorem ipsum, and only navigation icons remain, so that review concentrates on layout, hierarchy and flow rather than visual styling. The layout follows TikTok on the web and on phones, because the target users already know where the feed, the action buttons, the comments and the inbox sit, and the slide editor follows Canva for the same reason. Every screen is generated from one source (`docs/chapter4/wireframes/screens.mjs`, rendered by `build.mjs`) as an editable vector SVG that imports into Figma, with a PNG copy used for the figures below, so a change agreed with the supervisor is applied consistently everywhere. Each screen is traced to the use cases in Section 4.2 and to the functional requirements and later additions (R-items) it covers; the full mapping is listed in `docs/chapter4/wireframes/INDEX.md`.
+	The wireframes below were produced before implementation to fix the layout and navigation of NotaLah. There are 57 screens: 49 desktop screens at 1440 by 900 pixels and 8 mobile screens at 390 by 844 pixels for the views most affected by NFR2. They are deliberately low fidelity and greyscale: avatars, slides and images are crossed placeholders, descriptive copy is lorem ipsum, and only navigation icons remain, so that review concentrates on layout, hierarchy and flow rather than visual styling. The layout follows TikTok on the web and on phones, because the target users already know where the feed, the action buttons, the comments and the inbox sit, and the slide editor follows Canva for the same reason. Every screen is generated from one source (`FYP_Submissions/wireframes/screens.mjs`, rendered by `build.mjs`) as an editable vector SVG that imports into Figma, with a PNG copy used for the figures below, so a change agreed with the supervisor is applied consistently everywhere. Each screen is traced to the use cases in Section 4.2 and to the functional requirements and later additions (R-items) it covers; the full mapping is listed in `FYP_Submissions/wireframes/INDEX.md`.
 
 ## 4.4.1 Guest and account screens
 
 	These screens cover the Welcome page, registration and login (UC01, UC02) and what a signed-out guest can see and do (R31).
 
-![Welcome page](wireframes/png/01_welcome.png)
+![Welcome page](../../../FYP_Submissions/wireframes/png/01_welcome.png)
 
 *Figure 4.14: Welcome page*
 
 	The Welcome page is the first screen for a signed-out visitor. It states what NotaLah is in one heading and one sentence and offers three actions of equal reach: Browse as guest, Log in and Register. Browse as guest opens the public feed without an account (R31), while the other two open the dialogs for UC01 and UC02. The box on the right stands for a phone preview of the feed.
 
-![Register dialog](wireframes/png/02_register.png)
+![Register dialog](../../../FYP_Submissions/wireframes/png/02_register.png)
 
 *Figure 4.15: Register dialog*
 
 	Registration (UC01) opens as a dialog over the Welcome page, so the visitor keeps the context of the product. A Student or Lecturer switch sits at the top; the Lecturer state is shown because it adds a staff ID field, and lecturer features stay locked until an administrator approves the application (UC22). Programme is picked from a list rather than typed, which keeps profile values consistent for search.
 
-![Log in dialog (error state)](wireframes/png/03_login.png)
+![Log in dialog (error state)](../../../FYP_Submissions/wireframes/png/03_login.png)
 
 *Figure 4.16: Log in dialog (error state)*
 
 	The login dialog (UC02) is shown in its error state. One message under the password field says that the email or password is incorrect without saying which, so the form does not reveal which accounts exist. The password field has a Show control, accepts pasted input for password managers and is the same size as the email field. A link at the bottom switches to Register.
 
-![Guest feed](wireframes/png/04_guest-feed.png)
+![Guest feed](../../../FYP_Submissions/wireframes/png/04_guest-feed.png)
 
 *Figure 4.17: Guest feed*
 
 	The guest feed is the Feed as a signed-out visitor sees it (R31, UC09). Only public notes appear, the Following tab is absent and the navigation offers Feed and Explore with a Log in and Register box. The card, slide dots and action rail match the signed-in feed, so the layout does not change after login; tapping Like, Comment, Save or Follow asks the visitor to log in.
 
-![Guest note view with comments](wireframes/png/05_guest-note.png)
+![Guest note view with comments](../../../FYP_Submissions/wireframes/png/05_guest-note.png)
 
 *Figure 4.18: Guest note view with comments*
 
 	A guest can open a public note and read it with its comments (R31, UC11). The slide is on the left with the action rail beside it, and the right panel lists the title, module, hashtags, the verified badge and the comment thread with its pinned lecturer comment. The comment box is replaced by "Log in to comment" with a Log in button, so reading is open but writing needs an account.
 
-![Log in / Register sheet (mobile)](wireframes/png/06_guest-auth-sheet-mobile.png)
+![Log in / Register sheet (mobile)](../../../FYP_Submissions/wireframes/png/06_guest-auth-sheet-mobile.png)
 
 *Figure 4.19: Log in / Register sheet (mobile)*
 
 	On the phone, a guest who taps Like is shown a bottom sheet instead of being sent to another page (R31, UC01, UC02, UC10). The sheet names the action that needs an account and offers Log in, Register and Not now. After logging in the visitor returns to the same note, so the action can be completed without searching for it again.
 
-![Guest search results](wireframes/png/07_guest-search.png)
+![Guest search results](../../../FYP_Submissions/wireframes/png/07_guest-search.png)
 
 *Figure 4.20: Guest search results*
 
 	Guests can search public content (R31, UC14, FR4). The results use the same tabs as the signed-in search (Top, Notes, People, Hashtags, Modules) and a short filter row, and the result count states that only public notes are included. People appear with Follow buttons and notes as tiles with like counts; any action on them opens the log in sheet.
 
-![Guest view of a public profile](wireframes/png/08_guest-profile.png)
+![Guest view of a public profile](../../../FYP_Submissions/wireframes/png/08_guest-profile.png)
 
 *Figure 4.21: Guest view of a public profile*
 
@@ -681,61 +681,61 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover the ranked feed, comments, annotations, the ranking explanation, saving, reporting and the lecturer Super Like (UC09 to UC13, UC19).
 
-![Ranked feed (desktop)](wireframes/png/09_feed.png)
+![Ranked feed (desktop)](../../../FYP_Submissions/wireframes/png/09_feed.png)
 
 *Figure 4.22: Ranked feed (desktop)*
 
 	The ranked Feed is the home screen after login (UC09, FR11). One note fills the centred card, with a dot indicator at the bottom of the slide, the "Verified by Dr Lee" badge (FR2) and a "Why this note?" button at the top. The caption gives author, title, hashtags, module and the background track (FR17), and the rail on the right holds Follow, Like, Comment, Save, Share and More.
 
-![Feed, collapsed nav, lecturer view](wireframes/png/10_feed-collapsed.png)
+![Feed, collapsed nav, lecturer view](../../../FYP_Submissions/wireframes/png/10_feed-collapsed.png)
 
 *Figure 4.23: Feed, collapsed nav, lecturer view*
 
 	This screen shows the navigation collapsed to an icon rail and a widescreen 16:9 note letterboxed inside the vertical card, with arrows and the slide dots below it (UC09, FR1). It is the lecturer view, so the rail adds a Super Like control above Like (UC19). The collapsed rail keeps every destination one click away while giving the card more room.
 
-![Feed with comments panel](wireframes/png/11_feed-comments.png)
+![Feed with comments panel](../../../FYP_Submissions/wireframes/png/11_feed-comments.png)
 
 *Figure 4.24: Feed with comments panel*
 
 	Comments open as a panel beside the note rather than on a new page, so the slide stays visible while reading (UC11, FR16). The lecturer's comment is pinned at the top, replies are one level deep with "View more replies", and typing @ in the comment box opens a picker of thread participants and friends. Each comment shows its age, a Reply link and a like count.
 
-!["Why this note?" ranking panel](wireframes/png/12_feed-ranking.png)
+!["Why this note?" ranking panel](../../../FYP_Submissions/wireframes/png/12_feed-ranking.png)
 
 *Figure 4.25: "Why this note?" ranking panel*
 
 	"Why this note?" opens a panel that explains the ranking for the note on screen (FR3, NFR5, UC09). It lists the four parts of the score (engagement, recency, lecturer validation and hashtag match), each with its value, weight and product, and the total at the bottom. This makes the deterministic heuristic visible to users and gives the tuning after UAT a screen to check against.
 
-![Ranked feed (mobile)](wireframes/png/13_feed-mobile.png)
+![Ranked feed (mobile)](../../../FYP_Submissions/wireframes/png/13_feed-mobile.png)
 
 *Figure 4.26: Ranked feed (mobile)*
 
 	The phone feed follows the TikTok mobile layout (UC09, FR11, NFR2). Feed and Following tabs sit at the top with menu and search, the verified badge and "Why?" sit above the slide, and the slide dots are at its bottom edge. The action rail floats on the right and the caption sits under the slide, with the tab bar for Home, Discover, Create, Inbox and Profile at the bottom.
 
-![Comments sheet (mobile)](wireframes/png/14_comments-mobile.png)
+![Comments sheet (mobile)](../../../FYP_Submissions/wireframes/png/14_comments-mobile.png)
 
 *Figure 4.27: Comments sheet (mobile)*
 
 	On the phone, comments open as a bottom sheet over the note (UC11, FR16, NFR2). The sheet shows the comment count, the pinned lecturer comment, a reply thread and a comment field with an @ control at the bottom. Dismissing the sheet returns to the same note and slide, so reading comments does not lose the reader's place in the feed.
 
-![Note detail with annotations](wireframes/png/15_note-detail.png)
+![Note detail with annotations](../../../FYP_Submissions/wireframes/png/15_note-detail.png)
 
 *Figure 4.28: Note detail with annotations*
 
 	The note detail view is for reading a note closely with annotations (FR18, UC11). Selecting text on the slide shows an Annotate and Copy menu; each annotation is anchored to the selected text and numbered on the slide. The right panel lists the annotations for the current slide with the quoted text, author, body and Reply and Report links, and the slide dots show the position in the note.
 
-![Saved notes](wireframes/png/40_saved.png)
+![Saved notes](../../../FYP_Submissions/wireframes/png/40_saved.png)
 
 *Figure 4.29: Saved notes*
 
 	Saved lists the notes the user has bookmarked, visible only to that user (UC13, FR14). Chips at the top group the saved notes by module with a count for each, and a sort menu orders them by when they were saved. Each tile shows the title, the author and how long ago it was saved, so a revision list can be built per module.
 
-![Report note dialog](wireframes/png/41_report-dialog.png)
+![Report note dialog](../../../FYP_Submissions/wireframes/png/41_report-dialog.png)
 
 *Figure 4.30: Report note dialog*
 
 	Reporting a note opens a dialog with a list of reasons and an optional details field with a character limit (UC12). Two reasons, plagiarism and copyright violation, are marked Lecturers only because they need subject knowledge to judge. The reporter stays anonymous to the author, and the report goes to the administrator queue shown in Figure 4.65.
 
-![Super Like (verify) dialog](wireframes/png/42_superlike-dialog.png)
+![Super Like (verify) dialog](../../../FYP_Submissions/wireframes/png/42_superlike-dialog.png)
 
 *Figure 4.31: Super Like (verify) dialog*
 
@@ -745,43 +745,43 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover co-authored notes, collaboration requests, sharing, the editing soft lock and re-verification after an edit (R30).
 
-![Co-authored note card](wireframes/png/16_coauthor-note.png)
+![Co-authored note card](../../../FYP_Submissions/wireframes/png/16_coauthor-note.png)
 
 *Figure 4.32: Co-authored note card*
 
 	A co-authored note credits its owner and co-authors on the card (R30, UC09). The caption names the owner, Melvin Chen, and adds "with Lim Qi Cai and Brosnan Wong", and the rail stacks the three avatars in place of the single follow avatar. The note appears in the Following feed of each co-author's followers, which is the tab shown here.
 
-![Request to collaborate](wireframes/png/17_request-collab.png)
+![Request to collaborate](../../../FYP_Submissions/wireframes/png/17_request-collab.png)
 
 *Figure 4.33: Request to collaborate*
 
 	Any viewer can ask to become a co-author from a note's More menu (R30). The menu offers Request to collaborate, Copy link and Report, and the request dialog shows the note being requested, a short explanation and an optional message to the owner with a character count. Sending the request creates a notification for the owner, who decides on it as shown in Figure 4.38.
 
-!["Edited since verification" state](wireframes/png/18_edited-since-verification.png)
+!["Edited since verification" state](../../../FYP_Submissions/wireframes/png/18_edited-since-verification.png)
 
 *Figure 4.34: "Edited since verification" state*
 
 	When a verified note's content is edited, the badge changes to "Edited since verification" (R30, FR1, FR2, UC19). The lecturer who verified it sees a panel with the original Super Like date and the edit date, and can either Remove Super Like or Re-confirm. The rail's Super Like control reads Re-confirm until a decision is made, so an edit cannot silently keep a verification.
 
-![Share dialog (owner)](wireframes/png/27_share-dialog.png)
+![Share dialog (owner)](../../../FYP_Submissions/wireframes/png/27_share-dialog.png)
 
 *Figure 4.35: Share dialog (owner)*
 
 	The owner shares a note from the editor's Share button (R30, UC08). People are invited by name or username as viewers or editors, and the list of people with access shows each person's role and how they joined. The view link and edit link can each be turned on or off, copied, and for the edit link regenerated or revoked, so access can be withdrawn later.
 
-![Editor soft lock (co-author view)](wireframes/png/28_editor-locked.png)
+![Editor soft lock (co-author view)](../../../FYP_Submissions/wireframes/png/28_editor-locked.png)
 
 *Figure 4.36: Editor soft lock (co-author view)*
 
 	When a co-author opens a note that someone else is editing, the editor is read-only (R30, UC08). A banner names the person editing and offers Notify me, the tools and slide size menu are dimmed, and a panel lists who is on the note now. Publish is dimmed with the tip "Only the owner can publish", because publishing and visibility stay with the owner.
 
-![Editor soft lock (owner publishes)](wireframes/png/29_editor-locked-owner.png)
+![Editor soft lock (owner publishes)](../../../FYP_Submissions/wireframes/png/29_editor-locked-owner.png)
 
 *Figure 4.37: Editor soft lock (owner publishes)*
 
 	The owner sees the same soft lock when a co-author is editing, but Publish stays available (R30, UC07, FR10). Opening it shows a menu to publish the last saved version and choose who can see it, Public or Friends only, with a note that the co-author's unsaved changes are not included. This lets the owner publish without waiting for the editing session to end.
 
-![Owner approves or declines a request](wireframes/png/44_collab-request-notification.png)
+![Owner approves or declines a request](../../../FYP_Submissions/wireframes/png/44_collab-request-notification.png)
 
 *Figure 4.38: Owner approves or declines a request*
 
@@ -791,55 +791,55 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover the Canva-style slide editor, publishing and drafts (UC05 to UC07, FR8, FR10, FR17).
 
-![Editor: templates on an empty note](wireframes/png/19_editor-templates.png)
+![Editor: templates on an empty note](../../../FYP_Submissions/wireframes/png/19_editor-templates.png)
 
 *Figure 4.39: Editor: templates on an empty note*
 
 	The slide editor follows the Canva layout (UC05, FR8). The top bar holds Home, the note title, save status, undo and redo, the slide size menu, Preview, Share, Save draft and Publish. The left rail switches panels, and this screen shows Templates on an empty note: slide layouts for the current slide and deck themes for all slides, with the thumbnail strip and zoom below the workspace.
 
-![Editor: text selected, curated fonts](wireframes/png/20_editor-text.png)
+![Editor: text selected, curated fonts](../../../FYP_Submissions/wireframes/png/20_editor-text.png)
 
 *Figure 4.40: Editor: text selected, curated fonts*
 
 	This screen shows a text box selected on the slide, with resize handles, a rotate handle and a centre guide (UC05, FR8). A toolbar above the workspace holds font, size, colour, bold, italic, underline, strike, alignment, list, spacing, effects, position, lock, copy and delete. The font menu offers a short curated list, and the Text panel adds headings, body text and text presets.
 
-![Editor: photos and image tools](wireframes/png/21_editor-photos.png)
+![Editor: photos and image tools](../../../FYP_Submissions/wireframes/png/21_editor-photos.png)
 
 *Figure 4.41: Editor: photos and image tools*
 
 	The Photos panel searches stock images and inserts them with an automatic credit line on the image (UC05, FR8). The selected image shows its handles and an image toolbar with Replace, Crop, Flip, Transparency, Effects, Position, Lock, Copy and Delete. The Transparency control is open as a slider with a value field, and the panel footer states where the photos come from.
 
-![Editor: background music](wireframes/png/22_editor-music.png)
+![Editor: background music](../../../FYP_Submissions/wireframes/png/22_editor-music.png)
 
 *Figure 4.42: Editor: background music*
 
 	The Music panel lets the author attach one background track to the whole note (UC05, FR17). Search results list title, artist and a 30-second preview with Use or Added, and the track on the note has a volume slider and a delete control. A small player on the slide shows the current track; the catalogue source is shown next to the results heading.
 
-![Editor: elements, shapes and slide size](wireframes/png/23_editor-elements.png)
+![Editor: elements, shapes and slide size](../../../FYP_Submissions/wireframes/png/23_editor-elements.png)
 
 *Figure 4.43: Editor: elements, shapes and slide size*
 
 	The Elements panel adds shapes, lines, a code block and a table to a slide (UC05, FR8). A selected shape gets a toolbar for fill, border, border width, corner radius, text, opacity, position, lock, copy and delete. The slide size menu is open from the top bar and offers 4:5 portrait, 9:16 full screen and 16:9 widescreen with Cancel and Resize.
 
-![Editor: uploads and page notes](wireframes/png/24_editor-uploads.png)
+![Editor: uploads and page notes](../../../FYP_Submissions/wireframes/png/24_editor-uploads.png)
 
 *Figure 4.44: Editor: uploads and page notes*
 
 	The Uploads panel holds the author's own images, with an Upload button and a drop area that states the accepted types and the 5 MB limit (UC05, FR8). An oversized file is shown as an inline error naming the file, so the author knows why it was not added. Page notes are open under the slide; they are private to the author and do not appear when the note is published.
 
-![Slide editor (mobile)](wireframes/png/25_editor-mobile.png)
+![Slide editor (mobile)](../../../FYP_Submissions/wireframes/png/25_editor-mobile.png)
 
 *Figure 4.45: Slide editor (mobile)*
 
 	The phone editor puts the slide first and moves the tools into a bottom tray (UC05, FR8, NFR2). The top bar keeps back, title, undo, share and Publish; the slide thumbnails sit under the slide with an add button. With a text box selected, a compact formatting row appears above the tool rail of Layouts, Elements, Text, Uploads, Photos, Music and Background.
 
-![Publish dialog](wireframes/png/26_publish-dialog.png)
+![Publish dialog](../../../FYP_Submissions/wireframes/png/26_publish-dialog.png)
 
 *Figure 4.46: Publish dialog*
 
 	Publishing opens a dialog over the editor (UC07, FR10). Visibility is chosen first from three cards of equal weight (Public, Friends only and Private draft), followed by the module, up to five hashtags, the slide size and the background music. A thumbnail of the first slide with the slide count sits on the left, and Publish confirms the choice.
 
-![Drafts](wireframes/png/30_drafts.png)
+![Drafts](../../../FYP_Submissions/wireframes/png/30_drafts.png)
 
 *Figure 4.47: Drafts*
 
@@ -849,37 +849,37 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover own and other users' profiles, profile editing and blocking (UC04, UC17).
 
-![My profile](wireframes/png/31_my-profile.png)
+![My profile](../../../FYP_Submissions/wireframes/png/31_my-profile.png)
 
 *Figure 4.48: My profile*
 
 	The user's own profile shows the name, username, programme, counts and bio, with Edit profile, Drafts, Share and Settings (UC04). The tabs switch between the user's notes, saved notes and liked notes. Tiles carry small labels for Pinned, Verified, Friends only and Co-authored, so the visibility and status of each note can be read from the grid.
 
-![Another user's profile (friends)](wireframes/png/32_user-profile.png)
+![Another user's profile (friends)](../../../FYP_Submissions/wireframes/png/32_user-profile.png)
 
 *Figure 4.49: Another user's profile (friends)*
 
 	Another user's profile is shown in the Friends state, which applies when both users follow each other (UC04, UC17). The button reads Friends with a menu, next to Message, Share and More. Because the viewer is a friend, the grid includes a note labelled Friends only that other users cannot see, which shows the FR10 visibility rule on a profile.
 
-![Block a user (More menu and confirm)](wireframes/png/33_block-user.png)
+![Block a user (More menu and confirm)](../../../FYP_Submissions/wireframes/png/33_block-user.png)
 
 *Figure 4.50: Block a user (More menu and confirm)*
 
 	Blocking starts from a profile's More menu, which also offers Share profile and Report account (Sprint 4 blocking, UC04). Choosing Block opens a confirmation that lists its effects: neither user can follow, message or send a message request to the other, the blocked user cannot see, like or comment on the blocker's notes, and follows are removed both ways.
 
-![Blocked profile state](wireframes/png/34_blocked-profile.png)
+![Blocked profile state](../../../FYP_Submissions/wireframes/png/34_blocked-profile.png)
 
 *Figure 4.51: Blocked profile state*
 
 	After blocking, the profile shows the name and programme but hides the counts, bio and notes (Sprint 4 blocking, UC04). A short message explains what the block does and an Unblock button is shown at the top and in the message. Follow and Message are removed, matching the server rule that a blocked pair cannot interact.
 
-![Edit profile dialog](wireframes/png/35_edit-profile.png)
+![Edit profile dialog](../../../FYP_Submissions/wireframes/png/35_edit-profile.png)
 
 *Figure 4.52: Edit profile dialog*
 
 	Edit profile is a single dialog over the user's profile (UC04). It holds the profile photo with an edit control and its size limit, the display name, the username with a rule about allowed characters, the programme picked from a list and a bio with a character count. Cancel and Save sit at the bottom, and the profile behind shows where the changes will appear.
 
-![Profile (mobile)](wireframes/png/36_profile-mobile.png)
+![Profile (mobile)](../../../FYP_Submissions/wireframes/png/36_profile-mobile.png)
 
 *Figure 4.53: Profile (mobile)*
 
@@ -889,19 +889,19 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover search results and filters on desktop and phone (UC14, FR4, FR5, FR12, FR15).
 
-![Search results (Top)](wireframes/png/37_search.png)
+![Search results (Top)](../../../FYP_Submissions/wireframes/png/37_search.png)
 
 *Figure 4.54: Search results (Top)*
 
 	Search results open on the Top tab, which mixes people, hashtags, modules and notes for the query (UC14, FR4, FR5, FR12). The filter row under the tabs shows the active filters as chips with the result count and the time taken, which supports the response time requirement. People show their relationship to the user, such as Friends, Following or Follow back.
 
-![Search filters](wireframes/png/38_search-filters.png)
+![Search filters](../../../FYP_Submissions/wireframes/png/38_search-filters.png)
 
 *Figure 4.55: Search filters*
 
 	The filter panel sits beside the results on the Notes tab (UC14, FR15). It offers a Lecturer content only switch, a specific lecturer, an academic term, a custom date range and a module, with Reset and Show results. The academic term field is shown only when an administrator has added terms, and a help line says to use a term or a date range, not both.
 
-![Search (mobile)](wireframes/png/39_search-mobile.png)
+![Search (mobile)](../../../FYP_Submissions/wireframes/png/39_search-mobile.png)
 
 *Figure 4.56: Search (mobile)*
 
@@ -911,49 +911,49 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover notifications, the phone inbox and post-anchored messaging, including requests and groups (UC15 to UC18, R8).
 
-![Notifications drawer](wireframes/png/43_notifications.png)
+![Notifications drawer](../../../FYP_Submissions/wireframes/png/43_notifications.png)
 
 *Figure 4.57: Notifications drawer*
 
 	Notifications open as a drawer beside the collapsed navigation, with filter chips for All, Mentions, Follows, Super Likes, Requests and System (UC16, UC19, UC20, UC22, R8). Items are grouped by Today and This week and include Super Likes, mentions, collaboration requests, follows, an "edited since verification" alert with Re-confirm, lecturer approval and a hidden note notice. Message requests have their own entry at the top.
 
-![Inbox (mobile)](wireframes/png/45_inbox-mobile.png)
+![Inbox (mobile)](../../../FYP_Submissions/wireframes/png/45_inbox-mobile.png)
 
 *Figure 4.58: Inbox (mobile)*
 
 	The phone inbox combines notification groups and chats in one list (UC15, UC16, UC17, R30). The top rows are New followers, Activity, Collaboration requests, Message requests and System notifications, each with an unread count. Conversations follow under Messages with the last message and its time, and the Inbox tab shows the total unread badge.
 
-![Post-anchored chat](wireframes/png/46_messages.png)
+![Post-anchored chat](../../../FYP_Submissions/wireframes/png/46_messages.png)
 
 *Figure 4.59: Post-anchored chat*
 
 	Messaging on the desktop uses a conversation list and a chat pane (UC15, UC17, FR7, FR9). The list starts with Message requests and then shows chats with their last message. This chat began from a shared note card, which carries the note title and author, and the header shows the friend status and activity. A Seen label marks the last message the other person has read.
 
-![Chat: reply, delete, Seen, typing, image](wireframes/png/47_chat-details.png)
+![Chat: reply, delete, Seen, typing, image](../../../FYP_Submissions/wireframes/png/47_chat-details.png)
 
 *Figure 4.60: Chat: reply, delete, Seen, typing, image*
 
 	This screen shows the Sprint 4 chat details in one conversation (UC15, FR6, FR7). Selecting a message opens a menu with Reply, Copy text and Report, and Delete is added for one's own messages. The pane shows a quoted reply, a "Message deleted" placeholder, an image message, the Seen time, a typing indicator, and a reply bar above the input that can be cancelled.
 
-![Message request (recipient)](wireframes/png/48_message-request.png)
+![Message request (recipient)](../../../FYP_Submissions/wireframes/png/48_message-request.png)
 
 *Figure 4.61: Message request (recipient)*
 
 	A first message from someone who is not a friend waits as a request (UC16, FR6). The requests column lists pending senders, and the open request shows the sender's relationship to the user, the shared note card and the message. The user can Report, Delete or Accept; accepting opens the chat without a follow.
 
-![New group dialog](wireframes/png/49_new-group.png)
+![New group dialog](../../../FYP_Submissions/wireframes/png/49_new-group.png)
 
 *Figure 4.62: New group dialog*
 
 	A group is created from a dialog over the messages screen (UC18, FR13). The user enters a group name and picks at least two friends from a list with checkboxes; picked friends also appear as chips in the search field. The create button shows the member count, and a help line states the group size limit.
 
-![Group chat with details](wireframes/png/50_group-chat.png)
+![Group chat with details](../../../FYP_Submissions/wireframes/png/50_group-chat.png)
 
 *Figure 4.63: Group chat with details*
 
 	A group conversation shows each sender's name and avatar above their messages, and shared notes appear as cards in the thread (UC18, FR13). The details panel on the right lets members rename the group, see the member list with roles, add their own friends and leave the group. The creator can also remove members from each member's menu.
 
-![Chat (mobile)](wireframes/png/51_chat-mobile.png)
+![Chat (mobile)](../../../FYP_Submissions/wireframes/png/51_chat-mobile.png)
 
 *Figure 4.64: Chat (mobile)*
 
@@ -963,37 +963,37 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	These screens cover moderation, user management, lecturer approval, the module catalogue and academic terms (UC20 to UC22, FR15).
 
-![Admin: report queue](wireframes/png/52_admin-reports.png)
+![Admin: report queue](../../../FYP_Submissions/wireframes/png/52_admin-reports.png)
 
 *Figure 4.65: Admin: report queue*
 
 	The report queue lists reported notes with their report count, reasons and the age of the oldest report (UC20). The selected note opens in a detail pane with each report and its reporter, the author's earlier upheld reports and a required resolution remark. The administrator can Dismiss, Hide note, or Hide and act on the account, which leads to the user screen.
 
-![Admin: users and suspension](wireframes/png/53_admin-users.png)
+![Admin: users and suspension](../../../FYP_Submissions/wireframes/png/53_admin-users.png)
 
 *Figure 4.66: Admin: users and suspension*
 
 	The users table lists name, email, role, status, upheld reports and join date, with search and filters for students, lecturers and suspended accounts (UC21). The dialog shown suspends a user: the administrator picks Restrict posting, Suspend or Delete account and must give a reason before confirming. The upheld report count helps decide which action is proportionate.
 
-![Admin: lecturer applications](wireframes/png/54_admin-lecturers.png)
+![Admin: lecturer applications](../../../FYP_Submissions/wireframes/png/54_admin-lecturers.png)
 
 *Figure 4.67: Admin: lecturer applications*
 
 	Lecturer applications are reviewed one card at a time with the applicant's name, email, staff ID and school (UC22). Approve unlocks lecturer features such as Super Like. Reject opens a field for the reason, which is required and sent to the applicant, with Cancel and Reject application before the decision is saved.
 
-![Admin: module catalogue](wireframes/png/55_admin-modules.png)
+![Admin: module catalogue](../../../FYP_Submissions/wireframes/png/55_admin-modules.png)
 
 *Figure 4.68: Admin: module catalogue*
 
 	The module catalogue lets the administrator add a module by code and name and rename existing ones inline (UC21, R4, R5). The table shows each module's code, name and number of notes, with a Rename action per row. Renaming keeps every note linked to the module, so filing and module search are not broken by a title change.
 
-![Admin: academic terms](wireframes/png/56_admin-terms.png)
+![Admin: academic terms](../../../FYP_Submissions/wireframes/png/56_admin-terms.png)
 
 *Figure 4.69: Admin: academic terms*
 
 	The Terms page manages the academic terms used by the search term filter (FR15, Sprint 4). The form adds a term with a name, a start date and an end date, and the table lists existing terms with their dates, the number of notes in each term and Edit and Delete actions. A line at the top states that the end date must come after the start date.
 
-![Admin: terms, empty state](wireframes/png/57_admin-terms-empty.png)
+![Admin: terms, empty state](../../../FYP_Submissions/wireframes/png/57_admin-terms-empty.png)
 
 *Figure 4.70: Admin: terms, empty state*
 
