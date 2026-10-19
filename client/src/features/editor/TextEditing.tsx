@@ -1,4 +1,4 @@
-import type { TextElement } from '@parp/shared';
+import type { TextElement } from '@notalah/shared';
 import { EditorContent, useEditor as useTipTap } from '@tiptap/react';
 import { useEffect, useRef } from 'react';
 import { textBoxStyle } from '@/components/board/SlideBoard';

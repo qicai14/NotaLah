@@ -1,4 +1,4 @@
-import { CODE_LANGS, type CodeLang, FONT_IDS, type FontId, LIMITS, round1, type SlideElement } from '@parp/shared';
+import { CODE_LANGS, type CodeLang, FONT_IDS, type FontId, LIMITS, round1, type SlideElement } from '@notalah/shared';
 import {
   AlignCenter,
   AlignCenterHorizontal,

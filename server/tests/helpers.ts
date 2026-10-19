@@ -1,4 +1,4 @@
-import type { Slide, TextElement } from '@parp/shared';
+import type { Slide, TextElement } from '@notalah/shared';
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { signToken } from '../src/features/auth/passport';
@@ -48,11 +48,11 @@ export async function insertUser(u: TestUserInput = {}): Promise<number> {
 }
 
 /** CSRF header every state-changing /api request must carry (D35). */
-export const CSRF = { 'X-Requested-With': 'parp' };
+export const CSRF = { 'X-Requested-With': 'notalah' };
 
 /** Headers for an existing user id: the auth cookie plus the CSRF header. The role claim is ignored by the server. */
 export function asUser(id: number): Record<string, string> {
-  return { Cookie: `parp_token=${signToken({ id, role: 'student' } as AuthUser)}`, ...CSRF };
+  return { Cookie: `notalah_token=${signToken({ id, role: 'student' } as AuthUser)}`, ...CSRF };
 }
 
 /** A full-board text element, as the notes API stores one. */

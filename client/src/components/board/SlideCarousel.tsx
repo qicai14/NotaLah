@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Aspect } from '@parp/shared';
+import type { Aspect } from '@notalah/shared';
 import { cn } from '@/lib/utils';
 import { type BoardSlide, SlideBoard } from './SlideBoard';
 

@@ -1,4 +1,4 @@
-import { type Aspect, BOARD_WIDTH, boardHeight } from '@parp/shared';
+import { type Aspect, BOARD_WIDTH, boardHeight } from '@notalah/shared';
 import { useState } from 'react';
 import { type BoardSlide, SlideBoard } from '@/components/board/SlideBoard';
 import { Button } from '@/components/ui/button';

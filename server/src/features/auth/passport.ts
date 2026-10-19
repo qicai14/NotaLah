@@ -15,7 +15,7 @@ declare global {
 
 export const BCRYPT_COST = 12;
 export const TOKEN_TTL_SECONDS = 3600;
-export const AUTH_COOKIE = 'parp_token';
+export const AUTH_COOKIE = 'notalah_token';
 const COOKIE_PATTERN = new RegExp(String.raw`(?:^|;\s*)${AUTH_COOKIE}=([^;]+)`);
 const BLOCKED_STATUSES = new Set(['suspended', 'deleted']);
 

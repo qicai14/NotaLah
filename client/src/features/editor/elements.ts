@@ -6,7 +6,7 @@ import {
   round1,
   type SlideElement,
   type TextElement,
-} from '@parp/shared';
+} from '@notalah/shared';
 import StarterKit from '@tiptap/starter-kit';
 import { newId } from './store';
 

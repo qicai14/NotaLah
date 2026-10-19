@@ -12,7 +12,7 @@ import {
   rotateAbout,
   rotationFromPointer,
   snapMove,
-} from '@parp/shared';
+} from '@notalah/shared';
 
 const box: Box = { x: 100, y: 100, w: 200, h: 100, rotation: 0 };
 const close = (a: { x: number; y: number }, b: { x: number; y: number }) => {

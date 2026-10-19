@@ -14,7 +14,7 @@ let admin: Record<string, string>;
 beforeEach(async () => {
   await truncateAll();
   await pool.query(`DELETE FROM "MODULE_T" WHERE mod_code LIKE 'TST%'`);
-  admin = asUser(await insertUser({ role: 'admin', email: 'admin@parp.test' }));
+  admin = asUser(await insertUser({ role: 'admin', email: 'admin@notalah.test' }));
 });
 
 const post = (body: object, h = admin) => request(app).post('/api/admin/modules').set(h).send(body);

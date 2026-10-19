@@ -1,4 +1,4 @@
-import type { Aspect, Fill, SlideElement } from '@parp/shared';
+import type { Aspect, Fill, SlideElement } from '@notalah/shared';
 
 export interface ModuleRef {
   id: number;

@@ -1,7 +1,7 @@
 import { type FormEvent, type RefObject, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { COLLAB_REQUEST_MESSAGE_MAX as MAX } from '@parp/shared';
+import { COLLAB_REQUEST_MESSAGE_MAX as MAX } from '@notalah/shared';
 import { useAction } from '@/lib/useAction';
 import { api } from '../../lib/api';
 

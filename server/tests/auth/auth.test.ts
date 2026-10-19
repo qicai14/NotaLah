@@ -28,7 +28,7 @@ const register = (body: object) => request(app).post('/api/auth/register').set(C
 const login = (email: string, password: string) =>
   request(app).post('/api/auth/login').set(CSRF).send({ email, password });
 const setCookies = (res: request.Response): string[] => ([] as string[]).concat(res.headers['set-cookie'] ?? []);
-const tokenFrom = (res: request.Response): string => setCookies(res)[0].match(/^parp_token=([^;]+)/)![1];
+const tokenFrom = (res: request.Response): string => setCookies(res)[0].match(/^notalah_token=([^;]+)/)![1];
 const userCount = async () => Number((await pool.query('SELECT COUNT(*) FROM "USER_T"')).rows[0].count);
 
 describe('POST /api/auth/register', () => {
@@ -170,7 +170,7 @@ describe('POST /api/auth/login', () => {
 
     const me = await request(app)
       .get('/api/auth/me')
-      .set('Cookie', `parp_token=${tokenFrom(res)}`);
+      .set('Cookie', `notalah_token=${tokenFrom(res)}`);
     expect(me.status).toBe(200);
     expect(me.body.user).toMatchObject({ email: 'test1@mail.apu.edu.my', displayName: 'Test Student' });
   });
@@ -182,7 +182,7 @@ describe('protected routes', () => {
     const token = tokenFrom(await login('test1@mail.apu.edu.my', 'Passw0rd!'));
     const me = (jwtValue?: string) => {
       const r = request(app).get('/api/auth/me');
-      return jwtValue ? r.set('Cookie', `parp_token=${jwtValue}`) : r;
+      return jwtValue ? r.set('Cookie', `notalah_token=${jwtValue}`) : r;
     };
 
     expect((await me()).status).toBe(401);
@@ -217,7 +217,7 @@ describe('protected routes', () => {
   });
 
   it('AUTH-TC12: a bearer header alone is rejected with 401', async () => {
-    const token = asUser(await insertUser()).Cookie.slice('parp_token='.length);
+    const token = asUser(await insertUser()).Cookie.slice('notalah_token='.length);
     const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: 'Unauthorized' });
@@ -241,7 +241,7 @@ describe('auth cookie and CSRF (D35)', () => {
     expect(res.body.token).toBeUndefined();
     expect(JSON.stringify(res.body)).not.toContain(tokenFrom(res));
     const cookie = setCookies(res)[0];
-    expect(cookie).toMatch(/^parp_token=[^;]+; Max-Age=3600; Path=\/; Expires=[^;]+; HttpOnly; SameSite=Lax$/);
+    expect(cookie).toMatch(/^notalah_token=[^;]+; Max-Age=3600; Path=\/; Expires=[^;]+; HttpOnly; SameSite=Lax$/);
 
     const reg = await register({ ...student, email: 'new@mail.apu.edu.my' });
     expect(reg.status).toBe(201);
@@ -250,17 +250,17 @@ describe('auth cookie and CSRF (D35)', () => {
   });
 
   it('AUTH-TC13: logout clears the cookie with 204, even when the token is invalid', async () => {
-    const valid = `parp_token=${tokenFrom(await login('test1@mail.apu.edu.my', 'Passw0rd!'))}`;
-    for (const cookie of [valid, 'parp_token=garbage']) {
+    const valid = `notalah_token=${tokenFrom(await login('test1@mail.apu.edu.my', 'Passw0rd!'))}`;
+    for (const cookie of [valid, 'notalah_token=garbage']) {
       const res = await request(app).post('/api/auth/logout').set(CSRF).set('Cookie', cookie);
       expect(res.status).toBe(204);
       expect(setCookies(res)[0]).toBe(
-        'parp_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax',
+        'notalah_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax',
       );
     }
   });
 
-  it('AUTH-TC14: a state-changing request without X-Requested-With: parp gets 403', async () => {
+  it('AUTH-TC14: a state-changing request without X-Requested-With: notalah gets 403', async () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({ email: 'test1@mail.apu.edu.my', password: 'Passw0rd!' });
@@ -279,11 +279,11 @@ describe('auth cookie and CSRF (D35)', () => {
     expect((await request(app).get('/api/auth/me').set('Cookie', Cookie)).status).toBe(200);
   });
 
-  it('AUTH-TC16: reads only the exact parp_token cookie among several', async () => {
+  it('AUTH-TC16: reads only the exact notalah_token cookie among several', async () => {
     const token = tokenFrom(await login('test1@mail.apu.edu.my', 'Passw0rd!'));
     const me = (cookie: string) => request(app).get('/api/auth/me').set('Cookie', cookie);
-    expect((await me(`xparp_token=garbage; other=1; parp_token=${token}`)).status).toBe(200);
-    expect((await me(`xparp_token=${token}`)).status).toBe(401);
+    expect((await me(`xnotalah_token=garbage; other=1; notalah_token=${token}`)).status).toBe(200);
+    expect((await me(`xnotalah_token=${token}`)).status).toBe(401);
   });
 
   it('AUTH-TC15: the cookie carries the Secure flag when COOKIE_SECURE=true', async () => {
@@ -300,7 +300,7 @@ describe('auth cookie and CSRF (D35)', () => {
 
 describe('Rate-limit key from the auth cookie (D40)', () => {
   it('AUTH-TC20: tokenSubject returns the id of a valid cookie and null for a forged or expired token', () => {
-    const req = (token: string) => ({ headers: { cookie: `parp_token=${token}` } }) as Request;
+    const req = (token: string) => ({ headers: { cookie: `notalah_token=${token}` } }) as Request;
     expect(tokenSubject(req(signToken({ id: 42, role: 'student' } as AuthUser)))).toBe('42');
     const forged = jwt.sign({ role: 'admin' }, 'another-secret-of-length', { algorithm: 'HS256', subject: '42' });
     expect(tokenSubject(req(forged))).toBeNull();

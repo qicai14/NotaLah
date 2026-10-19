@@ -1,4 +1,4 @@
-import { LIMITS } from '@parp/shared';
+import { LIMITS } from '@notalah/shared';
 import { mapSlide, useEditor } from './store';
 
 /** Private page notes for the active slide (R21 spec 1.2); typing is one undo step per visit to the box. */

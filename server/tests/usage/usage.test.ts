@@ -75,8 +75,8 @@ describe('free-tier cost guard (R34, D57)', () => {
   });
 
   it('USE-TC3: an upload that would pass the global storage cap is refused with 507 and nothing is stored', async () => {
-    const a = await insertUser({ email: 'a@parp.test' });
-    const b = await insertUser({ email: 'b@parp.test' });
+    const a = await insertUser({ email: 'a@notalah.test' });
+    const b = await insertUser({ email: 'b@notalah.test' });
     const chunk = 2_000_000_000;
     for (let i = 0; i * chunk < STORAGE_CAP_BYTES; i++) {
       await pool.query(
@@ -135,8 +135,8 @@ describe('free-tier cost guard (R34, D57)', () => {
   });
 
   it('USE-TC7: only an admin can read /api/admin/usage, and it lists each metric', async () => {
-    const student = await insertUser({ email: 's@parp.test' });
-    const admin = await insertUser({ role: 'admin', email: 'ad@parp.test' });
+    const student = await insertUser({ email: 's@notalah.test' });
+    const admin = await insertUser({ role: 'admin', email: 'ad@notalah.test' });
     expect((await request(app).get('/api/admin/usage')).status).toBe(401);
     expect((await request(app).get('/api/admin/usage').set(asUser(student))).status).toBe(403);
     await consume('class_a', 3);

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vite-plus/test';
-import type { SlideElement } from '@parp/shared';
+import type { SlideElement } from '@notalah/shared';
 import { emptyDeck, HISTORY_LIMIT, patchElement, reaspect, useEditor } from './store';
 
 const rect = (id: string, x = 100): SlideElement => ({

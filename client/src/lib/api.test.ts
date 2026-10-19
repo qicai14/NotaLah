@@ -33,7 +33,7 @@ describe('api wrapper', () => {
     expect(fetchMock).toHaveBeenCalledTimes(5);
     for (const [, init] of fetchMock.mock.calls) {
       expect(init.credentials).toBe('include');
-      expect(init.headers['X-Requested-With']).toBe('parp');
+      expect(init.headers['X-Requested-With']).toBe('notalah');
       if (init.method === 'GET') {
         expect(init.headers['Content-Type']).toBeUndefined();
         expect(init.body).toBeUndefined();

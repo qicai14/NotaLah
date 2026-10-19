@@ -1,4 +1,4 @@
-import { boardHeight, type Fill, type SlideElement } from '@parp/shared';
+import { boardHeight, type Fill, type SlideElement } from '@notalah/shared';
 import {
   ChevronDown,
   ChevronUp,

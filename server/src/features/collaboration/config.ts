@@ -1,4 +1,4 @@
-import { COLLAB_REQUEST_MESSAGE_MAX } from '@parp/shared';
+import { COLLAB_REQUEST_MESSAGE_MAX } from '@notalah/shared';
 
 /** Collaboration settings (R30, D46). Not ranking constants, so they live with the feature. */
 export const COLLABORATION = Object.freeze({

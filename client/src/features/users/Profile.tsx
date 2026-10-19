@@ -1,4 +1,4 @@
-import { BOARD_WIDTH, boardHeight } from '@parp/shared';
+import { BOARD_WIDTH, boardHeight } from '@notalah/shared';
 import { ArrowLeft, Ban, MessageSquareText, MoreHorizontal, Pencil } from 'lucide-react';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';

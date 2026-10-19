@@ -1,11 +1,11 @@
 {
-  "name": "parp",
+  "name": "notalah",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
-    "prepare": "vp config && vp run @parp/shared#build"
+    "prepare": "vp config && vp run @notalah/shared#build"
   },
   "devDependencies": {
     "vite": "catalog:",

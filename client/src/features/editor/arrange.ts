@@ -7,7 +7,7 @@ import {
   distributeBoxes,
   groupBounds,
   type SlideElement,
-} from '@parp/shared';
+} from '@notalah/shared';
 import { mapElements, useEditor } from './store';
 
 export const boxOf = (e: SlideElement): Box => ({ x: e.x, y: e.y, w: e.w, h: e.h, rotation: e.rotation });

@@ -75,7 +75,7 @@ describe('Socket.io gateway', () => {
       expiresIn: -10,
     });
     const forged = jwt.sign({ role: 'student' }, 'not-the-secret-at-all', { algorithm: 'HS256', subject: String(id) });
-    for (const cookie of [null, `parp_token=${expired}`, `parp_token=${forged}`]) {
+    for (const cookie of [null, `notalah_token=${expired}`, `notalah_token=${forged}`]) {
       await expect(socketAs(cookie)).rejects.toThrow('Unauthorized');
     }
     await expect(socketAs(cookieOf(id))).resolves.toBeTruthy();

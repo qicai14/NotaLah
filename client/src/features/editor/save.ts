@@ -1,4 +1,4 @@
-import { type Deck, deckSchema, type ThemeId } from '@parp/shared';
+import { type Deck, deckSchema, type ThemeId } from '@notalah/shared';
 import { api, ApiError, errorText } from '@/lib/api';
 import type { Note } from '@/types';
 import { BACKUP_PREFIX } from './backup';

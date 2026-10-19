@@ -20,23 +20,23 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: parp
-          POSTGRES_PASSWORD: parp
-          POSTGRES_DB: parp
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U parp -d parp"
+          --health-cmd "pg_isready -U notalah -d notalah"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
     env:
       NODE_ENV: test
-      DATABASE_URL: postgres://parp:parp@localhost:5432/parp?sslmode=disable
-      TEST_DATABASE_URL: postgres://parp:parp@localhost:5432/parp_test?sslmode=disable
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah?sslmode=disable
+      TEST_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test?sslmode=disable
       JWT_SECRET: ci-only-dummy-secret-not-for-production
       CLIENT_ORIGIN: http://localhost:5173
-      PGPASSWORD: parp
+      PGPASSWORD: notalah
     steps:
       - uses: actions/checkout@v4
       - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
@@ -57,7 +57,7 @@ jobs:
       - name: Create empty .env (dbmate scripts require the file; values come from job env)
         run: touch .env
       - name: Create test database
-        run: psql -h localhost -U parp -d postgres -c "CREATE DATABASE parp_test"
+        run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
       - name: Check (format, lint, types)
         run: vp run --no-cache check
       - name: Test (server and client)

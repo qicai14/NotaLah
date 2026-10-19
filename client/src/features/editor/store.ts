@@ -9,7 +9,7 @@ import {
   round1,
   type Slide,
   type SlideElement,
-} from '@parp/shared';
+} from '@notalah/shared';
 
 /** Snapshot undo keeps at most this many steps (R21 spec 5). */
 export const HISTORY_LIMIT = 100;

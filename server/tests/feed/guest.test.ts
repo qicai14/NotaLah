@@ -95,9 +95,11 @@ describe('Guest browsing (R31)', () => {
     expect(res.body.note).toMatchObject({ id: w.pub, liked: false, bookmarked: false });
     for (const id of w.unseen) expect((await guest(`/api/notes/${id}`)).status).toBe(404);
     // An invalid or expired cookie is treated as a guest, not refused.
-    const bad = await request(app).get(`/api/notes/${w.pub}`).set('Cookie', 'parp_token=garbage');
+    const bad = await request(app).get(`/api/notes/${w.pub}`).set('Cookie', 'notalah_token=garbage');
     expect(bad.status).toBe(200);
-    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', 'parp_token=garbage')).status).toBe(404);
+    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', 'notalah_token=garbage')).status).toBe(
+      404,
+    );
     expect(bad.headers['x-viewer']).toBe('guest');
     const friendView = await request(app).get(`/api/notes/${w.contacts}`).set(asUser(w.friend));
     expect(friendView.status).toBe(200);
@@ -108,7 +110,7 @@ describe('Guest browsing (R31)', () => {
       subject: String(w.friend),
       expiresIn: -1,
     });
-    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', `parp_token=${expired}`)).status).toBe(
+    expect((await request(app).get(`/api/notes/${w.contacts}`).set('Cookie', `notalah_token=${expired}`)).status).toBe(
       404,
     );
     // A suspended author's still-valid cookie no longer opens their own draft.

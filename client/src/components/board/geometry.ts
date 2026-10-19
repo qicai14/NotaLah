@@ -1,4 +1,4 @@
-import { type Aspect, BOARD_WIDTH, boardHeight, type Fill, type FontId, type SlideElement } from '@parp/shared';
+import { type Aspect, BOARD_WIDTH, boardHeight, type Fill, type FontId, type SlideElement } from '@notalah/shared';
 
 /** Scale that fits the whole board inside a box of the given pixel size; 0 until the box has been measured. */
 export const fitScale = (boxW: number, boxH: number, aspect: Aspect): number =>

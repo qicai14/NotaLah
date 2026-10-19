@@ -16,7 +16,7 @@ import {
   type ImageSource,
   type Slide,
   type SlideElement,
-} from '@parp/shared';
+} from '@notalah/shared';
 import { apiOrigin } from '@/lib/api';
 import { arrowHead, backgroundCss, cropBox, FONT_STACK, fitScale, inReadingOrder, shapePoints } from './geometry';
 

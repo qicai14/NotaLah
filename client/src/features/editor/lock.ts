@@ -46,7 +46,7 @@ export function afterLockWon(reload: () => void): void {
 function release(noteId: number) {
   void fetch(`${apiOrigin()}/api/notes/${noteId}/lock`, {
     method: 'DELETE',
-    headers: { 'X-Requested-With': 'parp' },
+    headers: { 'X-Requested-With': 'notalah' },
     credentials: 'include',
     keepalive: true,
   }).catch(() => {});

@@ -1,4 +1,4 @@
-import type { Aspect, Fill, SlideElement } from '@parp/shared';
+import type { Aspect, Fill, SlideElement } from '@notalah/shared';
 import { isDeepStrictEqual } from 'node:util';
 import type { PoolClient } from 'pg';
 import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
