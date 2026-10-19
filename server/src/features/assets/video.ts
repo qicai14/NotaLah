@@ -18,13 +18,30 @@ export type VideoResult = { ok: true; video: ProcessedVideo } | { ok: false; err
 
 class Rejected extends Error {}
 
-/** execFile takes an argument array (no shell) and kills the child on timeout. */
-export function runTool(cmd: string, args: string[], timeoutMs: number): Promise<string> {
+export interface ToolLimits {
+  timeoutMs: number;
+  /** Aborting kills the child, for a worker that lost its lease or is stopping. */
+  signal?: AbortSignal;
+}
+
+/**
+ * execFile takes an argument array (no shell) and kills the child on timeout. A timeout or a failing exit is the file's
+ * fault (`Rejected`); an abort, or a kill from outside such as the OOM killer, is a plain Error the worker retries (R40).
+ */
+export function runTool(cmd: string, args: string[], { timeoutMs, signal }: ToolLimits): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024, windowsHide: true }, (err, stdout) => {
-      if (!err) return resolve(stdout);
-      reject(new Rejected(err.killed ? 'Video processing took too long' : 'Not a valid video'));
-    });
+    execFile(
+      cmd,
+      args,
+      { timeout: timeoutMs, maxBuffer: 10 * 1024 * 1024, windowsHide: true, signal },
+      (err, stdout) => {
+        if (!err) return resolve(stdout);
+        if (signal?.aborted) return reject(new Error('Video processing was stopped'));
+        if (err.killed) return reject(new Rejected('Video processing took too long'));
+        if (err.signal) return reject(new Error(`${cmd} was killed by ${err.signal}`));
+        reject(new Rejected('Not a valid video'));
+      },
+    );
   });
 }
 
@@ -52,12 +69,12 @@ function displayed(s: Stream): { w: number; h: number } {
   return quarter ? { w: s.height!, h: s.width! } : { w: s.width!, h: s.height! };
 }
 
-const probe = async (file: string, timeoutMs: number) =>
+const probe = async (file: string, limits: ToolLimits) =>
   JSON.parse(
     await runTool(
       'ffprobe',
       ['-v', 'error', ...SAFE_INPUT, '-print_format', 'json', '-show_format', '-show_streams', `file:${file}`],
-      timeoutMs,
+      limits,
     ),
   ) as Probe;
 
@@ -73,8 +90,8 @@ interface Inspected {
 }
 
 /** Checks the container from the bytes with ffprobe, never the filename or MIME header, against the size, length and edge limits. */
-async function inspect(file: string, timeoutMs: number): Promise<Inspected> {
-  const found = await probe(file, timeoutMs);
+async function inspect(file: string, limits: ToolLimits): Promise<Inspected> {
+  const found = await probe(file, limits);
   const video = found.streams.find((s) => s.codec_type === 'video');
   const audio = found.streams.find((s) => s.codec_type === 'audio');
   const names = (found.format.format_name ?? '').split(',');
@@ -99,10 +116,12 @@ export async function inspectVideo(
   file: string,
 ): Promise<{ ok: true; width: number; height: number; durationMs: number | null } | { ok: false; error: string }> {
   try {
-    const { w, h, durationMs } = await inspect(file, VIDEO.toolTimeoutMs);
+    const { w, h, durationMs } = await inspect(file, { timeoutMs: VIDEO.toolTimeoutMs });
     return { ok: true, width: w, height: h, durationMs };
   } catch (err) {
-    return { ok: false, error: err instanceof Rejected ? err.message : 'Not a valid video' };
+    if (err instanceof Rejected) return { ok: false, error: err.message };
+    if (err instanceof SyntaxError) return { ok: false, error: 'Not a valid video' };
+    throw err;
   }
 }
 
@@ -134,26 +153,43 @@ export function planEncode(
 export async function processVideo(
   input: string,
   workDir: string,
-  { profile, timeoutMs = VIDEO.encodeTimeoutMs }: { profile: VideoProfile; timeoutMs?: number },
+  {
+    profile,
+    timeoutMs = VIDEO.encodeTimeoutMs,
+    signal,
+  }: { profile: VideoProfile; timeoutMs?: number; signal?: AbortSignal },
 ): Promise<VideoResult> {
+  const limits = { timeoutMs, signal };
+  const threads = String(profile.threads);
   try {
-    const found = await inspect(input, timeoutMs);
+    const found = await inspect(input, limits);
     const plan = planEncode(found, profile);
     const out = path.join(workDir, 'clean.mp4');
-    const args = ['-v', 'error', '-y', '-threads', '2', '-filter_threads', '1', ...SAFE_INPUT, '-i', `file:${input}`];
+    const args = [
+      '-v',
+      'error',
+      '-y',
+      '-threads',
+      threads,
+      '-filter_threads',
+      '1',
+      ...SAFE_INPUT,
+      '-i',
+      `file:${input}`,
+    ];
     args.push('-map', '0:v:0', '-map', '0:a:0?', '-t', String(VIDEO.maxSeconds));
-    args.push('-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact', '-threads', '2');
+    args.push('-map_metadata', '-1', '-map_chapters', '-1', '-fflags', '+bitexact', '-threads', threads);
     if (plan.copyVideo) args.push('-c:v', 'copy');
     else {
       args.push('-vf', `scale=${plan.box[0]}:${plan.box[1]}:force_original_aspect_ratio=decrease:force_divisible_by=2`);
       args.push('-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'veryfast');
     }
     args.push('-c:a', plan.copyAudio ? 'copy' : 'aac', '-movflags', '+faststart');
-    await runTool('ffmpeg', [...args, out], timeoutMs);
+    await runTool('ffmpeg', [...args, out], limits);
 
     const { size } = await stat(out);
     if (size > VIDEO.maxBytes) throw new Rejected('Video is still over 50 MB after processing');
-    const result = await probe(out, timeoutMs);
+    const result = await probe(out, limits);
     const cleaned = result.streams.find((s) => s.codec_type === 'video');
     const seconds = Number(result.format.duration);
     if (!cleaned?.width || !cleaned.height || !Number.isFinite(seconds) || seconds <= 0) {
@@ -166,7 +202,7 @@ export async function processVideo(
     await runTool(
       'ffmpeg',
       ['-v', 'error', '-y', '-ss', at, ...SAFE_INPUT, '-i', `file:${out}`, '-frames:v', '1', frame],
-      timeoutMs,
+      limits,
     );
     const poster = await reencodeImage(await readFile(frame));
     if (!poster.ok) throw new Rejected('Could not read a frame from the video');
@@ -183,6 +219,7 @@ export async function processVideo(
       },
     };
   } catch (err) {
-    return { ok: false, error: err instanceof Rejected ? err.message : 'Not a valid video' };
+    if (err instanceof Rejected) return { ok: false, error: err.message };
+    throw err;
   }
 }

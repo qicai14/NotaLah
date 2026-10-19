@@ -252,13 +252,16 @@ export function failVideoJob(job: VideoJob, error: string): Promise<boolean> {
   });
 }
 
-/** Puts the job back in the queue, claimable again after `delayMs`. */
-export async function retryVideoJob(job: VideoJob, error: string, delayMs: number): Promise<void> {
+/** Puts the job back in the queue, claimable again after `delayMs`; `refund` gives the attempt back when the file was never at fault. */
+export async function retryVideoJob(
+  job: VideoJob,
+  { error, delayMs, refund = false }: { error: string; delayMs: number; refund?: boolean },
+): Promise<void> {
   await pool.query(
     `UPDATE "VIDEO_JOB_T"
-     SET vjb_status = 'queued', vjb_last_error = LEFT($3, 200),
+     SET vjb_status = 'queued', vjb_last_error = LEFT($3, 200), vjb_attempts = vjb_attempts - $5::INT,
          vjb_locked_until = NOW() + $4::INT * INTERVAL '1 millisecond', vjb_updated_at = NOW()
      WHERE ${OWNED}`,
-    [job.id, job.attempts, error, delayMs],
+    [job.id, job.attempts, error, delayMs, refund ? 1 : 0],
   );
 }

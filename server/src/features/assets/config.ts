@@ -47,8 +47,10 @@ export const VIDEO = Object.freeze({
   /** Claims of one job before it is marked failed; an unexpected error waits `retryDelayMs` times the attempt before the next. */
   maxAttempts: 3,
   retryDelayMs: 30_000,
+  /** A job held back by the free-tier usage cap (D57) waits this long, without using up an attempt. */
+  usageLimitDelayMs: 60 * 60_000,
   /** How often an idle worker looks for a job; an upload in the same process wakes it at once. */
-  idlePollMs: 5_000,
+  idlePollMs: 30_000,
   tmpPrefix: 'notalah-video-',
 });
 
@@ -61,6 +63,8 @@ export interface VideoProfile {
   maxHeight: number;
   /** Jobs one worker process runs at once. */
   concurrency: number;
+  /** ffmpeg decoder and encoder threads per job. */
+  threads: number;
 }
 
 /** `VIDEO_PROFILE` presets (R40, D67): `free` suits a shared 0.1-CPU instance, `standard` a paid one. */
@@ -72,6 +76,6 @@ export function videoProfile({
   concurrency: number;
 }): VideoProfile {
   return profile === 'free'
-    ? { name: 'free', maxWidth: 1280, maxHeight: 720, concurrency: 1 }
-    : { name: 'standard', maxWidth: 1920, maxHeight: 1080, concurrency };
+    ? { name: 'free', maxWidth: 1280, maxHeight: 720, concurrency: 1, threads: 1 }
+    : { name: 'standard', maxWidth: 1920, maxHeight: 1080, concurrency, threads: 2 };
 }

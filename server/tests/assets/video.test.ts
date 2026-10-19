@@ -212,7 +212,7 @@ http://127.0.0.1:${port}/seg.ts
       'null',
       '-',
     ];
-    await expect(runTool('ffmpeg', endless, 400)).rejects.toThrow(/too long/);
+    await expect(runTool('ffmpeg', endless, { timeoutMs: 400 })).rejects.toThrow(/too long/);
     expect(Date.now() - started).toBeLessThan(5000);
     expect(await processVideo(file('short.mp4'), dir, { profile: activeVideoProfile, timeoutMs: 1 })).toEqual({
       ok: false,

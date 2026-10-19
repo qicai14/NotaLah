@@ -6,12 +6,13 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { VIDEO, videoProfile } from '../../src/features/assets/config';
-import { claimVideoJob } from '../../src/features/assets/repository';
-import { planEncode } from '../../src/features/assets/video';
+import { claimVideoJob, completeVideoJob, failVideoJob } from '../../src/features/assets/repository';
+import { planEncode, processVideo, runTool } from '../../src/features/assets/video';
 import { runNextVideoJob, startVideoWorker } from '../../src/features/assets/worker';
 import { env, parseEnv } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { storage } from '../../src/lib/storage';
+import { UsageLimitError } from '../../src/features/usage/service';
 import { asUser, insertUser, truncateAll } from '../helpers';
 
 let dir: string;
@@ -184,13 +185,14 @@ describe('Async video pipeline (R40)', () => {
       const e = parseEnv({ ...base, ...extra });
       return videoProfile({ profile: e.VIDEO_PROFILE, concurrency: e.VIDEO_CONCURRENCY });
     };
-    expect(fromEnv({})).toEqual({ name: 'free', maxWidth: 1280, maxHeight: 720, concurrency: 1 });
+    expect(fromEnv({})).toEqual({ name: 'free', maxWidth: 1280, maxHeight: 720, concurrency: 1, threads: 1 });
     expect(fromEnv({ VIDEO_CONCURRENCY: '4' }).concurrency).toBe(1);
     expect(fromEnv({ VIDEO_PROFILE: 'standard' })).toEqual({
       name: 'standard',
       maxWidth: 1920,
       maxHeight: 1080,
       concurrency: 2,
+      threads: 2,
     });
     expect(fromEnv({ VIDEO_PROFILE: 'standard', VIDEO_CONCURRENCY: '3' }).concurrency).toBe(3);
     expect(() => parseEnv({ ...base, VIDEO_PROFILE: 'huge' })).toThrow(/VIDEO_PROFILE/);
@@ -219,5 +221,66 @@ describe('Async video pipeline (R40)', () => {
     } finally {
       await worker.stop();
     }
+  });
+
+  it('VID-TC12: a worker whose lease lapsed cannot complete or fail the job its successor holds', async () => {
+    const uid = await insertUser();
+    const { id } = (await upload(uid)).body.asset;
+    const a = (await claimVideoJob(VIDEO.leaseMs))!;
+    await lapse();
+    const b = (await claimVideoJob(VIDEO.leaseMs))!;
+    expect(b.attempts).toBe(2);
+    const finished = { key: 'v/x.mp4', posterKey: 'p/x.webp', bytes: 10, width: 2, height: 2, durationMs: 1000 };
+    expect(await completeVideoJob(a, finished)).toBe(false);
+    expect(await failVideoJob(a, 'late')).toBe(false);
+    expect(await job(id)).toMatchObject({ status: 'running', attempts: 2, error: null });
+    const { rows } = await pool.query(`SELECT ast_status, ast_key FROM "ASSET_T" WHERE ast_id = $1`, [id]);
+    expect(rows[0].ast_status).toBe('processing');
+    expect(rows[0].ast_key).toMatch(/^o\//);
+  });
+
+  it('VID-TC13: the usage cap requeues the job for an hour without using up the attempt or the original', async () => {
+    const uid = await insertUser();
+    const { id } = (await upload(uid)).body.asset;
+    const read = vi.spyOn(storage, 'read').mockRejectedValue(new UsageLimitError('Storage reads are paused'));
+    try {
+      expect(await runNextVideoJob()).toBe(true);
+    } finally {
+      read.mockRestore();
+    }
+    expect(await job(id)).toMatchObject({ status: 'queued', attempts: 0, error: 'Storage reads are paused' });
+    const { rows } = await pool.query(
+      `SELECT vjb_locked_until > NOW() + INTERVAL '59 minutes' AS "hourAway", a.ast_status, a.ast_key
+       FROM "VIDEO_JOB_T" JOIN "ASSET_T" a ON a.ast_id = vjb_ast_id WHERE vjb_ast_id = $1`,
+      [id],
+    );
+    expect(rows[0]).toMatchObject({ hourAway: true, ast_status: 'processing' });
+    expect(await storage.read(rows[0].ast_key)).not.toBeNull();
+  });
+
+  it('VID-TC14: an abort kills ffmpeg and is a retryable error, not a bad file', async () => {
+    const endless = [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'testsrc=size=640x360:rate=30',
+      '-t',
+      '3000',
+      '-f',
+      'null',
+      '-',
+    ];
+    const stop = new AbortController();
+    const started = Date.now();
+    const running = runTool('ffmpeg', endless, { timeoutMs: 60_000, signal: stop.signal });
+    setTimeout(() => stop.abort(), 200);
+    await expect(running).rejects.toThrow('Video processing was stopped');
+    expect(Date.now() - started).toBeLessThan(5000);
+    const free = videoProfile({ profile: 'free', concurrency: 1 });
+    await expect(
+      processVideo(path.join(dir, 'short.mp4'), dir, { profile: free, signal: AbortSignal.abort() }),
+    ).rejects.toThrow('Video processing was stopped');
   });
 });
