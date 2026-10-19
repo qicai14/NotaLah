@@ -18,6 +18,7 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
 8. Final demonstration hosting? **Answered:** live deployment with CI/CD (D29): Cloudflare Pages frontend on
    `app.<domain>`, Express + Socket.io on Fly.io at `api.<domain>`, Neon Postgres, the free GitHub Student Pack
    `.me` domain, GitHub Actions pipeline. Local hosting stays as the fallback. Report §1.5 and §2.3.9 to be updated.
+   **Updated 20 Oct (D65):** the API moves from Fly.io to one Render free web service at `api.<domain>`; the rest stands.
 9. (Merged into 7.)
 10. References (researcher check, 14 Oct):
     - Lieu (2024): confirmed. *A structured approach to online discussion* [Doctoral dissertation, Royal Holloway,

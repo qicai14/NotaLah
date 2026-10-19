@@ -1030,6 +1030,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC19 | Shared rate-limit store | two store instances; key k hit twice, another key once; one decrement; window start moved back 61 s; reset; purge; a test limiter of 2 per minute on the store | Hits 1 then 2 across instances (reset time about a minute ahead); the other key counts 1; decrement leaves 1; next hit starts a new window at 1; reset deletes the row; purge removes the expired counter; the third request to the test limiter gets 429 | | |
 | AUTH-TC20 | Rate-limit key ignores invalid tokens | auth cookie from signToken for user 42; a token signed with another secret; an expired token; no cookie | tokenSubject returns "42" for the valid cookie and null for the forged, expired and missing ones | | |
 | AUTH-TC21 | Guest reads are rate-limited by IP | guest GET /api/users/:id; the guest counter set to the limit (120 per minute); the same request again, then signed in | 200; 429 "Too many requests. Log in or try again in a minute."; signed-in request 200 (not counted) | | |
+| AUTH-TC22 | Revalidating a guest response after login | guest GET /api/notes/:id/comments (ETag saved); the same GET signed in with If-None-Match set to that ETag | 200 with X-Viewer: guest; then 304 with X-Viewer: user, so the cached guest header is replaced | | |
 
 *Table 4.25: Note editor and publishing module test cases (NOTE)*
 
@@ -1058,10 +1059,72 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC21 | Moderator-hidden note | status set to hidden in the database | Author PUT 403; other user GET 404; not on the author's profile | | |
 | NOTE-TC22 | Numbered list start attribute | slide `<ol start="3" onclick="x()"><li>a</li></ol>` | Stored as `<ol start="3"><li>a</li></ol>`; other attributes removed | | |
 | NOTE-TC23 | Note detail engagement state | Another user likes a published note, then GET /api/notes/:id as that user | `counts.likes` 1, `counts.comments` 0, `liked` true, `bookmarked` false, `verified` false | | |
-| NOTE-TC25 | Template choices | template "fancy"; "howto"; none | 400 "Invalid template"; stored as howto; defaults to plain | | |
+| NOTE-TC25 | Theme choices | theme "fancy"; "howto"; none | 400 "Invalid theme"; stored as howto; defaults to plain | | |
 | NOTE-TC24 | Hashtag input rules (client) | Add `#Algebra, maths, Algebra`, then an invalid tag, then a sixth tag | `#` stripped, lowercased, duplicates ignored, invalid tag and a sixth tag rejected with a message | | |
 | NOTE-TC26 | Drafts keyset paging | 5 drafts with one shared edit time; GET /api/notes/drafts?limit=2, following nextCursor; limit 101 | Pages of 2, 2 and 1 list every draft once, highest id first; nextCursor null on the last page; 400 for limit 101 | | |
 | NOTE-TC27 | Guest opens notes | no cookie: a public note, a contacts-only note, a hidden note, a draft, a note by a suspended author; `notalah_token=garbage`; an expired but validly signed token of the friend; a suspended author's valid cookie on their own draft | Public note 200 with liked and bookmarked false; 404 for each of the others; an invalid cookie is treated as a guest (200 public with `X-Viewer: guest`, 404 contacts-only); the author's friend gets the contacts-only note with no `X-Viewer` header; the expired token gets 404; the suspended author gets 404 | | |
+| NOTE-TC28 | Out-of-range geometry | shape with `x: 1e9`; `rotation: 400`; `opacity: 2`; `w: 0` | 400 each, naming the slide and element | | |
+| NOTE-TC29 | Invalid colour, font, aspect | `color: 'red;background:url(x)'`; `font: 'Comic Sans'`; `aspect: '1:1'` | 400 each | | |
+| NOTE-TC30 | Duplicate element ids | two slides each holding an element with the same id | 400 "Slide 2, element 1: Duplicate element id" | | |
+| NOTE-TC31 | Text sanitising | span with `color:#ff0000;font-size:99px` and `onclick`; `u`; `script` | Stored as `<p><span style="color:#ff0000">hi</span> <u>u</u></p>`; script removed | | |
+| NOTE-TC32 | Deck limits | 31 slides; 61 elements; 2 videos; 20,001 characters of code; 20,001-character text box; 2,001-character page notes; exactly 20,000 characters and 2,000-character notes | 400 each naming the slide; the exact-limit deck is 201 | | |
+| NOTE-TC33 | Foreign, unready or wrong-kind asset | another user's image; a pending video; an image id in a video element; an unknown id | 400 "Slide 1, element 1: Video not found" (or Image) | | |
+| NOTE-TC34 | Unsplash URL spoofing | another host; `images.unsplash.com.evil.example`; a URL with `)"; background: url(...)`; a space | 400 "Invalid Unsplash image URL"; a plain `?w=800&q=80` URL is 201. Asset ownership checks (TC33) arrive with R22 | | |
+| NOTE-TC35 | Search uses elements | words in a text box, code, an image's alt text and a table; a word only in page notes | The first four are found; the notes word is not | | |
+| NOTE-TC36 | Page notes private | author, edit collaborator, view collaborator, other user and guest GET a published note; the editor then saves it | `notes` present for author and editor, absent for the rest; the author's notes survive the editor's save | | |
+| NOTE-TC37 | Hidden note hides assets | moderator hides a note with an upload | others 404 on the note and its asset file; the author still gets both | | |
+| NOTE-TC38 | Image upload validation | 5 MB + 1 byte; text file named .png; SVG; JPEG with GPS EXIF; 3000 px GIF | 413; 400; 400; 201 WebP with no EXIF; 201 still WebP, longest edge 2560 | | |
+| NOTE-TC40 | Asset ownership | user B reads or uses user A's unreferenced upload | 404 on the file, 400 when saved in B's note | | |
+| NOTE-TC41 | Stale save | PUT with the `baseUpdatedAt` from before the previous save | 409, note unchanged | | |
+| NOTE-TC42 | Migration of HTML slides | note with three slides; run the down then the up SQL | One text element per slide with ids `text-001` to `text-003`; the search tsvector built from the old and the new shape equals the stored one | | |
+| NOTE-TC45 | Deck of every element type | one slide with text, shape, line, image, code, video and table; gradient background; page notes; aspect 9:16; theme lecture | 201; GET returns the elements unchanged, `music` null, `assets` empty | | |
+| NOTE-TC46 | Unknown type or extra key | `type: 'iframe'`; text element with `style` | 400 "Slide 1, element N: ..." | | |
+| NOTE-TC47 | Editor adapter round trip (client; retired in R21c with the adapter, D56) | a migrated slide loaded, then rebuilt with `htmlToSlide(slideToHtml(...))` | Same background and elements (stable id `text-001`), so a resave is not a content edit | | |
+| NOTE-TC48 | Editor adapter empty slide (client; retired in R21c with the adapter, D56) | empty HTML; HTML with page notes | No elements; the notes are carried through | | |
+| NOTE-TC49 | Storage quota | user with 500 MB less 10 bytes stored uploads an image | 413 naming the 500 MB limit; another user still uploads | | |
+| NOTE-TC50 | Asset file access | image in a public, friends-only, blocked, draft and deleted note, and behind a view share link, read by guest, friend, stranger, blocked user, collaborator | 200 only where the note itself is readable (the share link serves only that note's images); 404 otherwise | | |
+| NOTE-TC51 | Unsplash proxy and attribution | search with and without `UNSPLASH_ACCESS_KEY`; results with an off-site image or credit; Unsplash failing; download with a hostile `download_location` | 503 "not configured" without a key; spoofed results dropped, credit link gets utm parameters, repeat search cached; 503 on upstream failure; download only calls Unsplash's own `download_location` (else 503) | | |
+| NOTE-TC52 | Unlinked asset purge | two-day-old uploads, one in a live note, one orphaned; a fresh upload | only the orphan is marked deleted | | |
+| NOTE-TC53 | Upload request checks | no cookie; restricted user; no CSRF header; no file; malformed asset id | 401; 403; 403; 400; 404 | | |
+| NOTE-TC54 | Asset links on save | image element and image background using one upload; then a save without it | 201 with `assets` map and one `POST_ASSET_T` row; later `assets` empty | | |
+| NOTE-TC55 | Co-author assets | co-author adds own image, owner then saves; co-author adds an owner asset not linked to the note | 200 both ways; 400 "Image not found" | | |
+| NOTE-TC56 | Board scale and geometry (client) | boxes of 500x10000, 10000x625 and 1000x562.5 for aspects 4:5 and 16:9; an unmeasured 0 box; two elements out of reading order; a crop of the lower-right quarter; an image with a crop and flipX | The scale is the smaller of width/1000 and height/board height, and 0 before measuring; reading order is y then x while z-index stays the array index; the crop frame is twice the box, offset by the crop; flip is applied to the frame, not the cropped image | | |
+| NOTE-TC57 | SlideBoard renders every element type (client) | one slide with gradient background, text with a heading and bold, ellipse, dashed arrow line, upload image (with and without `VITE_API_URL`, and with no asset-map entry), Unsplash image, SQL code, table with header row and video; a 4-slide carousel; arrow buttons, ArrowRight and ArrowLeft | Text is real DOM, shapes and lines are SVG, image alt text and the asset URL (prefixed with `VITE_API_URL`) are used, a missing asset leaves a plain tile with no `img`, code is a `pre`, the table has header and data cells, video shows a labelled placeholder, the Unsplash author is credited with a link, the board is a named group, the carousel mounts only the active slide and its neighbours, and has chevron buttons (no Prev/Next text) whose disabled state follows the first and last slide, plus a polite "Slide N of M" label | | |
+| NOTE-TC44 | Editor geometry (client) | resize a 30-degree box from a corner and an edge; Shift resize; drag past the opposite corner; rotate around the centre with and without snapping; move near the board centre and another box, desktop and phone | The opposite corner or edge midpoint stays fixed; Shift keeps the ratio; size never goes below 8 units; rotation lands on 15-degree steps (exact angle with snapping off); the box snaps to the centre or the other box's edge and shows guides; phones snap to the centre only | | |
+| NOTE-TC58 | Editor undo and redo (client) | add an element, drag it in five steps, undo twice, redo twice; 120 changes; a change after an undo | The drag is one undo step; undo restores each state and clears a selection that no longer exists; history keeps the last 100 steps; a new change clears redo | | |
+| NOTE-TC59 | Editor slide strip and aspect (client) | duplicate, add, reorder and delete slides; delete the last slide; change 4:5 to 16:9 and to 9:16 | Duplicates get new element ids; the active slide follows the change; the last slide is emptied, not removed; a shorter board scales content by newH/oldH and centres it, a taller one only centres it | | |
+| NOTE-TC60 | Editor save state (client) | edit while a save is in flight, then save again | Dirty stays set after the first save and clears after the second | | |
+| NOTE-TC61 | Editor save and autosave (client) | delays 0, 7, 9 and 12 s after the first change; a new note saved twice; a save answered 409 | Autosave waits 2 s, never past 10 s; the first save POSTs and records the id and `updatedAt`, the next PUTs with `baseUpdatedAt`; a 409 sets the conflict state and keeps the note dirty | | |
+| NOTE-TC62 | Editor keyboard and layers (client) | focus a rectangle, ArrowRight, Shift+ArrowDown, Delete, undo; open Layers and move the rectangle up | Focus selects it; it moves 1 then 10 units; Delete removes it and undo restores it; Layers lists the top element first and the move changes the stacking order | | |
+| NOTE-TC63 | Editor local backup restore (client) | backup read by another user; after the server version changed; valid backup whose text has `onclick`, `<script>`, a link and a colour span; backup failing the deck schema | Each invalid case returns nothing and deletes the backup; the valid one is restored with only allow-listed tags and the hex colour span | | |
+| NOTE-TC64 | Editor backup clearing (client) | backups of users 7 and 8 and an unrelated key; sign-in of user 7, then logout | Sign-in removes only user 8's backup; logout removes all backups; the unrelated key stays | | |
+| NOTE-TC65 | Editor late save reply (client) | a save still in flight when a new note is loaded | The reply does not give the new note an id or change its save state | | |
+| NOTE-TC66 | Editor untitled and locked saves (client) | draft with a blank title; save answered 423 | Saved as "Untitled note"; a 423 sets the locked state and keeps the changes | | |
+| NOTE-TC67 | Editor queued save after closing a new note (client) | a new note's first save in flight, a second save of it queued, then another note loaded before the first reply | The queued save PUTs to the id the first save received instead of POSTing a duplicate, and neither reply touches the newly loaded note | | |
+| NOTE-TC39 | Video validation and acceptance | 91 s MP4; non-video bytes; AVI named .mp4; 4100 px wide MP4; a short MP4 and a short WebM | 400 each for the first four; 201 for the last two with status ready, a poster key and a WebP poster at ?poster=1 | | |
+| NOTE-TC68 | Playlist upload makes no network call | an #EXTM3U playlist whose segment is an http URL on a local test server, uploaded as clip.mp4 | 400 and the test server receives no request | | |
+| NOTE-TC69 | Early refusal | UPLOADS_DISABLED true; a video upload | 503 before the body is read and no temp directory is left | | |
+| NOTE-TC70 | Orientation and 1080p | 1920x1080 clip with a 90 degree display matrix; 2000x1100 clip | Stored 1080x1920; the 2000x1100 clip is scaled to fit 1920x1080 | | |
+| NOTE-TC71 | Video over 50 MB | 51 MB body | 413 | | |
+| NOTE-TC72 | Video metadata stripped | MP4 and WebM tagged with title and comment | The served file has no title, comment or SECRET text | | |
+| NOTE-TC73 | Range requests | Range bytes=0-99, bytes=-50, bytes=size- | 206 with Content-Range and 100 bytes; 206 for the tail; 416 with bytes */size; Accept-Ranges bytes | | |
+| NOTE-TC74 | Temp cleanup | a successful, a rejected and an oversized upload | No notalah-video- directory remains | | |
+| NOTE-TC75 | Tool timeout | ffmpeg run past a 400 ms limit; processVideo with a 1 ms limit | Rejected as too long within 5 s; processVideo returns Video processing took too long | | |
+| NOTE-TC76 | Ready video in a note | save a draft with a video element using a ready video | 201 | | |
+| NOTE-TC77 | Poster access | stranger requests the poster; a view-link holder requests it | 404; 200 image/webp | | |
+| NOTE-TC78 | Group geometry | three boxes, one turned 90 degrees; align left and middle; distribute across and down; scale a group from its se corner; rotate a box 180 degrees about a point; marquee rectangle | Frame covers the rotated bounds; aligned edges match; gaps become equal with the outer boxes fixed; scale 2 about the fixed nw corner; the box turns round the pivot; only touched boxes are hit | | |
+| NOTE-TC79 | Multi-select on the canvas (client) | click one shape, Shift-click another, Shift+ArrowDown, align top, Delete, Ctrl-click a selected shape | Both selected and announced "selected"; both move 10 units; tops line up; Delete removes both as one undo step; Ctrl-click takes it out of the selection | | |
+| NOTE-TC80 | Whole-box text styling (client) | closed text box with a bold word: italic on and off, bulleted list, toolbar Bold twice, Underline, undo | Marks cover every character and report their state; the toolbar says "Whole box"; Bold sets weight 700, then 400 and clears inner bold; each press is one undo step | | |
+| NOTE-TC81 | Slide size confirm (client) | open Slide size, pick 16:9, Cancel; reopen, pick 9:16, Resize | Nothing changes until Resize, which is disabled for the current size; Resize applies 9:16 as one undo step | | |
+| NOTE-TC82 | Editor soft lock (client) | lock answered 423 naming the holder, then 200 on the retry; renew; close the editor; a new note | Read-only state names the holder; winning the lock after the wait reloads the note once; renewals do not; closing sends DELETE; a new note takes no lock | | |
+| NOTE-TC83 | Your uploads list | three uploads by one user, one deleted, one by another user; pages of one; guest request | Newest ready image first with its file URL, then the next page, then no cursor; 401 for a guest | | |
+| NOTE-TC84 | Table and image blocks (client) | add and remove rows and columns past the limits; an image 1200 x 800 with 400-character alt text | Typed cells kept, sizes clamped to 20 rows and 8 columns, no change returns null; the image keeps 3:2, fits 700 units, is centred and its alt text is cut to 250 | | |
+| NOTE-TC85 | Keep mine for a co-author (client) | conflict after the owner published and moved the note; Keep mine | The PUT carries the server's status, visibility, module and `updatedAt`, so it saves instead of failing again | | |
+| NOTE-TC86 | Lock won back; overlapping lock runs (client) | lock won with nothing unsaved; with an unsaved title; two editor runs on one note, closed one after the other | Reloads once; with unsaved edits it sets the conflict state instead of reloading; DELETE is sent only when the second run closes | | |
+| NOTE-TC87 | Paste caps and group scale limits (client) | paste 12 images and a text box; scale range of a 760 x 40 heading at size 100 | 10 images and the text box are added; the group scales between 0.2 (8-unit minimum) and 4 (font 400) | | |
+| NOTE-TC88 | Keyboard multi-select and cancelled drags (client) | focus one shape, Shift+Space on another twice; a live move cancelled | The second shape joins then leaves the selection; the cancelled move restores the deck with no undo step | | |
+| NOTE-TC89 | Drafts list thumbnails | draft with two 16:9 slides, the first with page notes; a draft with no slides | The list gives aspect 16:9, slideCount 2, the first slide's elements without its notes and an asset map; the empty draft has slideCount 0 and cover null | | |
+| NOTE-TC90 | Draft tiles and publish preview (client) | a drafts reply with one 4-slide draft; the publish dialog with a one-slide 16:9 preview | The tile shows the first slide, module chip, "4 slides" and a Continue editing link to the editor; the dialog shows the title and "1 slide · 16:9" | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -1094,6 +1157,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC25 | Profile notes paging | 52 published notes with one shared publish time; GET /api/users/:id, then GET /api/users/:id/notes?cursor=notesNextCursor; unknown user; cursor "x" | Profile embeds 50 notes and a notesNextCursor; the follow-up returns the last 2 with nextCursor null, all 52 in id order descending; 404 for the unknown user; 400 for the bad cursor | | |
 | USR-TC26 | Guest views a profile | no cookie: GET /api/users/:id and /api/users/:id/notes of an author with a public and a contacts-only note; user 99999 | 200 with follower and following counts, followedByMe false, no draftCount, and only the public note in both lists; 404; a signed-in friend sees both notes | | |
 | USR-TC27 | Suspended profile hidden except from admins | user with a note and one follower is suspended; guest, the follower and an admin open the profile, its notes, followers and following, and the note | Guest: 404 for the profile and its notes; follower: 404 for all four and for the note; admin: 200 for all four and the note, the profile shows followerCount 1 and the note, while the admin's feed stays empty; the follower's following list is empty | | |
+| USR-TC28 | Profile thumbnail data and likeCount | Note with page notes, one ready and one pending upload, likes from a fan and the author, and a friends-only note liked by a fan; a stranger opens the profile | likeCount is 1; the cover has no notes key; assets lists only the ready upload; the friends-only note is absent | | |
 
 *Table 4.27: Blocking test cases (BLK). BLK covers user blocks (D49): the block endpoints and every path a block closes, each checked from both sides of the pair.*
 
@@ -1318,7 +1382,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | COL-TC1 | Draft and friends-only notes readable by collaborators only | a draft and a published contacts-only note, each with an editor and a viewer; GET /api/notes/:id as owner, editor, viewer, a stranger and a guest | 200 for owner, editor and viewer; 404 for the stranger and the guest | | |
 | COL-TC2 | Owner-only endpoints refuse everyone else | GET access, PUT collaborator, POST link, DELETE link, DELETE another collaborator and decide a request, as each of the five users | Owner 2xx; editor and viewer 403; stranger 404; guest 401 | | |
 | COL-TC3 | Who may edit and delete a note | PUT /api/notes/:id with a valid body as each user; DELETE as editor, viewer and owner | PUT 200 for owner and editor, 403 viewer, 404 stranger, 401 guest; DELETE 403 for editor and viewer, 204 for the owner | | |
-| COL-TC4 | Editor cannot change owner-only fields | editor PUT with visibility contacts, another module, status draft; without baseUpdatedAt; baseUpdatedAt "yesterday"; publishing a draft | 403 "Only the owner can change status, visibility or module" for each field change and for publishing; 400 "baseUpdatedAt is required"; 400 for the invalid value | | |
+| COL-TC4 | Editor cannot change owner-only fields | editor PUT with visibility contacts, another module, status draft; without baseUpdatedAt; baseUpdatedAt "yesterday"; publishing a draft | 409 "The owner changed who can see this note or its module. Reload to see the latest version" for each field change and for publishing (D58); 400 "baseUpdatedAt is required"; 400 for the invalid value | | |
 | COL-TC5 | Stale edit refused (optimistic check) | editor saves with the loaded baseUpdatedAt; owner then saves with the same, now old, value; owner saves without baseUpdatedAt | Editor 200; owner 409 and the title stays the editor's; owner without baseUpdatedAt 200 | | |
 | COL-TC6 | Link token returned once, only its hash stored | POST /api/notes/:id/links {role: view}; read SHARE_LINK_T; GET access; role "owner" | 201 with a 43-character token and a /share/ URL; the table holds only the SHA-256 hex of the token; access lists role and date without the token; 400 for the bad role | | |
 | COL-TC7 | View link opens a restricted note and nothing else | contacts-only note; view link opened by a guest and a stranger; stranger likes the note, opens it directly, POSTs the view link | 200 with the note for both, no collaborator row added; like 404; direct GET 404; POST 400 "A view link cannot be joined" | | |
@@ -1339,6 +1403,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | COL-TC22 | Downgrade frees the lock; role re-checked in the save | editor holds the lock and is changed to view; replaceNote called for the former editor and a stranger | Owner can take the lock; both saves return forbidden | | |
 | COL-TC23 | Restricted author blocks co-author edits | author restricted; editor PUT and lock; stranger joins an edit link; editor GET; stranger GET of the link | 403, 403, 403; reading 200 and 200 | | |
 | COL-TC24 | Concurrent link regeneration | five simultaneous POST /links {role: view} | All 201; exactly one active link | | |
+| COL-TC25 | Owner publishes the last saved version under a lock | editor holds the lock; owner publishes with no hashtags, editor saves, editor and stranger try, bad visibility, owner publishes friends-only, publishes again; editor saves its draft body, then with the server's status and `updatedAt`; a save lands between the publish's read and write | 400 hashtag error; 403, 404, 400; 200 published friends-only with the saved slides; 400 already published; 409, then 200 (Keep mine); the publish write is stale (409) | | |
 
 *Table 4.36: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
 
@@ -1373,12 +1438,110 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC17 | Register submits the chosen programme | Pick a programme from the select and press Register | register is called with the chosen programme | | |
 | CLI-TC18 | Programme list load failure | /api/programmes returns 500 | An alert says the programmes could not be loaded and a Retry button is shown | | |
 | CLI-TC19 | Guest answer while signed in | GET /feed answered 200 with `X-Viewer: guest`, first signed out, then signed in | Signed out: data returned, no redirect; signed in: redirect to /login?expired=1 | | |
+| CLI-TC20 | useAction write state | run() with a pending promise, then run() again; a rejected ApiError("Already liked"); a rejection with onError returning null | The second call is ignored and returns undefined; pending is true until the first settles and it returns its value; error shows "Already liked"; with onError returning null, onError is called once and error stays null | | |
+| CLI-TC29 | Own profile | Open /profile as a student with 12 followers, 40 likes and 2 drafts | Heading, counts, Edit profile link and "2 drafts" link shown; no Follow or Message | | |
+| CLI-TC30 | Follow and friends | Press Follow on a profile; the server answers followedByMe and followsMe true | Button becomes Friends and the follower count updates from the response | | |
+| CLI-TC31 | Block with confirmation | More, Block, read the dialog, press Block | Dialog explains the effects and nothing is sent until Block; then only the name and Unblock show | | |
+| CLI-TC32 | Unblock from the blocked profile | Press Unblock on a profile the viewer blocked | DELETE /users/:id/block is sent and the full profile with Follow is shown again | | |
+| CLI-TC33 | Profile not available | GET /users/9 answers 404 | A plain "This profile is not available" state with no profile details or actions | | |
+| CLI-TC34 | Block refused by the server | Confirm Block while the server answers 403 "Administrators cannot be blocked" | The message shows in the open dialog; the profile is not replaced | | |
+| CLI-TC35 | Guest on a profile | Signed out, open /users/2 and press Follow | Profile is shown; the guest sheet opens and no write request is sent; no More menu | | |
+| CLI-TC36 | Message button | Signed in, open another user's profile; then open it as a guest | Message links to `/messages?to=2`; a guest's Message opens the log-in sheet and does not navigate | | |
+| CLI-TC37 | Blocked accounts list | Edit profile lists two blocked people; press Unblock on the first | DELETE sent, that row disappears and the other stays | | |
+| CLI-TC38 | No blocked accounts | GET /users/me/blocks returns an empty page | "You have not blocked anyone." is shown | | |
+| CLI-TC39 | Admin profile has no More menu | Open an administrator's profile | Follow shows; there is no More options button | | |
+| CLI-TC40 | Focus after block and unblock | Open a blocked profile, press Unblock | Unblock has focus on arrival; the name heading has focus after the full profile loads | | |
+| CLI-TC41 | Tile cover is inert | Render a profile note tile | The slide sits in an inert, aria-hidden wrapper inside the tile link | | |
+| CLI-TC42 | Carousel dots, up to seven slides | dotWindow for 1, 5 and 7 slides | One dot per slide, exactly one current, none flagged as an edge | | |
+| CLI-TC43 | Carousel dot window | dotWindow for 20 slides at slides 1, 11 and 20 | Seven dots; the window slides with the current slide and always contains it (1-7, 8-14, 14-20) | | |
+| CLI-TC44 | Carousel edge dots | dotWindow for 20 slides at slides 1, 11 and 20 | Only a window end with more slides beyond it is small: last only, both, first only | | |
+| CLI-TC45 | Saved tab on own profile | Open your own profile, press Saved; then open another person's profile | Notes is selected first and no /bookmarks request is made; Saved lists the bookmarks; another profile has no tabs | | |
+| CLI-TC46 | Rendered dots and focus | 12-slide carousel, press Next six times; one slide; press Next to the last slide | Seven dots, the current one marked, the first small once the window slides; one slide shows no buttons; reaching the last slide moves focus to the carousel | | |
+| CLI-TC58 | Socket event: message:new | A message from the other person for a chat in the list, repeated once, then my own message and one for the chat on screen | The chat moves to the top with that message and one unread; the repeat adds nothing; my message and the open chat's add no unread | | |
+| CLI-TC59 | Socket events: read, deleted, removed | conversation:read from the other member with an older then newer id, then from me; message:deleted for the last message; conversation:removed | The receipt only moves forward; my own read clears unread; the last message shows deleted with no text; the chat leaves the list | | |
+| CLI-TC60 | Socket events: request:new and answered | Two requests (one repeated), then one answered | One row per request, newest first; the answered one is removed | | |
+| CLI-TC61 | Paging merge: conversations | Page 1 holds chats 4 and 3 with a cursor; page 2 holds 3, 2 and 1 | List is 4, 3, 2, 1 with no repeat and no further page; a row seen twice keeps its newer copy | | |
+| CLI-TC62 | Paging merge: history | Newest page 50, 49, 48; older page 48, 47, 46; then a new message 51 twice and a delete of 51 | Chat reads 46 to 50 oldest first, 51 appears once and shows deleted; a message before history has loaded is ignored | | |
+| CLI-TC63 | Seen receipt | My messages 1, 3, 4; one member has read up to 3, another has read nothing | Seen appears under message 3 for that member only | | |
+| CLI-TC64 | Typing throttle | Four typing calls at 0, 0.5, 1.9 and 2.1 s | Two events are sent (at 0 and 2.1 s), matching the server's 2 s window | | |
+| CLI-TC65 | One socket per session | Guest; then sign in; connect; then log out | No socket for a guest; one socket after sign-in with the inbox loaded; the socket is closed and the inbox cleared on logout | | |
+| CLI-TC66 | Unread badge | message:new from the other person for a listed chat | The unread total rises by one | | |
+| CLI-TC67 | Message request state | Open /messages?to=2 as a non-friend with a note attached; send a text | A request notice shows first; after sending, Request sent shows the text and note and the box is gone; the body posts toUserId, body and noteId | | |
+| CLI-TC68 | Send to a friend; request pending | Friend: send a message; non-friend with a request already pending: send | The friend's send moves to the new conversation; the pending case shows "You already have a request waiting with this person." | | |
+| CLI-TC69 | Unavailable and blocked starts | /messages?to= for a missing or blocked-by-them user; for a user I blocked | The first shows "This conversation is not available"; the second shows "You blocked <name>" with no message box | | |
+| CLI-TC47 | Co-author credit | Credit for three co-authors, then an empty list | Reads "with Aina, Ben and Chloe" with each name linking to the profile; nothing is shown for an empty list | | |
+| CLI-TC48 | More menu by role | Open More as the owner, as a view collaborator and as an edit collaborator | Owner sees Share and no Request; a viewer sees Request to collaborate and no Share; an editor sees neither; a feed card with no role offers no Request | | |
+| CLI-TC49 | Guest requests to collaborate | Signed out, choose Request to collaborate in More | The log-in sheet opens for the collaborate action, returning to the note; no dialog and no request | | |
+| CLI-TC50 | Share dialog contents | Owner opens Share on a note with one editor, one request and a view link | Owner row marked you, the editor with a role select, the request with its message, the view link shown as active and one Create link button | | |
+| CLI-TC51 | Create and revoke a link | Create the edit link, then Revoke | POST creates it and the address shows once with Copy; Revoke asks "Are you sure?" first, then DELETE removes it and the address disappears | | |
+| CLI-TC52 | Approve and decline a request | Pick Can view for one request and Approve; Decline another | POST with decision approve and role view; the row leaves the list; the second posts decline with the default role edit | | |
+| CLI-TC53 | Invite by search | Choose Can view, search "ai" where one result already has access, press Invite on the other | The person with access is not offered; PUT is sent with role view | | |
+| CLI-TC54 | Edit link as a guest | Open /share/:token signed out and the server answers 401 | "Log in to edit this note" with Log in and Register buttons; no note content | | |
+| CLI-TC55 | Join as editor | Signed in, open an edit link, press Join as editor | The note is previewed with no write; Join posts once, then the browser goes to /notes/9 | | |
+| CLI-TC56 | View link and bad link | Open a view link signed out; open a revoked token | The note shows with co-authors, a view-only banner and no Join button; the revoked link shows "This link does not work" with the server message | | |
+| CLI-TC57 | Request to collaborate dialog | Paste 301 characters and send; then a padded message; then send again after a 409 | 301 / 300 is shown and nothing is sent; the message is trimmed and the dialog confirms; the duplicate error is shown | | |
+| CLI-TC21 | Search URL round trip | `?q=normal forms&tab=notes&lecturer=any&module=7&from=2026-09-01&to=2026-10-01`; an empty query string; `searchHref` with only a query | The state holds each value; writing it back drops the default Top tab and blanks; an empty string gives the empty state; the link is `/search?q=dsa` | | |
+| CLI-TC22 | Search URL with invalid values | Tab `videos`, lecturer `1e3`, term `0`, module `+5`, dates `yesterday` and `2026-13-45`, a 150 character query | Tab falls back to Top, ids and dates are dropped, the query is cut to 100 characters, a valid lecturer id `12` is kept | | |
+| CLI-TC23 | Term and date range are exclusive | URL with a term and dates; choosing a term after dates and dates after a term; a start date after the end date | The URL keeps the term and drops the dates; each choice clears the other; the range error names the start date; equal dates are valid | | |
+| CLI-TC24 | Search request path | Blank query, query with spaces, all filters on the Notes tab, a later page with cursor and asOf | Blank gives no request; the query is trimmed; filters are sent in order; the cursor and the asOf from page 1 are appended and URL-encoded | | |
+| CLI-TC25 | Filters ignored outside Top and Notes | People, Hashtags and Modules tabs with lecturer, term and module set; Notes tab with three active filters | The request carries no filters and the filter count is 0 on the first three tabs; the Notes tab counts a date range as one filter (3 in all) | | |
+| CLI-TC26 | Search load more | Page 1 returns items 1 and 2 with a cursor and asOf; page 2 returns 2 and 3 | The second request carries the cursor and page 1's asOf; the list is 1, 2, 3 without a repeat; no further page is offered | | |
+| CLI-TC27 | Stale search answer | The query changes from `old` to `new` before `old` answers; then the query is set to blanks | The `old` answer is dropped and only `new` is shown; a blank query shows no results and sends no request | | |
+| CLI-TC28 | Search page failure | The first page request answers 500, then the retry answers 200 | The error text is returned; Try again fetches the same page and the error clears | | |
+
+*Table 4.38: Free-tier cost guard test cases (USE)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| USE-TC1 | Atomic usage counter | 40 concurrent consume calls of 1 against a cap of 25; then 3 and 2 against cap 27; a cap smaller than the amount | Exactly 25 succeed and the stored count is 25; 3 is refused and 2 accepted; an amount above the cap is refused | | |
+| USE-TC2 | Period rollover | Hourly counter filled at 14:59 UTC, then a call at 15:00; month and day keys | The 15:00 call is allowed from zero; keys are `2026-10-18T14`, `2026-10` and `2026-10-18` | | |
+| USE-TC3 | Storage cap refusal | live assets summing to the 8 GB cap, then an upload by another user; the assets then marked deleted | 507 "Image storage is full" and no Class A count; after deletion the upload gives 201 | | |
+| USE-TC4 | Class A and Class B exhausted | Upload and serve once; Class B set to its cap, then the file request and a modules request; Class A set to its cap, then an upload | Counts are 1 and 1; file request 503 "Monthly image limit reached" while modules stays 200; upload 503 with the same message | | |
+| USE-TC5 | Unsplash app-wide hourly cap | Counter at cap minus 1; two different searches; the first search repeated | First 200, second 503 with no outbound request; the repeated cached search 200 | | |
+| USE-TC6 | Upload kill switch | `UPLOADS_DISABLED=true`, then an upload | 503 "Uploads are turned off"; nothing stored or counted | | |
+| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, unsplash (cap 25) and storage_bytes (cap 8000000000) | | |
+| USE-TC8 | Env cap lowers but never raises | Caps of unset, `5000`, `600000`, `999999999`, `-1` and `lots` for Class A (default 500,000); `9000000000` for storage | 500,000; 5000; 500,000; 500,000; default; default; 8,000,000,000 | | |
+| USE-TC9 | Counter failure | Usage table unreachable; an upload, a file request, a storage delete | Upload 500 and no file written; file request 500; delete still removes the file | | |
+
+*Table 4.39: R2 storage driver test cases (STO)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| STO-TC1 | Put signs one PutObject | put of 5 bytes under an `i/` key, mocked fetch | One PUT to `https://<account>.r2.cloudflarestorage.com/<bucket>/<key>` with an AWS4-HMAC-SHA256 header (region `auto`, service `s3`), an unsigned-payload header (TLS) and the body | | |
+| STO-TC2 | Failed put | R2 answers 403 | Throws "R2 put failed with status 403"; no credential in the message | | |
+| STO-TC3 | Ranged read | `Range: bytes=1-3`, R2 answers 206 `bytes 1-3/5` | The Range header is sent; result size 5, start 1, end 3, partial, stream yields the 3 bytes | | |
+| STO-TC4 | Whole read | No range, then a multi-range header; R2 answers 200 | No Range header sent; size from content-length, start 0, end size-1, not partial | | |
+| STO-TC5 | Missing and unsatisfiable | R2 answers 404; then 416 `bytes */5` | null; `{ unsatisfiable: 5 }` | | |
+| STO-TC6 | Server error is not retried | R2 answers 503 on read | Throws "R2 read failed with status 503"; exactly one request | | |
+| STO-TC7 | Remove | R2 answers 204, 404, then 500 | DELETE sent; 204 and 404 succeed; 500 throws | | |
+| STO-TC8 | Invalid key | key `../x` | Throws "Invalid storage key"; no request sent | | |
+| STO-TC9 | Timeout | R2 never answers a delete | The request is aborted after 15 s | | |
+| STO-TC10 | Missing R2 variables | `STORAGE_DRIVER=r2` with only the account ID and secret set | Startup fails naming `R2_ACCESS_KEY_ID` and `R2_BUCKET`; no variable value in the message | | |
+| STO-TC11 | Driver selection | `STORAGE_DRIVER` unset; then `r2` with all four variables | `local`; `r2` | | |
+| STO-TC12 | Live smoke (opt-in, `R2_LIVE_TEST=1`) | put 5 bytes under `t/`, read `bytes=99-`, read `bytes=1-3`, delete | `bytes=99-` gives unsatisfiable with size 5; read returns "ell" as a partial 5-byte object; the object is removed | | |
+| STO-TC13 | Malformed read responses | 206 without Content-Range; 200 with a non-numeric content-length; 416 without a size | Each throws before any stream is created | | |
+| STO-TC14 | Image put fails | `storage.put` rejects (timeout) on an image upload | 500; `storage.remove` is called with the key the put used | | |
+| STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `v/` key | | |
+
+*Table 4.40: Deploy readiness test cases (DEP)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| DEP-TC1 | Proxy trust setting | `TRUST_PROXY` unset, empty, `1`, `0`; then `true`, `-1`, `1.5`, `uniquelocal` | `loopback`, `loopback`, 1, 0; each invalid value fails startup naming `TRUST_PROXY` without echoing the value | | |
+| DEP-TC2 | Production startup guards | `NODE_ENV=production` with local storage, `CLIENT_ORIGIN=http://…`, `COOKIE_SECURE=false`, no `TRUST_PROXY`; then a valid production set; then the bad values without production | Startup fails naming `STORAGE_DRIVER`, `CLIENT_ORIGIN`, `COOKIE_SECURE` and `TRUST_PROXY`, never the origin value; the valid set parses with `TRUST_PROXY` 1; development still parses | | |
+| DEP-TC3 | Separate buckets behind the proxy | `TRUST_PROXY=1`; three guest reads from proxy peer 10.0.0.1 with `X-Forwarded-For` 203.0.113.5 twice, then 198.51.100.7 | `trust proxy` is 1; remaining guest reads 119, 118, then 119 for the second client | | |
+| DEP-TC4 | Forged forwarding header ignored | `trust proxy` loopback; two guest reads from public peer 198.51.100.20 with different `X-Forwarded-For` values | Remaining 119 then 118; the only counter key is `guest:198.51.100.20` | | |
+| DEP-TC5 | Login failures per IP and email | 10 wrong passwords for a@…; then the right password as " A@…"; a wrong password for b@…; 11 correct logins for b@…, all from one IP | Ten 401s; 429 "Too many failed attempts for this account. Try again in a minute."; b@… gets 401, then 200 eleven times | | |
+| DEP-TC6 | Asset file GETs skip the guest read limiter | Guest GET `/api/assets/999999/file` and `/api/share/not-a-token/assets/1`; then a guest profile read | 404 twice with no guest counter; the profile read creates one guest counter | | |
+| DEP-TC7 | Purge by each prefix's window | Counters `upload:` 10 minutes and 2 hours old, `guest:` 10 minutes and 10 seconds old | 2 deleted; the 10-minute upload counter and the 10-second guest counter remain | | |
+| DEP-TC8 | Sliding session | `GET /api/auth/me` with a token 10 minutes from expiry; a guest-readable GET with one 5 minutes from expiry; `/me` with a fresh token | New `notalah_token` cookie (HttpOnly, SameSite=Lax, Max-Age=3600, about an hour left) on both near-expiry requests; no cookie for the fresh token | | |
+| DEP-TC9 | Socket reconnects after a server cut | Client socket receives `disconnect` with reason `transport close`, then `io server disconnect` | No manual reconnect for the transport drop (socket.io retries itself); one `connect()` call after the server cut | | |
 
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.38: UAT tester details*
+*Table 4.41: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1386,7 +1549,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.39: UAT scenario tasks*
+*Table 4.42: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1405,7 +1568,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.40: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.43: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1415,7 +1578,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.41: UAT feedback and developer response*
+*Table 4.44: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1426,7 +1589,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.42: Ranking weight re-evaluation (NFR5)*
+*Table 4.45: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

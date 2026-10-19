@@ -233,7 +233,7 @@ R10 adds ANN-TC rows: exact anchor, re-anchor after an earlier insert, orphan af
 **Order:** R21a → R21b (app works on the new data) → R22 server alongside R21c → R21d → R22 client → R29 and R9 → R10.
 Frontend work waits on wireframe sign-off.
 
-**Risks:** ffmpeg/ffprobe needed in the Fly image and on the dev machine; text measurement drift across browsers
+**Risks:** ffmpeg/ffprobe needed in the server image (Render, D65; R40 moves video processing off the API) and on the dev machine; text measurement drift across browsers
 (self-hosted fonts mitigate); R2 CORS setup and Unsplash's 50/hour demo limit (production approval needs the live site);
 undo memory on 30-slide decks (measure); 2 MB / 48 KB limits may reject very dense slides; annotations orphan when authors rewrite heavily.
 
