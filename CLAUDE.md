@@ -12,7 +12,8 @@ Use `vp`, never npm/npx. Tasks are cached; server tests never are.
 
 ## Layout
 `server/src/features/<feature>/` and `client/src/features/<feature>/` per feature; SQL only in `repository.ts`;
-migrations in `server/db/migrations/`; tests mirror features. Map: `docs/ARCHITECTURE.md`.
+migrations in `server/db/migrations/`; tests mirror features. `client/` and `server/` have their own CLAUDE.md.
+Every doc is indexed in `docs/README.md`; the folder map is `docs/ARCHITECTURE.md`.
 
 ## Rules
 - Tables UPPERCASE `_T`, always double-quoted (`"POST_T"`); columns lowercase with a table prefix; SQL keywords

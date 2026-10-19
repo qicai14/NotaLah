@@ -14,7 +14,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy.
 - **User review (14 Oct):** Keep.
 
-## D2 — FR15 filter by lecturer and academic term: **rework**
+## D2 — FR15 filter by lecturer and academic term: **rework** (restored in full by the user, 14 Oct; see User review)
 - **Rework:** search results get two filters: *lecturer content* (posts authored by, or Super-Liked
   by, a lecturer) and *published date range*. "Academic term" is not modelled as an entity; APU
   intakes and terms differ per programme, so a date range expresses the same need without a term
@@ -24,7 +24,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy (filters are query parameters).
 - **User review (14 Oct):** **Modify.** Keep the lecturer-content filter and custom date range, and restore the academic-term filter through a seeded term catalogue (`"TERM_T"`: name, start date, end date, loaded by migration like `"MODULE_T"`); choosing a term filters by its dates. FR15 is then delivered as written in the IR. Shape confirmed 14 Oct: the lecturer filter also offers one named lecturer.
 
-## D3 — FR17 background audio on slide notes: **cut (future work)**
+## D3 — FR17 background audio on slide notes: ~~cut~~ **restored by the user, 14 Oct** (Jamendo, D43)
 - **Alternatives:** keep as Sprint 4 stretch; rework as a link to external audio.
 - **Why:** lowest-supported feature (53.1% useful, 18.8% below moderate, IR §3.3.3.3 already flags it
   as deferrable). It needs file upload, storage, size limits and copyright moderation of audio, none of
@@ -33,7 +33,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Medium (adds an upload pipeline later; schema change is one nullable column).
 - **User review (14 Oct):** **Reverse.** FR17 is built. The author searches Deezer from the editor (through a server proxy: the Deezer API needs no key but sends no CORS headers) and attaches one track; the note stores provider, track id, title, artist and cover only, with no audio stored on our side. The slide viewer loops the 30-second preview behind the slides with a play/pause control; the preview URL is signed and expires, so it is fetched fresh when the note plays. If Deezer is unreachable the note works without audio. 30-second previews are acceptable (user). Alternatives considered: own upload (storage and copyright moderation), Spotify (new apps get no preview URLs, playback only through the visible embed), MusicBrainz (metadata only, no audio), YouTube (quota of about 100 searches a day; its policies forbid audio-only playback).
 
-## D4 — FR18 peer/lecturer annotation of notes: **cut (covered by comments)**
+## D4 — FR18 peer/lecturer annotation of notes: ~~cut~~ **restored by the user, 14 Oct** (text-anchored, R10)
 - **Alternatives:** inline annotations anchored to slide text ranges.
 - **Why:** proposed by one respondent and already marked "Low, deferred" in the IR. The underlying
   need (lecturer feedback on a specific note) is met by slide-referenced comments plus automatic
@@ -74,7 +74,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** Easy.
 - **User review (14 Oct):** Keep.
 
-## D9 — "Contact" is created by an accepted message request
+## D9 — "Contact" is created by an accepted message request (superseded by follows, D38)
 - **Decision:** there is no separate friend-request feature. When a recipient accepts a message
   request (FR6), both users become contacts, and contacts-only posts (FR10) are visible to them.
 - **Alternatives:** separate add-friend flow (rejected: two approval mechanisms for one idea).
@@ -464,7 +464,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (before Chapter 4) to `…_2345`.
 - **User review (14 Oct):** Keep.
 
-## D29 — Live deployment with CI/CD (user decision, 14 Oct 2026)
+## D29 — Live deployment with CI/CD (user decision, 14 Oct 2026; host superseded by Render, D65)
 - **Decision:** the final demonstration and UAT run on a live deployment. Frontend: Cloudflare Pages on `app.<domain>`.
   Backend: Express + Socket.io on Fly.io (shared-cpu-1x, about $3/month, no cold starts) at `api.<domain>`. Database:
   Neon free Postgres. Domain: the free `.me` domain from the GitHub Student Developer Pack. Both hosts sit under one
@@ -1407,6 +1407,24 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** stay on 5.9.3 (rejected by the user); `isolatedDeclarations` for shared (not needed).
 - **Reversibility:** High: revert the catalog entry and the three `catalog:` references, then `vp install`.
 
+## D64 - Sentry SDK 11 (20 Oct 2026)
+
+- **Decision (user, 20 Oct):** upgrade `@sentry/node` from 10.75.3 to 11.8.0. No behaviour change: D41 still holds
+  (Sentry is imported only when `SENTRY_DSN` is set, only 5xx errors are reported, tagged with the request id, with the
+  request URL, headers, cookies and body stripped).
+- **What changed:** `server/src/lib/errorReporting.ts` replaces `sendDefaultPii: false` with an explicit
+  `dataCollection` block. v11 removed `sendDefaultPii` and now collects everything unless told otherwise (user info,
+  cookies, headers, HTTP bodies, query params, database query data, queue arguments, local variables), so every
+  category is switched off (`userInfo`, `cookies`, `httpHeaders`, `urlQueryParams`, `databaseQueryData`, `queues`,
+  `stackFrameVariables` false; `httpBodies: []`). `beforeSend` still deletes `event.request`. `init`, `withScope`,
+  `setTag` and `captureException` are unchanged in v11.
+- **Checked:** tracing stays off because no `tracesSampleRate` or `tracesSampler` is set, so v11's span streaming and
+  new HTTP attributes never run. Source context lines now default to 5 (was 7), which sends less. Node 20.19 minimum is
+  met. New test `OPS-TC6` asserts the `dataCollection` options, the `request` stripping and the request-id tag.
+  Not verified against a real DSN (none available).
+- **Alternatives:** keep `sendDefaultPii: false` (silently ignored in v11, so everything would be collected); stay on v10.
+- **Reversibility:** High: pin 10.75.3 and restore `sendDefaultPii: false`.
+
 ## D65 - Hosting on Render free tier (supersedes D29's Fly.io choice) (R37, 20 Oct 2026)
 
 - **Decision (user, 18 and 20 Oct):** the API runs as one Render free web service at `api.<domain>`; the client stays on
@@ -1420,32 +1438,70 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     tolerates a cold database.
   - *Behind Render's proxy (one hop):* `trust proxy` now comes from `TRUST_PROXY`, a hop count or `loopback` (dev default),
     never `true`, which would let a client forge `X-Forwarded-For`. Production sets `1`, so `req.ip` is the client and each
-    guest gets its own rate-limit bucket (the D35 and D44 pre-deploy item).
+    guest gets its own rate-limit bucket (the D35 and D44 pre-deploy item). `1` holds only while `api.<domain>` is
+    DNS-only (grey cloud) in Cloudflare; proxied through Cloudflare (orange cloud) it is two hops, so `2`. The guards
+    refuse `loopback` and `0` but cannot tell 1 from 2, so the first deploy is checked by hand: with `DEBUG_PROXY=1`
+    each `GET /api/health` logs `req.ip` beside the raw `X-Forwarded-For`, and the logged ip must be the caller's own
+    public address. The flag is unset afterwards.
   - *Ephemeral disk:* production refuses `STORAGE_DRIVER=local` at startup.
   - *One instance, 512 MB:* Socket.io rooms and the guest ranking cache stay in process (D50, D44); comments now name
     Render. Video transcoding (ffmpeg) is the heaviest memory user and moves off the API under R40.
   - *Campus lab behind one IP:* the per-IP login and register cap rises from 10 to 60 per minute, and a second limiter
     counts failed logins per IP and normalised email (10 per minute; a successful login takes its hit back), so one
     account's guesses do not lock out a lab. Asset file GETs are counted only by the file limiter, not also by the guest
-    read limiter.
+    read limiter. Accepted trade-off: the per-IP cap is still shared, so one person in a lab sending 60 attempts in a
+    minute blocks logins for everyone on that IP for the rest of the minute; a per-account limit alone would let one
+    IP guess across many accounts.
   - *Purge accuracy:* each rate-limit key prefix is purged after its own window, so the hourly upload, video and Unsplash
-    counters are no longer wiped by the one-minute window.
-- **Startup guards:** with `NODE_ENV=production` the server refuses to start when `STORAGE_DRIVER` is `local`,
-  `CLIENT_ORIGIN` is not `https://`, `COOKIE_SECURE` is not true or `TRUST_PROXY` is `loopback`. Each message names the
-  variable, never its value.
+    counters are no longer wiped by the one-minute window. An asset row is still marked deleted before its files are
+    removed (so a note cannot link a file being removed); a file that fails to go is logged with its key as orphaned,
+    and `db:purge` then exits 1 so the workflow run shows red.
+- **Startup guards:** with `NODE_ENV=production`, or `RENDER=true` (set by Render on its services), the server refuses
+  to start when `STORAGE_DRIVER` is `local`, `CLIENT_ORIGIN` is not `https://`, `COOKIE_SECURE` is not true or
+  `TRUST_PROXY` is `loopback` or `0`. Each message names the variable, never its value. The `COOKIE_SECURE` default
+  follows that parsed production flag rather than reading `process.env` separately.
 - **Sliding session:** the JWT still lasts one hour, but a request whose token has under 15 minutes left gets a fresh
-  cookie (same flags, new hour), so an active user is not logged out mid-session. The server still cuts a socket when its
-  token expires; the client now reconnects after a server-side disconnect, and the handshake reads the renewed cookie, so
-  socket expiry follows the new token.
+  cookie (same flags, new hour), so an active user is not logged out mid-session. Tokens carry an `auth_time` claim (the
+  login time), copied into each renewal; past `MAX_SESSION_HOURS` (default 12) since login the cookie is no longer
+  renewed, so a session left open on a shared lab PC ends within 13 hours. Tokens issued before R37 have no `auth_time`
+  and simply expire. The server still cuts a socket when its token expires; the client reconnects after a server-side
+  disconnect, after a random 1-3 s delay so tabs do not reconnect at once, and the handshake reads the renewed cookie,
+  so socket expiry follows the new token.
 - **Domain requirement:** both `pages.dev` and `onrender.com` are on the Public Suffix List, so `*.pages.dev` and
   `*.onrender.com` are different sites: the SameSite=Lax login cookie set by the API would not be sent from the client's
   requests. The app therefore needs its own domain with `app.` and `api.` subdomains before the live deploy.
 - **Under R27:** a keep-awake ping (to hide the cold start during UAT and the demo) and a k6 load test of the free instance.
-- **Tests:** DEP-TC1 to DEP-TC9.
+- **Supply chain:** `actions/checkout` is pinned by commit SHA with `persist-credentials: false` in both workflows, and
+  the purge workflow gives its secrets only to the gate and purge steps.
+- **Tests:** DEP-TC1 to DEP-TC11.
 - **Alternatives:** Fly.io (rejected: no free tier or spending cap); a paid always-on instance (rejected: never exceed a
   free tier).
 - **Reversibility:** Medium: the app is a plain Node process, so another host needs only its env values (`TRUST_PROXY`
   set to that host's hop count) and a start command.
+
+## D66 - Architecture review decisions (20 Oct 2026)
+- **Context:** a read-only whole-codebase audit and a review of the planned deployment scored the code 59/100 and the
+  planned system design 55/100 across eleven quality attributes. The user decided each design question on 20 Oct.
+- **Domain:** claim the GitHub Student Pack `.me` domain before R11. The client (`app.`) and API (`api.`) must share
+  one registrable domain, because `pages.dev` and `onrender.com` are on the Public Suffix List and the SameSite=Lax
+  login cookie would never reach the API.
+- **Video (R40):** uploads return at once with status `processing`; a Postgres job table and worker loop transcode
+  (inside the API on the free tier, a separate worker later with no code change). `VIDEO_PROFILE=free` stream-copies
+  compatible MP4 and otherwise re-encodes at most 720p, one job at a time; `standard` allows 1080p and several jobs.
+  The editor shows the limits as a disclaimer, and Chapter 6 records the scale-up path.
+- **Public media:** media of public notes is served from a CDN-cached public R2 custom domain; friends-only and draft
+  media stay behind the API's visibility checks.
+- **AI vendors:** keep Groq (R28), Gemini Flash-Lite (R35) and Workers AI Whisper (R36); users are told that
+  Gemini's free tier may use uploads.
+- **R27** becomes live-site evidence: a k6 load test for NFR1, a keep-awake ping within Render's 750 free hours
+  (after checking Render's terms) and one Neon restore drill. Two-instance scale-out is future work.
+- **Follow-ups logged in PLAN:** R37 deploy readiness, R38 clean-up, R39 feed payload, R40 video pipeline.
+- **Housekeeping:** wireframes v3 (generator, SVG, PNG) moved to the report repo (`FYP_Submissions/wireframes/`);
+  placeholder feature READMEs, `docs/PROGRESS.md` and `docs/system-design-review.html` deleted; `docs/README.md`
+  indexes the docs; nested `client/CLAUDE.md` and `server/CLAUDE.md` added.
+- **Alternatives:** proxy `/api` through Cloudflare without a domain; keep 1080p synchronous transcoding; stream all
+  media through the API; drop R27.
+- **Reversibility:** High for all items; none changes an FR or the fixed stack.
 
 ## D67 - Async video pipeline (R40, 20 Oct 2026)
 - **Context:** R29 (D59) transcoded each video inside the upload request with up to two ffmpeg runs at once. On the Render

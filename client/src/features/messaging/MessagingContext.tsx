@@ -87,8 +87,10 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     setSocket(s);
     s.on('connect_error', () => setError('Live updates are offline. Refresh to try again.'));
     // The server cuts a socket when its token expires; reconnecting picks up the cookie the sliding session renewed (D65).
+    // The 1-3 s jitter keeps every tab from reconnecting at once after a server-wide cut.
+    let reconnect: ReturnType<typeof setTimeout> | undefined;
     s.on('disconnect', (reason) => {
-      if (reason === 'io server disconnect') s.connect();
+      if (reason === 'io server disconnect') reconnect = setTimeout(() => s.connect(), 1000 + Math.random() * 2000);
     });
     s.on('connect', () => {
       setError(null);
@@ -118,6 +120,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'removed', conversationId }),
     );
     return () => {
+      clearTimeout(reconnect);
       s.close();
       setSocket(null);
     };

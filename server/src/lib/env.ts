@@ -16,6 +16,8 @@ const schema = z
     TEST_DATABASE_URL: z.string().min(1).optional(),
     JWT_SECRET: z.string().min(16),
     NODE_ENV: z.string().optional(),
+    // Render sets RENDER=true on its services; treated as production for the guards below (R37).
+    RENDER: z.string().optional(),
     PORT: z.coerce.number().int().positive().default(4000),
     PG_POOL_MAX: z.coerce.number().int().positive().default(10),
     PG_IDLE_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(30000),
@@ -60,21 +62,29 @@ const schema = z
         .default('loopback'),
     ),
     // Secure auth cookie (D35); defaults to on in production only, since local http would drop it.
-    COOKIE_SECURE: z
-      .enum(['true', 'false'])
+    COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+    // Hard cap on a sliding session (R37): past this many hours since login the cookie is no longer renewed.
+    MAX_SESSION_HOURS: z.coerce.number().positive().default(12),
+    // First-deploy check (D65): 1 logs req.ip beside the raw X-Forwarded-For on each health check, to confirm TRUST_PROXY.
+    DEBUG_PROXY: z
+      .enum(['1', '0'])
       .optional()
-      .transform((v) => (v === undefined ? process.env.NODE_ENV === 'production' : v === 'true')),
+      .transform((v) => v === '1'),
+  })
+  .transform((v) => {
+    const production = v.NODE_ENV === 'production' || v.RENDER === 'true';
+    return { ...v, production, COOKIE_SECURE: v.COOKIE_SECURE === undefined ? production : v.COOKIE_SECURE === 'true' };
   })
   .superRefine((v, ctx) => {
     const fail = (name: string, message: string) => ctx.addIssue({ code: 'custom', path: [name], message });
     // Production guards (R37, D65): each message names the variable, never its value.
-    if (v.NODE_ENV === 'production') {
+    if (v.production) {
       if (v.STORAGE_DRIVER === 'local')
         fail('STORAGE_DRIVER', 'STORAGE_DRIVER must be r2 in production: the disk is wiped on restart');
       if (!v.CLIENT_ORIGIN.startsWith('https://'))
         fail('CLIENT_ORIGIN', 'CLIENT_ORIGIN must be an https:// origin in production');
       if (!v.COOKIE_SECURE) fail('COOKIE_SECURE', 'COOKIE_SECURE must be true in production');
-      if (v.TRUST_PROXY === 'loopback')
+      if (v.TRUST_PROXY === 'loopback' || v.TRUST_PROXY === 0)
         fail('TRUST_PROXY', 'TRUST_PROXY must be the proxy hop count (1 on Render) in production');
     }
     if (v.STORAGE_DRIVER !== 'r2') return;
