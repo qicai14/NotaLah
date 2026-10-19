@@ -1,0 +1,52 @@
+name: Daily purge
+
+# The dependable daily run of the purge set (R37, D65). The API's in-process timer is only a fallback, because the
+# Render free instance sleeps after 15 idle minutes and may never be awake when it is due.
+on:
+  schedule:
+    - cron: '30 19 * * *' # 03:30 Malaysia time, the quietest hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: purge
+  cancel-in-progress: false
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      # Unlinked assets are deleted from R2 too, so the job needs the production bucket; it fails rather than orphan files.
+      STORAGE_DRIVER: r2
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      # env.ts requires a signing secret; the purge signs no tokens, so a placeholder is enough.
+      JWT_SECRET: purge-job-signs-no-tokens
+    steps:
+      - name: Check for the production database secret
+        id: gate
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::PROD_DATABASE_URL is not set; skipping the purge."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: '24'
+          cache: true
+      - if: steps.gate.outputs.run == 'true'
+        run: vp install
+      - name: Purge
+        if: steps.gate.outputs.run == 'true'
+        run: vp run server#db:purge
