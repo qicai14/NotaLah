@@ -9,7 +9,7 @@ import { MESSAGING } from './config';
 import * as repo from './repository';
 
 // shortcut: rooms, typing throttles and the kicks done through them (suspension, removal from a group) live in this
-// process's memory, so the app runs on a single Fly machine (D50); add the Socket.io Postgres adapter (R27) before scaling out.
+// process's memory, so the app runs as one Render instance (D50, D65); add the Socket.io Postgres adapter (R27) before scaling out.
 let io: Server | undefined;
 
 export const userRoom = (id: number) => `user:${id}`;

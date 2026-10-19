@@ -86,6 +86,10 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     const s = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
     setSocket(s);
     s.on('connect_error', () => setError('Live updates are offline. Refresh to try again.'));
+    // The server cuts a socket when its token expires; reconnecting picks up the cookie the sliding session renewed (D65).
+    s.on('disconnect', (reason) => {
+      if (reason === 'io server disconnect') s.connect();
+    });
     s.on('connect', () => {
       setError(null);
       setConnections((n) => n + 1);

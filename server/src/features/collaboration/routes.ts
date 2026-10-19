@@ -8,7 +8,7 @@ import { bodyOrEmpty, idParam, invalidId } from '../../lib/validation';
 import { shareAssetUrl } from '../assets/config';
 import { getLinkedAsset } from '../assets/repository';
 import { sendAsset } from '../assets/service';
-import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
+import { me, optionalAuth, optionalAuthForFiles, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { fileLimiter, guestReadLimiter } from '../auth/rateLimit';
 import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
 import { isBlocked } from '../users/repository';
@@ -119,9 +119,8 @@ collaborationRouter.get(
 
 collaborationRouter.get(
   '/share/:token/assets/:assetId',
-  optionalAuth,
-  fileLimiter,
-  (req, res, next) => (req.user ? guestReadLimiter(req, res, next) : next()),
+  optionalAuthForFiles,
+  fileLimiter, // the only limit here, so an image is not counted twice (R37)
   async (req, res) => {
     const found = await link(req, res);
     if (!found) return;

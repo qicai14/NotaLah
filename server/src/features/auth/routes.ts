@@ -1,18 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
 import { z } from 'zod';
-import {
-  AUTH_COOKIE,
-  authCookieOptions,
-  BCRYPT_COST,
-  type LoginInfo,
-  passport,
-  signToken,
-  TOKEN_TTL_SECONDS,
-} from './passport';
+import { AUTH_COOKIE, authCookieOptions, BCRYPT_COST, type LoginInfo, passport, setAuthCookie } from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
-import { authLimiter } from './rateLimit';
+import { authLimiter, loginFailureLimiter } from './rateLimit';
 import { programmeExists } from '../modules/repository';
 import { isUniqueViolation } from '../../lib/pool';
 import { bodyOrEmpty, issueMap } from '../../lib/validation';
@@ -87,7 +79,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
   }
 });
 
-authRouter.post('/login', authLimiter, (req, res, next) => {
+authRouter.post('/login', authLimiter, loginFailureLimiter, (req, res, next) => {
   const { email, password } = bodyOrEmpty(req);
   if (typeof email !== 'string' || !email.trim() || typeof password !== 'string' || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
@@ -97,7 +89,7 @@ authRouter.post('/login', authLimiter, (req, res, next) => {
     if (!user) {
       return res.status(info?.status ?? 401).json({ error: info?.message ?? 'Invalid email or password' });
     }
-    res.cookie(AUTH_COOKIE, signToken(user), { ...authCookieOptions(), maxAge: TOKEN_TTL_SECONDS * 1000 });
+    setAuthCookie(res, user);
     res.json({ user });
   })(req, res, next);
 });

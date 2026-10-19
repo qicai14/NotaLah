@@ -7,7 +7,7 @@ import multer from 'multer';
 import { idParam } from '../../lib/validation';
 import { env } from '../../lib/env';
 import { storage } from '../../lib/storage';
-import { me, optionalAuth, requireActive, requireAuth, viewerId } from '../auth/middleware';
+import { me, optionalAuthForFiles, requireActive, requireAuth, viewerId } from '../auth/middleware';
 import { fileLimiter, uploadLimiter, videoUploadLimiter } from '../auth/rateLimit';
 import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl, VIDEO } from './config';
@@ -180,7 +180,7 @@ assetsRouter.post(
   },
 );
 
-assetsRouter.get('/:id/file', optionalAuth, fileLimiter, async (req, res) => {
+assetsRouter.get('/:id/file', optionalAuthForFiles, fileLimiter, async (req, res) => {
   const asset = await getReadableAsset(Number(req.params.id), viewerId(req));
   if (!asset) return res.status(404).json({ error: 'Asset not found' });
   await sendAsset(req, res, asset);

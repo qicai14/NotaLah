@@ -9,6 +9,10 @@ const sockets: FakeSocket[] = [];
 class FakeSocket {
   handlers: Record<string, Handler> = {};
   closed = false;
+  connects = 0;
+  connect() {
+    this.connects += 1;
+  }
   on(event: string, fn: Handler) {
     this.handlers[event] = fn;
   }
@@ -131,5 +135,15 @@ describe('messaging provider', () => {
       }),
     );
     expect(screen.getByText('chats 1 unread 2')).toBeTruthy();
+  });
+
+  it('DEP-TC9: a socket the server cut (token expiry) reconnects; a dropped transport is left to socket.io', async () => {
+    signedIn = sam;
+    render(tree());
+    await act(async () => sockets[0]!.fire('connect'));
+    sockets[0]!.fire('disconnect', 'transport close');
+    expect(sockets[0]!.connects).toBe(0);
+    sockets[0]!.fire('disconnect', 'io server disconnect');
+    expect(sockets[0]!.connects).toBe(1);
   });
 });

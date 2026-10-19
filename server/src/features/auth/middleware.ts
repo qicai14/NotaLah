@@ -1,5 +1,5 @@
 import type { Request, RequestHandler } from 'express';
-import { passport } from './passport';
+import { passport, slideSession } from './passport';
 import { guestReadLimiter } from './rateLimit';
 import { type AuthUser, GUEST_ID, type Role } from '../users/repository';
 
@@ -8,9 +8,26 @@ export const requireAuth: RequestHandler = (req, res, next) => {
     if (err) return next(err);
     if (!user) return res.status(401).json({ error: 'Unauthorized' });
     req.user = user;
+    slideSession(req, res, user);
     next();
   })(req, res, next);
 };
+
+const attachViewer =
+  (limitGuests: boolean): RequestHandler =>
+  (req, res, next) => {
+    passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
+      if (err) return next(err);
+      if (!user) {
+        res.set('X-Viewer', 'guest');
+        return limitGuests ? guestReadLimiter(req, res, next) : next();
+      }
+      res.set('X-Viewer', 'user');
+      req.user = user;
+      slideSession(req, res, user);
+      next();
+    })(req, res, next);
+  };
 
 /**
  * For guest-readable GETs (R31, D44): a valid cookie attaches the user; a missing, invalid or expired one makes a guest,
@@ -18,18 +35,10 @@ export const requireAuth: RequestHandler = (req, res, next) => {
  * Signed-in answers say `X-Viewer: user`: a 304 keeps the cached response's headers unless the 304 replaces them, so
  * without it a guest copy revalidated after login would still read as guest and end the new session.
  */
-export const optionalAuth: RequestHandler = (req, res, next) => {
-  passport.authenticate('jwt', { session: false }, (err: unknown, user: AuthUser | false) => {
-    if (err) return next(err);
-    if (!user) {
-      res.set('X-Viewer', 'guest');
-      return guestReadLimiter(req, res, next);
-    }
-    res.set('X-Viewer', 'user');
-    req.user = user;
-    next();
-  })(req, res, next);
-};
+export const optionalAuth = attachViewer(true);
+
+/** optionalAuth without the guest read limit, for asset file GETs that fileLimiter already counts (R37). */
+export const optionalAuthForFiles = attachViewer(false);
 
 /** Use after requireAuth or optionalAuth: the signed-in user's id, or GUEST_ID. */
 export const viewerId = (req: Request): number => req.user?.id ?? GUEST_ID;

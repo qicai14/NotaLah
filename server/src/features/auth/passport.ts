@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import type { CookieOptions, Request } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import passport from 'passport';
 import { Strategy as JwtStrategy } from 'passport-jwt';
@@ -34,6 +34,19 @@ export function signToken(user: AuthUser): string {
 /** Attributes shared by setting and clearing the auth cookie (D35); read per call so tests can flip COOKIE_SECURE. */
 export function authCookieOptions(): CookieOptions {
   return { httpOnly: true, sameSite: 'lax', path: '/', secure: env.COOKIE_SECURE };
+}
+
+export function setAuthCookie(res: Response, user: AuthUser): void {
+  res.cookie(AUTH_COOKIE, signToken(user), { ...authCookieOptions(), maxAge: TOKEN_TTL_SECONDS * 1000 });
+}
+
+/** Sliding session (R37, D65): a token with less than this left is re-issued by the next authenticated request. */
+export const REFRESH_BELOW_SECONDS = 15 * 60;
+
+/** Use after the JWT strategy accepted the request's cookie: re-issues it with a fresh hour when it is near expiry. */
+export function slideSession(req: Request, res: Response, user: AuthUser): void {
+  const exp = jwt.decode(fromAuthCookie(req) ?? '', { json: true })?.exp;
+  if (exp !== undefined && exp * 1000 - Date.now() < REFRESH_BELOW_SECONDS * 1000) setAuthCookie(res, user);
 }
 
 // The token is read from the httpOnly cookie only, never a bearer header, so page script can never hold it (D35).
