@@ -49,7 +49,7 @@ export default function Register() {
       },
     );
     if (done)
-      navigate('/login', {
+      void navigate('/login', {
         state: {
           from,
           notice: isLecturer

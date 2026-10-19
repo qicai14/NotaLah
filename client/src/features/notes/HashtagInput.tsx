@@ -10,7 +10,7 @@ export function HashtagInput({
   error,
 }: {
   value: string[];
-  onChange(v: string[]): void;
+  onChange: (v: string[]) => void;
   error?: string;
 }) {
   const [text, setText] = useState('');

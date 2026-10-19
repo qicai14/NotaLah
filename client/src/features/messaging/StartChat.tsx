@@ -17,7 +17,7 @@ import type { Message } from './types';
 const MAX_PAGES = 10;
 
 /** The first message to a person: `/messages?to=<id>`. Opens the existing direct chat, or starts one; a non-friend gets a request. */
-export function StartChat({ toId, note, onBack }: { toId: number; note: Attachment | null; onBack(): void }) {
+export function StartChat({ toId, note, onBack }: { toId: number; note: Attachment | null; onBack: () => void }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { inbox, loadMoreConversations } = useMessaging();
@@ -90,7 +90,7 @@ export function StartChat({ toId, note, onBack }: { toId: number; note: Attachme
       setAttached(null);
       return true;
     }
-    navigate(`/messages/${r.conversationId}`, { replace: true });
+    void navigate(`/messages/${r.conversationId}`, { replace: true });
     return true;
   };
 

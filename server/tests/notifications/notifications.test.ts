@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { insertNotifications } from '../../src/features/notifications/repository';
 import { notify } from '../../src/features/notifications/service';
@@ -275,7 +275,7 @@ describe('Delivery rules', () => {
       suspended,
       deleted,
     ]);
-    expect(stored.map((r) => r.recipientId).sort()).toEqual([active, restricted].sort());
+    expect(stored.map((r) => r.recipientId).sort((a, b) => a - b)).toEqual([active, restricted].sort((a, b) => a - b));
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [actor]);
     expect(await inbox(active)).toEqual([]);
   });

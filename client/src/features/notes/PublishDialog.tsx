@@ -32,8 +32,8 @@ export function PublishDialog({
   note?: string;
   /** The note as readers will first see it (wireframe 26): its first slide, size and length. */
   preview?: { title: string; slide: BoardSlide; aspect: Aspect; slides: number; assets: Record<string, string> };
-  onChoose(c: PublishChoice): void;
-  onClose(): void;
+  onChoose: (c: PublishChoice) => void;
+  onClose: () => void;
 }) {
   const [choice, setChoice] = useState<PublishChoice | null>(initial);
   const options = alreadyPublished ? OPTIONS.slice(0, 2) : OPTIONS;

@@ -1326,3 +1326,45 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Timeouts:** 60 s to response headers for put, 30 s for read, 15 s for delete (abort via `AbortController`). The read timer stops once headers arrive, so a long video stream is not cut off; a stalled body is bounded by the client connection and the existing server limits. A put that times out may still have stored the object, so the image and video routes record the key before the put and remove it (best effort) when the put fails.
 - **Tests:** STO-TC1 to TC11 with a mocked fetch (signing shape, Range, status mapping, no retry, key check, timeout, env errors) and STO-TC12, an opt-in live smoke (`R2_LIVE_TEST=1`) of put, ranged read and delete under the `t/` prefix (the key pattern allows a single-letter prefix, so `test/` is not used).
 - **Reversibility:** Easy: `STORAGE_DRIVER=local` restores the previous behaviour; no schema change.
+
+## D61 - Vite+-native toolchain (20 Oct 2026)
+- **Context:** D47 added Vite+ 1.3.0 on top of npm workspaces, `tsc` builds, `concurrently` and npm pre-hooks, with
+  type-aware lint off because the CommonJS server tsconfig was rejected by tsgolint. The user approved finishing the move
+  on 20 Oct. No app behaviour changes.
+- **What changed:** pnpm 12.14.0 workspaces with a catalog for `vite`/`vitest`/`vite-plus`; the server is ESM and built by
+  `vp pack` (tsdown); `shared` is built by `vp pack` (ESM plus `.d.ts`); `vp check` runs format, lint, type-aware lint and
+  the type check; tests import from `vite-plus/test` and Vitest comes only through Vite+ (pinned 5.0.5); `run.tasks`
+  replace npm scripts, `concurrently` and the pre-hooks; git hooks run `vp check --fix` on staged JS/TS; CI uses
+  `setup-vp` and the Vite Task cache. Details and fixes in `docs/sprints/vite_plus_migration.md` ("Native migration, 20 Oct").
+- **Why:** one toolchain and one config file per package instead of npm, tsc, concurrently and lint/format scripts;
+  cached tasks, so an unchanged check, build or client test replays in under a second and `shared` builds once for every
+  consumer; type-aware lint, which caught 140 real warnings (unbound callbacks, floating `navigate` promises, unsafe
+  stringification, comparator-less sorts); pnpm, which installs about 9x faster here and keeps dependencies strict.
+- **Vite+ features used:** `vp migrate --full` (catalog, overrides, import rewrite, hooks); `vp check` with `typeAware`
+  and `typeCheck`; Vite Task cache locally (`run.tasks`, `dependsOn`, `cache.env`, `untrackedEnv`, `cache: false` for the
+  DB-backed server tests) and in CI (`actions/cache` restore/save of `node_modules/.vite/task-cache`); `vp hooks` with a
+  `staged` block; `vp pack` for `shared` and the server; `vp env pin` (`.node-version` 24.22.0, `packageManager`
+  pnpm@12.14.0); VS Code settings for the Vite+ extension pack with Oxc as formatter and fixer; Vite 8
+  `resolve.tsconfigPaths` in the client.
+- **Timings (median of 3, seconds, same machine):**
+
+  | Task | Before | After (uncached) | After (cached rerun) |
+  |---|---|---|---|
+  | Install | 94.57 (`npm ci`) | 10.54 (`vp install`) | - |
+  | Static checks | 17.67 (typecheck + lint + format) | 5.08 (`vp run check`) | 0.73 |
+  | Client tests | 14.70 | 15.67 | 0.85 |
+  | Server tests | 93.16 | 85.04 (never cached) | - |
+  | Build | 13.35 (included `tsc --noEmit`) | 3.35 (types moved to check) | 0.94 |
+  | Dev cold start to ready | 3.35 | 2.31 | - |
+
+- **Version policy (user, 20 Oct):** newest releases, exact pins, pnpm `minimumReleaseAge` 3 days (4320 minutes) for npm
+  packages, Vite+ toolchain excluded (`vite-plus`, `vite`, `vitest`, `@voidzero-dev/*`, oxlint, oxfmt, tsdown, rolldown);
+  Node on the newest LTS (24.22.0). Patch and minor updates from `vp outdated -r` were applied; majors left for a
+  decision: `@sentry/node` 10.75.3 → 11.8.0, `typescript` 5.9.3 → 7.0.2, `@types/node` 24.19.2 → 26.6.5 (tracks Node 26).
+- **CI check uncached:** CI runs `vp run --no-cache check`, because it is not proven that the task fingerprint covers every file tsgolint reads; build and client tests stay cached.
+- **IR stack:** unchanged. Vite (8.3.4 inside Vite+) is still the bundler and dev server for the React + TypeScript +
+  Tailwind client, Vitest still runs the tests, and the server is still Node.js + Express + PostgreSQL + Socket.io with
+  dbmate migrations. Vite+ is the command line that drives those tools, plus Oxlint, Oxfmt and tsdown, which replace the
+  `tsc` emit step. pnpm replaces npm as the package manager, which the IR does not fix.
+- **Reversibility:** Medium: revert the branch; the app code changes are type-only or lint fixes and survive a revert of
+  the tooling.

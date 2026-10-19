@@ -79,7 +79,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const status = typeof err?.status === 'number' ? err.status : 500;
   if (status >= 500) {
     res.err = err;
-    reportError(err, { requestId: String(req.id) });
+    reportError(err, { requestId: req.id as string });
   }
   res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
 };

@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { asUser, insertNote, insertUser, truncateAll } from '../helpers';
@@ -40,7 +40,7 @@ describe('admin modules', () => {
     await insertNote(author, { status: 'draft' });
     const res = await request(app).get('/api/admin/modules').set(admin);
     expect(res.status).toBe(200);
-    const codes = res.body.modules.map((m: { code: string }) => m.code);
+    const codes: string[] = res.body.modules.map((m: { code: string }) => m.code);
     expect(codes).toHaveLength(12);
     expect(codes).toEqual([...codes].sort());
     const counts = res.body.modules.filter((m: { noteCount: number }) => m.noteCount > 0);

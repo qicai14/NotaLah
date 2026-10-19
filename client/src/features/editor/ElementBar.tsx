@@ -67,7 +67,7 @@ function Tool({
   children,
 }: {
   label: string;
-  onClick(): void;
+  onClick: () => void;
   pressed?: boolean;
   disabled?: boolean;
   children: ReactNode;
@@ -91,7 +91,7 @@ function Tool({
   );
 }
 
-function Colour({ label, value, onChange }: { label: string; value: string; onChange(v: string): void }) {
+function Colour({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <label
       className="relative flex size-8 cursor-pointer items-center justify-center rounded-md hover:bg-accent"
@@ -123,7 +123,7 @@ function Num({
   min: number;
   max: number;
   step?: number;
-  onChange(v: number): void;
+  onChange: (v: number) => void;
   className?: string;
 }) {
   return (
@@ -149,7 +149,7 @@ function Num({
 const Sep = () => <span className="mx-1 h-6 w-px shrink-0 bg-border" aria-hidden="true" />;
 
 /** Exact position, size and angle: the keyboard and single-pointer alternative to dragging (WCAG 2.5.7). */
-function PositionPopover({ el, update }: { el: SlideElement; update(p: Partial<SlideElement>): void }) {
+function PositionPopover({ el, update }: { el: SlideElement; update: (p: Partial<SlideElement>) => void }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -267,7 +267,7 @@ function Stepper({
   one: string;
   n: number;
   max: number;
-  set(v: number): void;
+  set: (v: number) => void;
 }) {
   return (
     <span className="flex items-center gap-0.5" role="group" aria-label={what}>
@@ -284,7 +284,7 @@ function Stepper({
   );
 }
 
-function TableTools({ el, update }: { el: El<'table'>; update(p: Partial<SlideElement>): void }) {
+function TableTools({ el, update }: { el: El<'table'>; update: (p: Partial<SlideElement>) => void }) {
   const rows = el.cells.length;
   const cols = el.cells[0].length;
   const resize = (r: number, c: number) => {
@@ -325,7 +325,7 @@ const pct = (n: number) => Math.round(n * 100);
 const photoRatio = (el: El<'image'>) => (el.h / el.w) * (el.crop.w / el.crop.h);
 
 /** Crop trims each side; the frame's height follows so the photo keeps its proportions. */
-function CropPopover({ el, update }: { el: El<'image'>; update(p: Partial<SlideElement>): void }) {
+function CropPopover({ el, update }: { el: El<'image'>; update: (p: Partial<SlideElement>) => void }) {
   const c = el.crop;
   const trims = { left: c.x, top: c.y, right: 1 - c.x - c.w, bottom: 1 - c.y - c.h };
   const set = (side: keyof typeof trims, value: number) => {
@@ -408,7 +408,7 @@ function AltPopover({ el }: { el: El<'image'> }) {
   );
 }
 
-function ImageTools({ el, update }: { el: El<'image'>; update(p: Partial<SlideElement>): void }) {
+function ImageTools({ el, update }: { el: El<'image'>; update: (p: Partial<SlideElement>) => void }) {
   return (
     <>
       <CropPopover el={el} update={update} />

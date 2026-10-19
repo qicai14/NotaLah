@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { emptyInbox, inboxReducer } from './inboxReducer';
 import { StartChat } from './StartChat';
 
@@ -26,7 +26,7 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const key = `${init?.method ?? 'GET'} ${url.replace('/api', '')}`;
-      if (init?.body) posted.push(JSON.parse(String(init.body)));
+      if (init?.body) posted.push(JSON.parse(init.body as string));
       const { status, body } = replies[key] ?? { status: 404, body: { error: 'Not found' } };
       return { status, ok: status < 400, headers: new Headers(), json: () => Promise.resolve(body) };
     }),

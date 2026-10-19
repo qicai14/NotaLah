@@ -32,7 +32,7 @@ export function MoreMenu({ variant, collapsed = false }: { variant: 'rail' | 'ic
     run(
       async () => {
         await logout();
-        navigate('/login', { replace: true });
+        void navigate('/login', { replace: true });
       },
       () => 'Could not log out. Try again.',
     );

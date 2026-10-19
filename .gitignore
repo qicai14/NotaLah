@@ -11,4 +11,3 @@ coverage/
 .DS_Store
 Thumbs.db
 .claude/settings.local.json
-client/tsconfig.tsbuildinfo

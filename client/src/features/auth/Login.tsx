@@ -28,7 +28,7 @@ export default function Login() {
       () => login(email, password),
       (err) => (err instanceof ApiError ? err.message : 'Could not reach the server. Please try again.'),
     );
-    if (user) navigate(state?.from ?? (user.role === 'admin' ? '/admin/lecturers' : '/'), { replace: true });
+    if (user) void navigate(state?.from ?? (user.role === 'admin' ? '/admin/lecturers' : '/'), { replace: true });
   }
 
   return (

@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { asUser, truncateAll } from '../helpers';

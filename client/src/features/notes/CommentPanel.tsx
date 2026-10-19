@@ -25,8 +25,8 @@ function Composer({
   noteId: number;
   slideCount: number;
   parentId?: number;
-  onDone(): void;
-  onCancel?(): void;
+  onDone: () => void;
+  onCancel?: () => void;
 }) {
   const [body, setBody] = useState('');
   const [slideNo, setSlideNo] = useState('');
@@ -130,9 +130,9 @@ function CommentRow({
   noteAuthorId?: number;
   canReply: boolean;
   replying: boolean;
-  onReply(): void;
-  onChanged(): void;
-  onError(m: string): void;
+  onReply: () => void;
+  onChanged: () => void;
+  onError: (m: string) => void;
 }) {
   const { user } = useAuth();
   const askToLogIn = useGuestPrompt();

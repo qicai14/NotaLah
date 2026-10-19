@@ -12,8 +12,8 @@ export function BlockDialog({
 }: {
   userId: number;
   name: string;
-  onClose(): void;
-  onBlocked(): void;
+  onClose: () => void;
+  onBlocked: () => void;
 }) {
   const { run, pending, error } = useAction();
 

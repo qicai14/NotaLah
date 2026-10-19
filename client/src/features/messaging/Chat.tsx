@@ -17,7 +17,7 @@ import type { Message } from './types';
 const TYPING_SHOWN_MS = 3500;
 const GAP_MS = 5 * 60 * 1000;
 
-export function Gone({ onBack }: { onBack(): void }) {
+export function Gone({ onBack }: { onBack: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
       <h2 className="text-title font-bold">This conversation is not available</h2>
@@ -39,8 +39,8 @@ export function Chat({
   initialNote,
 }: {
   id: number;
-  onBack(): void;
-  onLeft(): void;
+  onBack: () => void;
+  onLeft: () => void;
   initialNote: Attachment | null;
 }) {
   const { user } = useAuth();

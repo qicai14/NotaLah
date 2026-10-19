@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import jwt from 'jsonwebtoken';
 import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { attachSocket } from '../../src/features/messaging/socket';
 import { env } from '../../src/lib/env';
@@ -167,7 +167,9 @@ describe('Socket.io gateway', () => {
     expect(created.status).toBe(201);
     const g = created.body.conversation;
     expect(g).toMatchObject({ type: 'group', name: 'FYP Team', ownerId: a });
-    expect(g.members.map((m: { id: number }) => m.id).sort()).toEqual([a, b, c].sort());
+    expect(g.members.map((m: { id: number }) => m.id).sort((x: number, y: number) => x - y)).toEqual(
+      [a, b, c].sort((x: number, y: number) => x - y),
+    );
     const both = [next(sb, 'message:new'), next(sc, 'message:new')];
     await post(a, `/api/conversations/${g.id}/messages`, { body: 'Welcome' });
     await Promise.all(both);

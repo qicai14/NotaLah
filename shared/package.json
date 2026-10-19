@@ -12,12 +12,10 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "dev": "tsc -w --preserveWatchOutput"
+    "dev": "vp pack --watch --no-clean"
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "typescript": "5.9.3"

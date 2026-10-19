@@ -8,7 +8,7 @@ export function ConfirmButton({
   focusMain = true,
 }: {
   label: string;
-  onConfirm(): void;
+  onConfirm: () => void;
   disabled?: boolean;
   /** Move focus to <main> after a confirm (the row is gone); false inside a dialog, which keeps its own focus. */
   focusMain?: boolean;

@@ -10,8 +10,8 @@ export function SuperLikeDialog({
   onClose,
 }: {
   noteId: number;
-  onDone(verifiedBy: string): void;
-  onClose(): void;
+  onDone: (verifiedBy: string) => void;
+  onClose: () => void;
 }) {
   const [remark, setRemark] = useState('');
   const [error, setError] = useState<string | null>(null);

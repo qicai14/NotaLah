@@ -20,8 +20,8 @@ export function GroupDetails({
   onLeft,
 }: {
   conversation: Conversation;
-  onClose(): void;
-  onLeft(): void;
+  onClose: () => void;
+  onLeft: () => void;
 }) {
   const { user } = useAuth();
   const me = user!.id;
@@ -166,7 +166,7 @@ function AddFriends({
 }: {
   conversation: Conversation;
   pending: boolean;
-  onAdd(userId: number): void;
+  onAdd: (userId: number) => void;
 }) {
   const { friends, loading, error, hasMore, loadingMore, loadMore } = useFriends();
   const inGroup = new Set(c.members.map((m) => m.id));

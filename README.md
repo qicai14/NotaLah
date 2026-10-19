@@ -3,35 +3,43 @@
 React + Vite + Tailwind client, Express 5 + TypeScript server, PostgreSQL 17 (Docker), dbmate migrations.
 
 ## Prerequisites
-Node 24+, npm 11+, Docker Desktop.
+[Vite+](https://viteplus.dev) (`vp`), Docker Desktop. `vp` provides the pinned Node (`.node-version`) and pnpm
+(`packageManager` in `package.json`), so neither needs a separate install.
 
 ## Setup
 ```sh
 cp .env.example .env        # then set JWT_SECRET to a long random string
-npm install
-npm run db:up               # Postgres on localhost:5433 (databases parp and parp_test)
-npm run db:migrate -w server
-npm run dev                 # server :4000, client :5173 (proxies /api)
+vp install                  # pnpm install, plus the git pre-commit hook
+vp run db:up                # Postgres on localhost:5433 (databases parp and parp_test)
+vp run server#db:migrate
+vp run dev                  # builds shared, then shared watch + server :4000 + client :5173 (proxies /api)
 ```
 Check: `curl http://localhost:4000/api/health` returns `{"status":"ok","db":"up"}`.
 
 ### First administrator
 Admins cannot self-register (D6). Set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ chars, upper, lower case
 and a digit) and `ADMIN_NAME` in your local `.env` (or the shell), then run
-`npm run admin:create -w server`. It creates the admin, or promotes/resets the account with that
+`vp run server#admin:create`. It creates the admin, or promotes/resets the account with that
 email. Clear the password from `.env` afterwards.
 
 ## Commands
+Tasks in the `vite.config.ts` files are cached: a rerun with unchanged inputs replays the result. Each one builds
+`@parp/shared` first (also cached). Server tests are never cached, since they depend on the database.
+
 | Command | Does |
 |---|---|
-| `npm test` | server tests (migrates `parp_test` first), then client tests |
-| `npm test -w client` | client tests only (no database needed) |
-| `npm run build` / `npm run typecheck` | both workspaces |
-| `npm run lint` | Oxlint over both workspaces (via Vite+) |
-| `npm run db:down` | stop Postgres (data kept in the `parp_pgdata` volume) |
-| `npm run db:rollback -w server` | undo the last migration |
-| `npm run db:status -w server` | list applied migrations |
-| `npm run admin:create -w server` | create or reset the admin from `ADMIN_*` env values |
+| `vp run check` | format check, lint, type-aware lint and type check over the whole repo |
+| `vp check --fix` | the same, fixing formatting and autofixable lint |
+| `vp run -r test` | server tests (migrate `parp_test` first) and client tests |
+| `vp run client#test` / `vp run server#test` | one side only (client tests need no database) |
+| `vp run -r build` | shared and server with `vp pack`, client with `vp build` |
+| `vp run server#start` | run the built server (`node dist/server.js`) |
+| `vp run db:down` | stop Postgres (data kept in the `parp_pgdata` volume) |
+| `vp run server#db:rollback` | undo the last migration |
+| `vp run server#db:status` | list applied migrations |
+| `vp run server#admin:create` | create or reset the admin from `ADMIN_*` env values |
+
+The pre-commit hook runs `vp check --fix` on staged JS/TS files; commits touching only docs skip it.
 
 
 ### Client tests
@@ -51,10 +59,11 @@ survive restyling.
   a second signal or the timeout exits 1.
 
 ## CI
-`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `npm ci`, lint, typecheck, `npm test` (against a
-`postgres:17-alpine` service with a fresh `parp_test`), `npm run build`, then `npm audit --audit-level=high --omit=dev`.
+`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: `setup-vp`, `vp install`, `vp run --no-cache check`,
+`vp run -r test` (against a `postgres:17-alpine` service with a fresh `parp_test`), `vp run -r build`, then
+`pnpm audit --prod --audit-level high`. The Vite Task cache is restored after install and saved after a green run.
 Open the failing step in the Actions run: typecheck errors show the file and line, test failures show the Vitest diff,
-and an audit failure lists the vulnerable package and advisory. Reproduce locally with `npm run db:up` and the same
+and an audit failure lists the vulnerable package and advisory. Reproduce locally with `vp run db:up` and the same
 commands. Newer pushes to a branch cancel its still-running older run.
 
 ## Layout (full map in `docs/ARCHITECTURE.md`)

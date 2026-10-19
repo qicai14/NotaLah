@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { asUser, CSRF, insertNote, insertUser, truncateAll, walkPages } from '../helpers';

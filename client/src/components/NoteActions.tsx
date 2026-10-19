@@ -56,7 +56,7 @@ function RailButton({
   caption?: string;
   pressed?: boolean;
   disabled?: boolean;
-  onClick?(): void;
+  onClick?: () => void;
   to?: string;
   bar: boolean;
 }) {
@@ -117,8 +117,8 @@ export function NoteActions({
   layout?: 'rail' | 'bar';
   showAuthor?: boolean;
   commentsLink?: boolean;
-  onOpenComments?(): void;
-  onChange(patch: Partial<Note>): void;
+  onOpenComments?: () => void;
+  onChange: (patch: Partial<Note>) => void;
 }) {
   const { user } = useAuth();
   const askToLogIn = useGuestPrompt();

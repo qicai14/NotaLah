@@ -16,7 +16,7 @@ export function RequestDialog({
   noteId: number;
   title: string;
   ownerName: string;
-  onClose(): void;
+  onClose: () => void;
   returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const [message, setMessage] = useState('');

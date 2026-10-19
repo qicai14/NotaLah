@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { isBlocked, upsertAdmin } from '../../src/features/users/repository';
 import { pool } from '../../src/lib/pool';
@@ -225,7 +225,9 @@ describe('Blocking', () => {
       const res = await api.get(x, '/api/search?q=kernel&tab=people');
       expect(ids(res.body.items)).toEqual([x]);
     }
-    expect(ids((await api.get(null, '/api/search?q=kernel&tab=people')).body.items).sort()).toEqual([a, b].sort());
+    expect(ids((await api.get(null, '/api/search?q=kernel&tab=people')).body.items).sort((a, b) => a - b)).toEqual(
+      [a, b].sort((a, b) => a - b),
+    );
   });
 
   it('BLK-TC11: invites, share links and requests between the pair are refused; existing access pauses until unblock', async () => {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { asUser, CSRF, insertUser, slideHtml, slidesOf, textEl, truncateAll } from '../helpers';
@@ -259,7 +259,10 @@ describe('Slide elements (R21a)', () => {
                       WHERE s.sld_pst_id = p.pst_id AND e ->> 'type' = 'text')`;
     const stored = (await pool.query(`SELECT pst_search_doc::TEXT AS d FROM "POST_T" WHERE pst_id = $1`, [created.id]))
       .rows[0].d;
-    const file = readFileSync(path.resolve(__dirname, '../../db/migrations/20261017000001_slide_elements.sql'), 'utf8');
+    const file = readFileSync(
+      path.resolve(import.meta.dirname, '../../db/migrations/20261017000001_slide_elements.sql'),
+      'utf8',
+    );
     const [up, down] = file.replace('-- migrate:up', '').split('-- migrate:down');
     const c = await pool.connect();
     try {

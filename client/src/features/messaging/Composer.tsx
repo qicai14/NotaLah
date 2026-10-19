@@ -24,12 +24,12 @@ export function Composer({
   placeholder = 'Write a message',
   autoFocus,
 }: {
-  onSend(body: string): Promise<boolean>;
-  onTyping?(): void;
+  onSend: (body: string) => Promise<boolean>;
+  onTyping?: () => void;
   replyTo?: { id: number; name: string; body: string | null } | null;
-  onCancelReply?(): void;
+  onCancelReply?: () => void;
   note?: Attachment | null;
-  onRemoveNote?(): void;
+  onRemoveNote?: () => void;
   pending: boolean;
   disabled?: boolean;
   placeholder?: string;

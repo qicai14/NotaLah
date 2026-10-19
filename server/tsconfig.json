@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "tests", "vitest.config.ts"]
+  "include": ["src", "tests", "vite.config.ts"]
 }

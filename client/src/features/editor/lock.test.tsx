@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { afterLockWon, LOCK_RENEW_MS, LOCK_RETRY_MS, useEditLock } from './lock';
 import { emptyDeck, useEditor } from './store';
 import { LockedNotice } from './LockedNotice';

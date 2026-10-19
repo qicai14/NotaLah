@@ -55,7 +55,7 @@ export const NoteCard = memo(function NoteCard({
   item: FeedNote;
   guest: boolean;
   weights: RankingWeights | null;
-  onOpenComments(note: Note): void;
+  onOpenComments: (note: Note) => void;
 }) {
   const [item, setItem] = useState(initial);
   const ref = useViewLogger(item.id, guest);

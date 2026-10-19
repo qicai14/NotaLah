@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, insertNote, insertUser, truncateAll, walkPages } from '../helpers';
@@ -353,7 +353,7 @@ describe('Messages', () => {
     await holder.query('COMMIT');
     holder.release();
     const results = await Promise.all(adds);
-    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    expect(results.map((r) => r.status).sort((a, b) => a - b)).toEqual([201, 409]);
     expect(
       (await pool.query(`SELECT COUNT(*)::INT AS n FROM "CONV_MEMBER_T" WHERE cmb_cnv_id = $1`, [g])).rows[0].n,
     ).toBe(30);

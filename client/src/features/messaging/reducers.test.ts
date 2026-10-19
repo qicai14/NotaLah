@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { chatReducer, emptyChat, seenBy, typingThrottle } from './chatReducer';
 import { emptyInbox, inboxReducer, mergeById, unreadTotal, type InboxState } from './inboxReducer';
 import type { Conversation, Message } from './types';

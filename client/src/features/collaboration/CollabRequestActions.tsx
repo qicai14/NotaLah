@@ -18,7 +18,7 @@ export function CollabRequestActions({
   noteId: number;
   requestId: number;
   name: string;
-  onDecided(decision: 'approve' | 'decline'): void;
+  onDecided: (decision: 'approve' | 'decline') => void;
 }) {
   const [role, setRole] = useState<CollabRole>('edit');
   const { run, pending, error } = useAction();
