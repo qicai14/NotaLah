@@ -24,7 +24,7 @@ export function ReportDialog({
   returnFocus,
 }: {
   noteId: number;
-  onClose(): void;
+  onClose: () => void;
   returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const { user } = useAuth();

@@ -44,7 +44,7 @@ export function GuestPromptProvider({ children }: { children: ReactNode }) {
   const go = (to: '/login' | '/register') => {
     const from = ask?.returnTo ?? `${location.pathname}${location.search}`;
     setAsk(null);
-    navigate(to, { state: { from } });
+    void navigate(to, { state: { from } });
   };
 
   const { title, icon: Icon } = COPY[ask?.action ?? lastAction];

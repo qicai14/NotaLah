@@ -57,7 +57,7 @@ describe('Guest browsing (R31)', () => {
 
     // Signed-in behaviour is unchanged: the friend sees the contacts-only note, has M > 0 and gets a snapshot.
     const signedIn = await request(app).get('/api/feed').set(asUser(w.friend));
-    expect(ids(signedIn.body.items).sort()).toEqual([w.pub, w.contacts].sort());
+    expect(ids(signedIn.body.items).sort((a, b) => a - b)).toEqual([w.pub, w.contacts].sort((a, b) => a - b));
     expect(signedIn.body.items.find((i: { id: number }) => i.id === w.pub)).toMatchObject({ liked: true });
     expect(signedIn.body.items.find((i: { id: number }) => i.id === w.pub).components.M).toBeGreaterThan(0);
     expect((await pool.query(`SELECT 1 FROM "FEED_SNAPSHOT_T"`)).rowCount).toBe(1);
@@ -203,7 +203,7 @@ describe('Guest browsing (R31)', () => {
     expect(ids(more.body.notes)).toEqual([w.pub]);
     expect((await guest('/api/users/99999')).status).toBe(404);
     const friendView = await request(app).get(`/api/users/${w.author}`).set(asUser(w.friend));
-    expect(ids(friendView.body.user.notes).sort()).toEqual([w.pub, w.contacts].sort());
+    expect(ids(friendView.body.user.notes).sort((a, b) => a - b)).toEqual([w.pub, w.contacts].sort((a, b) => a - b));
   });
 
   it('AUTH-TC21: guest reads are rate-limited per IP; signed-in reads are not', async () => {

@@ -39,7 +39,7 @@ describe('editor save', () => {
     await saveNote();
     const [url, init] = put.mock.calls[0];
     expect(url).toBe('/api/notes/9');
-    expect(JSON.parse(String(init?.body))).toMatchObject({
+    expect(JSON.parse(init?.body as string)).toMatchObject({
       baseUpdatedAt: '2026-10-17T06:00:00.000Z',
       status: 'draft',
     });
@@ -132,7 +132,7 @@ describe('editor save', () => {
     vi.stubGlobal('fetch', post);
     s().setMeta({ title: '  ' });
     await saveNote();
-    expect(JSON.parse(String(post.mock.calls[0][1]?.body)).title).toBe('Untitled note');
+    expect(JSON.parse(post.mock.calls[0][1]?.body as string).title).toBe('Untitled note');
 
     vi.stubGlobal('fetch', reply(423, { error: 'Another collaborator is editing this note' }));
     s().setMeta({ title: 'Week 6' });
@@ -158,7 +158,7 @@ describe('editor save', () => {
     await first;
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
     expect(fetch.mock.calls[1][0]).toBe('/api/notes/9');
-    expect(JSON.parse(String(fetch.mock.calls[1][1]?.body))).toMatchObject({
+    expect(JSON.parse(fetch.mock.calls[1][1]?.body as string)).toMatchObject({
       title: 'Week 6, more',
       baseUpdatedAt: 'v1',
     });
@@ -197,7 +197,7 @@ describe('editor save', () => {
       }),
     );
     expect((await keepMine(true)).ok).toBe(true);
-    const sent = JSON.parse(String(calls[1].init?.body));
+    const sent = JSON.parse(calls[1].init?.body as string);
     expect(calls[1].init?.method).toBe('PUT');
     expect(sent).toMatchObject({ status: 'published', visibility: 'contacts', moduleId: 2, baseUpdatedAt: 'new' });
   });

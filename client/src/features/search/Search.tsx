@@ -27,7 +27,7 @@ import { type HashtagResult, type ModuleResult, type PersonResult, useSearchResu
 
 const DEBOUNCE_MS = 300;
 
-function Tabs({ tab, onChange }: { tab: SearchTab; onChange(tab: SearchTab): void }) {
+function Tabs({ tab, onChange }: { tab: SearchTab; onChange: (tab: SearchTab) => void }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
   const move = (e: KeyboardEvent, i: number) => {
     const to =
@@ -80,7 +80,7 @@ function Tabs({ tab, onChange }: { tab: SearchTab; onChange(tab: SearchTab): voi
   );
 }
 
-function Chip({ children, onRemove, name }: { children: string; onRemove(): void; name: string }) {
+function Chip({ children, onRemove, name }: { children: string; onRemove: () => void; name: string }) {
   return (
     <li className="inline-flex h-8 items-center gap-1 rounded-full bg-surface-strong pl-3 text-body-sm font-semibold">
       {children}
@@ -368,7 +368,15 @@ export default function Search() {
   }
 }
 
-function Rows({ tab, items, onLecturer }: { tab: SearchTab; items: { id: number }[]; onLecturer(id: string): void }) {
+function Rows({
+  tab,
+  items,
+  onLecturer,
+}: {
+  tab: SearchTab;
+  items: { id: number }[];
+  onLecturer: (id: string) => void;
+}) {
   if (tab === 'notes' || tab === 'top')
     return (
       <ul className="grid gap-3 sm:grid-cols-2">

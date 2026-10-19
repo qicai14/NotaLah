@@ -275,7 +275,7 @@ describe('Delivery rules', () => {
       suspended,
       deleted,
     ]);
-    expect(stored.map((r) => r.recipientId).sort()).toEqual([active, restricted].sort());
+    expect(stored.map((r) => r.recipientId).sort((a, b) => a - b)).toEqual([active, restricted].sort((a, b) => a - b));
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [actor]);
     expect(await inbox(active)).toEqual([]);
   });

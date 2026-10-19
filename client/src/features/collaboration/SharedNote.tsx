@@ -74,7 +74,7 @@ export default function SharedNote() {
   const own = user?.id === n.author.id;
   const joinAsEditor = async () => {
     const r = await join.run(() => api<{ noteId: number }>(`/share/${encodeURIComponent(token)}`, { method: 'POST' }));
-    if (r) navigate(`/notes/${r.noteId}`, { replace: true });
+    if (r) void navigate(`/notes/${r.noteId}`, { replace: true });
   };
 
   return (

@@ -5,7 +5,6 @@ import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
-import { requireAuth } from '../../src/features/auth/middleware';
 import { PgStore, purgeOldRateLimits } from '../../src/features/auth/rateLimit';
 import { signToken, tokenSubject } from '../../src/features/auth/passport';
 import type { AuthUser } from '../../src/features/users/repository';

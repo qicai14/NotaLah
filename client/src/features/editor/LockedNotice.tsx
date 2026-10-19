@@ -7,7 +7,7 @@ import type { LockHolder } from './lock';
  * Wireframes 28 and 29: someone else is editing, so this editor is read-only. It says who, what still works, and
  * that editing opens by itself once they finish (the lock is retried in the background and taken over when it lapses).
  */
-export function LockedNotice({ holder, owner, onRetry }: { holder: LockHolder; owner: boolean; onRetry(): void }) {
+export function LockedNotice({ holder, owner, onRetry }: { holder: LockHolder; owner: boolean; onRetry: () => void }) {
   return (
     <div
       role="status"

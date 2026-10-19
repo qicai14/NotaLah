@@ -18,7 +18,7 @@ export function PeopleDialog({
   userId: number;
   side: Side;
   name: string;
-  onClose(): void;
+  onClose: () => void;
 }) {
   const {
     items: rows,

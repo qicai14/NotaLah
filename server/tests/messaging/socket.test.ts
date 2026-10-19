@@ -167,7 +167,9 @@ describe('Socket.io gateway', () => {
     expect(created.status).toBe(201);
     const g = created.body.conversation;
     expect(g).toMatchObject({ type: 'group', name: 'FYP Team', ownerId: a });
-    expect(g.members.map((m: { id: number }) => m.id).sort()).toEqual([a, b, c].sort());
+    expect(g.members.map((m: { id: number }) => m.id).sort((x: number, y: number) => x - y)).toEqual(
+      [a, b, c].sort((x: number, y: number) => x - y),
+    );
     const both = [next(sb, 'message:new'), next(sc, 'message:new')];
     await post(a, `/api/conversations/${g.id}/messages`, { body: 'Welcome' });
     await Promise.all(both);

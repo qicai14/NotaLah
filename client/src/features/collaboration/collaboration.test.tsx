@@ -77,7 +77,7 @@ beforeEach(() => {
     vi.fn(async (url: string, init?: RequestInit) => {
       const path = url.replace('/api', '');
       const method = init?.method ?? 'GET';
-      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      const body = init?.body ? JSON.parse(init.body as string) : undefined;
       calls.push({ method, path, body });
       const key = `${method} ${path}`;
       const handler = handlers[key] ?? handlers[key.split('?')[0]];

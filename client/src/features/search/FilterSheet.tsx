@@ -29,11 +29,11 @@ export function FilterSheet({
   onApply,
 }: {
   open: boolean;
-  onOpenChange(open: boolean): void;
+  onOpenChange: (open: boolean) => void;
   state: SearchState;
   terms: TermOption[];
   modules: ModuleRef[] | null;
-  onApply(next: SearchState): void;
+  onApply: (next: SearchState) => void;
 }) {
   const desktop = useMediaQuery(DESKTOP);
   const [draft, setDraft] = useState(state);

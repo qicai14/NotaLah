@@ -44,7 +44,7 @@ export default function EditProfile() {
     );
     if (r) {
       setUser(r.user);
-      navigate('/profile');
+      void navigate('/profile');
     }
   }
 

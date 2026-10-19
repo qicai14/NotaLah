@@ -82,7 +82,7 @@ export default function Welcome({ dialog }: { dialog?: 'login' | 'register' }) {
   const close = () => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/welcome'));
   const browse = () => {
     markGuest();
-    navigate('/');
+    void navigate('/');
   };
 
   return (

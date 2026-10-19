@@ -10,7 +10,15 @@ import type { CollabPerson, CollabRole } from '../../types';
 import { RoleSelect } from './RoleSelect';
 
 /** Search people by name and invite one with a role (R30). People who already have access are left out. */
-export function InvitePeople({ noteId, skip, onInvited }: { noteId: number; skip: Set<number>; onInvited(): void }) {
+export function InvitePeople({
+  noteId,
+  skip,
+  onInvited,
+}: {
+  noteId: number;
+  skip: Set<number>;
+  onInvited: () => void;
+}) {
   const [query, setQuery] = useState('');
   const [role, setRole] = useState<CollabRole>('edit');
   const q = useDebouncedValue(query.trim(), 250);

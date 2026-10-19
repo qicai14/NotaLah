@@ -99,7 +99,7 @@ function Unavailable() {
 }
 
 /** Wireframe 34: the blocker sees only the name and Unblock. */
-function BlockedView({ profile, onUnblocked }: { profile: BlockedProfile; onUnblocked(): void }) {
+function BlockedView({ profile, onUnblocked }: { profile: BlockedProfile; onUnblocked: () => void }) {
   const { run, pending, error } = useAction();
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => button.current?.focus(), []);
@@ -125,7 +125,7 @@ function BlockedView({ profile, onUnblocked }: { profile: BlockedProfile; onUnbl
   );
 }
 
-function Stat({ value, label, onClick }: { value: number; label: string; onClick?(): void }) {
+function Stat({ value, label, onClick }: { value: number; label: string; onClick?: () => void }) {
   const inner = (
     <>
       <span className="text-title-sm font-bold tabular-nums">{compact.format(value)}</span>{' '}
@@ -151,9 +151,9 @@ function Loaded({
   p: ProfileData;
   own: boolean;
   focusName: boolean;
-  onFollowState(s: FollowState): void;
-  onBlocked(): void;
-  reload(): void;
+  onFollowState: (s: FollowState) => void;
+  onBlocked: () => void;
+  reload: () => void;
 }) {
   const { user } = useAuth();
   const askToLogIn = useGuestPrompt();
@@ -346,7 +346,7 @@ const TABS = [
 ] as const;
 
 /** Notes / Saved switch on your own profile: a tablist with arrow-key movement. */
-function ProfileTabs({ tab, onTab }: { tab: 'notes' | 'saved'; onTab(t: 'notes' | 'saved'): void }) {
+function ProfileTabs({ tab, onTab }: { tab: 'notes' | 'saved'; onTab: (t: 'notes' | 'saved') => void }) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
   const onKey = (e: KeyboardEvent) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;

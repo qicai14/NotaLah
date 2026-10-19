@@ -35,6 +35,7 @@ const id = (message: string) => z.number({ error: message }).int(message).positi
 // Plain text (React escapes it on render): control characters other than tab and newline are dropped, then trimmed.
 const text = z
   .string({ error: 'Message is required' })
+  // oxlint-disable-next-line no-control-regex -- stripping control characters is the point of this regex
   .transform((s) => s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim())
   .pipe(
     z

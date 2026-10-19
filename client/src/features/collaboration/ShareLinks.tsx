@@ -21,7 +21,7 @@ function LinkRow({
   noteId: number;
   role: CollabRole;
   active: NoteAccess['links'][number] | undefined;
-  onChanged(): void;
+  onChanged: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -127,7 +127,7 @@ export function ShareLinks({
 }: {
   noteId: number;
   links: NoteAccess['links'];
-  onChanged(): void;
+  onChanged: () => void;
 }) {
   return (
     <ul className="flex flex-col gap-2.5">

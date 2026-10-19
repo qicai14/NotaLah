@@ -123,9 +123,9 @@ describe('Search matching', () => {
     expect(ids((await search({ q: '#Normalisation' })).body.items)).toEqual([tagged]);
     const friend = await insertUser();
     await befriend(author, friend);
-    expect(ids((await search({ q: '#Normalisation', tab: 'notes' }, asUser(friend))).body.items).sort()).toEqual(
-      [tagged, contacts].sort(),
-    );
+    expect(
+      ids((await search({ q: '#Normalisation', tab: 'notes' }, asUser(friend))).body.items).sort((a, b) => a - b),
+    ).toEqual([tagged, contacts].sort((a, b) => a - b));
   });
 
   it("SRCH-TC5: module code returns that module's notes only", async () => {
@@ -139,7 +139,9 @@ describe('Search matching', () => {
     ];
     await note(author, { module: 'CT071-3-2' });
     await note(author, { module: 'CT030-3-2' });
-    expect(ids((await search({ q: 'CT071-3-3' })).body.items).sort()).toEqual(inModule.sort());
+    expect(ids((await search({ q: 'CT071-3-3' })).body.items).sort((a, b) => a - b)).toEqual(
+      inModule.sort((a, b) => a - b),
+    );
     expect(ids((await search({ q: 'ct071-3-3' })).body.items)).toHaveLength(2);
   });
 
@@ -158,7 +160,9 @@ describe('Search matching', () => {
     const author = await insertUser({ displayName: 'Lee Ming' });
     const se = [await note(author, { module: 'CT046-3-M' }), await note(author, { module: 'CT076-3-2' })];
     await note(author, { module: 'CT044-3-2' });
-    expect(ids((await search({ q: 'Software Engineering', tab: 'notes' })).body.items).sort()).toEqual(se.sort());
+    expect(ids((await search({ q: 'Software Engineering', tab: 'notes' })).body.items).sort((a, b) => a - b)).toEqual(
+      se.sort((a, b) => a - b),
+    );
 
     const contains = await insertUser({ displayName: 'Stanley Ong' });
     const prefix = await insertUser({ displayName: 'Tan Wei Ming' });
@@ -192,7 +196,9 @@ describe('Search matching', () => {
     await superLike(suspendedLec, likedBySuspended);
     await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [suspendedLec]);
 
-    expect(ids((await search({ q: 'joins', lecturer: 'any' })).body.items).sort()).toEqual([byA, likedByB].sort());
+    expect(ids((await search({ q: 'joins', lecturer: 'any' })).body.items).sort((a, b) => a - b)).toEqual(
+      [byA, likedByB].sort((a, b) => a - b),
+    );
     expect(ids((await search({ q: 'joins', lecturer: String(lecA) })).body.items)).toEqual([byA]);
     expect(ids((await search({ q: 'joins', lecturer: String(lecB) })).body.items)).toEqual([likedByB]);
     expect(ids((await search({ q: 'joins', lecturer: String(student) })).body.items)).toEqual([]);
@@ -205,7 +211,7 @@ describe('Search matching', () => {
     const before = await note(author, { title: 'Indexes', publishedAt: '2026-09-30T15:00:00Z' }); // 30 Sep 23:00
     const after = await note(author, { title: 'Indexes', publishedAt: '2026-10-13T17:00:00Z' }); // 14 Oct 01:00
     const res = await search({ q: 'indexes', from: '2026-10-01', to: '2026-10-13' });
-    expect(ids(res.body.items).sort()).toEqual([first, last].sort());
+    expect(ids(res.body.items).sort((a, b) => a - b)).toEqual([first, last].sort((a, b) => a - b));
     expect(ids((await search({ q: 'indexes', to: '2026-09-30' })).body.items)).toEqual([before]);
     expect(ids((await search({ q: 'indexes', from: '2026-10-14' })).body.items)).toEqual([after]);
     const bad = await search({ q: 'indexes', from: '2026-10-13', to: '2026-10-01' });
@@ -291,7 +297,9 @@ describe('Search order, paging, tabs and filters', () => {
       `INSERT INTO "TERM_T" (trm_name, trm_start_date, trm_end_date) VALUES ('Sem 2', '2026-09-01', '2026-12-20') RETURNING trm_id`,
     );
     const term = String(rows[0].trm_id);
-    expect(ids((await search({ q: 'threads', term })).body.items).sort()).toEqual([inTerm, otherModule].sort());
+    expect(ids((await search({ q: 'threads', term })).body.items).sort((a, b) => a - b)).toEqual(
+      [inTerm, otherModule].sort((a, b) => a - b),
+    );
     const module = String(await moduleId('CT050-3-2'));
     expect(ids((await search({ q: 'threads', term, module })).body.items)).toEqual([inTerm]);
   });
@@ -347,9 +355,13 @@ describe('Search order, paging, tabs and filters', () => {
     expect(ids(guest.body.items)).toEqual([pub]);
     expect(ids(guest.body.people)).toEqual([author]);
     expect(guest.body.hashtags).toEqual([]);
-    expect(ids((await search({ q: 'kernel' }, asUser(friend))).body.items).sort()).toEqual([pub, contacts].sort());
+    expect(ids((await search({ q: 'kernel' }, asUser(friend))).body.items).sort((a, b) => a - b)).toEqual(
+      [pub, contacts].sort((a, b) => a - b),
+    );
     // The author sees their own contacts-only note, but never their draft or hidden one.
-    expect(ids((await search({ q: 'kernel' }, asUser(author))).body.items).sort()).toEqual([pub, contacts].sort());
+    expect(ids((await search({ q: 'kernel' }, asUser(author))).body.items).sort((a, b) => a - b)).toEqual(
+      [pub, contacts].sort((a, b) => a - b),
+    );
     const asAdmin = await search({ q: 'kernel' }, asUser(admin));
     expect(ids(asAdmin.body.items)).toEqual([pub]);
     expect(ids(asAdmin.body.people)).toEqual([author]);

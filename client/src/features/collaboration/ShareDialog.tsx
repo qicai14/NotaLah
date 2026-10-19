@@ -34,7 +34,7 @@ export function ShareDialog({
   title: string;
   ownerId: number;
   ownerName: string;
-  onClose(): void;
+  onClose: () => void;
   returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const access = useFetch<NoteAccess>(`/notes/${noteId}/access`);

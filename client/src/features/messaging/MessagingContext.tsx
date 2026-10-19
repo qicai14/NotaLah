@@ -25,12 +25,12 @@ interface MessagingValue {
   dispatch: Dispatch<InboxAction>;
   unread: number;
   error: string | null;
-  loadMoreConversations(): Promise<void>;
-  loadMoreRequests(): Promise<void>;
+  loadMoreConversations: () => Promise<void>;
+  loadMoreRequests: () => Promise<void>;
   /** Fetches one conversation and adds it to the list; undefined when it is not available to this user. */
-  fetchConversation(id: number): Promise<Conversation | undefined>;
+  fetchConversation: (id: number) => Promise<Conversation | undefined>;
   /** The chat on screen, so its new messages are not counted unread. */
-  setOpen(id: number | null): void;
+  setOpen: (id: number | null) => void;
 }
 
 const MessagingContext = createContext<MessagingValue | null>(null);

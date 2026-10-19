@@ -168,7 +168,7 @@ export default function EditorPage() {
   useEffect(() => {
     const created = (location.state as { created?: boolean } | null)?.created;
     if (id && created && useEditor.getState().meta.noteId === Number(id)) {
-      navigate(location.pathname, { replace: true, state: null }); // a reload must refetch
+      void navigate(location.pathname, { replace: true, state: null }); // a reload must refetch
       setReady(true);
       return;
     }
@@ -188,7 +188,7 @@ export default function EditorPage() {
   afterSave.current = (r) => {
     if (!r.ok) return setErrors(r.errors);
     setErrors({});
-    if (!id) navigate(`/notes/${r.note.id}/edit`, { replace: true, state: { created: true } });
+    if (!id) void navigate(`/notes/${r.note.id}/edit`, { replace: true, state: { created: true } });
   };
 
   // Autosave for drafts: 2 s after the last change, at most 10 s after the first unsaved one, and when the tab hides.
@@ -301,7 +301,7 @@ export default function EditorPage() {
     setDialog(false);
     if (r.ok && publishing) {
       clearBackup(r.note.id);
-      navigate(`/notes/${r.note.id}`);
+      void navigate(`/notes/${r.note.id}`);
       return;
     }
     afterSave.current(r);
@@ -317,7 +317,7 @@ export default function EditorPage() {
     setBusy(true);
     try {
       await api(`/notes/${meta.noteId}/publish`, { method: 'POST', body: { visibility: choice } });
-      navigate(`/notes/${meta.noteId}`);
+      void navigate(`/notes/${meta.noteId}`);
     } catch (e) {
       setDialog(false);
       const fields: Record<string, string> = e instanceof ApiError ? e.errors : {};

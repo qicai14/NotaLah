@@ -13,7 +13,7 @@ import { GROUP_MAX, GROUP_MIN_OTHERS, GROUP_NAME_MAX, useFriends } from './helpe
 import { useMessaging } from './MessagingContext';
 import type { Conversation } from './types';
 
-function PaneHeader({ title, onBack }: { title: string; onBack(): void }) {
+function PaneHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <header className="flex h-topbar shrink-0 items-center gap-2 border-b px-2 md:px-4">
       <Button variant="ghost" size="icon" aria-label="Back to messages" onClick={onBack} className="md:hidden">
@@ -37,7 +37,7 @@ function FriendStatus({
   empty: boolean;
   hasMore: boolean;
   loadingMore: boolean;
-  loadMore(): void;
+  loadMore: () => void;
 }) {
   return (
     <>
@@ -73,7 +73,7 @@ function FriendStatus({
 }
 
 /** Wireframe 45 (New chat): pick a friend; the chat opens through /messages?to=<id>. */
-export function NewChat({ onBack }: { onBack(): void }) {
+export function NewChat({ onBack }: { onBack: () => void }) {
   const f = useFriends();
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -103,7 +103,7 @@ export function NewChat({ onBack }: { onBack(): void }) {
 }
 
 /** Wireframe 49: name a group and pick friends (2 to 29 besides you; 30 members at most). */
-export function NewGroup({ onBack }: { onBack(): void }) {
+export function NewGroup({ onBack }: { onBack: () => void }) {
   const f = useFriends();
   const navigate = useNavigate();
   const { dispatch } = useMessaging();
@@ -135,7 +135,7 @@ export function NewGroup({ onBack }: { onBack(): void }) {
     );
     if (!r) return;
     dispatch({ type: 'upsert', conversation: r.conversation });
-    navigate(`/messages/${r.conversation.id}`, { replace: true });
+    void navigate(`/messages/${r.conversation.id}`, { replace: true });
   };
 
   const needed = GROUP_MIN_OTHERS - picked.length;

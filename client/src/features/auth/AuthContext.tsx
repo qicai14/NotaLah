@@ -15,11 +15,11 @@ export interface RegisterInput {
 
 interface AuthValue {
   user: User | null;
-  login(email: string, password: string): Promise<User>;
-  logout(): Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
   /** Replaces the signed-in user (after a profile edit); the auth cookie is unchanged. */
-  setUser(user: User): void;
-  register(input: RegisterInput): Promise<User>;
+  setUser: (user: User) => void;
+  register: (input: RegisterInput) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);

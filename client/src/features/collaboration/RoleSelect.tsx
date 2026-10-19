@@ -13,7 +13,7 @@ export function RoleSelect({
   className,
 }: {
   value: CollabRole;
-  onChange(role: CollabRole): void;
+  onChange: (role: CollabRole) => void;
   label: string;
   disabled?: boolean;
   className?: string;

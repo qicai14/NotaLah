@@ -299,10 +299,10 @@ export interface Details {
   errors: Record<string, string>;
   modules: ModuleRef[] | undefined;
   modulesError: string | null;
-  setModuleId(v: string): void;
+  setModuleId: (v: string) => void;
   /** Co-authors cannot move a note to another module (D44). */
   moduleLocked?: boolean;
-  setHashtags(v: string[]): void;
+  setHashtags: (v: string[]) => void;
 }
 
 function DetailsPanel({ d }: { d: Details }) {

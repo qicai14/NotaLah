@@ -24,8 +24,8 @@ export function MessageBubble({
   showTime: boolean;
   quotedName: string | null;
   seen: string | null;
-  onReply(): void;
-  onDelete(): void;
+  onReply: () => void;
+  onDelete: () => void;
 }) {
   const [actions, setActions] = useState(false);
   const bubble = cn(

@@ -477,7 +477,9 @@ describe('Collaboration (R30)', () => {
       .expect(200);
     expect(await ids(fan)).toEqual([c.note]); // a friends-only note still needs friendship with the owner
     await befriend(fan, contacts.owner);
-    expect((await ids(fan)).sort()).toEqual([c.note, contacts.note].sort());
+    expect((await ids(fan)).sort((x: number, y: number) => x - y)).toEqual(
+      [c.note, contacts.note].sort((x: number, y: number) => x - y),
+    );
   });
 
   it("COL-TC18: co-author credit starts at the first edit; the detail reports the viewer's role", async () => {

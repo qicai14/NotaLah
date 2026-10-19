@@ -26,7 +26,7 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const key = `${init?.method ?? 'GET'} ${url.replace('/api', '')}`;
-      if (init?.body) posted.push(JSON.parse(String(init.body)));
+      if (init?.body) posted.push(JSON.parse(init.body as string));
       const { status, body } = replies[key] ?? { status: 404, body: { error: 'Not found' } };
       return { status, ok: status < 400, headers: new Headers(), json: () => Promise.resolve(body) };
     }),

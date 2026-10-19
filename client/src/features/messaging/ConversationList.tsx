@@ -112,7 +112,7 @@ function Chats({
   items: Conversation[];
   hasMore: boolean;
   pending: boolean;
-  onMore(): void;
+  onMore: () => void;
 }) {
   const { user } = useAuth();
   const me = user!.id;
@@ -208,7 +208,7 @@ function Requests({
   items: MessageRequest[];
   hasMore: boolean;
   pending: boolean;
-  onMore(): void;
+  onMore: () => void;
 }) {
   if (!loaded)
     return (
@@ -258,7 +258,7 @@ function RequestRow({ request: r }: { request: MessageRequest }) {
     if (!out) return;
     dispatch({ type: 'requestGone', id: r.id });
     await fetchConversation(out.conversationId);
-    navigate(`/messages/${out.conversationId}`);
+    void navigate(`/messages/${out.conversationId}`);
   };
   const onDecline = async () => {
     const out = await decline.run(() => api(`/message-requests/${r.id}/decline`, { method: 'POST' }));

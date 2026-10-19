@@ -98,7 +98,7 @@ describe('Notes', () => {
       author: { id: uid, displayName: 'Author', isVerifiedLecturer: false },
     });
     expect(n.publishedAt).toBeTruthy();
-    expect([...n.hashtags].sort()).toEqual(['design_patterns', 'mvc']);
+    expect([...(n.hashtags as string[])].sort()).toEqual(['design_patterns', 'mvc']);
     expect(n.slides.map((s: { position: number }) => s.position)).toEqual([1, 2, 3]);
     expect(slideHtml(n.slides)).toEqual(['<p>one</p>', '<p>two</p>', '<p>three</p>']);
     const { rows } = await pool.query(

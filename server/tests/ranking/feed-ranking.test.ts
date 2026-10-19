@@ -66,8 +66,8 @@ describe('Ranked feed', () => {
       items
         .slice(0, 2)
         .map((i) => i.id)
-        .sort(),
-    ).toEqual([verified, byRestricted].sort());
+        .sort((a, b) => a - b),
+    ).toEqual([verified, byRestricted].sort((a, b) => a - b));
     expect(items[0].components.V).toBe(1);
     expect(items[1].components.V).toBe(1);
     expect(items.find((i) => i.id === plain)!.components.V).toBe(0);
@@ -102,7 +102,7 @@ describe('Ranked feed', () => {
     await verify(oldVerified, await lecturer());
     const recent = [await insertNote(author, ['sql'], 2), await insertNote(author, ['sql'], 1)];
     const ids = (await getCandidates(viewer, new Date(), 2)).map((c) => c.id);
-    expect(ids.sort()).toEqual([...recent, oldVerified].sort());
+    expect(ids.sort((a, b) => a - b)).toEqual([...recent, oldVerified].sort((a, b) => a - b));
     expect(ids).not.toContain(oldPlain);
   });
 
@@ -130,7 +130,7 @@ describe('Ranked feed', () => {
     );
     const recent = await insertNote(author, ['sql'], 1);
     const ids = (await getCandidates(viewer, await dbNow(), 1)).map((c) => c.id);
-    expect(ids.sort()).toEqual([recent, fresh].sort());
+    expect(ids.sort((a, b) => a - b)).toEqual([recent, fresh].sort((a, b) => a - b));
   });
 
   it('RANK-TC19: a note in the newest window keeps verified and V = 1 when its only Super Like is stale', async () => {

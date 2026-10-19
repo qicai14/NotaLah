@@ -40,7 +40,7 @@ describe('admin modules', () => {
     await insertNote(author, { status: 'draft' });
     const res = await request(app).get('/api/admin/modules').set(admin);
     expect(res.status).toBe(200);
-    const codes = res.body.modules.map((m: { code: string }) => m.code);
+    const codes: string[] = res.body.modules.map((m: { code: string }) => m.code);
     expect(codes).toHaveLength(12);
     expect(codes).toEqual([...codes].sort());
     const counts = res.body.modules.filter((m: { noteCount: number }) => m.noteCount > 0);

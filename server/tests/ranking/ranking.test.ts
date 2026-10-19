@@ -44,7 +44,7 @@ describe('ranking components', () => {
       { E: 0.0, R: 0.99, V: 0.0, M: 0.0, S: 0.248 },
     ];
     const irWeights = { engagement: 0.3, recency: 0.25, lecturerValidation: 0.3, relevance: 0.15 }; // IR 2.3.4.7
-    const scores = posts.map(({ S: _, ...c }) => score(c, irWeights));
+    const scores = posts.map((p) => score(p, irWeights));
     posts.forEach((p, i) => expect(Math.abs(scores[i] - p.S)).toBeLessThanOrEqual(0.002));
     expect([...scores].sort((a, b) => b - a)).toEqual(scores);
   });
