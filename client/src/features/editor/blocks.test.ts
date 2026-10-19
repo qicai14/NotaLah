@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { LIMITS } from '@parp/shared';
 import { makeImage, makeText, resizeTable } from './elements';
 import { emptyDeck, groupScaleRange, useEditor } from './store';

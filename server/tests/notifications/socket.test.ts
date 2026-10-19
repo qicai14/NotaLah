@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { attachSocket } from '../../src/features/messaging/socket';
 import { env } from '../../src/lib/env';

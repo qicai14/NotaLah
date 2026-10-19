@@ -2,35 +2,24 @@
   "name": "parp",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "shared",
-    "client",
-    "server"
-  ],
   "scripts": {
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
-    "dev": "concurrently -n shared,server,client -c yellow,blue,green \"npm run dev -w shared\" \"npm run dev -w server\" \"npm run dev -w client\"",
-    "test": "npm test -w server && npm test -w client",
-    "build": "npm run build --workspaces",
-    "typecheck": "npm run typecheck --workspaces",
+    "dev": "concurrently -n shared,server,client -c yellow,blue,green \"pnpm --filter @parp/shared dev\" \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
+    "test": "pnpm --filter server test && pnpm --filter client test",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
     "lint": "vp lint",
     "format:check": "vp fmt --check",
-    "prepare": "npm run build -w shared"
+    "prepare": "vp config && pnpm --filter @parp/shared build"
   },
   "devDependencies": {
     "concurrently": "10.0.5",
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
-    "vite-plus": "1.3.0"
-  },
-  "overrides": {
-    "@tiptap/core": "3.31.3",
-    "@tiptap/extension-bubble-menu": "3.31.3",
-    "@tiptap/extension-floating-menu": "3.31.3",
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
-    "vitest": "5.0.5"
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
   },
   "engines": {
-    "node": ">=24.15"
-  }
+    "node": "^24.15.0"
+  },
+  "packageManager": "pnpm@12.9.1"
 }

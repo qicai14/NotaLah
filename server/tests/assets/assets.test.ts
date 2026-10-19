@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import sharp from 'sharp';
 import request from 'supertest';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { purgeUnlinkedAssets } from '../../src/features/assets/service';
 import { clearUnsplashCache } from '../../src/features/unsplash/service';

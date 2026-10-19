@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { RANKING, assertWeightsSumToOne } from '../../src/features/ranking/config';
 import { engagement, recency, relevance, score, validation } from '../../src/features/ranking/service';
 

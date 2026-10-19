@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { BACKUP_PREFIX, clearAllBackups } from './backup';
 import { autosaveDelay, keepMine, readBackup, saveNote, writeBackup } from './save';
 import { emptyDeck, emptyMeta, useEditor } from './store';

@@ -1,7 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';

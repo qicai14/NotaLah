@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { VIDEO } from '../../src/features/assets/config';
 import { processVideo, runTool } from '../../src/features/assets/video';

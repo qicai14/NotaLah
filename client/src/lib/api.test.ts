@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { api, ApiError, setSignedIn } from './api';
 
 const respond = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>

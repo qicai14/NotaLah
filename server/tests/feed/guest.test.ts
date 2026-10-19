@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { RATE_LIMITS } from '../../src/features/auth/rateLimit';
 import { env } from '../../src/lib/env';

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { asUser, CSRF, insertUser, slideHtml, slidesOf, textEl, truncateAll } from '../helpers';

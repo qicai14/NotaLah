@@ -2,7 +2,7 @@ import { readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 import request from 'supertest';
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { clearUnsplashCache } from '../../src/features/unsplash/service';
 import { capFromEnv, FREE, METRICS, SHARE, STORAGE_CAP_BYTES } from '../../src/features/usage/config';

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { replaceNote } from '../../src/features/notes/repository';
 import { parseNoteBody } from '../../src/features/notes/service';

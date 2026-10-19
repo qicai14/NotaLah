@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterAll, beforeEach, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import pino from 'pino';
 import { loggerOptions, logPath } from '../../src/lib/logger';

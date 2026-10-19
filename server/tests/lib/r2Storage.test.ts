@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import { parseEnv } from '../../src/lib/env';
 import { r2StorageDriver } from '../../src/lib/storage';
 
