@@ -1,4 +1,5 @@
 import { app } from './app';
+import { startVideoWorker } from './features/assets/worker';
 import { attachSocket } from './features/messaging/socket';
 import { RANKING, assertWeightsSumToOne } from './features/ranking/config';
 import { env } from './lib/env';
@@ -15,6 +16,8 @@ assertWeightsSumToOne(RANKING.searchWeights);
 void initErrorReporting().catch((err) => logger.error({ err }, 'error reporting failed to start'));
 const server = app.listen(env.PORT, () => logger.info({ port: env.PORT }, 'server listening'));
 const io = attachSocket(server);
+// The video worker shares this process on the free tier; a paid deploy turns it off and runs server#worker instead (R40, D67).
+const videoWorker = env.VIDEO_WORKER_IN_PROCESS ? startVideoWorker() : undefined;
 
 const purge = () =>
   purgeAll().then(
@@ -40,6 +43,8 @@ function shutdown(signal: string): void {
   logger.info({ signal }, 'shutting down: no longer accepting connections');
   clearTimeout(purgeStart);
   clearInterval(purgeInterval);
+  // Not awaited: a job in flight can outlast the timeout, and its lease lets another process take it over.
+  void videoWorker?.stop();
   setTimeout(() => {
     logger.error({ timeoutMs: SHUTDOWN_TIMEOUT_MS }, 'shutdown timed out, forcing exit');
     process.exit(1);

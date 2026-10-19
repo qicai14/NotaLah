@@ -9,6 +9,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vite-
 import { app } from '../../src/app';
 import { VIDEO } from '../../src/features/assets/config';
 import { processVideo, runTool } from '../../src/features/assets/video';
+import { activeVideoProfile, runNextVideoJob } from '../../src/features/assets/worker';
 import { env } from '../../src/lib/env';
 import { parseRange, storage } from '../../src/lib/storage';
 import { pool } from '../../src/lib/pool';
@@ -54,10 +55,15 @@ afterAll(async () => {
 const upload = (uid: number, body: Buffer, filename = 'clip.mp4', contentType = 'video/mp4') =>
   request(app).post('/api/assets/videos').set(asUser(uid)).attach('file', body, { filename, contentType });
 const tmpDirs = () => readdirSync(os.tmpdir()).filter((n) => n.startsWith(VIDEO.tmpPrefix));
+/** Uploads (202, processing), runs the worker once, and returns the asset as its owner now sees it (R40). */
 const ready = async (uid: number, name: string) => {
   const res = await upload(uid, readFileSync(file(name)), name);
-  expect(res.status).toBe(201);
-  return res.body.asset as { id: number; url: string; kind: string; width: number; height: number };
+  expect(res.status).toBe(202);
+  expect(res.body.asset.status).toBe('processing');
+  expect(await runNextVideoJob()).toBe(true);
+  const done = await request(app).get(`/api/assets/${res.body.asset.id}`).set(asUser(uid));
+  expect(done.body.asset.status).toBe('ready');
+  return done.body.asset as { id: number; url: string; kind: string; width: number; height: number };
 };
 const bytesOf = (uid: number, url: string) =>
   request(app)
@@ -80,17 +86,14 @@ describe('Video upload (R29)', () => {
     expect((await upload(uid, readFileSync(file('legacy.avi')), 'clip.mp4')).status).toBe(400);
     expect((await upload(uid, readFileSync(file('wide.mp4')))).body.error).toMatch(/too large/);
 
-    for (const [name, mime] of [
-      ['short.mp4', 'video/mp4'],
-      ['short.webm', 'video/webm'],
-    ]) {
+    for (const name of ['short.mp4', 'short.webm']) {
       const asset = await ready(uid, name);
       expect(asset.kind).toBe('video');
       const { rows } = await pool.query(
         `SELECT ast_status, ast_mime, ast_poster_key, ast_duration_ms FROM "ASSET_T" WHERE ast_id = $1`,
         [asset.id],
       );
-      expect(rows[0]).toMatchObject({ ast_status: 'ready', ast_mime: mime });
+      expect(rows[0]).toMatchObject({ ast_status: 'ready', ast_mime: 'video/mp4' });
       expect(rows[0].ast_poster_key).toMatch(/^p\//);
       expect(rows[0].ast_duration_ms).toBeGreaterThan(1500);
       const poster = await request(app).get(`${asset.url}?poster=1`).set(asUser(uid));
@@ -135,15 +138,15 @@ http://127.0.0.1:${port}/seg.ts
     expect(res.status).toBe(413);
   });
 
-  it('NOTE-TC70: scales a video above 1080p down to fit', async () => {
+  it('NOTE-TC70: scales a video above the profile box down to fit', async () => {
     const asset = await ready(await insertUser(), 'big.mp4');
-    expect(asset.width).toBeLessThanOrEqual(VIDEO.maxWidth);
-    expect(asset.height).toBeLessThanOrEqual(VIDEO.maxHeight);
+    expect(asset.width).toBeLessThanOrEqual(activeVideoProfile.maxWidth);
+    expect(asset.height).toBeLessThanOrEqual(activeVideoProfile.maxHeight);
   });
 
-  it('NOTE-TC70: a rotated 1920x1080 clip is stored as the 1080x1920 portrait it displays as', async () => {
+  it('NOTE-TC70: a rotated 1920x1080 clip is stored as the portrait it displays as, inside the profile box', async () => {
     const asset = await ready(await insertUser(), 'portrait.mp4');
-    expect([asset.width, asset.height]).toEqual([1080, 1920]);
+    expect([asset.width, asset.height]).toEqual([activeVideoProfile.maxHeight, activeVideoProfile.maxWidth]);
   });
 
   it('NOTE-TC72: strips metadata from both containers', async () => {
@@ -211,7 +214,7 @@ http://127.0.0.1:${port}/seg.ts
     ];
     await expect(runTool('ffmpeg', endless, 400)).rejects.toThrow(/too long/);
     expect(Date.now() - started).toBeLessThan(5000);
-    expect(await processVideo(file('short.mp4'), dir, 1)).toEqual({
+    expect(await processVideo(file('short.mp4'), dir, { profile: activeVideoProfile, timeoutMs: 1 })).toEqual({
       ok: false,
       error: 'Video processing took too long',
     });
@@ -293,7 +296,7 @@ it('STO-TC15: a video put that fails removes the key it may have written', async
   const res = await upload(uid, readFileSync(file('short.mp4')));
   expect(res.status).toBe(500);
   expect(remove).toHaveBeenCalledWith(put.mock.calls[0]![0]);
-  expect(put.mock.calls[0]![0]).toMatch(/^v\//);
+  expect(put.mock.calls[0]![0]).toMatch(/^o\//);
   put.mockRestore();
   remove.mockRestore();
 });
