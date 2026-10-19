@@ -81,12 +81,24 @@ API environment on Render (the server refuses to start in production when a guar
 | `JWT_SECRET` | a long random string, never reused from development |
 | `CLIENT_ORIGIN` | `https://app.<domain>` (guarded: must be https) |
 | `COOKIE_SECURE` | `true` (guarded) |
-| `TRUST_PROXY` | `1`, Render's one proxy hop (guarded: `loopback` refused; never `true`) |
+| `TRUST_PROXY` | `1`, Render's one proxy hop, with `api.<domain>` DNS-only (grey cloud) in Cloudflare; `2` if it is proxied (orange cloud). Guarded: `loopback` and `0` refused; never `true` |
 | `STORAGE_DRIVER` | `r2` (guarded: the disk is wiped on restart), with `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` |
+| `NODE_VERSION` | `24` (the repo needs Node 24) |
+| `MAX_SESSION_HOURS` | optional; default `12`, the longest a login is renewed |
+| `DEBUG_PROXY` | `1` for the first deploy only, see below |
 | `PORT` | leave unset; Render provides it |
 | `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `USAGE_CAP_*`, `PG_*` | optional, as in `.env.example` |
 
 Client build on Cloudflare Pages: `VITE_API_URL=https://api.<domain>`.
+
+Render service settings (there is no global `vp` on Render; the repo's own copy runs through pnpm):
+- Build command: `corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm exec vp run server#build`
+  (`--prod=false` because `NODE_ENV=production` would otherwise skip the dev dependencies the build needs).
+- Start command: `pnpm --filter server start`.
+
+First-deploy proxy check: deploy with `DEBUG_PROXY=1`, open `https://api.<domain>/api/health` in a browser and find the
+`proxy check` log line. `ip` must be your own public address; if it is a Render or Cloudflare address, the hop count is
+wrong. Then remove `DEBUG_PROXY`.
 
 The service starts with `vp run server#start` and uses `GET /api/health` as its health check. Apply new migrations to
 Neon with `vp run server#db:migrate` (with `DATABASE_URL` pointing at Neon) before deploying code that needs them. The free instance sleeps after 15 idle minutes (about a minute to wake), so the daily purge runs from
