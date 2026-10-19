@@ -1446,3 +1446,44 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   free tier).
 - **Reversibility:** Medium: the app is a plain Node process, so another host needs only its env values (`TRUST_PROXY`
   set to that host's hop count) and a start command.
+
+## D67 - Async video pipeline (R40, 20 Oct 2026)
+- **Context:** R29 (D59) transcoded each video inside the upload request with up to two ffmpeg runs at once. On the Render
+  free instance (D65: 0.1 CPU, 512 MB, sleeps when idle) a 90 s re-encode can take minutes, holds the request open past
+  proxy timeouts and competes with every other request for the one CPU. The user approved moving it off the request on
+  20 Oct (review finding 3, R40).
+- **Decision:** `POST /api/assets/videos` streams the body to a temp file as before, checks it with ffprobe only (size,
+  length, container, edges), stores the original under an `o/` key (one metered put) and answers 202 with
+  `status: processing`. The asset row and a `VIDEO_JOB_T` row are written in one transaction. A worker claims the oldest
+  open job with `FOR UPDATE SKIP LOCKED`, holds a two-minute lease renewed every 30 s, downloads the original, runs ffmpeg,
+  stores the MP4 and a WebP poster, marks the asset `ready` and deletes the original. An invalid file (ffmpeg rejects it)
+  fails at once; an unexpected error (storage, database) is retried after 30 s times the attempt, and the third failure
+  marks the asset `failed` with a reason the uploader sees. A lapsed lease (the process died or slept) makes the job
+  claimable again; the attempt count doubles as the claim token, so a late worker cannot overwrite a newer claim.
+- **Profiles:** `VIDEO_PROFILE=free|standard` (zod, default `free`) in `assets/config.ts`. `free`: stream-copy an H.264
+  yuv420p MP4 (or MOV) that already fits 1280x720, otherwise re-encode with libx264 veryfast into that box; one job at a
+  time. `standard`: the same rule with a 1920x1080 box and `VIDEO_CONCURRENCY` jobs (default 2). Size (50 MB) and length
+  (90 s) limits are unchanged. Output is always H.264/AAC MP4, so WebM input is re-encoded rather than kept as WebM: one
+  format plays everywhere (Safari included) and x264 is far cheaper than VP9 on a shared CPU.
+- **Where it runs:** `startVideoWorker()` runs inside the API process (started in `server.ts`, stopped on shutdown) unless
+  `VIDEO_WORKER_IN_PROCESS=false`; `server/src/scripts/videoWorker.ts` (`vp run server#worker`) runs the same loop as its
+  own service with no code change. An upload in the API process wakes its own worker at once; a separate worker polls
+  every 5 s.
+- **Serving:** the file and share routes answer 409 `{ status: 'processing' }` or 404 `{ status: 'failed' }` instead of a
+  broken file; notes carry `videoStatus` (asset id to status) beside `assets`; a processing or failed video stays
+  linkable so saving a note never drops it. The owner polls `GET /api/assets/:id`; the editor shows the limits from
+  `GET /api/assets/videos/limits` ("Demo server: videos up to 90 s, 50 MB, 720p.") and a processing or failed tile on the
+  slide. Quota counts a processing original; purge leaves processing videos to the worker.
+- **Scale-up path:** (1) a paid Render instance with `VIDEO_PROFILE=standard`; (2) a separate background worker running
+  `server#worker` with `VIDEO_WORKER_IN_PROCESS=false` on the API, scaled by instances and `VIDEO_CONCURRENCY`, since
+  SKIP LOCKED lets any number of workers share the table; (3) a managed video service (for example Cloudflare Stream or
+  Mux) behind the same job table and statuses, so the client and note payloads do not change.
+- **Alternatives:** keep the synchronous transcode (rejected: blocks the request and the CPU); a Redis or BullMQ queue
+  (rejected: another service to host, while Postgres is already there and SKIP LOCKED is enough at this volume); a
+  managed video service now (rejected: paid, and the free tier is a requirement).
+- **Known limits:** a re-encode that grows can overshoot the 500 MB quota by under 50 MB, because the quota is checked
+  against the original's size; finished job rows are kept (a few bytes each) rather than purged; the editor polls every
+  4 s rather than listening on the socket.
+- **Tests:** VID-TC1 to VID-TC11; NOTE-TC39, NOTE-TC70 and STO-TC15 updated for the 202 flow and the profile box.
+- **Reversibility:** Medium: the migration has a down step (processing and failed assets become rejected); reverting
+  the code restores the synchronous route.

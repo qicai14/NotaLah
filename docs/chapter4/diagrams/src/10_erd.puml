@@ -236,6 +236,36 @@ entity "NOTIFICATION_T" as NTF {
   ntf_read_at : TIMESTAMPTZ
   * ntf_created_at : TIMESTAMPTZ
 }
+entity "ASSET_T" as AST {
+  * ast_id : INTEGER <<PK>>
+  --
+  * ast_usr_id : INTEGER <<FK>>
+  * ast_kind : VARCHAR(5)
+  * ast_key : VARCHAR(100)
+  ast_poster_key : VARCHAR(100)
+  * ast_mime : VARCHAR(30)
+  * ast_bytes : INTEGER
+  ast_width : SMALLINT
+  ast_height : SMALLINT
+  ast_duration_ms : INTEGER
+  * ast_status : VARCHAR(10)
+  * ast_created_at : TIMESTAMPTZ
+}
+entity "POST_ASSET_T" as PAS {
+  * pas_pst_id : INTEGER <<PK, FK>>
+  * pas_ast_id : INTEGER <<PK, FK>>
+}
+entity "VIDEO_JOB_T" as VJB {
+  * vjb_id : INTEGER <<PK>>
+  --
+  * vjb_ast_id : INTEGER <<FK>>
+  * vjb_status : VARCHAR(10)
+  * vjb_attempts : SMALLINT
+  vjb_last_error : VARCHAR(200)
+  * vjb_locked_until : TIMESTAMPTZ
+  * vjb_created_at : TIMESTAMPTZ
+  * vjb_updated_at : TIMESTAMPTZ
+}
 entity "RATE_LIMIT_T" as RLT {
   * rlt_key : VARCHAR(200) <<PK>>
   --
@@ -288,4 +318,8 @@ CMT |o--o{ NTF
 CRQ |o--o{ NTF
 MRQ |o--o{ NTF
 MSG |o--o{ MSG : "replies to"
+USER ||--o{ AST : uploads
+POST ||--o{ PAS
+AST ||--o{ PAS
+AST ||--o| VJB : "processed by"
 @enduml
