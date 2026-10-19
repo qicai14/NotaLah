@@ -1456,19 +1456,24 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   length, container, edges), stores the original under an `o/` key (one metered put) and answers 202 with
   `status: processing`. The asset row and a `VIDEO_JOB_T` row are written in one transaction. A worker claims the oldest
   open job with `FOR UPDATE SKIP LOCKED`, holds a two-minute lease renewed every 30 s, downloads the original, runs ffmpeg,
-  stores the MP4 and a WebP poster, marks the asset `ready` and deletes the original. An invalid file (ffmpeg rejects it)
-  fails at once; an unexpected error (storage, database) is retried after 30 s times the attempt, and the third failure
-  marks the asset `failed` with a reason the uploader sees. A lapsed lease (the process died or slept) makes the job
+  stores the MP4 and a WebP poster, marks the asset `ready` and deletes the original. Only a bad-file result fails at
+  once (ffmpeg or ffprobe exits with an error, or runs past its timeout); anything else, including ffmpeg killed from
+  outside (for example by the OOM killer), storage or database errors, is retried after 30 s times the attempt, and the
+  third failure marks the asset `failed` with a reason the uploader sees. The free-tier usage cap (D57) puts the job back
+  for an hour and gives the attempt back, so a capped month never fails or deletes an upload. When a lease renewal finds
+  the claim lost, the worker aborts its ffmpeg through an `AbortSignal`; `stop()` aborts in-flight jobs the same way and
+  requeues them at once without using up the attempt. A lapsed lease (the process died or slept) makes the job
   claimable again; the attempt count doubles as the claim token, so a late worker cannot overwrite a newer claim.
 - **Profiles:** `VIDEO_PROFILE=free|standard` (zod, default `free`) in `assets/config.ts`. `free`: stream-copy an H.264
   yuv420p MP4 (or MOV) that already fits 1280x720, otherwise re-encode with libx264 veryfast into that box; one job at a
-  time. `standard`: the same rule with a 1920x1080 box and `VIDEO_CONCURRENCY` jobs (default 2). Size (50 MB) and length
+  time with one ffmpeg thread. `standard`: the same rule with a 1920x1080 box, two threads and `VIDEO_CONCURRENCY` jobs
+  (default 2). Size (50 MB) and length
   (90 s) limits are unchanged. Output is always H.264/AAC MP4, so WebM input is re-encoded rather than kept as WebM: one
   format plays everywhere (Safari included) and x264 is far cheaper than VP9 on a shared CPU.
 - **Where it runs:** `startVideoWorker()` runs inside the API process (started in `server.ts`, stopped on shutdown) unless
   `VIDEO_WORKER_IN_PROCESS=false`; `server/src/scripts/videoWorker.ts` (`vp run server#worker`) runs the same loop as its
   own service with no code change. An upload in the API process wakes its own worker at once; a separate worker polls
-  every 5 s.
+  every 30 s, which keeps an idle worker to two small queries a minute.
 - **Serving:** the file and share routes answer 409 `{ status: 'processing' }` or 404 `{ status: 'failed' }` instead of a
   broken file; notes carry `videoStatus` (asset id to status) beside `assets`; a processing or failed video stays
   linkable so saving a note never drops it. The owner polls `GET /api/assets/:id`; the editor shows the limits from
@@ -1483,7 +1488,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   managed video service now (rejected: paid, and the free tier is a requirement).
 - **Known limits:** a re-encode that grows can overshoot the 500 MB quota by under 50 MB, because the quota is checked
   against the original's size; finished job rows are kept (a few bytes each) rather than purged; the editor polls every
-  4 s rather than listening on the socket.
-- **Tests:** VID-TC1 to VID-TC11; NOTE-TC39, NOTE-TC70 and STO-TC15 updated for the 202 flow and the profile box.
+  4 s rather than listening on the socket. A process that dies after storing the `v/` file and poster but before the job
+  completes leaves those two objects orphaned (the retry stores new ones), and one that dies after the commit but before
+  removing the `o/` original leaves the original; neither is referenced by any row, so the asset purge never sees them.
+  The down migration marks processing and failed assets `rejected` but leaves their `o/` originals in storage.
+- **Tests:** VID-TC1 to VID-TC15; NOTE-TC39, NOTE-TC70 and STO-TC15 updated for the 202 flow and the profile box.
 - **Reversibility:** Medium: the migration has a down step (processing and failed assets become rejected); reverting
   the code restores the synchronous route.
