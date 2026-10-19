@@ -1,5 +1,6 @@
 import type { Editor as TipTapEditor } from '@tiptap/react';
 import { create } from 'zustand';
+import type { VideoStatus } from '@/types';
 import {
   type Aspect,
   BOARD_WIDTH,
@@ -38,6 +39,8 @@ export interface EditorState {
   textEditor: TipTapEditor | null;
   /** Upload id to file URL for the board (the note's `assets` map plus anything uploaded since); not in undo. */
   assets: Record<string, string>;
+  /** Pipeline status of each video in the deck (R40); one still processing is polled until ready or failed. Not in undo. */
+  videoStatus: Record<string, VideoStatus>;
   /** The text box, code block or table open for typing (at most one, and only while it is the sole selection). */
   editingId: string | null;
 }
@@ -80,6 +83,7 @@ const initial = (): EditorState => ({
   previewBase: null,
   textEditor: null,
   assets: {},
+  videoStatus: {},
   editingId: null,
 });
 
@@ -192,11 +196,17 @@ export function reaspect(deck: Deck, aspect: Aspect): Deck {
 
 interface Actions {
   /** Replaces everything with a loaded (or new) deck; history is cleared. */
-  load: (deck: Deck, meta?: NoteMeta, assets?: Record<string, string>) => void;
+  load: (
+    deck: Deck,
+    meta?: NoteMeta,
+    assets?: Record<string, string>,
+    videoStatus?: Record<string, VideoStatus>,
+  ) => void;
   /** Opens an element for typing, or closes the open one (null). */
   setEditing: (id: string | null) => void;
   /** Makes an upload drawable on the board. */
   addAsset: (id: number, url: string) => void;
+  setVideoStatus: (id: number, status: VideoStatus) => void;
   /** Detail edits (title, module, hashtags) mark the note dirty without an undo step. */
   setMeta: (patch: Partial<NoteMeta>) => void;
   /** One undoable change. */
@@ -260,10 +270,11 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
   return {
     ...initial(),
-    load: (deck, meta = emptyMeta(), assets = {}) =>
-      set({ ...initial(), deck, meta, assets, session: get().session + 1 }),
+    load: (deck, meta = emptyMeta(), assets = {}, videoStatus = {}) =>
+      set({ ...initial(), deck, meta, assets, videoStatus, session: get().session + 1 }),
     setEditing: (editingId) => set({ editingId }),
     addAsset: (id, url) => set({ assets: { ...get().assets, [String(id)]: url } }),
+    setVideoStatus: (id, status) => set({ videoStatus: { ...get().videoStatus, [String(id)]: status } }),
     setMeta: (patch) => set({ meta: { ...get().meta, ...patch }, dirty: true, rev: get().rev + 1 }),
     apply: (recipe) => apply(recipe),
     preview: (recipe) => {

@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Play } from 'lucide-react';
+import { CircleAlert, LoaderCircle, Play } from 'lucide-react';
 import {
   BOARD_WIDTH,
   boardHeight,
@@ -18,11 +18,13 @@ import {
   type SlideElement,
 } from '@notalah/shared';
 import { apiOrigin } from '@/lib/api';
+import type { VideoStatus } from '@/types';
 import { arrowHead, backgroundCss, cropBox, FONT_STACK, fitScale, inReadingOrder, shapePoints } from './geometry';
 
 /** What the board draws; page notes are never shown on it. */
 export type BoardSlide = Pick<Slide, 'background' | 'elements'>;
 type Assets = Record<string, string>;
+type VideoStatuses = Record<string, VideoStatus>;
 type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
 
 /** The image's URL, or null when an upload is not in the note's asset map (the frame then stays a plain tile). */
@@ -219,20 +221,76 @@ function Grid({ el }: { el: El<'table'> }) {
   );
 }
 
-/** Playback is R29; until then a video shows a placeholder tile. */
-function VideoTile() {
+/** A tile in place of a video with no file yet; the text is in board units, so it scales with the slide. */
+function VideoTile({ status }: { status?: VideoStatus }) {
+  const [Icon, text] =
+    status === 'processing'
+      ? [LoaderCircle, 'Processing…']
+      : status === 'failed'
+        ? [CircleAlert, 'Video could not be processed']
+        : [Play, null];
   return (
     <div
       role="img"
-      aria-label="Video"
-      className="flex size-full items-center justify-center bg-surface-strong text-muted-foreground"
+      aria-label={text ?? 'Video'}
+      className="flex size-full flex-col items-center justify-center gap-[0.4em] bg-surface-strong p-[0.5em] text-center text-muted-foreground"
+      style={{ fontSize: 28 }}
     >
-      <Play aria-hidden="true" style={{ width: '20%', height: '20%' }} />
+      <Icon
+        aria-hidden="true"
+        className={status === 'processing' ? 'animate-spin motion-reduce:animate-none' : undefined}
+        style={{ width: '20%', height: '20%' }}
+      />
+      {text && <span className="font-semibold">{text}</span>}
     </div>
   );
 }
 
-function Body({ el, assets }: { el: SlideElement; assets: Assets }) {
+/**
+ * A ready video plays in the viewer and shows its poster in the editor, where a click must select it, not play it.
+ * Until the worker finishes it is a tile saying it is processing or that it failed (R40).
+ */
+function Video({
+  el,
+  assets,
+  status,
+  playable,
+}: {
+  el: El<'video'>;
+  assets: Assets;
+  status?: VideoStatus;
+  playable: boolean;
+}) {
+  const url = assets[String(el.assetId)];
+  if (!url) return <VideoTile status={status} />;
+  const src = url.startsWith('/') ? apiOrigin() + url : url;
+  const poster = `${src}?poster=1`;
+  if (!playable) return <img src={poster} alt="" className="size-full object-cover" draggable={false} />;
+  return (
+    <video
+      src={src}
+      poster={poster}
+      controls
+      playsInline
+      preload="none"
+      loop={el.loop}
+      aria-label="Video"
+      className="size-full bg-surface-strong object-contain"
+    />
+  );
+}
+
+function Body({
+  el,
+  assets,
+  videoStatus,
+  playable,
+}: {
+  el: SlideElement;
+  assets: Assets;
+  videoStatus: VideoStatuses;
+  playable: boolean;
+}) {
   switch (el.type) {
     case 'text':
       return <TextBox el={el} />;
@@ -247,7 +305,7 @@ function Body({ el, assets }: { el: SlideElement; assets: Assets }) {
     case 'table':
       return <Grid el={el} />;
     case 'video':
-      return <VideoTile />;
+      return <Video el={el} assets={assets} status={videoStatus[String(el.assetId)]} playable={playable} />;
   }
 }
 
@@ -278,6 +336,7 @@ export function SlideBoard({
   aspect,
   mode = 'view',
   assets = {},
+  videoStatus = {},
   label = 'Slide',
   editing,
 }: {
@@ -285,6 +344,8 @@ export function SlideBoard({
   aspect: Aspect;
   mode?: 'view' | 'edit';
   assets?: Assets;
+  /** Each video's pipeline status, for a tile that says why there is no file yet (R40). */
+  videoStatus?: VideoStatuses;
   label?: string;
   editing?: BoardEditing;
 }) {
@@ -356,7 +417,9 @@ export function SlideBoard({
                   transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
                 }}
               >
-                {edit?.renderBody?.(el) ?? <Body el={el} assets={assets} />}
+                {edit?.renderBody?.(el) ?? (
+                  <Body el={el} assets={assets} videoStatus={videoStatus} playable={mode === 'view'} />
+                )}
               </div>
             ))}
           </div>

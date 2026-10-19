@@ -133,7 +133,7 @@ export default function SharedNote() {
       <div className="rounded-2xl border bg-card p-4 shadow-(--shadow-card) md:p-6">
         {n.module && <p className="mb-3 text-caption font-semibold text-muted-foreground">{n.module.code}</p>}
         <div className="h-[min(36rem,64dvh)]">
-          <SlideCarousel slides={n.slides} aspect={n.aspect} assets={n.assets} />
+          <SlideCarousel slides={n.slides} aspect={n.aspect} assets={n.assets} videoStatus={n.videoStatus} />
         </div>
       </div>
 

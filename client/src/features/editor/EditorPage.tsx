@@ -16,6 +16,7 @@ import { AspectPicker } from './AspectPicker';
 import { Canvas } from './Canvas';
 import { afterLockWon, useEditLock } from './lock';
 import { LockedNotice, ViewOnly } from './LockedNotice';
+import { useVideoPolling } from './MediaPanels';
 import { ElementBar } from './ElementBar';
 import { type Details, PanelBody, type PanelId, PANELS } from './Panels';
 import {
@@ -125,6 +126,7 @@ export default function EditorPage() {
   const { user } = useAuth();
   const desktop = useMediaQuery(DESKTOP);
   const modules = useFetch<{ modules: ModuleRef[] }>('/modules');
+  useVideoPolling();
 
   const meta = useEditor((s) => s.meta);
   const saveState = useEditor((s) => s.saveState);
@@ -159,7 +161,7 @@ export default function EditorPage() {
     const mine = note.myRole ?? (note.author.id === user?.id ? 'owner' : null);
     if (mine !== 'owner' && mine !== 'edit') return setNotMine(true);
     setRole(mine);
-    useEditor.getState().load(noteToDeck(note), noteToMeta(note), note.assets);
+    useEditor.getState().load(noteToDeck(note), noteToMeta(note), note.assets, note.videoStatus);
     setBackup(readBackup(note.id, note.updatedAt, user?.id));
   }
 
@@ -419,8 +421,8 @@ export default function EditorPage() {
           <Button
             size="xs"
             onClick={() => {
-              const { load, meta: m, setMeta, assets } = useEditor.getState();
-              load(backup.deck, m, assets);
+              const { load, meta: m, setMeta, assets, videoStatus } = useEditor.getState();
+              load(backup.deck, m, assets, videoStatus);
               setMeta(backup.meta);
               setBackup(null);
             }}

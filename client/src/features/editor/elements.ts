@@ -131,12 +131,15 @@ export function makeTable(boardH: number): El<'table'> {
 }
 
 /** An image at its own aspect ratio, fitted into 700 x 700 units and centred. */
-export function makeImage(boardH: number, source: ImageSource, width: number, height: number, alt = ''): El<'image'> {
+/** A centred box for media of the given size, at most 700 units wide and 70 % of the slide high. */
+function mediaBox(boardH: number, width: number, height: number) {
   const k = Math.min(700 / (width || 1), Math.min(700, boardH * 0.7) / (height || 1));
-  const w = round1(Math.max(40, (width || 700) * k));
-  const h = round1(Math.max(40, (height || 700) * k));
+  return base(boardH, round1(Math.max(40, (width || 700) * k)), round1(Math.max(40, (height || 700) * k)));
+}
+
+export function makeImage(boardH: number, source: ImageSource, width: number, height: number, alt = ''): El<'image'> {
   return {
-    ...base(boardH, w, h),
+    ...mediaBox(boardH, width, height),
     type: 'image',
     source,
     alt: alt.slice(0, LIMITS.altText),
@@ -145,6 +148,10 @@ export function makeImage(boardH: number, source: ImageSource, width: number, he
     flipY: false,
     radius: 0,
   };
+}
+
+export function makeVideo(boardH: number, assetId: number, width: number, height: number): El<'video'> {
+  return { ...mediaBox(boardH, width, height), type: 'video', assetId, loop: false };
 }
 
 /** A table with one row or column added or removed, within the schema's limits; null when it cannot change. */
