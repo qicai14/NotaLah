@@ -1,4 +1,4 @@
-# PARP architecture
+# NotaLah architecture
 
 ## Tiers
 ```
@@ -8,7 +8,7 @@ Browser (React + Vite)  --HTTP /api, JWT cookie-->  Express API  --pg, parameter
 The client never talks to the database. In development Vite serves the client on :5173 and proxies `/api`
 to Express on :4000 (with `X-Forwarded-For`, so rate limits are per client). Socket.io attaches to the same
 HTTP server for live messaging (D50) and notifications (D51): REST does every write, and the socket delivers events and relays typing. Its
-handshake checks `Origin` and authenticates the `parp_token` cookie with passport-jwt (D35). The client's Vite proxy
+handshake checks `Origin` and authenticates the `notalah_token` cookie with passport-jwt (D35). The client's Vite proxy
 will need a `/socket.io` entry with `ws: true` when the messaging UI is built.
 
 ## Request flow (server)
@@ -57,7 +57,7 @@ docs/chapter4/ chapter5/ chapter6/  report working material (chapter4 is generat
 docs/testing/unit/ testing/uat/   executed test tables per sprint, UAT
 docs/screenshots/ code-snippets/  Chapter 5.1 screenshots, Chapter 5.2 snippets
 docs/sprints/                     review and retrospective per sprint
-docker/                           Postgres init script (creates parp_test)
+docker/                           Postgres init script (creates notalah_test)
 ```
 
 ## Conventions
