@@ -15,6 +15,7 @@ const schema = z
     DATABASE_URL: z.string().min(1),
     TEST_DATABASE_URL: z.string().min(1).optional(),
     JWT_SECRET: z.string().min(16),
+    NODE_ENV: z.string().optional(),
     PORT: z.coerce.number().int().positive().default(4000),
     PG_POOL_MAX: z.coerce.number().int().positive().default(10),
     PG_IDLE_TIMEOUT_MS: z.coerce.number().int().nonnegative().default(30000),
@@ -40,6 +41,16 @@ const schema = z
       .enum(['true', 'false'])
       .optional()
       .transform((v) => v === 'true'),
+    // Express `trust proxy` (R37, D65): a hop count, or `loopback` for the Vite dev proxy. Never `true`, which lets a client forge X-Forwarded-For.
+    TRUST_PROXY: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z
+        .union([
+          z.literal('loopback'),
+          z.string().regex(/^\d+$/, 'TRUST_PROXY must be a hop count or loopback').transform(Number),
+        ])
+        .default('loopback'),
+    ),
     // Secure auth cookie (D35); defaults to on in production only, since local http would drop it.
     COOKIE_SECURE: z
       .enum(['true', 'false'])
@@ -47,10 +58,20 @@ const schema = z
       .transform((v) => (v === undefined ? process.env.NODE_ENV === 'production' : v === 'true')),
   })
   .superRefine((v, ctx) => {
+    const fail = (name: string, message: string) => ctx.addIssue({ code: 'custom', path: [name], message });
+    // Production guards (R37, D65): each message names the variable, never its value.
+    if (v.NODE_ENV === 'production') {
+      if (v.STORAGE_DRIVER === 'local')
+        fail('STORAGE_DRIVER', 'STORAGE_DRIVER must be r2 in production: the disk is wiped on restart');
+      if (!v.CLIENT_ORIGIN.startsWith('https://'))
+        fail('CLIENT_ORIGIN', 'CLIENT_ORIGIN must be an https:// origin in production');
+      if (!v.COOKIE_SECURE) fail('COOKIE_SECURE', 'COOKIE_SECURE must be true in production');
+      if (v.TRUST_PROXY === 'loopback')
+        fail('TRUST_PROXY', 'TRUST_PROXY must be the proxy hop count (1 on Render) in production');
+    }
     if (v.STORAGE_DRIVER !== 'r2') return;
     for (const name of R2_VARS) {
-      if (!v[name])
-        ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when STORAGE_DRIVER=r2` });
+      if (!v[name]) fail(name, `${name} is required when STORAGE_DRIVER=r2`);
     }
   });
 

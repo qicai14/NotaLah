@@ -25,8 +25,8 @@ import { verificationRouter } from './features/verification/routes';
 
 export const app = express();
 
-// Behind the Vite dev proxy every request arrives from loopback; trust its X-Forwarded-For (D17).
-app.set('trust proxy', 'loopback');
+// `loopback` trusts the Vite dev proxy; production trusts exactly the host's proxy hops (1 on Render), so req.ip is the client (D17, D65).
+app.set('trust proxy', env.TRUST_PROXY);
 
 app.use(requestLogger);
 app.use(helmet());
