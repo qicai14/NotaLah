@@ -10,7 +10,16 @@ export async function initErrorReporting(): Promise<void> {
   const s = await import('@sentry/node');
   s.init({
     dsn: env.SENTRY_DSN,
-    sendDefaultPii: false,
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      databaseQueryData: false,
+      queues: false,
+      stackFrameVariables: false,
+    },
     beforeSend(event) {
       delete event.request;
       return event;
