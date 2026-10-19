@@ -1388,3 +1388,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** keep accepting `parp_token` for a release (rejected, extra code for no users); leave the database
   names as they were (rejected by the user).
 - **Reversibility:** Medium: the old volume is never modified, so before it is deleted, `git checkout main` with the old compose file and `.env` values restores the old setup; after that, revert the branch and rename the role and databases back.
+
+## D63 - TypeScript 7 (20 Oct 2026)
+
+- **Decision (user, 20 Oct):** upgrade `typescript` from 5.9.3 to 7.0.2, the Go-native compiler. No behaviour change.
+- **What changed:** `typescript` is now one exact pin, `7.0.2`, in the pnpm catalog (`pnpm-workspace.yaml`), and
+  `shared`, `client` and `server` reference it with `catalog:`. No source, tsconfig or tool-config change was needed.
+- **Compatibility checked on 7.0.2:** `tsc --noEmit` is clean in all three packages (no new type errors); `vp pack`
+  builds `@notalah/shared` and emits its `.d.ts` through TypeScript 7 (tsdown prints a warning that the 7.0 API is
+  experimental), so `isolatedDeclarations` was not needed; `vp check` type checking runs on tsgolint, which bundles its
+  own compiler and does not read the `typescript` package; `tsx` and Vitest transpile with esbuild and are unaffected;
+  the VS Code setup uses the Oxc extension, not the TypeScript server. Server tests 367 passed and 2 skipped, client
+  113 passed, `vp run -r build`, the built server's `/api/health`, and `vp run dev` all pass. The generated `.d.ts`
+  differs from the 5.9.3 output only in member order and quote style.
+- **Install guard:** 7.0.2 was published on 8 Jul 2026, so it clears the 3-day `minimumReleaseAge`; no exclusion added.
+- **Speed (`vp run --no-cache check`, median of 3):** 5.35 s before (5.35, 5.41, 4.77), 4.63 s after (4.49, 4.86,
+  4.63). The check's own type step is tsgolint in both, so the difference is mostly the shared `.d.ts` emit and noise.
+- **Alternatives:** stay on 5.9.3 (rejected by the user); `isolatedDeclarations` for shared (not needed).
+- **Reversibility:** High: revert the catalog entry and the three `catalog:` references, then `vp install`.

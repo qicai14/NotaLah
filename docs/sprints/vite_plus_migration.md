@@ -109,6 +109,8 @@ in `vp run check`, so the build number is not like for like. Server and client t
 only the cached shared build. Dev ready is measured until the server logs "server listening" and Vite prints "ready in",
 on ports 4300/5373. Install is with a warm npm cache and a warm pnpm store respectively.
 
+After the TypeScript 7.0.2 upgrade (D63), `vp run --no-cache check` has a median of 4.63 s (5.35 s before, median of 3).
+
 ### Verification
 
 `vp install`, `vp run check` (0 warnings, 0 errors), `vp run -r test` (server 367 passed and 2 skipped, client 113 passed),
