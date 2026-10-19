@@ -92,4 +92,28 @@ describe('Video states (R40)', () => {
     expect(useEditor.getState().assets).toEqual({ '5': '/api/assets/5/file' });
     expect(fetch).toHaveBeenCalledWith('/api/assets/5', expect.anything());
   });
+
+  it('VID-TC15: a video added to the slide while the upload ran is not joined by a second one', async () => {
+    useEditor.getState().load(emptyDeck());
+    let answer: (r: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) =>
+        url === '/api/assets/videos'
+          ? new Promise<Response>((r) => (answer = r))
+          : json({ limits: { profile: 'free', maxSeconds: 90, maxBytes: 50 * 1024 * 1024, maxHeight: 720 } }),
+      ),
+    );
+    const { container } = render(<VideoPicker />);
+    const file = new File(['x'], 'clip.mp4', { type: 'video/mp4' });
+    fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    useEditor.getState().addElement({ ...video, id: 'video-02' });
+    answer(
+      new Response(JSON.stringify({ asset: { id: 6, status: 'processing', width: 640, height: 360, url: '/x' } }), {
+        status: 202,
+      }),
+    );
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(useEditor.getState().deck.slides[0].elements.filter((e) => e.type === 'video')).toHaveLength(1);
+  });
 });

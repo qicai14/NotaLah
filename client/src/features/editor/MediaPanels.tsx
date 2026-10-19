@@ -366,6 +366,8 @@ export function VideoPicker({ onAdd }: { onAdd?: () => void }) {
       const a = await postFile<VideoAsset>('/assets/videos', file);
       const now = useEditor.getState();
       now.setVideoStatus(a.id, a.status);
+      // The slide may have gained a video, or another slide become active, while the upload ran.
+      if (now.deck.slides[now.activeSlide].elements.some((e) => e.type === 'video')) return setError(VIDEO_FULL);
       now.addElement(makeVideo(boardHeight(now.deck.aspect), a.id, a.width ?? 640, a.height ?? 360));
       onAdd?.();
     } catch (e) {
