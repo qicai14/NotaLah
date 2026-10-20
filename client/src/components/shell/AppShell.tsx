@@ -1,10 +1,11 @@
-import { Search } from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useNotificationUnread } from '@/features/notifications/NotificationsContext';
 import { cn } from '@/lib/utils';
 import { BottomTabs } from './BottomTabs';
 import { LeftRail } from './LeftRail';
@@ -16,12 +17,25 @@ const isFullBleed = (pathname: string) =>
 
 function MobileTopBar() {
   const { user } = useAuth();
+  const unread = useNotificationUnread();
   return (
     <header className="sticky top-0 z-30 flex h-topbar items-center justify-between border-b bg-background/92 px-2 backdrop-blur-xl md:hidden">
       <MoreMenu variant="icon" />
       <Logo />
       {user ? (
-        <span className="size-10" aria-hidden="true" />
+        <Button asChild variant="ghost" size="icon" className="relative">
+          <Link to="/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}>
+            <Bell aria-hidden="true" className="size-5" />
+            {unread > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute top-0.5 right-0 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[0.625rem] font-bold text-primary-foreground tabular-nums"
+              >
+                {unread > 99 ? '99+' : unread}
+              </span>
+            )}
+          </Link>
+        </Button>
       ) : (
         <div className="flex items-center gap-1">
           <Button asChild variant="ghost" size="icon">

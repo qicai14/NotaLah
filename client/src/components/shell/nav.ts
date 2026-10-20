@@ -1,4 +1,5 @@
 import {
+  Bell,
   Bookmark,
   FileText,
   Flag,
@@ -30,6 +31,7 @@ export const RAIL: NavItem[] = [
   { to: '/search', label: 'Search', icon: Search },
   { to: '/?tab=following', label: 'Following', icon: UsersRound },
   { to: '/messages', label: 'Messages', icon: MessageCircle },
+  { to: '/notifications', label: 'Notifications', icon: Bell },
   { to: '/notes/new', label: 'Create', icon: Plus, primary: true },
   { to: '/drafts', label: 'Drafts', icon: FileText },
   { to: '/saved', label: 'Saved', icon: Bookmark },

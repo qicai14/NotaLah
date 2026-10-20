@@ -39,7 +39,7 @@ export function usePaged<T>(path: string, key: string, initial?: First<T>) {
     () =>
       more.run(async () => {
         if (!list.next) return;
-        const r = await api<Record<string, unknown>>(`${path}?cursor=${list.next}`);
+        const r = await api<Record<string, unknown>>(`${path}${path.includes('?') ? '&' : '?'}cursor=${list.next}`);
         setList((l) => ({ items: [...l.items, ...(r[key] as T[])], next: (r.nextCursor as string | null) ?? null }));
       }),
     // run is stable; list.next changes each page
