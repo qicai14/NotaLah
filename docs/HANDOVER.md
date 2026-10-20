@@ -1,50 +1,41 @@
-# Handover — 18 Oct 2026, late morning (Sprint D under way; awaiting user review)
+# Handover — 20 Oct 2026, 10:30 (session FYP-6 ends; Sprint D UI and Sprint 5 next)
 
-NotaLah (formerly PARP). Read with `../PLAN.md` (backlog R0-R33), `docs/DECISIONS.md` (D1-D56),
-`docs/specs/SprintD_spec.md` (agreed 17 Oct, D52), `docs/specs/R21_editor_data_model.md` and
-`../AUTOPILOT_2026-10-18.md` (current run log; 17 Oct log alongside). Older run logs: `../run-logs/`.
+NotaLah. Read with `../PLAN.md` (backlog R0-R40), `docs/DECISIONS.md` (D61-D68 are new), `docs/README.md` (doc index)
+and `../run-logs/AUTOPILOT_2026-10-20.md` (overnight log, choices made without the user).
 
-## State
-- `main` holds PRs #1-#25 (plus #26 R21c slice 1 if merged), all CI green. Sprint D so far:
-  - #19 Sprint D spec (D52). #20 R21a slides as element documents, `@notalah/shared` (D53).
-  - #21 R19 design system: light/dark tokens in `client/src/index.css` (swappable palette), shadcn/ui, `client/DESIGN.md`,
-    shell, feed, note detail, welcome/auth, guest sheet; `X-Viewer: user` fix (AUTH-TC22); feed returns `weights`.
-  - #22 R22 server: uploads (sharp → WebP, EXIF stripped, 5 MB, 500 MB quota), local-disk storage, asset access by note
-    visibility, share-link asset route, Unsplash proxy (503 until key), purge (D54). `/security-review`: no findings.
-  - #23 R21b `SlideBoard`/`SlideCarousel` replace SlideViewer. #24 Search UI (D55). #25 Profiles + blocking UI.
-  - #26 R21c slice 1: new editor (store/undo, geometry, canvas, strip, text/shapes, autosave, backup) (D56).
-- Tests: server 329, client 68; typecheck, lint (0 errors), format, build clean.
-- Dev DB `notalah` needs the two new migrations: run `npm run db:migrate -w server` in `FYP_Project`.
-- Blast Radius plugin is off (it held every `db:migrate*` command and failed in the desktop app).
-- Private test DBs `notalah_test_<branch>` exist for live worktrees; drop them when the worktree goes.
+## State of `main`
+- Merged this session: #37 Vite+-native toolchain + pnpm (D61), #38 rename to NotaLah (D62), #39 TypeScript 7 (D63),
+  #40 Sentry 11 (D64), #41 docs index + nested CLAUDE.md + wireframes moved to `FYP_Submissions/wireframes/` (D66),
+  #42 R37 deploy readiness (D65), #43 R40 async video pipeline (D67), R38 clean-up (D68, see below).
+- Tests: server ~395 + 2 skipped, client ~117; `vp run check`, build and CI green.
+- Commands are `vp` only (see `CLAUDE.md`); version policy: newest releases, exact pins, pnpm 3-day release-age guard,
+  Node 24 LTS (D61).
 
-## 18 Oct additions
-- #28 R34 free-tier cost guard (D57): caps at 80% storage / 50% monthly R2 ops / Unsplash 25 per hour, Postgres counters, kill switch, admin `GET /api/admin/usage`; files always stream through the server (no presigned URLs).
-- #29 feed polish (overlay rail, slide dots, dark backdrop, Saved tab on Profile). #30 R29 video server (D59) — merge if CI green.
-- Open branch `feat/r21c-editor-2` (worktree r21c2): R21c slice 2 steps 1-6, unreviewed; renumber its NOTE-TC68-74 to NOTE-TC78-84 (clash with R29); then step 7 (draft thumbnails, publish preview).
-- User decisions 18 Oct: host on **Render free web service** (Fly.io dropped: no free tier, no cap); R35 photo import on Gemini Flash-Lite free tier; R36 dictation on Cloudflare Workers AI Whisper; never exceed a free tier. R2 credentials are in `.env`; Gemini and Workers AI keys coming.
+## User steps (exact)
+1. Keep your dev data after the rename: follow `docker/rename-from-parp.md` (copies the volume first; rollback is
+   `git checkout` of an older main). Then `vp install`. Until then agents create test DBs with role `parp`.
+2. Claim the GitHub Student Pack `.me` domain (needed for the login cookie, D65/D66) before R11.
+3. `.env`: fix `R2_BUCKET` (73 chars; bucket names max 63), add `GEMINI_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN`.
+   Consider rotating keys: a `.env` was printed into an agent transcript on 20 Oct (not committed or sent anywhere).
+4. Re-render `docs/chapter4/diagrams/src/10_erd.puml` with PlantUML (needs Java) after R38's schema notes.
+5. When R11 deploys: GitHub secrets `PROD_DATABASE_URL` + `R2_*` for `purge.yml`; Render build/start commands and env
+   in README "Deploy notes"; `api.<domain>` DNS-only on Cloudflare (or `TRUST_PROXY=2`); check hops once with `DEBUG_PROXY=1`.
+6. Review the R13 report drafts in `FYP_Submissions/drafts/` before the writer applies them to the .docx.
 
-## 18 Oct morning window (08:24-10:30)
-- Merged: #32 R2 storage driver (D60; aws4fetch, streamed, metered, no retries), #33 R21c slice 2 (D58; multi-select, blocks, Uploads/Photos, locks, owner publish route, draft thumbnails, publish preview), #34 R30 collaboration UI, #35 messaging UI (if CI green; else merge it first).
-- Security: R2 driver and editor slice 2 got a /security-review-style pass (no findings); messaging got the reviewer's security pass (XSS, socket auth, origin) — no findings.
-- **User steps:** `R2_BUCKET` in `.env` is 73 characters (bucket names max 63; probably a URL) → set the bare bucket name, run the live check once (`cd worktrees` not needed: from `FYP_Project/server`, `R2_LIVE_TEST=1 npx vp test run tests/lib/r2Storage.test.ts`), then set `STORAGE_DRIVER=r2`. Add `GEMINI_API_KEY`, `CF_ACCOUNT_ID`, `CF_AI_TOKEN` for R35/R36.
-- Follow-ups: logout should disconnect sockets in other tabs (server); CLI-TC rows in 4.5 are not in numeric order in places.
+## Not verified overnight
+- R40: a real upload through the built server and a browser pass of the video picker after the review fixes.
+- R38: browser behaviour of the year-long media cache with `Vary: Cookie` on a shared PC.
 
 ## Next work, in order
-1. **R21d** templates, themes, self-hosted fonts; then R29 client (video picker in the editor, feed player with muted autoplay) and R22 leftovers. Earlier R21c slice-2 list for reference: multi-select, inline styling outside an open box, handles clipped at board edge, aspect-change
-   confirm (wireframe 23), locked-editor screens (28/29), code/table/image/video editing UI, draft thumbnails and the
-   publish preview with `SlideBoard`. Then **R21d** templates, themes, self-hosted fonts.
-2. **R22 client** (upload panel, my uploads, Unsplash panel once `UNSPLASH_ACCESS_KEY` is set) and **R29 video** (needs
-   `winget install Gyan.FFmpeg` first). R2 driver when the user gives Cloudflare R2 keys.
-3. Lane C (`frontend`): R30 share/collaboration UI, messaging (Vite proxy has `/socket.io` ws), R8 notifications,
-   admin pages restyle, Saved/Drafts restyle (`usePaged` exists), then `/code-review high` at sprint end.
-4. Sprint 5: R9 Jamendo (`JAMENDO_CLIENT_ID`), R10 annotations (after R21), R11 deploy, R20 audit, R27 scale-out.
-5. Before the first deploy (R11): `trust proxy` hop count `1` (never `true`, D45), `COOKIE_SECURE=true`,
-   one Render instance (750 free hours) until the Socket.io Postgres adapter (R27); never add a card to Render; a page CSP in Cloudflare Pages
-   `_headers` must allow `https://images.unsplash.com` and the API origin for images.
+1. Sprint D UI: R21d templates, themes, fonts; R29 feed player (muted autoplay, tap for sound); R8 notifications
+   inbox UI; admin and Drafts restyle; R39 feed payload (first slides only).
+2. IR features still undelivered (marks): R9 FR17 Jamendo background audio; R10 FR18 text-anchored annotations.
+3. Sprint 5: R11 deploy (domain first), R27 k6 load test + keep-awake + Neon restore drill, R28/R35/R36 AI aids,
+   R20 pre-UAT audit.
+4. Report: apply approved R13 drafts (writer), R14 length cut plan for meeting #2, diagrams from the review page
+   into §2.3.9 and Chapter 5.
 
 ## Known limits
-- Agents stopped twice on usage limits; resume them with SendMessage, not new agents.
-- `/security-review` runs only from a session whose working directory is a git checkout (it worked from a worktree).
-- Guests' image loads count against the guest read limit (one request per image) until R2 presigned URLs.
-- `erd.png` still needs Java + PlantUML to re-render.
+- Render free: ~1 min cold start, one instance, 512 MB; video re-encodes capped at 720p, one job (D67).
+- `/security-review` runs only from a git checkout (use a worktree).
+- Finished `"VIDEO_JOB_T"` rows are not purged yet (D67).

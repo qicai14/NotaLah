@@ -44,4 +44,13 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
    product, or may the 25 wireframes stay as the pre-coding design with differences explained in Chapter 5?
 3. Is a clickable prototype expected, or are the 25 wireframes sufficient?
 4. FR changes: confirm the requirement additions (FR19 lecturer approval, follows/friends, notifications, live deployment).
+5. Restored FR15/FR17/FR18 and the additions beyond the IR (collaboration, guest browsing, blocking, Canva-style editor,
+   video, cost guard): number them FR20 onward in Table 33, or list them as enhancements without FR numbers?
+6. Optional AI aids (R28 writing assistant, R35 photo/handwriting import, R36 dictation) reverse the IR's AI exclusion
+   while the ranking stays heuristic: acceptable as a logged extension?
+7. The R13 report-sync drafts add about 3,800 words; fold them into the length cut plan (question 1)?
 5. Confirm the exact final submission date.
+
+## Open for the user (20 Oct)
+- FR numbering for the additions (supervisor question 5) decides the Table 33 wording in the R13 drafts.
+- FR8 survey figure: the report says 19 selections (59.4%), the IR says 20 (62%); confirm which is correct.
