@@ -42,6 +42,7 @@ export function MusicChip({ music, className }: { music: NonNullable<Note['music
   }, [music.volume]);
 
   const Icon = active ? Pause : Play;
+  const label = music.title ? `${music.title} — ${music.artist ?? 'Unknown artist'}` : 'Music from Jamendo';
   return (
     <div
       ref={box}
@@ -52,7 +53,7 @@ export function MusicChip({ music, className }: { music: NonNullable<Note['music
     >
       <button
         type="button"
-        aria-label="Background music"
+        aria-label={`Background music: ${label}`}
         aria-pressed={active}
         onClick={() => (active ? release() : claim())}
         className="flex min-w-0 cursor-pointer items-center gap-2 rounded-full pr-1 focus-visible:ring-[3px] focus-visible:ring-ring/25"
@@ -67,9 +68,7 @@ export function MusicChip({ music, className }: { music: NonNullable<Note['music
             <Icon aria-hidden="true" className="size-4" />
           </span>
         </span>
-        <span className="truncate font-semibold">
-          {music.title ? `${music.title} — ${music.artist ?? 'Unknown artist'}` : 'Music from Jamendo'}
-        </span>
+        <span className="truncate font-semibold">{label}</span>
       </button>
       {music.licenseUrl && (
         <a

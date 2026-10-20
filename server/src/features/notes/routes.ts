@@ -31,17 +31,21 @@ async function resolveMusic(
   res: Response,
 ): Promise<boolean> {
   if (!n.music || (n.music.trackId === stored?.trackId && stored.title !== null)) return true;
+  const { trackId } = n.music;
   try {
-    const track = await lookupTrack(n.music.trackId, userId);
+    const track = await lookupTrack(trackId, userId);
     if (!track) {
-      if (n.music.trackId === stored?.trackId) return true; // saved during an outage; unrelated edits must not fail
+      if (trackId === stored?.trackId) {
+        n.music = null; // the stored track is gone from Jamendo: drop it so unrelated saves pass and stop re-looking it up
+        return true;
+      }
       res.status(400).json({ error: 'Validation failed', errors: { music: 'Unknown music track' } });
       return false;
     }
     n.musicMeta = track;
   } catch (err) {
     if (!(err instanceof MusicUnavailable)) throw err;
-    if (n.music.trackId !== stored?.trackId) n.musicMeta = null;
+    if (trackId !== stored?.trackId) n.musicMeta = null;
   }
   return true;
 }

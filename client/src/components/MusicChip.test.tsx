@@ -44,7 +44,7 @@ describe('MusicChip', () => {
 
   it('MUS-TC19: a tap plays and a second tap pauses, under one fixed label', () => {
     render(<MusicChip music={music} />);
-    const button = screen.getByRole('button', { name: 'Background music' });
+    const button = screen.getByRole('button', { name: /^Background music/ });
     expect(button.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(button);
     expect(play).toHaveBeenCalledTimes(1);
@@ -65,7 +65,7 @@ describe('MusicChip', () => {
     );
     act(() => video.claim());
     expect(video.active).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Background music' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Background music/ }));
     expect(video.active).toBe(false);
     expect(screen.getByRole('button').getAttribute('aria-pressed')).toBe('true');
     act(() => video.claim());
@@ -78,6 +78,6 @@ describe('MusicChip', () => {
     render(<MusicChip music={{ ...music, title: null, artist: null, cover: null, licenseUrl: null }} />);
     expect(screen.getByText('Music from Jamendo')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Background music' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Background music/ })).toBeTruthy();
   });
 });

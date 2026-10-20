@@ -242,7 +242,7 @@ describe('Background music (R9)', () => {
     expect((await search(other, 'q=drums')).status).toBe(200);
   });
 
-  it('MUS-TC15: Jamendo down or the cap reached still saves the track with no details, and a later save fills them', async () => {
+  it('MUS-TC15: Jamendo down or the cap reached still saves the track with no details, a vanished stored track is dropped, and a later save fills them', async () => {
     const uid = await insertUser();
     stub(() => new Response('down', { status: 503 }));
     const down = await post(uid, note({ music: music(168) }));
@@ -262,7 +262,7 @@ describe('Background music (R9)', () => {
     stub(() => reply([]));
     const empty = await put(uid, noteId, note({ music: music(168, 70) }));
     expect(empty.status).toBe(200);
-    expect(empty.body.note.music).toMatchObject({ trackId: 168, title: null });
+    expect(empty.body.note.music).toBeNull();
 
     await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
     stub(() => reply([raw(168)]));
