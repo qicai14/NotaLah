@@ -2,15 +2,8 @@ import { Router } from 'express';
 import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
-import {
-  createNote,
-  getNoteMeta,
-  getVisibleNote,
-  listDrafts,
-  NOT_EDITABLE,
-  replaceNote,
-  softDeleteNote,
-} from './repository';
+import { createNote, getVisibleNote, listDrafts, replaceNote, softDeleteNote } from './repository';
+import { noteAccess } from './access';
 import { moduleExists } from '../modules/repository';
 import { findBadAsset, parseBaseUpdatedAt, parseNoteBody } from './service';
 import { notifyVoidedVerifiers } from '../notifications/service';
@@ -45,11 +38,8 @@ notesRouter.get('/:id', optionalAuth, async (req, res) => {
 });
 
 notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
-  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
-  if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.role !== 'owner' && meta.role !== 'edit') return res.status(403).json({ error: 'Forbidden' });
-  if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
-  if (meta.role === 'edit' && !meta.authorActive) return res.status(403).json({ error: NOT_EDITABLE });
+  const meta = await noteAccess(req, res, ['owner', 'edit'], { editable: true });
+  if (!meta) return;
 
   const parsed = parseNoteBody(req.body);
   const base = parseBaseUpdatedAt(req.body, meta.role === 'edit');
@@ -99,10 +89,8 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
  */
 notesRouter.post('/:id/publish', requireAuth, requireActive, async (req, res) => {
   const id = Number(req.params.id);
-  const meta = await getNoteMeta(id, me(req).id);
-  if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.role !== 'owner') return res.status(403).json({ error: 'Only the owner can publish' });
-  if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
+  const meta = await noteAccess(req, res, ['owner'], { editable: true, forbidden: 'Only the owner can publish' });
+  if (!meta) return;
   if (meta.status !== 'draft') return res.status(400).json({ error: 'This note is already published' });
   const visibility = (req.body as { visibility?: unknown } | undefined)?.visibility;
   if (visibility !== 'public' && visibility !== 'contacts') {
@@ -134,9 +122,7 @@ notesRouter.post('/:id/publish', requireAuth, requireActive, async (req, res) =>
 });
 
 notesRouter.delete('/:id', requireAuth, async (req, res) => {
-  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
-  if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.role !== 'owner') return res.status(403).json({ error: 'Forbidden' });
+  if (!(await noteAccess(req, res, ['owner']))) return;
   await softDeleteNote(Number(req.params.id));
   res.status(204).end();
 });
