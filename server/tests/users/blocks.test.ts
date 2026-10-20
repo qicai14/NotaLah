@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { isBlocked, upsertAdmin } from '../../src/features/users/repository';
 import { pool } from '../../src/lib/pool';
-import { asUser, CSRF, follow, insertNote, insertUser, truncateAll, walkPages } from '../helpers';
+import { agePublished, asUser, CSRF, follow, insertNote, insertUser, truncateAll, walkPages } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -278,6 +278,7 @@ describe('Blocking', () => {
   it('BLK-TC12: guests are unaffected by blocks', async () => {
     const { a, b } = await blockedPair();
     const note = await kernelNote(a);
+    await agePublished();
     expect((await api.get(null, `/api/users/${a}`)).status).toBe(200);
     expect((await api.get(null, `/api/notes/${note}`)).status).toBe(200);
     expect(ids((await api.get(null, '/api/feed')).body.items)).toEqual([note]);

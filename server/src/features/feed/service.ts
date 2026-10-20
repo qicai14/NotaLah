@@ -14,6 +14,7 @@ import {
 } from './repository';
 
 const PAGE_SIZE = 10;
+const GUEST_CUTOFF_MS = 60_000;
 
 type FeedItem = NoteWithEngagement & { score: number; components: Components };
 
@@ -35,6 +36,9 @@ async function rank(viewerId: number, cutoff: Date): Promise<RankedEntry[]> {
 // Postgres if guests page across instances.
 const guestRankings = new Map<number, RankedEntry[]>();
 
+/** For tests: the cache outlives a truncated database. */
+export const clearGuestRankings = () => guestRankings.clear();
+
 function rememberGuestRanking(cutoff: Date, ranked: RankedEntry[]): void {
   guestRankings.set(cutoff.getTime(), ranked);
   if (guestRankings.size > RANKING.guestRankingCacheSize) guestRankings.delete(guestRankings.keys().next().value!);
@@ -52,10 +56,12 @@ export async function getFeedPage(
   page: number,
   asOf: Date | null,
 ): Promise<{ items: FeedItem[]; nextPage: number | null; asOf: Date; weights: typeof RANKING.weights }> {
-  const cutoff = await getCutoff(asOf);
-  const from = (page - 1) * PAGE_SIZE;
   const guest = viewerId === GUEST_ID;
-  const cached = guest && asOf ? guestRankings.get(cutoff.getTime()) : undefined;
+  const now = await getCutoff(asOf);
+  // A guest's first page rounds "now" down to the minute so guests share one cached ranking instead of ranking per request.
+  const cutoff = guest && !asOf ? new Date(Math.floor(now.getTime() / GUEST_CUTOFF_MS) * GUEST_CUTOFF_MS) : now;
+  const from = (page - 1) * PAGE_SIZE;
+  const cached = guest ? guestRankings.get(cutoff.getTime()) : undefined;
   let stored = cached
     ? { entries: cached.slice(from, from + PAGE_SIZE), total: cached.length }
     : asOf && !guest
