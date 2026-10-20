@@ -90,6 +90,8 @@ describe('Background music (R9)', () => {
       reply([
         raw(168, { name: 'The &quot;Best&quot; &amp; Brightest', artist_name: 'A&#39;s Band' }),
         raw(2, { license_ccurl: 'https://jamendo.com/own' }),
+        raw(3, { image: 'https://jamendo.com.evil.example/x.png' }),
+        raw(4, { image: 'http://usercontent.jamendo.com/x.png' }),
       ]),
     );
     const res = await search(await insertUser(), 'q=piano&instrumental=1&page=2');
@@ -211,17 +213,70 @@ describe('Background music (R9)', () => {
     });
   });
 
-  it('MUS-TC9: an unknown track is 400 and nothing is saved; Jamendo being down is 502', async () => {
+  it('MUS-TC9: an unknown track is 400 and nothing is saved', async () => {
     const uid = await insertUser();
     stub(() => reply([]));
     const unknown = await post(uid, note({ music: music(999999) }));
     expect(unknown.status).toBe(400);
     expect(unknown.body.errors.music).toBe('Unknown music track');
     expect((await pool.query(`SELECT 1 FROM "POST_T"`)).rowCount).toBe(0);
+  });
 
+  it('MUS-TC14: a user has 300 Jamendo calls a day, searches and save lookups together', async () => {
+    vi.stubEnv('RATE_LIMIT_UNDER_TEST', 'musicday');
+    const fetchMock = stub(() => reply([raw(1)]));
+    const uid = await insertUser();
+    expect((await search(uid, 'q=piano')).status).toBe(200);
+    await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_hits = 299 WHERE rlt_key = $1`, [`musicday:user:${uid}`]);
+    expect((await search(uid, 'q=guitar')).status).toBe(200);
+    const limited = await search(uid, 'q=drums');
+    expect(limited.status).toBe(429);
+    expect(limited.body.error).toBe('Daily music search limit reached. Try again tomorrow.');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const saved = await post(uid, note({ music: music(555) }));
+    expect(saved.status).toBe(201);
+    expect(saved.body.note.music).toMatchObject({ trackId: 555, title: null, licenseUrl: null });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const other = await insertUser({ email: 'o@notalah.test' });
+    expect((await search(other, 'q=drums')).status).toBe(200);
+  });
+
+  it('MUS-TC15: Jamendo down or the cap reached still saves the track with no details, and a later save fills them', async () => {
+    const uid = await insertUser();
     stub(() => new Response('down', { status: 503 }));
     const down = await post(uid, note({ music: music(168) }));
-    expect(down.status).toBe(502);
-    expect((await pool.query(`SELECT 1 FROM "POST_T"`)).rowCount).toBe(0);
+    expect(down.status).toBe(201);
+    expect(down.body.note.music).toMatchObject({ trackId: 168, title: null, volume: 60 });
+    const noteId = down.body.note.id;
+
+    await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
+    await consume('jamendo', METRICS.jamendo.cap);
+    const atCap = stub();
+    const capped = await put(uid, noteId, note({ music: music(168, 70) }));
+    expect(capped.status).toBe(200);
+    expect(capped.body.note.music).toMatchObject({ trackId: 168, title: null, volume: 70 });
+    expect(atCap).not.toHaveBeenCalled();
+
+    await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
+    stub(() => reply([raw(168)]));
+    const later = await put(uid, noteId, note({ music: music(168, 70) }));
+    expect(later.body.note.music).toMatchObject({ title: 'Track 168', volume: 70 });
+
+    await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
+    await consume('jamendo', METRICS.jamendo.cap);
+    const swapped = await put(uid, noteId, note({ music: music(77) }));
+    expect(swapped.status).toBe(200);
+    expect(swapped.body.note.music).toMatchObject({ trackId: 77, title: null, licenseUrl: null });
+  });
+
+  it('MUS-TC16: a track found by search is saved without a second Jamendo call', async () => {
+    const fetchMock = stub(() => reply([raw(168)]));
+    const uid = await insertUser();
+    await search(uid, 'q=piano');
+    const res = await post(uid, note({ music: music(168) }));
+    expect(res.status).toBe(201);
+    expect(res.body.note.music).toMatchObject({ trackId: 168, title: 'Track 168' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

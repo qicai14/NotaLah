@@ -2,6 +2,7 @@ import { jamendoStreamUrl } from '@notalah/shared';
 import { env } from '../../lib/env';
 import { consume } from '../usage/service';
 import { MUSIC } from './config';
+import { takeDailyCall } from './rateLimit';
 
 const API = 'https://api.jamendo.com/v3.0/tracks/';
 
@@ -77,6 +78,7 @@ function toTrack(r: unknown): Track | null {
 }
 
 const cache = new Map<string, { at: number; results: Track[] }>();
+const byId = new Map<number, Track>();
 
 /** Tracks matching `q`, instrumental only when asked, cached for ten minutes. */
 export async function searchTracks(q: string, instrumental: boolean, page: number): Promise<{ results: Track[] }> {
@@ -90,16 +92,26 @@ export async function searchTracks(q: string, instrumental: boolean, page: numbe
     ...(instrumental && { vocalinstrumental: 'instrumental' }),
   });
   const results = raw.map(toTrack).filter((t): t is Track => t !== null);
+  for (const t of results) {
+    if (byId.size >= MUSIC.trackMemory) byId.delete(byId.keys().next().value as number);
+    byId.set(t.id, t);
+  }
   if (results.length === 0) return { results }; // an empty answer may be a hiccup, so it is not remembered
   if (cache.size >= MUSIC.cacheMax) cache.delete(cache.keys().next().value as string);
   cache.set(key, { at: Date.now(), results });
   return { results };
 }
 
-/** Looks one track up by id for the save path; null when Jamendo has no such track. */
-export async function lookupTrack(id: number): Promise<Track | null> {
+/** Looks one track up by id for the save path, from a recent search when possible; null when Jamendo has no such track. */
+export async function lookupTrack(id: number, userId: number): Promise<Track | null> {
+  const known = byId.get(id);
+  if (known) return known;
+  if (!(await takeDailyCall(userId))) throw new MusicUnavailable('Music search is paused', 503);
   const [raw] = await call({ id: String(id), limit: '1' });
   return toTrack(raw);
 }
 
-export const clearMusicCache = () => cache.clear();
+export const clearMusicCache = () => {
+  cache.clear();
+  byId.clear();
+};

@@ -247,8 +247,9 @@ export interface NoteMeta {
   status: string;
   visibility: 'public' | 'contacts' | null;
   moduleId: number | null;
-  /** The attached Jamendo track, so a save of the same track skips the lookup (R9). */
+  /** The attached Jamendo track and its stored title; a save of the same track skips the lookup unless the title is still NULL (R9). */
   musicTrackId: number | null;
+  musicTitle: string | null;
   /** The viewer's access: the owner, a collaborator role, or null. */
   role: NoteRole | null;
   /** The viewer may read the note: VISIBLE or a collaborator. */
@@ -259,7 +260,7 @@ export interface NoteMeta {
 export async function getNoteMeta(id: number, viewerId: number): Promise<NoteMeta | undefined> {
   const { rows } = await pool.query<NoteMeta>(
     `SELECT p.pst_usr_id AS "authorId", p.pst_status AS "status", p.pst_visibility AS "visibility", p.pst_mod_id AS "moduleId",
-            p.pst_music_track_id::INT AS "musicTrackId", ${MY_ROLE} AS "role", ${READABLE} AS "visible",
+            p.pst_music_track_id::INT AS "musicTrackId", p.pst_music_title AS "musicTitle", ${MY_ROLE} AS "role", ${READABLE} AS "visible",
             EXISTS (SELECT 1 FROM "USER_T" a WHERE a.usr_id = p.pst_usr_id AND a.usr_status = 'active') AS "authorActive"
      FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status <> 'deleted'`,
     [viewerId, id],
@@ -327,7 +328,7 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   );
 }
 
-/** pst_music_provider, track id, volume, then title, artist, cover and licence from the Jamendo lookup (NULL keeps the stored ones on a save). */
+/** pst_music_provider, track id, volume, then title, artist, cover and licence from the Jamendo lookup (on a replace, `musicMeta` undefined keeps the stored ones and null clears them). */
 const musicParams = (n: NoteInput) => [
   n.music?.provider ?? null,
   n.music?.trackId ?? null,
@@ -397,14 +398,25 @@ export function replaceNote(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_aspect = $5, pst_status = $6, pst_visibility = $7,
            pst_music_provider = $8, pst_music_track_id = $9, pst_music_volume = $10,
-           pst_music_title = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($11, pst_music_title) END,
-           pst_music_artist = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($12, pst_music_artist) END,
-           pst_music_cover = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($13, pst_music_cover) END,
-           pst_music_license = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($14, pst_music_license) END,
+           pst_music_title = CASE WHEN $9::BIGINT IS NULL THEN NULL WHEN $15 THEN $11 ELSE pst_music_title END,
+           pst_music_artist = CASE WHEN $9::BIGINT IS NULL THEN NULL WHEN $15 THEN $12 ELSE pst_music_artist END,
+           pst_music_cover = CASE WHEN $9::BIGINT IS NULL THEN NULL WHEN $15 THEN $13 ELSE pst_music_cover END,
+           pst_music_license = CASE WHEN $9::BIGINT IS NULL THEN NULL WHEN $15 THEN $14 ELSE pst_music_license END,
            pst_published_at = CASE WHEN $6::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END,
-           pst_content_edited_at = CASE WHEN $15 THEN NOW() ELSE pst_content_edited_at END
+           pst_content_edited_at = CASE WHEN $16 THEN NOW() ELSE pst_content_edited_at END
        WHERE pst_id = $1`,
-      [id, n.moduleId, n.title, n.theme, n.aspect, n.status, n.visibility, ...musicParams(n), contentEdited],
+      [
+        id,
+        n.moduleId,
+        n.title,
+        n.theme,
+        n.aspect,
+        n.status,
+        n.visibility,
+        ...musicParams(n),
+        n.musicMeta !== undefined,
+        contentEdited,
+      ],
     );
     await writeChildren(c, id, n);
     if (cur.role === 'edit') {

@@ -35,6 +35,8 @@ const json = (body: unknown, status = 200) =>
 
 const play = vi.fn(() => Promise.resolve());
 const pause = vi.fn();
+const removeAttribute = vi.fn();
+const load = vi.fn();
 const audioSrcs: string[] = [];
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -42,6 +44,9 @@ beforeEach(() => {
   useEditor.getState().load(emptyDeck());
   play.mockClear();
   pause.mockClear();
+  removeAttribute.mockClear();
+  load.mockClear();
+  play.mockImplementation(() => Promise.resolve());
   audioSrcs.length = 0;
   vi.stubGlobal(
     'Audio',
@@ -53,6 +58,8 @@ beforeEach(() => {
       }
       play = play;
       pause = pause;
+      removeAttribute = removeAttribute;
+      load = load;
     },
   );
   fetchMock = vi.fn(() => json({ results: [track(1), track(2)] }));
@@ -80,13 +87,15 @@ describe('Music panel (R9)', () => {
     await searchFor('piano');
     expect(urlOf()).toContain('/music/search?q=piano&instrumental=1&page=1');
     expect(play).not.toHaveBeenCalled();
+    expect(screen.getByRole('status').textContent).toBe('2 tracks');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Play preview of Track 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Track 1' }));
     expect(audioSrcs).toEqual([track(1).audioUrl]);
     expect(play).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Pause preview of Track 1' }));
+    expect(screen.getByRole('button', { name: 'Preview Track 1' }).getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Track 1' }));
     expect(pause).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Play preview of Track 1' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Preview Track 1' }).getAttribute('aria-pressed')).toBe('false');
 
     fireEvent.click(screen.getByLabelText('Instrumental only'));
     fireEvent.submit(screen.getByRole('search'));
@@ -116,6 +125,7 @@ describe('Music panel (R9)', () => {
     });
     render(<MusicPanel />);
     expect(screen.getByRole('note').textContent).toContain('Remove videos to add music');
+    expect(screen.getByRole('note').closest('fieldset')).toBeNull();
     expect(screen.getByLabelText('Search free music').matches(':disabled')).toBe(true);
     expect(screen.getByLabelText('Instrumental only').matches(':disabled')).toBe(true);
     fireEvent.submit(screen.getByRole('search'));
@@ -150,5 +160,23 @@ describe('Music panel (R9)', () => {
     fireEvent.submit(screen.getByRole('search'));
     expect((await screen.findByRole('alert')).textContent).toContain('Music search is paused');
     expect(screen.queryByRole('list', { name: 'Search results' })).toBeNull();
+  });
+
+  it('MUS-TC17: a quick switch is not an error, a real play failure is, and leaving the panel releases the audio', async () => {
+    const { unmount } = render(<MusicPanel />);
+    await searchFor('piano');
+    play.mockImplementationOnce(() => Promise.reject(new DOMException('interrupted', 'AbortError')));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Track 1' }));
+    await Promise.resolve();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Preview Track 1' }).getAttribute('aria-pressed')).toBe('true');
+
+    play.mockImplementationOnce(() => Promise.reject(new DOMException('blocked', 'NotAllowedError')));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview Track 2' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('could not be played');
+
+    unmount();
+    expect(removeAttribute).toHaveBeenCalledWith('src');
+    expect(load).toHaveBeenCalled();
   });
 });

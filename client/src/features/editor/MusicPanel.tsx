@@ -2,6 +2,7 @@ import { MUSIC_VIDEO_CONFLICT } from '@notalah/shared';
 import { Music, Pause, Play, Search } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { api, ApiError, errorText } from '@/lib/api';
 import type { MusicTrack } from '@/types';
@@ -57,10 +58,21 @@ export function MusicPanel() {
   const audio = useRef<HTMLAudioElement | null>(null);
   const latest = useRef(0);
   const volume = music?.volume ?? DEFAULT_VOLUME;
+  const status = busy
+    ? 'Searching…'
+    : results && !error
+      ? results.length
+        ? `${results.length} ${results.length === 1 ? 'track' : 'tracks'}`
+        : 'No tracks found. Try another word.'
+      : '';
 
   useEffect(
     () => () => {
-      audio.current?.pause();
+      const a = audio.current;
+      if (!a) return;
+      a.pause();
+      a.removeAttribute('src');
+      a.load();
     },
     [],
   );
@@ -106,7 +118,8 @@ export function MusicPanel() {
     a.src = t.audioUrl;
     a.volume = volume / 100;
     setPlaying(t.id);
-    void Promise.resolve(a.play()).catch(() => {
+    void Promise.resolve(a.play()).catch((e: unknown) => {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
       setPlaying(null);
       setError('This track could not be played. Try another.');
     });
@@ -125,140 +138,142 @@ export function MusicPanel() {
     useEditor.getState().preview((d) => ({ ...d, music: d.music && { ...d.music, volume: v } }));
 
   return (
-    <fieldset disabled={hasVideo} className="flex min-w-0 flex-col gap-4 disabled:opacity-60">
-      <legend className="sr-only">Background music</legend>
+    <div className="flex min-w-0 flex-col gap-4">
       {hasVideo && (
         <p role="note" className="rounded-md bg-surface px-3 py-2 text-body-sm font-medium text-foreground">
           {MUSIC_VIDEO_CONFLICT}. A note with a video plays the video’s own sound.
         </p>
       )}
-      {music && (
-        <section aria-label="Music on this note" className="flex flex-col gap-3 rounded-xl border border-border p-3">
-          <div className="flex items-center gap-3">
-            {picked?.cover ? (
-              <img src={picked.cover} alt="" className="size-12 shrink-0 rounded-md object-cover" />
-            ) : (
-              <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-surface">
-                <Music className="size-5 text-muted-foreground" aria-hidden="true" />
-              </span>
-            )}
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-body-sm font-semibold">{picked?.title || 'Chosen track'}</span>
-              <span className="block truncate text-caption text-muted-foreground">{picked?.artist}</span>
-            </span>
-          </div>
-          <label className="flex flex-col gap-1 text-body-sm">
-            <span className="flex justify-between">
-              <span className="font-semibold">Volume</span>
-              <span className="text-muted-foreground tabular-nums">{volume}%</span>
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              onPointerUp={() => useEditor.getState().commit()}
-              onKeyUp={() => useEditor.getState().commit()}
-              onBlur={() => useEditor.getState().commit()}
-              className="accent-primary"
-            />
-          </label>
-          {picked && <MusicCredit track={picked} />}
-          <div>
-            <ConfirmButton label="Remove music" onConfirm={removeMusic} focusMain={false} />
-          </div>
-        </section>
-      )}
-      <form role="search" onSubmit={onSubmit} className="relative">
-        <label htmlFor="music-search" className="sr-only">
-          Search free music
-        </label>
-        <Search
-          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden="true"
-        />
-        <input
-          id="music-search"
-          type="search"
-          value={q}
-          maxLength={100}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search free music"
-          className="h-10 w-full rounded-full border border-input bg-surface pr-3 pl-9 text-body-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/25"
-        />
-      </form>
-      <label className="flex min-h-8 items-center gap-3 text-body-sm">
-        <input
-          type="checkbox"
-          checked={instrumental}
-          onChange={(e) => setInstrumental(e.target.checked)}
-          className="size-5 accent-primary"
-        />
-        Instrumental only
-      </label>
-      <p className="text-caption text-muted-foreground">
-        Free Creative Commons tracks from{' '}
-        <a href="https://www.jamendo.com" target="_blank" rel="noreferrer noopener" className="font-semibold underline">
-          Jamendo
-        </a>
-        . Readers hear a track only when they press play.
-      </p>
-      {error && (
-        <p role="alert" className="text-body-sm font-medium text-destructive">
-          {error}
-        </p>
-      )}
-      {busy && !results?.length && (
-        <p role="status" className="text-body-sm text-muted-foreground">
-          Searching…
-        </p>
-      )}
-      {!busy && results && !results.length && !error && (
-        <p className="text-body-sm text-muted-foreground">No tracks found. Try another word.</p>
-      )}
-      {results && results.length > 0 && (
-        <ul aria-label="Search results" className="flex flex-col gap-1">
-          {results.map((t) => (
-            <li key={t.id} className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label={`${playing === t.id ? 'Pause' : 'Play'} preview of ${t.title}`}
-                aria-pressed={playing === t.id}
-                onClick={() => toggle(t)}
-                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface transition-colors duration-(--duration-fast) hover:bg-surface-strong focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-              >
-                {playing === t.id ? (
-                  <Pause className="size-4" aria-hidden="true" />
-                ) : (
-                  <Play className="size-4" aria-hidden="true" />
-                )}
-              </button>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-body-sm font-semibold">{t.title}</span>
-                <span className="block truncate text-caption text-muted-foreground">
-                  {t.artist} · {mmss(t.duration)}
+      <fieldset disabled={hasVideo} className="flex min-w-0 flex-col gap-4 disabled:opacity-60">
+        <legend className="sr-only">Background music</legend>
+        {music && (
+          <section aria-label="Music on this note" className="flex flex-col gap-3 rounded-xl border border-border p-3">
+            <div className="flex items-center gap-3">
+              {picked?.cover ? (
+                <img src={picked.cover} alt="" className="size-12 shrink-0 rounded-md object-cover" />
+              ) : (
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-surface">
+                  <Music className="size-5 text-muted-foreground" aria-hidden="true" />
                 </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-body-sm font-semibold">{picked?.title || 'Chosen track'}</span>
+                <span className="block truncate text-caption text-muted-foreground">{picked?.artist}</span>
               </span>
-              <Button
-                type="button"
-                size="sm"
-                variant={music?.trackId === t.id ? 'secondary' : 'default'}
-                aria-label={`Use ${t.title}`}
-                aria-pressed={music?.trackId === t.id}
-                onClick={() => pick(t)}
-              >
-                {music?.trackId === t.id ? 'Chosen' : 'Use'}
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {more && (
-        <Button variant="secondary" size="sm" disabled={busy} onClick={() => void search(query, page + 1)}>
-          {busy ? 'Loading…' : 'Show more'}
-        </Button>
-      )}
-    </fieldset>
+            </div>
+            <label className="flex flex-col gap-1 text-body-sm">
+              <span className="flex justify-between">
+                <span className="font-semibold">Volume</span>
+                <span className="text-muted-foreground tabular-nums">{volume}%</span>
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={volume}
+                onChange={(e) => setVolume(Number(e.target.value))}
+                onPointerUp={() => useEditor.getState().commit()}
+                onKeyUp={() => useEditor.getState().commit()}
+                onBlur={() => useEditor.getState().commit()}
+                className="accent-primary"
+              />
+            </label>
+            {picked?.title && <MusicCredit track={picked} />}
+            <div>
+              <ConfirmButton label="Remove music" onConfirm={removeMusic} focusMain={false} />
+            </div>
+          </section>
+        )}
+        <form role="search" onSubmit={onSubmit} className="relative">
+          <label htmlFor="music-search" className="sr-only">
+            Search free music
+          </label>
+          <Search
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            id="music-search"
+            type="search"
+            value={q}
+            maxLength={100}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search free music"
+            className="h-10 w-full rounded-full border border-input bg-surface pr-3 pl-9 text-body-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:bg-background focus-visible:ring-[3px] focus-visible:ring-ring/25"
+          />
+        </form>
+        <label className="flex min-h-8 items-center gap-3 text-body-sm">
+          <input
+            type="checkbox"
+            checked={instrumental}
+            onChange={(e) => setInstrumental(e.target.checked)}
+            className="size-5 accent-primary"
+          />
+          Instrumental only
+        </label>
+        <p className="text-caption text-muted-foreground">
+          Free Creative Commons tracks from{' '}
+          <a
+            href="https://www.jamendo.com"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-semibold underline"
+          >
+            Jamendo
+          </a>
+          . Readers hear a track only when they press play.
+        </p>
+        {error && (
+          <p role="alert" className="text-body-sm font-medium text-destructive">
+            {error}
+          </p>
+        )}
+        <p role="status" className={cn('text-body-sm text-muted-foreground', !status && 'sr-only')}>
+          {status}
+        </p>
+        {results && results.length > 0 && (
+          <ul aria-label="Search results" className="flex flex-col gap-1">
+            {results.map((t) => (
+              <li key={t.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label={`Preview ${t.title}`}
+                  aria-pressed={playing === t.id}
+                  onClick={() => toggle(t)}
+                  className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface transition-colors duration-(--duration-fast) hover:bg-surface-strong focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                >
+                  {playing === t.id ? (
+                    <Pause className="size-4" aria-hidden="true" />
+                  ) : (
+                    <Play className="size-4" aria-hidden="true" />
+                  )}
+                </button>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-body-sm font-semibold">{t.title}</span>
+                  <span className="block truncate text-caption text-muted-foreground">
+                    {t.artist} · {mmss(t.duration)}
+                  </span>
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={music?.trackId === t.id ? 'secondary' : 'default'}
+                  aria-label={`Use ${t.title}`}
+                  aria-pressed={music?.trackId === t.id}
+                  onClick={() => pick(t)}
+                >
+                  {music?.trackId === t.id ? 'Chosen' : 'Use'}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {more && (
+          <Button variant="secondary" size="sm" disabled={busy} onClick={() => void search(query, page + 1)}>
+            {busy ? 'Loading…' : 'Show more'}
+          </Button>
+        )}
+      </fieldset>
+    </div>
   );
 }

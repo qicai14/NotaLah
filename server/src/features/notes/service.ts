@@ -102,8 +102,8 @@ export interface NoteInput {
   aspect: Aspect;
   slides: Slide[];
   music: MusicRef | null;
-  /** Filled by the route from Jamendo when the track is new to the note; absent means keep what is stored. */
-  musicMeta?: TrackMeta;
+  /** Set by the route when the track is new or has no details yet: a Jamendo lookup, or null when Jamendo could not answer. Absent means keep what is stored. */
+  musicMeta?: TrackMeta | null;
   moduleId: number | null;
   hashtags: string[];
   status: 'draft' | 'published';

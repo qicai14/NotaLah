@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
 import { requireAuth } from '../auth/middleware';
-import { musicLimiter } from './rateLimit';
+import { musicDailyLimiter, musicLimiter } from './rateLimit';
 import { MusicUnavailable, searchTracks } from './service';
 
 export const musicRouter = Router();
@@ -22,7 +22,7 @@ const searchQuery = z.object({
     .default(1),
 });
 
-musicRouter.get('/search', requireAuth, musicLimiter, async (req, res) => {
+musicRouter.get('/search', requireAuth, musicLimiter, musicDailyLimiter, async (req, res) => {
   const parsed = searchQuery.safeParse(req.query);
   if (!parsed.success)
     return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });

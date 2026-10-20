@@ -1647,15 +1647,20 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (`MUSIC_VIDEO_CONFLICT`, "Remove videos to add music"), enforced by `deckSchema` and by the note save. In the editor the
   Music panel is disabled with that reason, and the video picker asks to remove the music first.
 - **Schema:** migration `20261020000002_music_jamendo`: `pst_music_provider` CHECK now allows only `jamendo` (no row used
-  `deezer`); new `pst_music_license VARCHAR(200)`. The data dictionary and ERD source list all seven music columns.
-- **Save path:** `routes.ts` of notes looks the track up (`lookupTrack`) when it differs from the stored one and stores
-  title, artist, cover and licence URL. A track already stored is not looked up again, so autosave does not spend the
-  allowance. Unknown track: 400 `errors.music`. Jamendo down: 502; cap reached: 503.
+  `deezer`; the up step clears any such row first, the down step clears `jamendo` rows before restoring the Deezer check); new
+  `pst_music_license VARCHAR(200)`. The data dictionary and ERD source list all seven music columns.
+- **Save path:** `resolveMusic` in the notes routes looks the track up (`lookupTrack`) when it differs from the stored one, or
+  when the stored title is still NULL, and stores title, artist, cover and licence URL. A track stored with details is not
+  looked up again, so autosave does not spend the allowance. Unknown track: 400 `errors.music`. **Jamendo down, monthly cap
+  reached or the user's daily budget spent: the save still succeeds** with the track id and volume and NULL details (a changed
+  track clears the old details), and the next save retries, so autosave never fails because of music. A track found by
+  search is remembered (500 ids) and reused by the save without a second call.
 - **Search:** `GET /api/music/search?q=&instrumental=1&page=` proxies `/v3.0/tracks` (20 results, `vocalinstrumental=instrumental`
   when ticked, on by default). Results keep only tracks with a Creative Commons licence page and a Jamendo cover; the
   title is HTML-entity decoded (Jamendo sends `&quot;`). The stream URL is built from the id
   (`jamendoStreamUrl`, `https://prod-1.storage.jamendo.com/?trackid=ID&format=mp31`) and never read from Jamendo's reply or the
-  request. Per-user limit 20 a minute (`music` limiter); identical searches cached 10 minutes; an empty answer is not cached.
+  request. Per-user limits: 20 a minute (`music`) and **300 Jamendo calls a day** (`musicday`, searches and save lookups together,
+  so one account cannot drain the shared 28,000); identical searches cached 10 minutes; an empty answer is not cached.
 - **Allowance:** Jamendo's free non-commercial plan allows up to **35,000 API requests a month**
   (https://developer.jamendo.com/v3.0, read 20 Oct 2026; the Jamendo licensing help centre quotes the same figure but
   answered 403 to a fetch). New R34 metric `jamendo` (monthly) capped at 80%, **28,000** (`USAGE_CAP_JAMENDO` can only lower
@@ -1666,5 +1671,5 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `img-src https://usercontent.jamendo.com` to the host's policy if R11 introduces one.
 - **Alternatives:** an own-upload music library (storage and copyright moderation); storing the stream URL (Jamendo's `audio`
   URLs carry a signed `from` token and expire); a `MUSIC_T` table (one track per note makes columns enough).
-- **Tests:** MUS-TC1 to MUS-TC13; USE-TC7 and DEP-TC12 updated.
+- **Tests:** MUS-TC1 to MUS-TC17; USE-TC7 and DEP-TC12 updated.
 - **Reversibility:** High: one migration (down restores the Deezer check and drops the licence column), one feature folder.
