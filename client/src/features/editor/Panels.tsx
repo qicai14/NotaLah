@@ -1,4 +1,17 @@
-import { boardHeight, type Fill, type SlideElement } from '@notalah/shared';
+import {
+  applyTheme,
+  BOARD_WIDTH,
+  boardHeight,
+  type Fill,
+  FONT_NAMES,
+  LAYOUT_IDS,
+  LAYOUT_NAMES,
+  layoutSlide,
+  type SlideElement,
+  THEME_IDS,
+  themeElement,
+  THEMES,
+} from '@notalah/shared';
 import {
   ChevronDown,
   ChevronUp,
@@ -7,6 +20,7 @@ import {
   ImageIcon,
   Info,
   Layers,
+  LayoutTemplate,
   Lock,
   MoveRight,
   Palette,
@@ -16,18 +30,21 @@ import {
   Type,
   Upload,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
+import { backgroundCss, FONT_STACK } from '@/components/board/geometry';
+import { SlideBoard } from '@/components/board/SlideBoard';
 import { inputClass } from '@/components/Field';
 import { cn } from '@/lib/utils';
 import type { ModuleRef } from '@/types';
 import { HashtagInput } from '../notes/HashtagInput';
 import { elementLabel, makeCode, makeLine, makeShape, makeTable, makeText, SHAPES, TEXT_PRESETS } from './elements';
 import { PhotosPanel, UploadsPanel, VideoPicker } from './MediaPanels';
-import { mapSlide, useEditor } from './store';
+import { mapSlide, newId, useEditor } from './store';
 
-export type PanelId = 'text' | 'elements' | 'uploads' | 'photos' | 'background' | 'layers' | 'details';
+export type PanelId = 'design' | 'text' | 'elements' | 'uploads' | 'photos' | 'background' | 'layers' | 'details';
 
 export const PANELS: { id: PanelId; label: string; icon: typeof Type }[] = [
+  { id: 'design', label: 'Design', icon: LayoutTemplate },
   { id: 'text', label: 'Text', icon: Type },
   { id: 'elements', label: 'Elements', icon: Shapes },
   { id: 'uploads', label: 'Uploads', icon: Upload },
@@ -36,13 +53,6 @@ export const PANELS: { id: PanelId; label: string; icon: typeof Type }[] = [
   { id: 'layers', label: 'Layers', icon: Layers },
   { id: 'details', label: 'Details', icon: Info },
 ];
-
-export const THEMES = [
-  ['plain', 'Plain'],
-  ['lecture', 'Lecture summary'],
-  ['revision', 'Revision sheet'],
-  ['howto', 'Step-by-step guide'],
-] as const;
 
 /** Background swatches; slide colours belong to the deck, not the app theme. */
 const SWATCHES = [
@@ -78,7 +88,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function TextPanel({ onAdd }: { onAdd?: () => void }) {
   const add = (k: keyof typeof TEXT_PRESETS) => {
-    useEditor.getState().addElement(makeText(k, boardHeight(useEditor.getState().deck.aspect)));
+    const { deck, addElement } = useEditor.getState();
+    addElement(themeElement(makeText(k, boardHeight(deck.aspect)), THEMES[deck.theme]));
     onAdd?.();
   };
   return (
@@ -104,12 +115,103 @@ function TextPanel({ onAdd }: { onAdd?: () => void }) {
   );
 }
 
+/** A theme card or layout tile. */
+const card =
+  'flex flex-col gap-1.5 rounded-md p-1 text-left text-body-sm transition-colors duration-(--duration-fast) hover:bg-surface active:scale-[0.97]';
+
+/** Deck themes and slide layouts (R21d, D69). Swatches are deck colours, so they are drawn from the theme data. */
+function DesignPanel({ onAdd }: { onAdd?: () => void }) {
+  const current = useEditor((s) => s.deck.theme);
+  const aspect = useEditor((s) => s.deck.aspect);
+  const theme = THEMES[current];
+  const previews = useMemo(
+    () =>
+      LAYOUT_IDS.map((id) => {
+        let n = 0;
+        return { id, slide: layoutSlide(id, theme, aspect, () => `preview-${id}-${++n}`) };
+      }),
+    [theme, aspect],
+  );
+  return (
+    <>
+      <Section title="Theme">
+        <p className="text-caption text-muted-foreground">
+          Restyles fonts and colours on every slide. Undo takes it back.
+        </p>
+        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-2 max-md:grid-cols-3">
+          {THEME_IDS.map((id) => {
+            const t = THEMES[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={current === id}
+                aria-label={`${t.name} theme: ${FONT_NAMES[t.headingFont]} and ${FONT_NAMES[t.bodyFont]}`}
+                onClick={() => useEditor.getState().apply((d) => applyTheme(d, id))}
+                className={cn(card, 'aria-checked:bg-surface-strong aria-checked:font-semibold')}
+              >
+                <span
+                  aria-hidden="true"
+                  className="relative flex aspect-[4/3] flex-col justify-end gap-0.5 overflow-hidden rounded-sm border border-border p-2.5"
+                  style={{ background: backgroundCss(t.background) }}
+                >
+                  <span className="absolute top-2.5 right-2.5 size-3 rounded-full" style={{ background: t.accent }} />
+                  <span
+                    className="text-title leading-none font-bold"
+                    style={{ fontFamily: FONT_STACK[t.headingFont], color: t.heading }}
+                  >
+                    Aa
+                  </span>
+                  <span className="truncate text-caption" style={{ fontFamily: FONT_STACK[t.bodyFont], color: t.text }}>
+                    {FONT_NAMES[t.bodyFont]}
+                  </span>
+                </span>
+                <span className="px-1">{t.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+      <Section title="Layouts">
+        <p className="text-caption text-muted-foreground">
+          Fills the current slide if it is empty, or adds a new one after it.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {previews.map(({ id, slide }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                const { deck, insertSlide } = useEditor.getState();
+                insertSlide(layoutSlide(id, THEMES[deck.theme], deck.aspect, newId));
+                onAdd?.();
+              }}
+              className={card}
+            >
+              <span
+                aria-hidden="true"
+                className="pointer-events-none block w-full overflow-hidden rounded-sm border border-border"
+                style={{ aspectRatio: `${BOARD_WIDTH} / ${boardHeight(aspect)}` }}
+              >
+                <SlideBoard slide={slide} aspect={aspect} />
+              </span>
+              <span className="px-1">{LAYOUT_NAMES[id]}</span>
+            </button>
+          ))}
+        </div>
+      </Section>
+    </>
+  );
+}
+
 const SHAPE_ICONS = { rect: Square, ellipse: Circle, triangle: Triangle, diamond: Diamond, arrow: MoveRight } as const;
 
 function ElementsPanel({ onAdd }: { onAdd?: () => void }) {
   const h = () => boardHeight(useEditor.getState().deck.aspect);
   const add = (el: SlideElement) => {
-    useEditor.getState().addElement(el);
+    const { deck, addElement } = useEditor.getState();
+    addElement(themeElement(el, THEMES[deck.theme]));
     onAdd?.();
   };
   return (
@@ -296,7 +398,6 @@ export interface Details {
 }
 
 function DetailsPanel({ d }: { d: Details }) {
-  const theme = useEditor((s) => s.deck.theme);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
@@ -330,26 +431,6 @@ function DetailsPanel({ d }: { d: Details }) {
           </p>
         )}
       </div>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="theme" className="text-body-sm font-semibold">
-          Template
-        </label>
-        <select
-          id="theme"
-          value={theme}
-          onChange={(e) => {
-            const v = e.target.value as typeof theme;
-            useEditor.getState().apply((dk) => ({ ...dk, theme: v }));
-          }}
-          className={inputClass}
-        >
-          {THEMES.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-      </div>
       <HashtagInput value={d.hashtags} onChange={d.setHashtags} error={d.errors.hashtags} />
     </div>
   );
@@ -359,6 +440,7 @@ function DetailsPanel({ d }: { d: Details }) {
 export function PanelBody({ id, details, onAdd }: { id: PanelId; details: Details; onAdd?: () => void }) {
   return (
     <div className="flex flex-col gap-5">
+      {id === 'design' && <DesignPanel onAdd={onAdd} />}
       {id === 'text' && <TextPanel onAdd={onAdd} />}
       {id === 'elements' && <ElementsPanel onAdd={onAdd} />}
       {id === 'uploads' && <UploadsPanel onAdd={onAdd} />}

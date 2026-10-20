@@ -10,8 +10,8 @@ export const boardHeight = (aspect: Aspect): number => BOARD_WIDTH / RATIO[aspec
 export const FONT_IDS = ['source-sans-3', 'atkinson', 'lora', 'merriweather', 'montserrat', 'jetbrains-mono'] as const;
 export type FontId = (typeof FONT_IDS)[number];
 
-/** The old note templates, kept as deck themes of the same name (R21 spec 2.1). */
-export const THEME_IDS = ['plain', 'lecture', 'revision', 'howto'] as const;
+/** Deck themes: the four old note templates keep their names (R21 spec 2.1); the styles live in design.ts (D69). */
+export const THEME_IDS = ['plain', 'lecture', 'revision', 'howto', 'journal', 'midnight'] as const;
 export type ThemeId = (typeof THEME_IDS)[number];
 
 export const CODE_LANGS = [
