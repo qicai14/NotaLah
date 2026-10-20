@@ -3,7 +3,7 @@ import { inTransaction, pool } from '../../lib/pool';
 import { READABLE, SHAREABLE, VISIBLE_OR_ADMIN } from '../notes/repository';
 import { ASSETS, LINKABLE_STATUSES } from './config';
 
-export type AssetStatus = 'processing' | 'ready' | 'failed';
+type AssetStatus = 'processing' | 'ready' | 'failed';
 
 export interface Asset {
   id: number;
@@ -30,7 +30,7 @@ const ASSET_COLS = `ast_id AS "id", ast_kind AS "kind", ast_status AS "status", 
 const USED_BYTES = `SELECT COALESCE(SUM(ast_bytes), 0)::BIGINT AS used FROM "ASSET_T"
                     WHERE ast_usr_id = $1 AND ast_status IN ('pending', 'processing', 'ready')`;
 
-export interface NewAsset {
+interface NewAsset {
   kind: 'image' | 'video';
   key: string;
   posterKey?: string;
@@ -207,7 +207,7 @@ export async function renewVideoLease(job: VideoJob, leaseMs: number): Promise<b
   return rowCount === 1;
 }
 
-export interface FinishedVideo {
+interface FinishedVideo {
   key: string;
   posterKey: string;
   bytes: number;

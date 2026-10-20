@@ -97,6 +97,7 @@ authRouter.post('/login', authLimiter, loginFailureLimiter, (req, res, next) => 
 // No requireAuth: an expired or invalid token must still be able to log out.
 authRouter.post('/logout', (_req, res) => {
   res.clearCookie(AUTH_COOKIE, authCookieOptions());
+  res.set('Clear-Site-Data', '"cache"'); // drops the year-long copies of private media this browser holds (R38)
   res.status(204).end();
 });
 

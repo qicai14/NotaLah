@@ -43,7 +43,7 @@ const OPTIONS: sanitizeHtml.IOptions = {
 const plainText = (html: string) => sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} }).trim();
 
 /** A slide with nothing to show: a plain colour background and no element, or only text boxes with no text. */
-const isBlank = (slide: Slide) =>
+const isBlank = (slide: Pick<Slide, 'background' | 'elements'>) =>
   slide.background.kind === 'color' && slide.elements.every((e) => e.type === 'text' && plainText(e.html) === '');
 
 const textChars = (e: Slide['elements'][number]) =>
@@ -123,6 +123,24 @@ export function parseBaseUpdatedAt(
 
 type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
 
+/** Positions of the slides a publish drops as blank (the same rule parseNoteBody applies when saving a publish). */
+export const blankPositions = (
+  slides: { position: number; background: Slide['background']; elements: Slide['elements'] }[],
+) => slides.filter(isBlank).map((s) => s.position);
+
+/** What a saved draft still lacks before it can be published; empty when it can. Same rules and messages as parseNoteBody. */
+export function publishErrors(note: {
+  hashtags: string[];
+  module: unknown;
+  slides: Pick<Slide, 'background' | 'elements'>[];
+}): Record<string, string> {
+  const errors: Record<string, string> = {};
+  if (note.hashtags.length === 0) errors.hashtags = 'At least one hashtag is required';
+  if (note.slides.every(isBlank)) errors.slides = 'At least one slide with content is required';
+  if (!note.module) errors.moduleId = 'Module is required to publish';
+  return errors;
+}
+
 /** Validates and sanitises a create/replace body. Module existence is checked by the route. */
 export function parseNoteBody(body: unknown): Parsed {
   const obj: Record<string, unknown> = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
@@ -168,7 +186,7 @@ export function parseNoteBody(body: unknown): Parsed {
   };
 }
 
-export interface AssetRef {
+interface AssetRef {
   id: number;
   kind: 'image' | 'video';
   /** "Slide 2, element 1" or "Slide 2" for a background, for error messages. */

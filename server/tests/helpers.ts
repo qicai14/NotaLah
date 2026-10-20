@@ -3,10 +3,12 @@ import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { signToken } from '../src/features/auth/passport';
 import type { AuthUser } from '../src/features/users/repository';
+import { clearGuestRankings } from '../src/features/feed/service';
 import { pool } from '../src/lib/pool';
 
 /** Empties every table except the migration log and the seeded module catalogue. */
 export async function truncateAll(): Promise<void> {
+  clearGuestRankings();
   const { rows } = await pool.query<{ tablename: string }>(
     `SELECT tablename FROM pg_tables
      WHERE schemaname = 'public' AND tablename NOT IN ('schema_migrations', 'MODULE_T')`,
@@ -15,6 +17,12 @@ export async function truncateAll(): Promise<void> {
   const list = rows.map((r) => `"${r.tablename}"`).join(', ');
   await pool.query(`TRUNCATE ${list} RESTART IDENTITY CASCADE`);
 }
+
+/** Moves every published note back two minutes, past the minute a guest's first page rounds its cutoff down to (CLN-TC1). */
+export const agePublished = () =>
+  pool.query(
+    `UPDATE "POST_T" SET pst_published_at = pst_published_at - INTERVAL '2 minutes' WHERE pst_published_at IS NOT NULL`,
+  );
 
 export interface TestUserInput {
   email?: string;

@@ -7,7 +7,7 @@ import { type BoardSlide, SlideBoard } from './SlideBoard';
 
 export const MAX_DOTS = 7;
 
-export interface Dot {
+interface Dot {
   index: number;
   active: boolean;
   edge: boolean;

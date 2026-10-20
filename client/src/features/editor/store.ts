@@ -15,7 +15,7 @@ import {
 /** Snapshot undo keeps at most this many steps (R21 spec 5). */
 export const HISTORY_LIMIT = 100;
 
-export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict' | 'locked';
+type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict' | 'locked';
 
 export interface EditorState {
   deck: Deck;
@@ -66,7 +66,7 @@ export const emptyMeta = (): NoteMeta => ({
   baseUpdatedAt: null,
 });
 
-export const blankSlide = (): Slide => ({ background: { kind: 'color', color: '#ffffff' }, elements: [], notes: '' });
+const blankSlide = (): Slide => ({ background: { kind: 'color', color: '#ffffff' }, elements: [], notes: '' });
 export const emptyDeck = (): Deck => ({ aspect: '4:5', theme: 'plain', slides: [blankSlide()], music: null });
 
 const initial = (): EditorState => ({
@@ -244,7 +244,7 @@ interface Actions {
   markSaved: (session: number, sentRev: number, meta: Partial<NoteMeta>) => void;
 }
 
-export type EditorStore = EditorState & Actions;
+type EditorStore = EditorState & Actions;
 
 export const useEditor = create<EditorStore>()((set, get) => {
   const apply = (recipe: (deck: Deck) => Deck, extra: Partial<EditorState> = {}) => {

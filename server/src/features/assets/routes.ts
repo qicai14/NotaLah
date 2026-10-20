@@ -8,7 +8,7 @@ import { idParam } from '../../lib/validation';
 import { env } from '../../lib/env';
 import { storage } from '../../lib/storage';
 import { me, optionalAuthForFiles, requireActive, requireAuth, viewerId } from '../auth/middleware';
-import { fileLimiter, uploadLimiter, videoUploadLimiter } from '../auth/rateLimit';
+import { fileLimiter, uploadLimiter, videoUploadLimiter } from './rateLimit';
 import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl, VIDEO } from './config';
 import { reencodeImage } from './image';
@@ -36,8 +36,12 @@ const readUpload: RequestHandler = (req, res, next) =>
     res.status(400).json({ error: 'Invalid upload' });
   });
 
+/** The kill switch, checked before the body is read so a refused upload costs no bandwidth, disk or sharp/ffmpeg time. */
+const uploadsOn: RequestHandler = (_req, res, next) =>
+  env.UPLOADS_DISABLED ? void res.status(503).json({ error: 'Uploads are turned off' }) : next();
+
 // requireAuth, requireActive and the write limiter (app.ts) run before the body is read; CSRF runs before them all.
-assetsRouter.post('/images', requireAuth, requireActive, uploadLimiter, readUpload, async (req, res) => {
+assetsRouter.post('/images', requireAuth, requireActive, uploadsOn, uploadLimiter, readUpload, async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
   const result = await reencodeImage(req.file.buffer);
   if (!result.ok) return res.status(400).json({ error: result.error });
@@ -110,9 +114,8 @@ const readVideo: RequestHandler = (req, res, next) =>
     res.status(400).json({ error: 'Invalid upload' });
   });
 
-/** Refuses before the body is read when uploads are off or no video-sized file could fit, so a rejected upload costs no bandwidth or disk. */
+/** Refuses before the body is read when no video-sized file could fit. */
 const videoAllowed: RequestHandler = async (_req, res, next) => {
-  if (env.UPLOADS_DISABLED) return void res.status(503).json({ error: 'Uploads are turned off' });
   if (!(await storageFits(VIDEO.maxBytes))) {
     return void res.status(507).json({ error: 'Video storage is full. Uploads are paused' });
   }
@@ -139,6 +142,7 @@ assetsRouter.post(
   '/videos',
   requireAuth,
   requireActive,
+  uploadsOn,
   videoUploadLimiter,
   videoAllowed,
   prepareVideoUpload,

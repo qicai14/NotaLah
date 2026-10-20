@@ -9,8 +9,10 @@ import { shareAssetUrl } from '../assets/config';
 import { getLinkedAsset } from '../assets/repository';
 import { sendAsset } from '../assets/service';
 import { me, optionalAuth, optionalAuthForFiles, requireActive, requireAuth, viewerId } from '../auth/middleware';
-import { fileLimiter, guestReadLimiter } from '../auth/rateLimit';
-import { getNoteMeta, getVisibleNote, NOT_EDITABLE, type NoteMeta } from '../notes/repository';
+import { fileLimiter } from '../assets/rateLimit';
+import { guestReadLimiter } from '../auth/rateLimit';
+import { noteAccess } from '../notes/access';
+import { getNoteMeta, getVisibleNote, NOT_EDITABLE } from '../notes/repository';
 import { isBlocked } from '../users/repository';
 import { notify } from '../notifications/service';
 import { COLLABORATION } from './config';
@@ -27,18 +29,6 @@ const roleSchema = z.enum(['view', 'edit'], { error: 'Role must be view or edit'
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 const TOKEN_FORMAT = /^[A-Za-z0-9_-]{43}$/; // base64url of tokenBytes (32) random bytes
 
-/** The note's meta for the signed-in user, after answering 404 (cannot read it) or 403 (lacks one of `roles`). */
-async function access(
-  req: Request,
-  res: Response,
-  ...roles: NonNullable<NoteMeta['role']>[]
-): Promise<NoteMeta | undefined> {
-  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
-  if (!meta || !meta.visible) return void res.status(404).json({ error: 'Note not found' });
-  if (!meta.role || !roles.includes(meta.role)) return void res.status(403).json({ error: 'Forbidden' });
-  return meta;
-}
-
 collaborationRouter.get('/notes/shared', requireAuth, async (req, res) => {
   const page = parseKeyset(req, res, 2);
   if (!page) return;
@@ -47,12 +37,12 @@ collaborationRouter.get('/notes/shared', requireAuth, async (req, res) => {
 });
 
 collaborationRouter.get('/notes/:id/access', requireAuth, async (req, res) => {
-  if (!(await access(req, res, 'owner'))) return;
+  if (!(await noteAccess(req, res, ['owner']))) return;
   res.json(await repo.getAccess(Number(req.params.id)));
 });
 
 collaborationRouter.put('/notes/:id/collaborators/:userId', requireAuth, requireActive, async (req, res) => {
-  const meta = await access(req, res, 'owner');
+  const meta = await noteAccess(req, res, ['owner']);
   if (!meta) return;
   const role = roleSchema.safeParse(bodyOrEmpty(req).role);
   if (!role.success)
@@ -68,13 +58,13 @@ collaborationRouter.put('/notes/:id/collaborators/:userId', requireAuth, require
 // Owner removes anyone; a collaborator may remove only themself (leave). Leaving needs no active account and no access,
 // so a collaborator in a block with the owner can still leave (D49).
 collaborationRouter.delete('/notes/:id/collaborators/:userId', requireAuth, async (req, res) => {
-  if (Number(req.params.userId) !== me(req).id && !(await access(req, res, 'owner'))) return;
+  if (Number(req.params.userId) !== me(req).id && !(await noteAccess(req, res, ['owner']))) return;
   await repo.removeCollaborator(Number(req.params.id), Number(req.params.userId));
   res.status(204).end();
 });
 
 collaborationRouter.post('/notes/:id/links', requireAuth, requireActive, async (req, res) => {
-  if (!(await access(req, res, 'owner'))) return;
+  if (!(await noteAccess(req, res, ['owner']))) return;
   const role = roleSchema.safeParse(bodyOrEmpty(req).role);
   if (!role.success)
     return res.status(400).json({ error: 'Validation failed', errors: { role: role.error.issues[0].message } });
@@ -84,7 +74,7 @@ collaborationRouter.post('/notes/:id/links', requireAuth, requireActive, async (
 });
 
 collaborationRouter.delete('/notes/:id/links/:role', requireAuth, async (req, res) => {
-  if (!(await access(req, res, 'owner'))) return;
+  if (!(await noteAccess(req, res, ['owner']))) return;
   const role = roleSchema.safeParse(req.params.role);
   if (!role.success) return res.status(400).json({ error: 'Role must be view or edit' });
   await repo.revokeLink(Number(req.params.id), role.data);
@@ -175,7 +165,7 @@ const decisionSchema = z.object({
 });
 
 collaborationRouter.post('/notes/:id/requests/:requestId', requireAuth, requireActive, async (req, res) => {
-  const meta = await access(req, res, 'owner');
+  const meta = await noteAccess(req, res, ['owner']);
   if (!meta) return;
   const parsed = decisionSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success) {
@@ -195,10 +185,7 @@ collaborationRouter.post('/notes/:id/requests/:requestId', requireAuth, requireA
 });
 
 collaborationRouter.post('/notes/:id/lock', requireAuth, requireActive, async (req, res) => {
-  const meta = await access(req, res, 'owner', 'edit');
-  if (!meta) return;
-  if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
-  if (!meta.authorActive) return res.status(403).json({ error: NOT_EDITABLE });
+  if (!(await noteAccess(req, res, ['owner', 'edit'], { editable: true }))) return;
   const lock = await repo.takeLock(Number(req.params.id), me(req).id);
   if (!lock.ok)
     return res.status(423).json({ error: 'Another collaborator is editing this note', lockedBy: lock.holder });
@@ -206,7 +193,7 @@ collaborationRouter.post('/notes/:id/lock', requireAuth, requireActive, async (r
 });
 
 collaborationRouter.delete('/notes/:id/lock', requireAuth, async (req, res) => {
-  if (!(await access(req, res, 'owner', 'edit'))) return;
+  if (!(await noteAccess(req, res, ['owner', 'edit']))) return;
   await repo.releaseLock(pool, Number(req.params.id), me(req).id);
   res.status(204).end();
 });

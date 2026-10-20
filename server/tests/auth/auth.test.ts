@@ -254,6 +254,7 @@ describe('auth cookie and CSRF (D35)', () => {
     for (const cookie of [valid, 'notalah_token=garbage']) {
       const res = await request(app).post('/api/auth/logout').set(CSRF).set('Cookie', cookie);
       expect(res.status).toBe(204);
+      expect(res.headers['clear-site-data']).toBe('"cache"');
       expect(setCookies(res)[0]).toBe(
         'notalah_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax',
       );

@@ -273,7 +273,7 @@ export async function unfollow(followerId: number, followeeId: number): Promise<
   return rowCount === 1;
 }
 
-export interface FollowListItem {
+interface FollowListItem {
   id: number;
   displayName: string;
   role: Role;

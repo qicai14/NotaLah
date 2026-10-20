@@ -13,6 +13,8 @@ export const ASSETS = Object.freeze({
   uploadsPerHour: 30,
   /** Video uploads per user per hour; each one costs CPU for ffprobe and ffmpeg (R29, D59). */
   videoUploadsPerHour: 6,
+  /** Asset file requests per signed-in user (or IP) per minute (R34): each one is a counted storage read. */
+  fileRequestsPerMinute: 300,
   /** Unsplash searches per user per hour. */
   unsplashSearchesPerHour: 20,
   /** An asset no note references is removed once it is this old. */
@@ -54,7 +56,7 @@ export const VIDEO = Object.freeze({
   tmpPrefix: 'notalah-video-',
 });
 
-export type VideoProfileName = 'free' | 'standard';
+type VideoProfileName = 'free' | 'standard';
 
 export interface VideoProfile {
   name: VideoProfileName;

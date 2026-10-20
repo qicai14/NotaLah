@@ -1,6 +1,6 @@
 import { pool } from '../../lib/pool';
 
-export interface AdminModule {
+interface AdminModule {
   id: number;
   code: string;
   name: string;

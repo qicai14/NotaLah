@@ -321,6 +321,13 @@ describe('Asset file access (R22)', () => {
     expect((await getAsset(asset, await insertUser())).status).toBe(200);
   });
 
+  it('CLN-TC2: asset files are cached privately for a year as immutable', async () => {
+    const { asset } = await noteWithImage();
+    const res = await getAsset(asset);
+    expect(res.headers['cache-control']).toBe('private, max-age=31536000, immutable');
+    expect(res.headers.vary).toContain('Cookie');
+  });
+
   it('NOTE-TC50: hides a deleted note image from others', async () => {
     const { author, asset, noteId } = await noteWithImage();
     await request(app).delete(`/api/notes/${noteId}`).set(asUser(author));

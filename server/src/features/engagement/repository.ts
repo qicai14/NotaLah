@@ -16,7 +16,7 @@ const GONE = (c: string, u: string) =>
 /** A repeat view by the same user of the same note within this window is not logged again (D22). */
 const VIEW_WINDOW_MINUTES = 30;
 
-export interface Target {
+interface Target {
   authorId: number;
   slideCount: number;
   /** The viewer is an edit collaborator, so the note counts as their own for Super Likes (D46, D47). */
@@ -165,7 +165,7 @@ export async function getParent(
   return rows[0];
 }
 
-export interface NewComment {
+interface NewComment {
   body: string;
   slideNo: number | null;
   parentId: number | null;
@@ -187,7 +187,7 @@ export async function addComment(
   return rows[0];
 }
 
-export interface CommentMeta {
+interface CommentMeta {
   authorId: number;
   noteId: number;
 }
@@ -260,7 +260,7 @@ export async function removeBookmark(noteId: number, userId: number): Promise<vo
   await pool.query(`DELETE FROM "BOOKMARK_T" WHERE bmk_usr_id = $1 AND bmk_pst_id = $2`, [userId, noteId]);
 }
 
-export interface SavedNote extends NoteSummary {
+interface SavedNote extends NoteSummary {
   savedAt: Date;
 }
 
