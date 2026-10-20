@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vite-plus/test';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { dotWindow, MAX_DOTS, SlideCarousel } from './SlideCarousel';
 
 afterEach(cleanup);
@@ -56,5 +56,27 @@ describe('carousel dots', () => {
     cleanup();
     const one = render(<SlideCarousel slides={slides(1)} aspect="4:5" assets={{}} />);
     expect(one.container.querySelector('button')).toBeNull();
+  });
+});
+
+describe('lazy slides', () => {
+  it('CLI-TC70: asks for the rest only once the reader reaches the last loaded slide', async () => {
+    const more = vi.fn();
+    const { container, rerender } = render(
+      <SlideCarousel slides={slides(2)} slideCount={5} onNeedMore={more} aspect="4:5" assets={{}} />,
+    );
+    expect(container.querySelectorAll('[data-dot]')).toHaveLength(5);
+    expect(more).not.toHaveBeenCalled();
+    await userEvent.click(container.querySelector('button[aria-label="Next slide"]')!);
+    expect(more).toHaveBeenCalledTimes(1);
+    rerender(<SlideCarousel slides={slides(2)} slideCount={5} onNeedMore={more} aspect="4:5" assets={{}} />);
+    expect(more).toHaveBeenCalledTimes(1);
+    await userEvent.click(container.querySelector('button[aria-label="Next slide"]')!);
+    expect(more).toHaveBeenCalledTimes(2);
+    cleanup();
+    const full = vi.fn();
+    render(<SlideCarousel slides={slides(2)} slideCount={2} onNeedMore={full} aspect="4:5" assets={{}} />);
+    await userEvent.click(document.querySelector('button[aria-label="Next slide"]')!);
+    expect(full).not.toHaveBeenCalled();
   });
 });

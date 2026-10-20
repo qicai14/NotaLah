@@ -1,6 +1,10 @@
+import { mkdtempSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { defineConfig } from 'vite-plus';
+
+// One temp dir per run, so parallel runs of the suite never see each other's uploads or video temp files.
+const runDir = mkdtempSync(path.join(os.tmpdir(), 'notalah-test-'));
 
 const afterShared = [{ task: 'build', from: 'dependencies' as const }];
 
@@ -14,7 +18,13 @@ export default defineConfig({
   },
   test: {
     // Guards truncateAll against ever pointing at the dev DB when the shell sets NODE_ENV.
-    env: { NODE_ENV: 'test', STORAGE_DIR: path.join(os.tmpdir(), 'notalah-uploads-test') },
+    env: {
+      NODE_ENV: 'test',
+      STORAGE_DIR: path.join(runDir, 'uploads'),
+      TMPDIR: runDir,
+      TMP: runDir,
+      TEMP: runDir,
+    },
     globalSetup: ['tests/globalSetup.ts'],
     // Tests share one database, so files must not run in parallel.
     fileParallelism: false,

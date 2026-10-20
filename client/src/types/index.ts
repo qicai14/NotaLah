@@ -51,6 +51,8 @@ export interface Note {
   visibility: Visibility | null;
   module: ModuleRef | null;
   hashtags: string[];
+  /** A feed card carries only the first slides; this is the note's full count (D71). */
+  slideCount: number;
   slides: Slide[];
   author: { id: number; displayName: string; role: Role; isVerifiedLecturer: boolean };
   createdAt: string;
