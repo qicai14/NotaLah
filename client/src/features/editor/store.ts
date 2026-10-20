@@ -10,6 +10,7 @@ import {
   round1,
   type Slide,
   type SlideElement,
+  THEMES,
 } from '@notalah/shared';
 
 /** Snapshot undo keeps at most this many steps (R21 spec 5). */
@@ -225,6 +226,8 @@ interface Actions {
   toggleSelect: (id: string) => void;
   setActiveSlide: (index: number) => void;
   addSlide: () => void;
+  /** Puts a ready-made slide (a layout) on the active slide when that is empty, otherwise after it; selects nothing. */
+  insertSlide: (slide: Slide) => void;
   duplicateSlide: (index: number) => void;
   deleteSlide: (index: number) => void;
   moveSlide: (from: number, to: number) => void;
@@ -332,7 +335,32 @@ export const useEditor = create<EditorStore>()((set, get) => {
     addSlide: () => {
       if (slideCount() >= LIMITS.slides) return;
       const at = active() + 1;
-      apply((d) => ({ ...d, slides: spliced(d.slides, at, 0, blankSlide()) }), { activeSlide: at, selection: [] });
+      apply(
+        (d) => ({
+          ...d,
+          slides: spliced(d.slides, at, 0, { ...blankSlide(), background: THEMES[d.theme].background }),
+        }),
+        { activeSlide: at, selection: [] },
+      );
+    },
+    insertSlide: (slide) => {
+      const here = active();
+      const empty = !get().deck.slides[here].elements.length;
+      if (!empty && slideCount() >= LIMITS.slides) return;
+      const at = empty ? here : here + 1;
+      // An empty slide is replaced but keeps its page notes and a photo background.
+      const old = get().deck.slides[here];
+      const placed = empty
+        ? {
+            ...slide,
+            notes: old.notes,
+            background: old.background.kind === 'image' ? old.background : slide.background,
+          }
+        : slide;
+      apply((d) => ({ ...d, slides: spliced(d.slides, at, empty ? 1 : 0, placed) }), {
+        activeSlide: at,
+        selection: [],
+      });
     },
     duplicateSlide: (index) => {
       if (slideCount() >= LIMITS.slides) return;

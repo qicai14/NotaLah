@@ -1,6 +1,20 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@fontsource-variable/plus-jakarta-sans';
+/* Slide fonts (R21d, D69): self-hosted woff2. @font-face files download only when a slide uses them. */
+@import '@fontsource-variable/source-sans-3/wght.css';
+@import '@fontsource-variable/source-sans-3/wght-italic.css';
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/400-italic.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+@import '@fontsource/atkinson-hyperlegible/700-italic.css';
+@import '@fontsource-variable/lora/wght.css';
+@import '@fontsource-variable/lora/wght-italic.css';
+@import '@fontsource-variable/merriweather/wght.css';
+@import '@fontsource-variable/merriweather/wght-italic.css';
+@import '@fontsource-variable/montserrat/wght.css';
+@import '@fontsource-variable/montserrat/wght-italic.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
 
 /* Dark mode follows the `.dark` class on <html>; src/lib/theme.ts sets it from the toggle or the system setting. */
 @custom-variant dark (&:where(.dark, .dark *));

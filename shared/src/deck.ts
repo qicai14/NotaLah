@@ -228,6 +228,8 @@ export const deckSchema = z.strictObject({
 export type Fill = z.infer<typeof fillSchema>;
 export type ImageSource = z.infer<typeof imageSourceSchema>;
 export type SlideElement = z.infer<typeof elementSchema>;
+/** One element type, e.g. `El<'text'>`. */
+export type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
 export type TextElement = z.infer<typeof textEl>;
 export type Slide = z.infer<typeof slideSchema>;
 export type MusicRef = z.infer<typeof musicSchema>;

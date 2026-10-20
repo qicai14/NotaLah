@@ -1,4 +1,14 @@
-import { CODE_LANGS, type CodeLang, FONT_IDS, type FontId, LIMITS, round1, type SlideElement } from '@notalah/shared';
+import {
+  CODE_LANGS,
+  type CodeLang,
+  type El,
+  FONT_IDS,
+  FONT_NAMES,
+  type FontId,
+  LIMITS,
+  round1,
+  type SlideElement,
+} from '@notalah/shared';
 import {
   AlignCenter,
   AlignCenterHorizontal,
@@ -39,6 +49,7 @@ import {
   Underline,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useReducer } from 'react';
+import { FONT_STACK } from '@/components/board/geometry';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -47,17 +58,35 @@ import { type BoxList, type BoxMark, styleWholeBox, wholeBoxHas } from './wholeB
 import { CODE_LANG_NAMES, resizeTable } from './elements';
 import { offsetCopy, patchElement, useEditor } from './store';
 
-const FONT_NAMES: Record<FontId, string> = {
-  'source-sans-3': 'Source Sans 3',
-  atkinson: 'Atkinson Hyperlegible',
-  lora: 'Lora',
-  merriweather: 'Merriweather',
-  montserrat: 'Montserrat',
-  'jetbrains-mono': 'JetBrains Mono',
-};
-
 const field =
   'h-9 rounded-md border border-input bg-background px-2 text-body-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25';
+
+/** The curated fonts only (the schema rejects any other); each name is drawn in its own face. */
+function FontSelect({
+  value,
+  onChange,
+  className,
+}: {
+  value: FontId;
+  onChange: (f: FontId) => void;
+  className: string;
+}) {
+  return (
+    <select
+      aria-label="Font"
+      value={value}
+      onChange={(e) => onChange(e.target.value as FontId)}
+      className={cn(field, className)}
+      style={{ fontFamily: FONT_STACK[value] }}
+    >
+      {FONT_IDS.map((f) => (
+        <option key={f} value={f} style={{ fontFamily: FONT_STACK[f] }}>
+          {FONT_NAMES[f]}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function Tool({
   label,
@@ -254,8 +283,6 @@ function OpenButton({ id, label, locked }: { id: string; label: string; locked: 
   );
 }
 
-type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
-
 function Stepper({
   what,
   one,
@@ -299,18 +326,7 @@ function TableTools({ el, update }: { el: El<'table'>; update: (p: Partial<Slide
         <TableProperties />
       </Tool>
       <Sep />
-      <select
-        aria-label="Font"
-        value={el.font}
-        onChange={(e) => update({ font: e.target.value as FontId })}
-        className={cn(field, 'w-36')}
-      >
-        {FONT_IDS.map((f) => (
-          <option key={f} value={f}>
-            {FONT_NAMES[f]}
-          </option>
-        ))}
-      </select>
+      <FontSelect value={el.font} onChange={(font) => update({ font })} className="w-36" />
       <Num label="Size" value={el.size} min={8} max={120} onChange={(size) => update({ size })} className="sr-only" />
       <Colour label="Text colour" value={el.color} onChange={(color) => update({ color })} />
       <Colour label="Border colour" value={el.borderColor} onChange={(borderColor) => update({ borderColor })} />
@@ -534,18 +550,7 @@ export function ElementBar() {
             )}
             {whole ? 'Whole box' : 'Selected text'}
           </span>
-          <select
-            aria-label="Font"
-            value={el.font}
-            onChange={(e) => update({ font: e.target.value as FontId })}
-            className={cn(field, 'w-44')}
-          >
-            {FONT_IDS.map((f) => (
-              <option key={f} value={f}>
-                {FONT_NAMES[f]}
-              </option>
-            ))}
-          </select>
+          <FontSelect value={el.font} onChange={(font) => update({ font })} className="w-44" />
           <Num
             label="Size"
             value={el.size}

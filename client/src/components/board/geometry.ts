@@ -39,12 +39,12 @@ export const backgroundCss = (fill: Fill): string | undefined =>
       ? `linear-gradient(${fill.angle}deg, ${fill.from}, ${fill.to})`
       : undefined;
 
-/** Curated fonts (R21 spec 1.2) with system fallbacks; the self-hosted woff2 files arrive with R21d. */
+/** Curated fonts (R21 spec 1.2): the self-hosted family (index.css) first, then system fallbacks. */
 export const FONT_STACK: Record<FontId, string> = {
-  'source-sans-3': "'Source Sans 3', ui-sans-serif, system-ui, 'Segoe UI', sans-serif",
+  'source-sans-3': "'Source Sans 3 Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif",
   atkinson: "'Atkinson Hyperlegible', ui-sans-serif, system-ui, 'Segoe UI', sans-serif",
-  lora: 'Lora, ui-serif, Georgia, serif',
-  merriweather: 'Merriweather, ui-serif, Georgia, serif',
-  montserrat: "Montserrat, ui-sans-serif, system-ui, 'Segoe UI', sans-serif",
-  'jetbrains-mono': "'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace",
+  lora: "'Lora Variable', ui-serif, Georgia, serif",
+  merriweather: "'Merriweather Variable', ui-serif, Georgia, serif",
+  montserrat: "'Montserrat Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif",
+  'jetbrains-mono': "'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', Menlo, monospace",
 };
