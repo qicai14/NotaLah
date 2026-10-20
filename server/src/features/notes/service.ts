@@ -181,7 +181,7 @@ export function parseNoteBody(body: unknown): Parsed {
   };
 }
 
-export interface AssetRef {
+interface AssetRef {
   id: number;
   kind: 'image' | 'video';
   /** "Slide 2, element 1" or "Slide 2" for a background, for error messages. */

@@ -9,7 +9,7 @@ export const TAB_LABELS: Record<SearchTab, string> = {
   modules: 'Modules',
 };
 
-export const MAX_QUERY = 100;
+const MAX_QUERY = 100;
 
 /** Everything the search screen shows is a function of this, and it lives in the URL (so results can be shared). */
 export interface SearchState {

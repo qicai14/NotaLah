@@ -2,7 +2,7 @@ import { inputClass } from '@/components/Field';
 import { cn } from '@/lib/utils';
 import type { CollabRole } from '../../types';
 
-export const roleLabel = (r: CollabRole) => (r === 'edit' ? 'Can edit' : 'Can view');
+const roleLabel = (r: CollabRole) => (r === 'edit' ? 'Can edit' : 'Can view');
 
 /** Role picker for a collaborator, an invite or a request. A native select keeps keyboard and phone behaviour. */
 export function RoleSelect({

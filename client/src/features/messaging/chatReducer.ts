@@ -2,7 +2,7 @@ import { mergeById } from './inboxReducer';
 import type { Message } from './types';
 
 /** One open chat's messages, oldest first, with the cursor for older history. */
-export interface ChatState {
+interface ChatState {
   messages: Message[];
   older: string | null;
   loaded: boolean;
@@ -10,7 +10,7 @@ export interface ChatState {
 
 export const emptyChat: ChatState = { messages: [], older: null, loaded: false };
 
-export type ChatAction =
+type ChatAction =
   | { type: 'first'; items: Message[]; next: string | null }
   | { type: 'older'; items: Message[]; next: string | null }
   | { type: 'new'; message: Message }

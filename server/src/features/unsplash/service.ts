@@ -29,7 +29,7 @@ export interface UnsplashPhoto {
   authorUrl: string;
 }
 
-export interface UnsplashPage {
+interface UnsplashPage {
   results: UnsplashPhoto[];
   totalPages: number;
 }

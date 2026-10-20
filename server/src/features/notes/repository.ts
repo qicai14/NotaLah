@@ -24,7 +24,7 @@ export const SHAREABLE = `(p.pst_status IN ('draft', 'published')
     AND EXISTS (SELECT 1 FROM "USER_T" pa WHERE pa.usr_id = p.pst_usr_id AND pa.usr_status IN ('active', 'restricted')))`;
 
 /** SQL: the collaborator role ('view' | 'edit') of user $1 on post p, or NULL when there is none, p is not SHAREABLE or a block lies between $1 and the owner (kept, so an unblock restores it, D49). */
-export const COLLAB_ROLE = `(SELECT c.clb_role FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND ${SHAREABLE}
+const COLLAB_ROLE = `(SELECT c.clb_role FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND ${SHAREABLE}
     AND NOT ${blockedWith('$1', 'p.pst_usr_id')})`;
 
 /** SQL (alias c = COLLABORATOR_T): an edit collaborator who has saved the note at least once, so an invitation alone never credits anyone or reaches their followers (D46). */
@@ -45,12 +45,12 @@ export const HASHTAGS_COL = `COALESCE((SELECT json_agg(h.hsh_name ORDER BY h.hsh
                    WHERE ph.phs_pst_id = p.pst_id), '[]'::JSON) AS "hashtags"`;
 
 /** The note's ready uploads as asset id -> file URL (alias p = POST_T). */
-export const ASSETS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/api/assets/' || a.ast_id || '/file')
+const ASSETS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, '/api/assets/' || a.ast_id || '/file')
                    FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
                    WHERE pa.pas_pst_id = p.pst_id AND a.ast_status = 'ready'), '{}'::JSON) AS "assets"`;
 
 /** Every video the note references as asset id -> 'processing', 'ready' or 'failed', so a player can say why there is no file yet (R40). */
-export const VIDEO_STATUS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, a.ast_status)
+const VIDEO_STATUS_COL = `COALESCE((SELECT json_object_agg(a.ast_id::TEXT, a.ast_status)
                    FROM "POST_ASSET_T" pa JOIN "ASSET_T" a ON a.ast_id = pa.pas_ast_id
                    WHERE pa.pas_pst_id = p.pst_id AND a.ast_kind = 'video'
                      AND a.ast_status IN ${LINKABLE_STATUSES}), '{}'::JSON) AS "videoStatus"`;
@@ -327,7 +327,7 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
   });
 }
 
-export type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
+type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
 
 /**
  * Replaces the note as `editorId` (the owner or an edit collaborator). Refuses with 'locked' while another user holds a

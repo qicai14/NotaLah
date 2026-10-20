@@ -96,7 +96,7 @@ export async function resolveReports(
   });
 }
 
-export interface AdminUserRow {
+interface AdminUserRow {
   id: number;
   displayName: string;
   email: string;

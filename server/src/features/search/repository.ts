@@ -19,7 +19,7 @@ const CAMPUS_TIME_ZONE = 'Asia/Kuala_Lumpur';
 /** User text as a LIKE pattern that matches it literally (backslash is the default LIKE escape). */
 const literal = (s: string) => s.replace(/[\\%_]/g, '\\$&');
 
-export interface NoteMatch {
+interface NoteMatch {
   id: number;
   publishedAt: Date;
   textRank: number;

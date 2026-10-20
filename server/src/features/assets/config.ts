@@ -56,7 +56,7 @@ export const VIDEO = Object.freeze({
   tmpPrefix: 'notalah-video-',
 });
 
-export type VideoProfileName = 'free' | 'standard';
+type VideoProfileName = 'free' | 'standard';
 
 export interface VideoProfile {
   name: VideoProfileName;

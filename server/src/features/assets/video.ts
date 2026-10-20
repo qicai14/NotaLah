@@ -4,7 +4,7 @@ import path from 'node:path';
 import { VIDEO, type VideoProfile } from './config';
 import { reencodeImage } from './image';
 
-export interface ProcessedVideo {
+interface ProcessedVideo {
   /** Path of the cleaned file inside the work directory. */
   file: string;
   bytes: number;
@@ -14,11 +14,11 @@ export interface ProcessedVideo {
   poster: Buffer;
 }
 
-export type VideoResult = { ok: true; video: ProcessedVideo } | { ok: false; error: string };
+type VideoResult = { ok: true; video: ProcessedVideo } | { ok: false; error: string };
 
 class Rejected extends Error {}
 
-export interface ToolLimits {
+interface ToolLimits {
   timeoutMs: number;
   /** Aborting kills the child, for a worker that lost its lease or is stopping. */
   signal?: AbortSignal;
@@ -125,7 +125,7 @@ export async function inspectVideo(
   }
 }
 
-export interface EncodePlan {
+interface EncodePlan {
   copyVideo: boolean;
   copyAudio: boolean;
   /** The scale box (width, height) for a re-encode, turned to match a portrait input. */

@@ -36,7 +36,7 @@ export async function storageFits(bytes: number): Promise<boolean> {
   return (await storedBytes()) + bytes <= STORAGE_CAP_BYTES;
 }
 
-export interface UsageRow {
+interface UsageRow {
   metric: string;
   used: number;
   cap: number;

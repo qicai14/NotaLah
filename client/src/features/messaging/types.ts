@@ -5,7 +5,7 @@ export interface Member {
   lastReadMessageId: number | null;
 }
 
-export interface LastMessage {
+interface LastMessage {
   id: number;
   senderId: number;
   body: string | null;

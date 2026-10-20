@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 
 /** A parsed keyset cursor: its underscore-separated integer parts as strings (the last is a row id), or null for page 1. */
-export type Cursor = string[] | null;
+type Cursor = string[] | null;
 
 export interface KeysetPage {
   cursor: Cursor;

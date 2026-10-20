@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 
-export type GuestAction = 'like' | 'save' | 'comment' | 'report' | 'follow' | 'message' | 'collaborate';
+type GuestAction = 'like' | 'save' | 'comment' | 'report' | 'follow' | 'message' | 'collaborate';
 
 const COPY: Record<GuestAction, { title: string; icon: LucideIcon }> = {
   like: { title: 'Log in to like this note', icon: Heart },
