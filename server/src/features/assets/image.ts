@@ -1,13 +1,13 @@
 import sharp from 'sharp';
 import { ASSETS, IMAGE_FORMATS } from './config';
 
-export interface ProcessedImage {
+interface ProcessedImage {
   data: Buffer;
   width: number;
   height: number;
 }
 
-export type ImageResult = { ok: true; image: ProcessedImage } | { ok: false; error: string };
+type ImageResult = { ok: true; image: ProcessedImage } | { ok: false; error: string };
 
 /**
  * Decodes the upload with libvips, so the format comes from the bytes and not the filename or MIME header, then

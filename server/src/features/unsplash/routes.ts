@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { env } from '../../lib/env';
 import { issueMap } from '../../lib/validation';
 import { requireActive, requireAuth } from '../auth/middleware';
-import { unsplashLimiter } from '../auth/rateLimit';
+import { unsplashLimiter } from './rateLimit';
 import { searchPhotos, trackDownload, UnsplashNotFound, UnsplashUnavailable } from './service';
 
 export const unsplashRouter = Router();

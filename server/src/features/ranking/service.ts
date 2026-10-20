@@ -12,7 +12,7 @@ export interface Components {
   M: number;
 }
 
-export type InteractionType = keyof typeof RANKING.interactionWeights;
+type InteractionType = keyof typeof RANKING.interactionWeights;
 
 export interface InteractionRow {
   type: InteractionType;
@@ -21,7 +21,7 @@ export interface InteractionRow {
 }
 
 /** Hashtag name -> interest weight in [0, 1]. */
-export type InterestVector = Map<string, number>;
+type InterestVector = Map<string, number>;
 
 /** Log-compressed peer approval: raw = likes + commentEngagementWeight × comments, saturating at engagementCap. */
 export function engagement(likes: number, comments: number): number {

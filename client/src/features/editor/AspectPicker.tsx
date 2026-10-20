@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useEditor } from './store';
 
-export const ASPECT_LABELS: Record<Aspect, string> = {
+const ASPECT_LABELS: Record<Aspect, string> = {
   '4:5': '4:5 Portrait',
   '9:16': '9:16 Full screen',
   '16:9': '16:9 Widescreen',

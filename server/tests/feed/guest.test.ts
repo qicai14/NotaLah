@@ -5,7 +5,7 @@ import { app } from '../../src/app';
 import { RATE_LIMITS } from '../../src/features/auth/rateLimit';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
-import { asUser, befriend, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
+import { agePublished, asUser, befriend, CSRF, insertNote, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -25,6 +25,7 @@ async function world() {
   const hidden = await insertNote(author, { status: 'hidden' });
   const draft = await insertNote(author, { status: 'draft' });
   const suspended = await insertNote(await insertUser({ status: 'suspended' }));
+  await agePublished();
   return { author, friend, pub, contacts, hidden, draft, suspended, unseen: [contacts, hidden, draft, suspended] };
 }
 
@@ -68,11 +69,13 @@ describe('Guest browsing (R31)', () => {
     const fan = await insertUser();
     const notes: number[] = [];
     for (let i = 0; i < 12; i++) notes.push(await insertNote(author));
+    await agePublished();
     await pool.query(`UPDATE "POST_T" SET pst_published_at = NOW() - INTERVAL '5 days' WHERE pst_id = $1`, [notes[0]]);
     for (let i = 0; i < 30; i++) {
       const u = i === 0 ? fan : await insertUser();
       await pool.query(`INSERT INTO "LIKE_T" (lik_usr_id, lik_pst_id) VALUES ($1, $2)`, [u, notes[0]]);
     }
+    await pool.query(`UPDATE "LIKE_T" SET lik_created_at = lik_created_at - INTERVAL '2 minutes'`);
     const p1 = await guest('/api/feed');
     expect(ids(p1.body.items)).toContain(notes[0]);
     await pool.query(`DELETE FROM "LIKE_T"`); // unlikes lower E even at the old asOf
@@ -80,6 +83,19 @@ describe('Guest browsing (R31)', () => {
     const seen = [...ids(p1.body.items), ...ids(p2.body.items)];
     expect(seen.sort((a, b) => a - b)).toEqual(notes);
     expect((await pool.query(`SELECT 1 FROM "FEED_SNAPSHOT_T"`)).rowCount).toBe(0);
+  });
+
+  it('CLN-TC1: a guest first page rounds its cutoff down to the minute and reuses the cached ranking', async () => {
+    const author = await insertUser();
+    const note = await insertNote(author);
+    await agePublished();
+    const first = await guest('/api/feed');
+    expect(new Date(first.body.asOf).getTime() % 60_000).toBe(0);
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [note]);
+    const second = await guest('/api/feed'); // same minute: served from the cached ranking, the hidden note is dropped on load
+    expect(second.body.asOf).toBe(first.body.asOf);
+    expect(ids(first.body.items)).toEqual([note]);
+    expect(second.body.items).toEqual([]);
   });
 
   it('RANK-TC30: guest gets 401 on the Following feed', async () => {

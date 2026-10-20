@@ -12,7 +12,7 @@ export interface LockHolder {
   displayName: string;
 }
 
-export type LockState =
+type LockState =
   | { kind: 'none' }
   | { kind: 'held' }
   | { kind: 'locked'; holder: LockHolder; checkedAt: number }

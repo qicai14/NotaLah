@@ -19,7 +19,7 @@ export type Refusal =
   | 'member'
   | 'not_member';
 
-export interface MessageInput {
+interface MessageInput {
   body: string;
   noteId: number | null;
   replyToId: number | null;
@@ -262,7 +262,7 @@ async function openDirect(
   return { id, created: ins.rowCount === 1, heldMessageId };
 }
 
-export type DirectResult =
+type DirectResult =
   | { kind: 'message'; conversationId: number; messageId: number; created: boolean }
   | { kind: 'request'; requestId: number };
 

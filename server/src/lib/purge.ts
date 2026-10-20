@@ -1,3 +1,5 @@
+import '../features/assets/rateLimit'; // registers the upload, video and file windows with the purge
+import '../features/unsplash/rateLimit';
 import { purgeUnlinkedAssets } from '../features/assets/service';
 import { purgeOldRateLimits } from '../features/auth/rateLimit';
 import { purgeFeedSnapshots } from '../features/feed/repository';

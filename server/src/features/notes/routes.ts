@@ -2,17 +2,10 @@ import { Router } from 'express';
 import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
-import {
-  createNote,
-  getNoteMeta,
-  getVisibleNote,
-  listDrafts,
-  NOT_EDITABLE,
-  replaceNote,
-  softDeleteNote,
-} from './repository';
+import { createNote, getVisibleNote, listDrafts, publishNote, replaceNote, softDeleteNote } from './repository';
+import { noteAccess } from './access';
 import { moduleExists } from '../modules/repository';
-import { findBadAsset, parseBaseUpdatedAt, parseNoteBody } from './service';
+import { blankPositions, findBadAsset, parseBaseUpdatedAt, parseNoteBody, publishErrors } from './service';
 import { notifyVoidedVerifiers } from '../notifications/service';
 
 export const notesRouter = Router();
@@ -45,11 +38,8 @@ notesRouter.get('/:id', optionalAuth, async (req, res) => {
 });
 
 notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
-  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
-  if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.role !== 'owner' && meta.role !== 'edit') return res.status(403).json({ error: 'Forbidden' });
-  if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
-  if (meta.role === 'edit' && !meta.authorActive) return res.status(403).json({ error: NOT_EDITABLE });
+  const meta = await noteAccess(req, res, ['owner', 'edit'], { editable: true });
+  if (!meta) return;
 
   const parsed = parseNoteBody(req.body);
   const base = parseBaseUpdatedAt(req.body, meta.role === 'edit');
@@ -94,15 +84,13 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
 
 /**
  * The owner publishes the last saved version of a draft (wireframe 29). Allowed while a co-author holds the edit lock,
- * because it changes no content they could be overwriting: it re-sends the stored note with the new status, and only
- * if nothing was saved since it was read (409 otherwise). Same checks as publishing through PUT.
+ * because it changes no content they could be overwriting: one UPDATE of status, visibility and publish time, and only
+ * if nothing was saved since it was read (409 otherwise). Same completeness rules as publishing through PUT.
  */
 notesRouter.post('/:id/publish', requireAuth, requireActive, async (req, res) => {
   const id = Number(req.params.id);
-  const meta = await getNoteMeta(id, me(req).id);
-  if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.role !== 'owner') return res.status(403).json({ error: 'Only the owner can publish' });
-  if (meta.status === 'hidden') return res.status(403).json({ error: 'This note was hidden by a moderator' });
+  const meta = await noteAccess(req, res, ['owner'], { editable: true, forbidden: 'Only the owner can publish' });
+  if (!meta) return;
   if (meta.status !== 'draft') return res.status(400).json({ error: 'This note is already published' });
   const visibility = (req.body as { visibility?: unknown } | undefined)?.visibility;
   if (visibility !== 'public' && visibility !== 'contacts') {
@@ -110,33 +98,16 @@ notesRouter.post('/:id/publish', requireAuth, requireActive, async (req, res) =>
   }
   const note = await getVisibleNote(id, me(req).id);
   if (!note) return res.status(404).json({ error: 'Note not found' });
-  const parsed = parseNoteBody({
-    title: note.title,
-    theme: note.theme,
-    aspect: note.aspect,
-    music: note.music && { provider: 'deezer', trackId: note.music.trackId, volume: note.music.volume },
-    moduleId: note.module?.id ?? null,
-    hashtags: note.hashtags,
-    slides: note.slides.map(({ background, elements, notes }) => ({ background, elements, notes: notes ?? '' })),
-    status: 'published',
-    visibility,
-  });
-  if (!parsed.ok) return res.status(400).json({ error: 'Validation failed', errors: parsed.errors });
-  const badAsset = await findBadAsset(parsed.data.slides, me(req).id, id);
-  if (badAsset) return res.status(400).json({ error: 'Validation failed', errors: { slides: badAsset } });
-  const result = await replaceNote(id, parsed.data, me(req).id, new Date(note.updatedAt), { ignoreLock: true });
-  if (result === 'gone') return res.status(404).json({ error: 'Note not found' });
-  if (result === 'forbidden') return res.status(403).json({ error: 'Forbidden' });
-  if (result === 'stale') {
+  const errors = publishErrors(note);
+  if (Object.keys(errors).length > 0) return res.status(400).json({ error: 'Validation failed', errors });
+  if (!(await publishNote(id, me(req).id, visibility, new Date(note.updatedAt), blankPositions(note.slides)))) {
     return res.status(409).json({ error: 'This note was saved again just now. Try publishing once more' });
   }
   res.json({ note: await getVisibleNote(id, me(req).id) });
 });
 
 notesRouter.delete('/:id', requireAuth, async (req, res) => {
-  const meta = await getNoteMeta(Number(req.params.id), me(req).id);
-  if (!meta || !meta.visible) return res.status(404).json({ error: 'Note not found' });
-  if (meta.role !== 'owner') return res.status(403).json({ error: 'Forbidden' });
+  if (!(await noteAccess(req, res, ['owner']))) return;
   await softDeleteNote(Number(req.params.id));
   res.status(204).end();
 });

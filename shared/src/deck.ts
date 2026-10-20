@@ -13,7 +13,7 @@ const oneOf = <const T extends readonly [string, ...string[]]>(values: T, what: 
 const text = (max: number, what: string) =>
   z.string({ error: `${what} must be text` }).max(max, `${what} must be at most ${max} characters`);
 
-export const hexSchema = z.string({ error: 'Invalid colour' }).regex(/^#[0-9a-f]{6}([0-9a-f]{2})?$/i, 'Invalid colour');
+const hexSchema = z.string({ error: 'Invalid colour' }).regex(/^#[0-9a-f]{6}([0-9a-f]{2})?$/i, 'Invalid colour');
 const idSchema = z.string({ error: 'Invalid element id' }).regex(/^[A-Za-z0-9-]{8,36}$/, 'Invalid element id');
 
 const fontSchema = oneOf(FONT_IDS, 'font');
@@ -47,7 +47,7 @@ export const imageSourceSchema = z.discriminatedUnion(
   { error: 'Unknown image source' },
 );
 
-export const fillSchema = z.discriminatedUnion(
+const fillSchema = z.discriminatedUnion(
   'kind',
   [
     z.strictObject({ kind: z.literal('color'), color: hexSchema }),
@@ -168,16 +168,14 @@ const tableEl = z.strictObject({
   headerRow: bool('Header row'),
 });
 
-export const elementSchema = z.discriminatedUnion(
-  'type',
-  [textEl, shapeEl, lineEl, imageEl, codeEl, videoEl, tableEl],
-  { error: 'Unknown element type' },
-);
+const elementSchema = z.discriminatedUnion('type', [textEl, shapeEl, lineEl, imageEl, codeEl, videoEl, tableEl], {
+  error: 'Unknown element type',
+});
 
 const count = (els: { type: string }[], type: string) => els.filter((e) => e.type === type).length;
 
 /** One slide as sent by the editor. `notes` are the private page notes, which the database keeps apart from the document. */
-export const slideSchema = z
+const slideSchema = z
   .strictObject({
     background: fillSchema,
     elements: z

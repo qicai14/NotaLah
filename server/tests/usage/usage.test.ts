@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { readdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -103,13 +104,38 @@ describe('free-tier cost guard (R34, D57)', () => {
     await setCount('class_b', METRICS.class_b.cap);
     const served = await request(app).get(`/api/assets/${id}/file`).set(asUser(uid));
     expect(served.status).toBe(503);
-    expect(served.body.error).toBe('Monthly upload limit reached');
+    expect(served.body.error).toBe('Media is temporarily unavailable');
     expect((await request(app).get('/api/modules').set(asUser(uid))).status).toBe(200);
 
     await setCount('class_a', METRICS.class_a.cap);
     const refused = await upload(uid);
     expect(refused.status).toBe(503);
     expect(refused.body.error).toBe('Monthly upload limit reached');
+  });
+
+  it('CLN-TC3: bytes served from storage are counted, and at the cap video stops while images keep serving', async () => {
+    const uid = await insertUser();
+    const image = (await upload(uid)).body.asset.id;
+    const sent = await request(app).get(`/api/assets/${image}/file`).set(asUser(uid));
+    await vi.waitFor(async () => expect(await countOf('served_bytes')).toBe(Number(sent.headers['content-length'])));
+
+    const key = `v/${randomUUID()}.mp4`;
+    await storage.put(key, Buffer.alloc(1000));
+    const { rows } = await pool.query<{ ast_id: number }>(
+      `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_mime, ast_bytes, ast_status)
+       VALUES ($1, 'video', $2, 'video/mp4', 1000, 'ready') RETURNING ast_id`,
+      [uid, key],
+    );
+    const video = `/api/assets/${rows[0].ast_id}/file`;
+    const before = await countOf('served_bytes');
+    expect((await request(app).get(video).set(asUser(uid)).set('Range', 'bytes=0-99')).status).toBe(206);
+    await vi.waitFor(async () => expect(await countOf('served_bytes')).toBe(before + 100)); // 100 bytes sent, not 1000
+
+    await setCount('served_bytes', METRICS.served_bytes.cap);
+    const refused = await request(app).get(video).set(asUser(uid));
+    expect(refused.status).toBe(503);
+    expect(refused.body.error).toBe('Video is temporarily unavailable');
+    expect((await request(app).get(`/api/assets/${image}/file`).set(asUser(uid))).status).toBe(200);
   });
 
   it('USE-TC5: the Unsplash proxy stops calling out at the app-wide hourly cap', async () => {
@@ -143,9 +169,10 @@ describe('free-tier cost guard (R34, D57)', () => {
     const res = await request(app).get('/api/admin/usage').set(asUser(admin));
     expect(res.status).toBe(200);
     const byMetric = Object.fromEntries(res.body.usage.map((r: { metric: string }) => [r.metric, r]));
-    expect(Object.keys(byMetric).sort()).toEqual(['class_a', 'class_b', 'storage_bytes', 'unsplash']);
+    expect(Object.keys(byMetric).sort()).toEqual(['class_a', 'class_b', 'served_bytes', 'storage_bytes', 'unsplash']);
     expect(byMetric.class_a).toMatchObject({ used: 3, cap: 500_000 });
     expect(byMetric.unsplash.cap).toBe(25);
+    expect(byMetric.served_bytes).toMatchObject({ used: 0, cap: 50_000_000_000 });
     expect(byMetric.storage_bytes).toMatchObject({
       used: 0,
       cap: 8_000_000_000,

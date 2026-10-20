@@ -4,16 +4,16 @@ import type { Note } from '@/types';
 import { BACKUP_PREFIX } from './backup';
 import { type EditorState, type NoteMeta, useEditor } from './store';
 
-export type SaveChoice = 'draft' | 'public' | 'contacts';
+type SaveChoice = 'draft' | 'public' | 'contacts';
 
 /** A draft with no title is saved under this one (D56); the author can rename it at any time. */
-export const UNTITLED = 'Untitled note';
+const UNTITLED = 'Untitled note';
 export type SaveOutcome = { ok: true; note: Note } | { ok: false; errors: Record<string, string> };
 
 /** Drafts autosave this long after the last change (R21 spec 5)... */
-export const AUTOSAVE_IDLE_MS = 2000;
+const AUTOSAVE_IDLE_MS = 2000;
 /** ...but never wait longer than this while changes keep coming. */
-export const AUTOSAVE_MAX_MS = 10_000;
+const AUTOSAVE_MAX_MS = 10_000;
 
 /** Wait before the next autosave: the idle delay, cut short so no change waits more than the maximum. */
 export const autosaveDelay = (firstChangeAt: number, now: number): number =>
@@ -191,7 +191,7 @@ const SAFE_COLOUR = /^\s*color:\s*#(?:[0-9a-f]{6}|[0-9a-f]{8})\s*;?\s*$/i;
  * the browser could have edited: unknown tags are unwrapped (script, style and similar are dropped with their
  * content), and the only attributes kept are `start` on lists and a hex `color` style on spans.
  */
-export function cleanHtml(html: string): string {
+function cleanHtml(html: string): string {
   const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
   const walk = (node: Element) => {
     // Array.from copies the live collection, because the loop removes and unwraps children.

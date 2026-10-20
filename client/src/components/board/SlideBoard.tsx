@@ -310,7 +310,7 @@ function Body({
 }
 
 /** Editing hooks for `mode="edit"`; the editor owns selection, gestures and the overlay it draws. */
-export interface BoardEditing {
+interface BoardEditing {
   /** Replaces the element's body (the selected text box mounts TipTap here). */
   renderBody?: (el: SlideElement) => ReactNode | undefined;
   onElementPointerDown?: (e: ReactPointerEvent<HTMLDivElement>, el: SlideElement) => void;

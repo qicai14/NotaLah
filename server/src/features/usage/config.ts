@@ -6,13 +6,15 @@ export const FREE = Object.freeze({
   classA: 1_000_000,
   classB: 10_000_000,
   unsplash: 50,
+  /** Render's free web service: 100 GB of outbound traffic a month (R38). */
+  servedBytes: 100_000_000_000,
 });
 
 /**
  * Share of each allowance the app may use. Monthly R2 caps are 50% until the billing period is confirmed as the UTC
  * calendar month (D57); a cycle spanning two calendar months then still stays under the allowance.
  */
-export const SHARE = Object.freeze({ storage: 0.8, classA: 0.5, classB: 0.5, unsplash: 0.5 });
+export const SHARE = Object.freeze({ storage: 0.8, classA: 0.5, classB: 0.5, unsplash: 0.5, servedBytes: 0.5 });
 
 /** A cap from the environment. It can lower the default, never raise it: a higher or unusable value falls back to the default. */
 export function capFromEnv(
@@ -46,6 +48,11 @@ export const METRICS = Object.freeze({
   class_b: {
     period: 'month' as Period,
     cap: capFromEnv('USAGE_CAP_CLASS_B', FREE.classB, SHARE.classB),
+  },
+  /** Bytes streamed out of storage; at the cap videos stop, images keep serving (R38). */
+  served_bytes: {
+    period: 'month' as Period,
+    cap: capFromEnv('USAGE_CAP_SERVED_BYTES', FREE.servedBytes, SHARE.servedBytes),
   },
   unsplash: {
     period: 'hour' as Period,

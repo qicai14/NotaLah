@@ -9,7 +9,7 @@ import type { VideoStatus } from '@/types';
 import { makeImage, makeVideo } from './elements';
 import { useEditor } from './store';
 
-export interface UploadedImage {
+interface UploadedImage {
   id: number;
   width: number | null;
   height: number | null;
@@ -28,7 +28,7 @@ interface UnsplashPhoto {
 }
 
 /** JPEG, PNG, WebP or GIF; the server re-encodes to WebP and checks the real type (D54). */
-export const IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/gif';
+const IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/gif';
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Sends one file as multipart (the JSON `api` helper cannot), with the CSRF header every write needs (D35). */
@@ -51,7 +51,7 @@ async function postFile<T>(path: string, file: File): Promise<T> {
   return data.asset as T;
 }
 
-export async function uploadImage(file: File): Promise<UploadedImage> {
+async function uploadImage(file: File): Promise<UploadedImage> {
   if (file.size > MAX_BYTES) throw new ApiError(413, 'Image must be at most 5 MB');
   return postFile<UploadedImage>('/assets/images', file);
 }

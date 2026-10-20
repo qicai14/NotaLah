@@ -14,7 +14,7 @@ declare global {
 }
 
 export const BCRYPT_COST = 12;
-export const TOKEN_TTL_SECONDS = 3600;
+const TOKEN_TTL_SECONDS = 3600;
 export const AUTH_COOKIE = 'notalah_token';
 const COOKIE_PATTERN = new RegExp(String.raw`(?:^|;\s*)${AUTH_COOKIE}=([^;]+)`);
 const BLOCKED_STATUSES = new Set(['suspended', 'deleted']);
@@ -42,7 +42,7 @@ export function setAuthCookie(res: Response, user: AuthUser, authTime?: number):
 }
 
 /** Sliding session (R37, D65): a token with less than this left is re-issued by the next authenticated request. */
-export const REFRESH_BELOW_SECONDS = 15 * 60;
+const REFRESH_BELOW_SECONDS = 15 * 60;
 
 /**
  * Use after the JWT strategy accepted the request's cookie: re-issues it with a fresh hour when it is near expiry, unless
