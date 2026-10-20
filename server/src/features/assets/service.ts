@@ -26,7 +26,7 @@ export async function purgeUnlinkedAssets(): Promise<{ assets: number; orphanedF
 /**
  * Sends an asset's file, or a video's poster with `?poster=1`, answering a `Range` header with 206 (R29). The file is
  * streamed from storage, never held whole. Every call is one Class B read in `metered`, however small the range, so past
- * the cap nothing is served. Readability depends on who asks, so shared caches must not keep it; the viewer's browser may for a few minutes.
+ * the cap nothing is served. Readability depends on who asks, so shared caches must not keep it. A file never changes once stored, so the viewer's browser keeps it for a year (R38).
  */
 export async function sendAsset(req: Request, res: Response, asset: StoredFile): Promise<void> {
   // A video has no file until the worker finishes (R40): 409 while it may still come, 404 once it never will.
@@ -50,7 +50,7 @@ export async function sendAsset(req: Request, res: Response, asset: StoredFile):
   res.set({
     'Content-Type': poster ? 'image/webp' : asset.mime,
     'Content-Length': String(found.end - found.start + 1),
-    'Cache-Control': 'private, max-age=300',
+    'Cache-Control': 'private, max-age=31536000, immutable',
     'Cross-Origin-Resource-Policy': 'same-site',
     'Accept-Ranges': 'bytes',
   });
