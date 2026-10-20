@@ -4,6 +4,7 @@ import type { Aspect } from '@notalah/shared';
 import type { VideoStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { type BoardSlide, SlideBoard } from './SlideBoard';
+import { SlideActive } from './VideoPlayer';
 
 export const MAX_DOTS = 7;
 
@@ -108,13 +109,15 @@ export function SlideCarousel({
                 i === cur ? 'size-full rounded-lg' : 'pointer-events-none absolute inset-0 rounded-lg opacity-0'
               }
             >
-              <SlideBoard
-                slide={slide}
-                aspect={aspect}
-                assets={assets}
-                videoStatus={videoStatus}
-                label={`Slide ${i + 1} of ${total}`}
-              />
+              <SlideActive value={i === cur}>
+                <SlideBoard
+                  slide={slide}
+                  aspect={aspect}
+                  assets={assets}
+                  videoStatus={videoStatus}
+                  label={`Slide ${i + 1} of ${total}`}
+                />
+              </SlideActive>
             </div>
           ),
         )}
