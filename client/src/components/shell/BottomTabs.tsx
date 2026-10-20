@@ -1,12 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useUnread } from '@/features/messaging/MessagingContext';
+import { useNotificationUnread } from '@/features/notifications/NotificationsContext';
 import { cn } from '@/lib/utils';
 import { isActive, TABS } from './nav';
 
 /** Phone tab bar (below 768 px), translucent so the full-screen feed runs under it. */
 export function BottomTabs() {
   const { pathname, search } = useLocation();
-  const unread = useUnread();
+  const messages = useUnread();
+  const notifications = useNotificationUnread();
   return (
     <nav
       aria-label="Main tabs"
@@ -16,13 +18,23 @@ export function BottomTabs() {
         {TABS.map((item) => {
           const active = isActive(item, pathname, search);
           const Icon = item.icon;
-          const count = item.to === '/messages' ? unread : 0;
+          // Inbox is where chats and notifications meet on a phone, so its badge counts both.
+          const inbox = item.to === '/messages';
+          const count = inbox ? messages + notifications : 0;
           return (
             <li key={item.to} className="grid">
               <Link
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
-                aria-label={item.primary ? item.label : count ? `${item.label}, ${count} unread` : undefined}
+                aria-label={
+                  item.primary
+                    ? item.label
+                    : count
+                      ? inbox
+                        ? `${item.label}, ${messages} messages and ${notifications} notifications`
+                        : `${item.label}, ${count} unread`
+                      : undefined
+                }
                 className={cn(
                   'flex flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-semibold transition-colors',
                   active ? 'text-foreground' : 'text-muted-foreground',

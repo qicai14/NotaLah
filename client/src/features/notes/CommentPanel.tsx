@@ -1,5 +1,5 @@
 import { Heart, Pin } from 'lucide-react';
-import { type FormEvent, useId, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useAction } from '@/lib/useAction';
@@ -11,20 +11,42 @@ import { timeAgo } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
 import type { Comment, CommentReply } from '../../types';
 import { useAuth } from '../auth/AuthContext';
+import { useFriends } from '../messaging/helpers';
+import { findMention, insertMention, mentionIds, type Person, suggest } from './mentions';
 import { useGuestPrompt } from '../auth/GuestPrompt';
 
 const MAX = 1000;
+
+/** Fetches the viewer's friends (mounted only once someone types an @) and reports them upward. */
+function FriendsLoader({ onLoad }: { onLoad: (friends: Person[]) => void }) {
+  const { friends } = useFriends();
+  const key = friends.map((f) => f.id).join();
+  useEffect(() => {
+    onLoad(friends.map((f) => ({ id: f.id, displayName: f.displayName })));
+    // friends is a new array each render; its ids are the real dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, onLoad]);
+  return null;
+}
 
 function Composer({
   noteId,
   slideCount,
   parentId,
+  people,
+  friends,
+  onWantFriends,
   onDone,
   onCancel,
 }: {
   noteId: number;
   slideCount: number;
   parentId?: number;
+  /** Who the server lets this comment mention besides friends: the note's author and, in a reply, the thread. */
+  people: Person[];
+  friends: Person[];
+  /** Called when an @ is first typed, so friends are fetched only when needed. */
+  onWantFriends: () => void;
   onDone: () => void;
   onCancel?: () => void;
 }) {
@@ -32,20 +54,73 @@ function Composer({
   const [slideNo, setSlideNo] = useState('');
   const { run, pending, error, setError } = useAction();
   const idp = `c-${parentId ?? 'new'}`;
+  const [picked, setPicked] = useState<Map<number, string>>(new Map());
+  const [caret, setCaret] = useState(0);
+  const [active, setActive] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+  const field = useRef<HTMLTextAreaElement>(null);
+  const nextCaret = useRef<number | null>(null);
+  const mention = dismissed ? null : findMention(body, caret);
+  const options = mention ? suggest([...people, ...friends], mention.query) : [];
+  const open = options.length > 0;
+  const typing = mention !== null;
+
+  useEffect(() => {
+    if (typing) onWantFriends();
+  }, [typing, onWantFriends]);
+
+  useEffect(() => {
+    if (nextCaret.current === null) return;
+    field.current?.setSelectionRange(nextCaret.current, nextCaret.current);
+    nextCaret.current = null;
+  }, [body]);
+
+  const choose = (p: Person) => {
+    if (!mention) return;
+    const r = insertMention(body, mention.start, caret, p.displayName);
+    setBody(r.text);
+    setCaret(r.caret);
+    nextCaret.current = r.caret;
+    setPicked((m) => new Map(m).set(p.id, p.displayName));
+    setActive(0);
+    setDismissed(true); // "@Name " still looks like a partial name, so keep the list shut until the next keystroke
+    field.current?.focus();
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!open) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((a) => (a + (e.key === 'ArrowDown' ? 1 : options.length - 1)) % options.length);
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      choose(options[active] ?? options[0]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setDismissed(true);
+    }
+  };
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!body.trim()) return setError('Comment is required');
     if (body.length > MAX) return setError(`Comment must be at most ${MAX} characters`);
+    const ids = mentionIds(body, picked);
     const ok = await run(async () => {
       await api(`/notes/${noteId}/comments`, {
         method: 'POST',
-        body: { body, ...(slideNo ? { slideNo: Number(slideNo) } : {}), ...(parentId ? { parentId } : {}) },
+        body: {
+          body,
+          ...(slideNo ? { slideNo: Number(slideNo) } : {}),
+          ...(parentId ? { parentId } : {}),
+          ...(ids.length ? { mentions: ids } : {}),
+        },
       });
       return true;
     });
     if (ok) {
       setBody('');
+      setPicked(new Map());
       onDone();
     }
   }
@@ -55,11 +130,48 @@ function Composer({
       <label htmlFor={`${idp}-body`} className="sr-only">
         {parentId ? 'Your reply' : 'Add a comment'}
       </label>
-      <div className="flex items-end gap-2">
+      <div className="relative flex items-end gap-2">
+        {open && (
+          <ul
+            id={`${idp}-people`}
+            role="listbox"
+            aria-label="Mention someone"
+            className="absolute right-0 bottom-full left-0 z-10 mb-1 max-h-56 overflow-y-auto rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-(--shadow-float)"
+          >
+            {options.map((p, i) => (
+              <li
+                key={p.id}
+                id={`${idp}-person-${p.id}`}
+                role="option"
+                aria-selected={i === active}
+                onMouseDown={(e) => (e.preventDefault(), choose(p))}
+                className={cn(
+                  'flex h-10 cursor-pointer items-center gap-2 rounded-sm px-2 text-body-sm font-semibold',
+                  i === active && 'bg-accent',
+                )}
+              >
+                <UserAvatar name={p.displayName} className="size-6" />
+                {p.displayName}
+              </li>
+            ))}
+          </ul>
+        )}
         <textarea
           id={`${idp}-body`}
+          ref={field}
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          aria-expanded={open}
+          aria-controls={open ? `${idp}-people` : undefined}
+          aria-activedescendant={open && options[active] ? `${idp}-person-${options[active].id}` : undefined}
+          aria-autocomplete="list"
+          onKeyDown={onKeyDown}
+          onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
+          onChange={(e) => {
+            setBody(e.target.value);
+            setCaret(e.target.selectionStart);
+            setActive(0);
+            setDismissed(false);
+          }}
           rows={parentId ? 2 : 1}
           placeholder={parentId ? 'Write a reply' : 'Add a comment'}
           aria-invalid={error ? true : undefined}
@@ -208,12 +320,15 @@ export function CommentPanel({
   noteId,
   slideCount,
   noteAuthorId,
+  noteAuthor,
   heading = true,
   className,
 }: {
   noteId: number;
   slideCount: number;
   noteAuthorId?: number;
+  /** Offered in the @ picker: the server lets a comment mention the note's author. */
+  noteAuthor?: Person;
   heading?: boolean;
   className?: string;
 }) {
@@ -224,6 +339,15 @@ export function CommentPanel({
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const headingId = useId();
+  const [wantFriends, setWantFriends] = useState(false);
+  const [friends, setFriends] = useState<Person[]>([]);
+  const onWantFriends = useCallback(() => setWantFriends(true), []);
+  // Only people the server will notify (thread participants, the note's author, friends); never the viewer.
+  const peopleFor = (thread?: Comment) =>
+    [...(thread ? [thread, ...thread.replies] : []).map((c) => c.author), noteAuthor ?? null]
+      .filter((p): p is Person => p !== null && p.id !== user?.id)
+      .map((p) => ({ id: p.id, displayName: p.displayName }));
+  const composerProps = { friends, onWantFriends };
   const common = { onChanged: () => (setActionError(null), reload()), onError: setActionError, noteAuthorId };
 
   return (
@@ -232,6 +356,7 @@ export function CommentPanel({
       aria-label={heading ? undefined : 'Comments'}
       className={cn('flex min-h-0 flex-col', className)}
     >
+      {wantFriends && user && <FriendsLoader onLoad={setFriends} />}
       {heading && (
         <h2 id={headingId} className="px-5 pt-5 pb-3 text-title-sm font-bold">
           Comments
@@ -274,6 +399,8 @@ export function CommentPanel({
                         noteId={noteId}
                         slideCount={slideCount}
                         parentId={c.id}
+                        people={peopleFor(c)}
+                        {...composerProps}
                         onCancel={() => setReplyTo(null)}
                         onDone={() => (setReplyTo(null), reload())}
                       />
@@ -287,7 +414,7 @@ export function CommentPanel({
       </div>
       <div className="border-t bg-background px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {user ? (
-          <Composer noteId={noteId} slideCount={slideCount} onDone={reload} />
+          <Composer noteId={noteId} slideCount={slideCount} people={peopleFor()} {...composerProps} onDone={reload} />
         ) : (
           <div className="flex items-center justify-between gap-3">
             <p className="text-body-sm text-muted-foreground">Log in to comment.</p>

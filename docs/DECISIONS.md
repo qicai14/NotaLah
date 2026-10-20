@@ -1617,6 +1617,29 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** NOTE-TC91 to NOTE-TC94.
 - **Reversibility:** High: no schema change; themes and layouts are constants, and saved notes carry their own values.
 
+## D70 - Notifications inbox UI (R8, 20 Oct 2026)
+- **Context:** the backend landed in D51. This is the client half, matched to wireframes 43 and 44.
+- **Decision:** `features/notifications/`. `NotificationsProvider` (in `main.tsx`, inside `MessagingProvider`) reuses the
+  messaging socket: it loads `/notifications/unread-count` on every (re)connection, applies `notification:new` and
+  `notification:count`, and keeps the live items for the page. `/notifications` shows filter chips (All, Mentions,
+  Follows, Super Likes, Requests, System, each a `type` filter), rows grouped Today / This week / Earlier, Mark all read,
+  Show more through `usePaged`, and the R30 `CollabRequestActions` inline on pending collaboration requests. Opening a
+  row marks it read. `usePaged` now joins its cursor with `&` when the path already has a query.
+- **Navigation:** Notifications in the desktop rail with a count pill. On phones the bell sits in the top bar and in the
+  More menu, both with the notification count. The bottom tab bar's Inbox tab (chats and notifications meet there,
+  wireframe 45) shows one badge, unread messages plus unread notifications, labelled "Inbox, N messages and M
+  notifications" (user decision, 20 Oct). The bar keeps its five fixed slots (wireframe 13).
+- **Mentions:** the comment and reply boxes suggest people while typing `@name` (keyboard and pointer) and send the ids
+  whose `@Name` is still in the text, which is what the server checks. Suggestions match the server's rule: a new
+  comment offers the note's author and friends, a reply also the thread's commenters. Friends are fetched once per
+  comment panel, when the first `@` is typed. The panel gets `noteAuthor` from NoteDetail and Feed.
+- **Counts:** while the socket is connected the badge changes only on `notification:new` / `notification:count`; HTTP
+  replies could land after a newer push. A fetch that started before a push is dropped. Without a socket the reply is used.
+- **Not built:** wireframe 43's "Message requests" summary row, "Follow back" and "Re-confirm" buttons, and the
+  note thumbnails; rows link to the target instead.
+- **Tests:** NTF-TC19 to NTF-TC25 (client).
+- **Reversibility:** High: client only, no schema or API change.
+
 ## D71 - Feed payload: first slides only (R39, 20 Oct 2026)
 - **Context:** review finding #9: the ranked, Following and guest feeds returned every slide of every note, though a card
   shows one slide at a time.

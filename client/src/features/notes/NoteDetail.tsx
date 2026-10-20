@@ -162,6 +162,7 @@ export default function NoteDetail() {
             noteId={n.id}
             slideCount={n.slides.length}
             noteAuthorId={n.author.id}
+            noteAuthor={n.author}
             className="flex-1 border-t lg:min-h-0"
           />
         )}
