@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@t
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vite-plus/test';
 import type { SlideElement } from '@notalah/shared';
 import { SlideBoard } from '@/components/board/SlideBoard';
+import { SlideActive } from '@/components/board/VideoPlayer';
 import { limitsText, useVideoPolling, VideoPicker } from './MediaPanels';
 import { emptyDeck, useEditor } from './store';
 
@@ -36,7 +37,11 @@ afterEach(() => {
 describe('Video states (R40)', () => {
   it('VID-TC10: the board shows processing and failed tiles, a player when ready, and the poster while editing', () => {
     const view = (props: Partial<Parameters<typeof SlideBoard>[0]>) =>
-      render(<SlideBoard slide={slide} aspect="4:5" {...props} />);
+      render(
+        <SlideActive value={false}>
+          <SlideBoard slide={slide} aspect="4:5" {...props} />
+        </SlideActive>,
+      );
 
     view({ videoStatus: { '5': 'processing' } });
     expect(screen.getByRole('img', { name: 'Processing…' })).toBeTruthy();

@@ -1617,6 +1617,29 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** NOTE-TC91 to NOTE-TC94.
 - **Reversibility:** High: no schema change; themes and layouts are constants, and saved notes carry their own values.
 
+## D70 - Notifications inbox UI (R8, 20 Oct 2026)
+- **Context:** the backend landed in D51. This is the client half, matched to wireframes 43 and 44.
+- **Decision:** `features/notifications/`. `NotificationsProvider` (in `main.tsx`, inside `MessagingProvider`) reuses the
+  messaging socket: it loads `/notifications/unread-count` on every (re)connection, applies `notification:new` and
+  `notification:count`, and keeps the live items for the page. `/notifications` shows filter chips (All, Mentions,
+  Follows, Super Likes, Requests, System, each a `type` filter), rows grouped Today / This week / Earlier, Mark all read,
+  Show more through `usePaged`, and the R30 `CollabRequestActions` inline on pending collaboration requests. Opening a
+  row marks it read. `usePaged` now joins its cursor with `&` when the path already has a query.
+- **Navigation:** Notifications in the desktop rail with a count pill. On phones the bell sits in the top bar and in the
+  More menu, both with the notification count. The bottom tab bar's Inbox tab (chats and notifications meet there,
+  wireframe 45) shows one badge, unread messages plus unread notifications, labelled "Inbox, N messages and M
+  notifications" (user decision, 20 Oct). The bar keeps its five fixed slots (wireframe 13).
+- **Mentions:** the comment and reply boxes suggest people while typing `@name` (keyboard and pointer) and send the ids
+  whose `@Name` is still in the text, which is what the server checks. Suggestions match the server's rule: a new
+  comment offers the note's author and friends, a reply also the thread's commenters. Friends are fetched once per
+  comment panel, when the first `@` is typed. The panel gets `noteAuthor` from NoteDetail and Feed.
+- **Counts:** while the socket is connected the badge changes only on `notification:new` / `notification:count`; HTTP
+  replies could land after a newer push. A fetch that started before a push is dropped. Without a socket the reply is used.
+- **Not built:** wireframe 43's "Message requests" summary row, "Follow back" and "Re-confirm" buttons, and the
+  note thumbnails; rows link to the target instead.
+- **Tests:** NTF-TC19 to NTF-TC25 (client).
+- **Reversibility:** High: client only, no schema or API change.
+
 ## D71 - Feed payload: first slides only (R39, 20 Oct 2026)
 - **Context:** review finding #9: the ranked, Following and guest feeds returned every slide of every note, though a card
   shows one slide at a time.
@@ -1638,6 +1661,32 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (`server/vite.config.ts`: `STORAGE_DIR` under it, `TMPDIR`/`TMP`/`TEMP` pointing at it), so parallel runs no longer
   see each other's `notalah-video-*` files, which had made `tests/assets/video*.test.ts` flaky.
 - **Reversibility:** High: no schema change; raise `CARD_SLIDES` or drop the limit to restore the old payload.
+
+## D72 - Feed video player (R29, 20 Oct 2026)
+- **Context:** the server half (D59, D67) is done; boards drew a bare `<video controls>`. The feed needs TikTok-style
+  muted autoplay with tap for sound, and R9 background audio will need to share the "one sound at a time" rule.
+- **Decision:** `components/board/VideoPlayer.tsx` replaces the bare element. Muted, `playsInline`, `preload="metadata"`,
+  poster shown until playback. It plays while an IntersectionObserver reports at least 50 % visible and its slide is the
+  carousel's current one, and pauses otherwise. A tap on the video or the sound button (top right, `aria-pressed`) turns
+  sound on; sound goes off when the video pauses or leaves view. Processing and failed tiles are unchanged (`VideoTile`).
+  Note view, shared note and feed share the player; the note view also starts muted, so nothing autoplays with sound.
+- **Reduced motion:** no autoplay; poster plus a centred Play button (Pause at top left once started). The same Play
+  button appears when the browser refuses to play (low-power or data-saver mode) or a non-looping video ends. Controls
+  show only while the video is on screen on the current slide; leaving view resets them. The sound button is labelled
+  "Video sound" with `aria-pressed`. `preload="none"`: the feed never unmounts cards, so metadata fetches would add up.
+- **Sound rule:** `hooks/useActiveSound.ts` keeps the id that currently holds sound (module store,
+  `useSyncExternalStore`). `useActiveSound(id)` returns `{ active, claim, release }`; claiming mutes the previous holder.
+  R9 reuses it with its own id for background audio.
+- **SlideCarousel change:** each slide is wrapped in `SlideActive` (a context: true for the current slide). Outside a
+  carousel the context is undefined and a board shows the poster only, so profile and search tiles never autoplay.
+  `SlideBoard` also publishes its scale (`BoardScale`) so the buttons keep a 44 px size inside the scaled board.
+- **Editor picker:** already enabled (`VideoPicker` in Elements, D59 upload flow, VID-TC15); D58's "disabled tile" note
+  is out of date. No change.
+- **Chrome quirk:** an observer created in the same commit as the board's scale transform could report an empty box
+  once and never update (seen with reduced motion), so observation starts two frames after mount.
+- **Gap for design:** the sound and play icons are `media` with `media-shadow`; over very bright footage they are faint.
+- **Tests:** CLI-TC71 to CLI-TC76; VID-TC10 now wraps its board in `SlideActive`.
+- **Reversibility:** High: presentation only, no schema or API change.
 
 ## D73 - Background music from Jamendo (R9, FR17, 20 Oct 2026)
 - **Context:** FR17 was restored on 14 Oct with Deezer, then switched to Jamendo (D43) because Deezer's terms limit use to
@@ -1673,3 +1722,34 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   URLs carry a signed `from` token and expire); a `MUSIC_T` table (one track per note makes columns enough).
 - **Tests:** MUS-TC1 to MUS-TC17; USE-TC7 and DEP-TC12 updated.
 - **Reversibility:** High: one migration (down restores the Deezer check and drops the licence column), one feature folder.
+
+## D74 - One free origin through a Cloudflare Pages proxy (supersedes the domain part of D65 and D66) (20 Oct 2026)
+- **Context:** D65/D66 needed a registrable domain (`app.` + `api.`) so the SameSite=Lax login cookie reaches the API.
+  The GitHub Student Pack `.me` domain is not available to the user (Malaysia), and the user wants no paid domain.
+- **Decision (user, 20 Oct: option 1):** the client stays on Cloudflare Pages at its free `*.pages.dev` hostname. A Pages
+  Function forwards `/api/*` and `/socket.io/*` (WebSocket upgrades included) to the Render free web service, so the
+  browser only ever talks to one origin and the cookie is first-party. `_routes.json` limits the Function to those two
+  paths, so static assets never invoke it (static requests are free and unlimited).
+  - The Function overwrites `X-Forwarded-For` with `CF-Connecting-IP` (never appends a client-sent value); production
+    sets `TRUST_PROXY=2` (Function + Render), checked once with `DEBUG_PROXY=1` as in D65.
+  - Credentialed CORS is no longer needed in production; the startup guards stay.
+  - Public-note media keep streaming through the API (no R2 custom domain, which needs an owned zone); `r2.dev` public
+    URLs are not used (rate-limited, not for production).
+- **Free-tier caps (the user must never pay; Cloudflare items):**
+  - **Workers/Pages Functions:** stay on the Workers **Free** plan; never subscribe to Workers Paid. Free allows 100,000
+    Function + Worker requests a day (reset 00:00 UTC); past it Cloudflare returns error 1027 instead of billing. The
+    Pages project is set to **fail closed** so the proxy never silently bypasses to static pages. The k6 test (R27) stays
+    well under the daily quota.
+  - **R2:** the only Cloudflare product that bills past its free tier. Already guarded app-side by R34 (D57): storage,
+    Class A/B ops and served bytes capped at 80% (monthly R2 caps 50% until the billing period is confirmed), kill switch.
+  - **Workers AI (R36):** Free plan, 10,000 neurons a day, fails instead of billing; R36 adds an app-side daily cap at 80%.
+  - **Account:** a Cloudflare billing notification (usage-based, lowest threshold) set by the user as a second line.
+- **Limitation and future work:** a free-tier cap, not a design preference. Every API call takes one extra hop through
+  the Function, the daily Function quota bounds total traffic, and the app lives on a platform subdomain. With a paid
+  stack the upgrade is an owned domain with `app.`/`api.` subdomains (D65's layout), an R2 custom domain with CDN caching
+  for public media, and an always-on API instance; no app code change beyond `TRUST_PROXY` and CORS origin. Recorded for
+  Chapter 6 (limitations and future work).
+- **Alternatives:** Vercel rewrites (no WebSocket, Socket.io falls back to polling; Hobby plan non-commercial); Express
+  serving the client on Render (no CDN, cold start on page load); free subdomain services such as is-a.dev (volunteer-run,
+  no zone for R2); a paid domain (rejected by the user: no cost).
+- **Reversibility:** High: delete the Function and point `VITE_API_URL`/CORS at an owned `api.` domain.

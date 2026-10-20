@@ -3,6 +3,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
+  useContext,
   useLayoutEffect,
   useRef,
   useState,
@@ -19,6 +20,7 @@ import {
 } from '@notalah/shared';
 import { apiOrigin } from '@/lib/api';
 import type { VideoStatus } from '@/types';
+import { BoardScale, SlideActive, VideoPlayer } from './VideoPlayer';
 import { arrowHead, backgroundCss, cropBox, FONT_STACK, fitScale, inReadingOrder, shapePoints } from './geometry';
 
 /** What the board draws; page notes are never shown on it. */
@@ -247,7 +249,7 @@ function VideoTile({ status }: { status?: VideoStatus }) {
 }
 
 /**
- * A ready video plays in the viewer and shows its poster in the editor, where a click must select it, not play it.
+ * A ready video plays inside a carousel (VideoPlayer); everywhere else, and in the editor where a click must select it, it shows its poster.
  * Until the worker finishes it is a tile saying it is processing or that it failed (R40).
  */
 function Video({
@@ -261,23 +263,15 @@ function Video({
   status?: VideoStatus;
   playable: boolean;
 }) {
+  const slideActive = useContext(SlideActive);
   const url = assets[String(el.assetId)];
   if (!url) return <VideoTile status={status} />;
   const src = url.startsWith('/') ? apiOrigin() + url : url;
   const poster = `${src}?poster=1`;
-  if (!playable) return <img src={poster} alt="" className="size-full object-cover" draggable={false} />;
-  return (
-    <video
-      src={src}
-      poster={poster}
-      controls
-      playsInline
-      preload="none"
-      loop={el.loop}
-      aria-label="Video"
-      className="size-full bg-surface-strong object-contain"
-    />
-  );
+  if (!playable || slideActive === undefined) {
+    return <img src={poster} alt="" className="size-full object-cover" draggable={false} />;
+  }
+  return <VideoPlayer src={src} poster={poster} loop={el.loop} slideActive={slideActive} />;
 }
 
 function Body({
@@ -372,90 +366,92 @@ export function SlideBoard({
 
   const credits = creditsOf(slide);
   return (
-    <div ref={box} className="flex size-full items-center justify-center" data-mode={mode}>
-      <div
-        className="relative shrink-0 rounded-[inherit]"
-        style={{
-          width: BOARD_WIDTH * scale,
-          height: height * scale,
-          visibility: scale ? 'visible' : 'hidden',
-        }}
-      >
+    <BoardScale value={scale}>
+      <div ref={box} className="flex size-full items-center justify-center" data-mode={mode}>
         <div
-          role="group"
-          aria-roledescription="slide"
-          aria-label={label}
-          className="absolute inset-0 overflow-hidden rounded-[inherit]"
+          className="relative shrink-0 rounded-[inherit]"
+          style={{
+            width: BOARD_WIDTH * scale,
+            height: height * scale,
+            visibility: scale ? 'visible' : 'hidden',
+          }}
         >
           <div
-            ref={edit?.boardRef}
-            className="absolute top-0 left-0 origin-top-left"
-            style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={label}
+            className="absolute inset-0 overflow-hidden rounded-[inherit]"
           >
-            <div className="absolute inset-0" onPointerDown={edit?.onBackgroundPointerDown}>
-              <Background fill={slide.background} assets={assets} />
-            </div>
-            {inReadingOrder(slide.elements).map(({ el, z }) => (
-              <div
-                key={el.id}
-                data-element={el.type}
-                data-id={edit ? el.id : undefined}
-                tabIndex={edit ? 0 : undefined}
-                role={edit ? 'group' : undefined}
-                aria-roledescription={edit ? 'element' : undefined}
-                aria-label={edit?.elementLabel?.(el)}
-                onPointerDown={edit?.onElementPointerDown && ((e) => edit.onElementPointerDown?.(e, el))}
-                onFocus={edit?.onElementFocus && ((e) => e.target === e.currentTarget && edit.onElementFocus?.(el))}
-                className={edit ? 'absolute touch-none outline-none' : 'absolute'}
-                style={{
-                  left: el.x,
-                  top: el.y,
-                  width: el.w,
-                  height: el.h,
-                  zIndex: z,
-                  opacity: el.opacity,
-                  transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
-                }}
-              >
-                {edit?.renderBody?.(el) ?? (
-                  <Body el={el} assets={assets} videoStatus={videoStatus} playable={mode === 'view'} />
-                )}
+            <div
+              ref={edit?.boardRef}
+              className="absolute top-0 left-0 origin-top-left"
+              style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+            >
+              <div className="absolute inset-0" onPointerDown={edit?.onBackgroundPointerDown}>
+                <Background fill={slide.background} assets={assets} />
               </div>
-            ))}
+              {inReadingOrder(slide.elements).map(({ el, z }) => (
+                <div
+                  key={el.id}
+                  data-element={el.type}
+                  data-id={edit ? el.id : undefined}
+                  tabIndex={edit ? 0 : undefined}
+                  role={edit ? 'group' : undefined}
+                  aria-roledescription={edit ? 'element' : undefined}
+                  aria-label={edit?.elementLabel?.(el)}
+                  onPointerDown={edit?.onElementPointerDown && ((e) => edit.onElementPointerDown?.(e, el))}
+                  onFocus={edit?.onElementFocus && ((e) => e.target === e.currentTarget && edit.onElementFocus?.(el))}
+                  className={edit ? 'absolute touch-none outline-none' : 'absolute'}
+                  style={{
+                    left: el.x,
+                    top: el.y,
+                    width: el.w,
+                    height: el.h,
+                    zIndex: z,
+                    opacity: el.opacity,
+                    transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+                  }}
+                >
+                  {edit?.renderBody?.(el) ?? (
+                    <Body el={el} assets={assets} videoStatus={videoStatus} playable={mode === 'view'} />
+                  )}
+                </div>
+              ))}
+            </div>
+            {credits.length > 0 && (
+              <p className="absolute top-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
+                Photo by{' '}
+                {credits.map((c, i) => (
+                  <span key={c.name}>
+                    {i > 0 && ', '}
+                    <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
+                      {c.name}
+                    </a>
+                  </span>
+                ))}{' '}
+                on{' '}
+                <a
+                  href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-semibold underline"
+                >
+                  Unsplash
+                </a>
+              </p>
+            )}
           </div>
-          {credits.length > 0 && (
-            <p className="absolute top-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
-              Photo by{' '}
-              {credits.map((c, i) => (
-                <span key={c.name}>
-                  {i > 0 && ', '}
-                  <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
-                    {c.name}
-                  </a>
-                </span>
-              ))}{' '}
-              on{' '}
-              <a
-                href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="font-semibold underline"
-              >
-                Unsplash
-              </a>
-            </p>
+          {edit?.overlay && (
+            // Outside the clipped slide, so handles and frames of elements at the edge stay whole and grabbable.
+            <div
+              className="pointer-events-none absolute top-0 left-0 origin-top-left"
+              style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+            >
+              {edit.overlay}
+            </div>
           )}
         </div>
-        {edit?.overlay && (
-          // Outside the clipped slide, so handles and frames of elements at the edge stay whole and grabbable.
-          <div
-            className="pointer-events-none absolute top-0 left-0 origin-top-left"
-            style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
-          >
-            {edit.overlay}
-          </div>
-        )}
       </div>
-    </div>
+    </BoardScale>
   );
 }

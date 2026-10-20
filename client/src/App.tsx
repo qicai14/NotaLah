@@ -10,6 +10,7 @@ import { ProtectedRoute } from './features/auth/ProtectedRoute';
 const Welcome = lazy(() => import('./features/auth/Welcome'));
 const Feed = lazy(() => import('./features/feed/Feed'));
 const Search = lazy(() => import('./features/search/Search'));
+const Notifications = lazy(() => import('./features/notifications/Notifications'));
 const Saved = lazy(() => import('./features/feed/Saved'));
 const Drafts = lazy(() => import('./features/notes/Drafts'));
 const NoteDetail = lazy(() => import('./features/notes/NoteDetail'));
@@ -54,6 +55,7 @@ function ShellRoutes() {
           <Route path="/share/:token" element={<SharedNote />} />
           <Route path="/drafts" element={signedIn(<Drafts />)} />
           <Route path="/messages/*" element={signedIn(<Messages />)} />
+          <Route path="/notifications" element={signedIn(<Notifications />)} />
           <Route path="/saved" element={signedIn(<Saved />)} />
           <Route path="/profile" element={signedIn(<Profile />)} />
           <Route path="/profile/edit" element={signedIn(<EditProfile />)} />

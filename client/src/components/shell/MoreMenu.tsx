@@ -1,4 +1,4 @@
-import { Bookmark, LogOut, Menu, Monitor, Moon, MoreHorizontal, Sun } from 'lucide-react';
+import { Bell, Bookmark, LogOut, Menu, Monitor, Moon, MoreHorizontal, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/features/auth/AuthContext';
+import { useNotificationUnread } from '@/features/notifications/NotificationsContext';
 import { useAction } from '@/lib/useAction';
 import { type ThemePreference, useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ export function MoreMenu({ variant, collapsed = false }: { variant: 'rail' | 'ic
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const unread = useNotificationUnread();
   const { run, error } = useAction();
 
   const logOut = () =>
@@ -75,6 +77,18 @@ export function MoreMenu({ variant, collapsed = false }: { variant: 'rail' | 'ic
           {user && (
             <>
               <DropdownMenuSeparator />
+              {variant === 'icon' && (
+                <DropdownMenuItem className="h-10 rounded-sm" onSelect={() => navigate('/notifications')}>
+                  <Bell className="size-4" aria-hidden="true" />
+                  Notifications
+                  {unread > 0 && (
+                    <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-caption font-bold text-primary-foreground tabular-nums">
+                      <span className="sr-only">{unread} unread</span>
+                      <span aria-hidden="true">{unread > 99 ? '99+' : unread}</span>
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              )}
               {variant === 'icon' && (
                 <DropdownMenuItem className="h-10 rounded-sm" onSelect={() => navigate('/saved')}>
                   <Bookmark className="size-4" aria-hidden="true" />

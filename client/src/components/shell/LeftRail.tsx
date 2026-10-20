@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/features/auth/AuthContext';
 import { useUnread } from '@/features/messaging/MessagingContext';
+import { useNotificationUnread } from '@/features/notifications/NotificationsContext';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { MoreMenu } from './MoreMenu';
@@ -24,8 +25,9 @@ function RailLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const { pathname, search } = useLocation();
   const active = isActive(item, pathname, search);
   const Icon = item.icon;
-  const unread = useUnread();
-  const count = item.to === '/messages' ? unread : 0;
+  const messages = useUnread();
+  const notifications = useNotificationUnread();
+  const count = item.to === '/messages' ? messages : item.to === '/notifications' ? notifications : 0;
   const link = (
     <Link
       to={item.to}
