@@ -1,6 +1,7 @@
 import {
   BOARD_WIDTH,
   type CodeLang,
+  type El,
   type ImageSource,
   LIMITS,
   round1,
@@ -83,8 +84,6 @@ export function makeLine(boardH: number, arrow = false): SlideElement {
     endCap: arrow ? 'arrow' : 'none',
   };
 }
-
-type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
 
 export const CODE_LANG_NAMES: Record<CodeLang, string> = {
   plaintext: 'Plain text',

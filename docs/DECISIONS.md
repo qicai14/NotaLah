@@ -1597,8 +1597,11 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   (a JetBrains Mono box keeps its font; inline span colours are kept); tables take the body font, text colour and muted
   borders; shapes and lines take the accent, except a shape filled with the previous theme's muted colour (the image
   placeholder), which stays muted; code blocks take the theme's code style; every slide without a photo background gets
-  the theme background. One undo step. New text, shapes, lines, tables, code and blank slides are created in the current
-  theme. `pst_template` stores the theme id (no migration: the column has no CHECK and the schema already rejects
+  the theme background. One undo step. A text box with a fill keeps its text colour, so the pair stays readable (light
+  Midnight text on a white box would vanish). Hand-coloured inline words (span colours) are kept on purpose; undo
+  restores the rest. New text, shapes, lines, tables, code and blank slides are created in the current
+  theme. Old decks (`lecture`, `revision`, `howto`, saved before R21d with plain styling) get the theme only for new
+  content; clicking the theme card makes the whole deck match. `pst_template` stores the theme id (no migration: the column has no CHECK and the schema already rejects
   unknown ids).
 - **UI:** a Design panel first in the editor rail and phone tray (theme cards, live layout previews). A layout fills the
   active slide when it has no elements (keeping its page notes), else becomes a new slide after it. The Template select

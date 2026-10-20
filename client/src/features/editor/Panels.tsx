@@ -115,6 +115,10 @@ function TextPanel({ onAdd }: { onAdd?: () => void }) {
   );
 }
 
+/** A theme card or layout tile. */
+const card =
+  'flex flex-col gap-1.5 rounded-md p-1 text-left text-body-sm transition-colors duration-(--duration-fast) hover:bg-surface active:scale-[0.97]';
+
 /** Deck themes and slide layouts (R21d, D69). Swatches are deck colours, so they are drawn from the theme data. */
 function DesignPanel({ onAdd }: { onAdd?: () => void }) {
   const current = useEditor((s) => s.deck.theme);
@@ -134,17 +138,18 @@ function DesignPanel({ onAdd }: { onAdd?: () => void }) {
         <p className="text-caption text-muted-foreground">
           Restyles fonts and colours on every slide. Undo takes it back.
         </p>
-        <div className="grid grid-cols-2 gap-2 max-md:grid-cols-3">
+        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-2 max-md:grid-cols-3">
           {THEME_IDS.map((id) => {
             const t = THEMES[id];
             return (
               <button
                 key={id}
                 type="button"
-                aria-pressed={current === id}
+                role="radio"
+                aria-checked={current === id}
                 aria-label={`${t.name} theme: ${FONT_NAMES[t.headingFont]} and ${FONT_NAMES[t.bodyFont]}`}
                 onClick={() => useEditor.getState().apply((d) => applyTheme(d, id))}
-                className="flex flex-col gap-1.5 rounded-md p-1 text-left text-body-sm transition-colors duration-(--duration-fast) hover:bg-surface active:scale-[0.97] aria-pressed:bg-surface-strong aria-pressed:font-semibold"
+                className={cn(card, 'aria-checked:bg-surface-strong aria-checked:font-semibold')}
               >
                 <span
                   aria-hidden="true"
@@ -182,7 +187,7 @@ function DesignPanel({ onAdd }: { onAdd?: () => void }) {
                 insertSlide(layoutSlide(id, THEMES[deck.theme], deck.aspect, newId));
                 onAdd?.();
               }}
-              className="flex flex-col gap-1.5 rounded-md p-1 text-left text-body-sm transition-colors duration-(--duration-fast) hover:bg-surface active:scale-[0.97]"
+              className={card}
             >
               <span
                 aria-hidden="true"

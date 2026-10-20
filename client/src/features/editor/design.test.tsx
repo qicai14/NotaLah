@@ -38,7 +38,15 @@ describe('themes and layouts', () => {
   it('NOTE-TC91: applying a theme writes concrete fonts and colours and keeps photo backgrounds', () => {
     const heading = makeText('heading', 1250);
     const mono = { ...makeText('body', 1250), font: 'jetbrains-mono' as const };
-    const els: SlideElement[] = [heading, makeText('body', 1250), mono, makeTable(1250), makeShape('rect', 1250)];
+    const boxed = { ...makeText('body', 1250), fill: '#ffffff', color: '#222222' };
+    const els: SlideElement[] = [
+      heading,
+      makeText('body', 1250),
+      mono,
+      makeTable(1250),
+      makeShape('rect', 1250),
+      boxed,
+    ];
     const deck: Deck = {
       ...emptyDeck(),
       slides: [
@@ -55,6 +63,7 @@ describe('themes and layouts', () => {
     expect(code).toMatchObject({ font: 'jetbrains-mono', color: m.text });
     expect(table).toMatchObject({ font: m.bodyFont, color: m.text, borderColor: m.muted });
     expect(shape).toMatchObject({ fill: m.accent, stroke: null });
+    expect(out.slides[0].elements[5]).toMatchObject({ font: m.bodyFont, color: '#222222' }); // filled box keeps its colour
     expect(out.slides[0]).toMatchObject({ background: m.background, notes: 'mine' });
     expect(out.slides[1].background).toBe(photo);
     expect(out.slides[1].elements[0]).toMatchObject({ type: 'code', theme: m.code });
@@ -79,8 +88,10 @@ describe('themes and layouts', () => {
     );
     expect(framed.slides[0].elements[0]).toMatchObject({ fill: THEMES.journal.muted });
 
+    s().apply((d) => ({ ...d, slides: [{ ...d.slides[0], background: photo }] }));
     s().insertSlide(layoutSlide('title', THEMES.plain, '4:5', newId)); // empty first slide is filled
     expect(s().deck.slides).toHaveLength(1);
+    expect(s().deck.slides[0].background).toBe(photo); // and keeps its photo
     s().insertSlide(layoutSlide('code', THEMES.plain, '4:5', newId)); // a full one gets a new slide after it
     expect(s().deck.slides).toHaveLength(2);
     expect(s().activeSlide).toBe(1);
@@ -100,11 +111,11 @@ describe('themes and layouts', () => {
   it('NOTE-TC94: the Design panel applies a theme to the deck and adds a layout slide (client)', () => {
     s().addElement(makeText('heading', 1250));
     render(<PanelBody id="design" details={details} />);
-    expect(screen.getByRole('button', { name: /^Plain theme/ }).getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: /^Journal theme/ }));
+    expect(screen.getByRole('radio', { name: /^Plain theme/ }).getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(screen.getByRole('radio', { name: /^Journal theme/ }));
     expect(s().deck.theme).toBe('journal');
     expect(s().deck.slides[0].elements[0]).toMatchObject({ font: 'lora', color: THEMES.journal.heading });
-    expect(screen.getByRole('button', { name: /^Journal theme/ }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('radio', { name: /^Journal theme/ }).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Two columns' }));
     expect(s().deck.slides).toHaveLength(2);
     expect(s().deck.slides[1].background).toEqual(THEMES.journal.background);

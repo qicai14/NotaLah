@@ -1,4 +1,4 @@
-import type { Deck, Fill, Slide, SlideElement } from './deck.js';
+import type { Deck, El, Fill, Slide, SlideElement } from './deck.js';
 import { round1 } from './geometry.js';
 import { type Aspect, BOARD_WIDTH, boardHeight, type FontId, type ThemeId } from './limits.js';
 
@@ -111,10 +111,9 @@ export const THEMES: Record<ThemeId, Theme> = {
   },
 };
 
-type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
-
 /**
- * One element in a theme's fonts and colours. Text keeps a monospace font and its inline colours; shapes filled with
+ * One element in a theme's fonts and colours. Text keeps a monospace font and its inline colours, and a filled box
+ * keeps its text colour; shapes filled with
  * the previous theme's muted colour are placeholders and stay muted; images and videos are untouched.
  */
 export function themeElement(el: SlideElement, theme: Theme, previous: Theme = theme): SlideElement {
@@ -124,7 +123,8 @@ export function themeElement(el: SlideElement, theme: Theme, previous: Theme = t
       return {
         ...el,
         font: el.font === 'jetbrains-mono' ? el.font : heading ? theme.headingFont : theme.bodyFont,
-        color: heading ? theme.heading : theme.text,
+        // A filled box keeps its text colour, so the text/fill pair stays readable.
+        color: el.fill ? el.color : heading ? theme.heading : theme.text,
       };
     }
     case 'table':

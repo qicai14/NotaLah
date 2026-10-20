@@ -1,6 +1,7 @@
 import {
   CODE_LANGS,
   type CodeLang,
+  type El,
   FONT_IDS,
   FONT_NAMES,
   type FontId,
@@ -281,8 +282,6 @@ function OpenButton({ id, label, locked }: { id: string; label: string; locked: 
     </Button>
   );
 }
-
-type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
 
 function Stepper({
   what,

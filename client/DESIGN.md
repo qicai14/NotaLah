@@ -69,8 +69,8 @@ Tracking tightens as size grows; these are built into the classes, so do not add
 | `text-caption` | 0.75rem / 1rem, +0.01em | Counts, chips, hints |
 
 Slides use their own curated fonts (deck data, never UI type): Source Sans 3, Atkinson Hyperlegible, Lora, Merriweather,
-Montserrat and JetBrains Mono, self-hosted from `@fontsource` in `index.css` (each woff2 downloads only when a slide uses
-it). Ids and names live in `@notalah/shared` (`FONT_IDS`, `FONT_NAMES`); CSS stacks in `components/board/geometry.ts`.
+Montserrat and JetBrains Mono, self-hosted from `@fontsource` in `index.css` (each woff2 downloads only when a slide, the Design
+panel or the font list shows it). Ids and names live in `@notalah/shared` (`FONT_IDS`, `FONT_NAMES`); CSS stacks in `components/board/geometry.ts`.
 
 Weights: 400 body, 600 labels and meta names, 700 headings and buttons, 800 display and the wordmark. Sentence case
 everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.

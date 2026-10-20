@@ -348,8 +348,15 @@ export const useEditor = create<EditorStore>()((set, get) => {
       const empty = !get().deck.slides[here].elements.length;
       if (!empty && slideCount() >= LIMITS.slides) return;
       const at = empty ? here : here + 1;
-      // An empty slide is replaced but keeps its page notes.
-      const placed = empty ? { ...slide, notes: get().deck.slides[here].notes } : slide;
+      // An empty slide is replaced but keeps its page notes and a photo background.
+      const old = get().deck.slides[here];
+      const placed = empty
+        ? {
+            ...slide,
+            notes: old.notes,
+            background: old.background.kind === 'image' ? old.background : slide.background,
+          }
+        : slide;
       apply((d) => ({ ...d, slides: spliced(d.slides, at, empty ? 1 : 0, placed) }), {
         activeSlide: at,
         selection: [],

@@ -1,9 +1,7 @@
-import { LIMITS, type SlideElement } from '@notalah/shared';
+import { type El, LIMITS } from '@notalah/shared';
 import { type CSSProperties, useEffect, useRef } from 'react';
 import { FONT_STACK } from '@/components/board/geometry';
 import { patchElement, useEditor } from './store';
-
-type El<T extends SlideElement['type']> = Extract<SlideElement, { type: T }>;
 
 /** Typing previews into the deck; the whole visit is one undo step, committed when the block closes. */
 function useCommitOnClose() {
