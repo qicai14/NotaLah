@@ -1551,3 +1551,34 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Tests:** VID-TC1 to VID-TC15; NOTE-TC39, NOTE-TC70 and STO-TC15 updated for the 202 flow and the profile box.
 - **Reversibility:** Medium: the migration has a down step (processing and failed assets become rejected); reverting
   the code restores the synchronous route.
+
+## D68 - Code clean-up (R38, 20 Oct 2026)
+- **Context:** the 20 Oct architecture review (D66) found copy-paste, hand-written permission checks and cache gaps. No
+  behaviour changes except the caching and metering items below.
+- **Lockfile:** the server pinned `@types/node` 24 while the rest resolved 26, so `vite-plus` and `vitest` each resolved
+  twice (one copy with Sentry's `@opentelemetry` peer) and local runs sometimes failed with "Vitest failed to find the
+  runner". One `@types/node` override in `pnpm-workspace.yaml` leaves a single copy (`pnpm why vitest`).
+- **Rate limiters:** `createLimiter` in `auth/rateLimit.ts` holds the shared headers, `PgStore` prefix and test switch;
+  each feature builds its own limiter (assets: upload, video, file; unsplash; auth: login, register, write, guest).
+  `PgStore.windows` still records each prefix's window, so the R37 purge is unchanged. The file cap moved to `ASSETS`.
+- **Note access:** `notes/access.ts` `noteAccess(req, res, roles, { editable, forbidden })` replaces the helper in
+  collaboration and the hand-written checks in the note routes (404 unreadable, 403 wrong role, and with `editable`
+  403 hidden or restricted author). Same statuses and messages.
+- **Publish:** `POST /api/notes/:id/publish` is one conditional UPDATE (`publishNote`: status, visibility, published_at,
+  only for the owner's draft whose `pst_updated_at` still equals the value read, compared at millisecond precision).
+  Completeness rules moved to `publishErrors` (hashtag, non-blank slide, module). `replaceNote` lost `ignoreLock`.
+  Blank slides are no longer stripped on publish; the editor already drops them when it saves a publish through PUT.
+- **Guest feed:** a guest's first page rounds "now" down to 60 s, so guests share one cached ranking per minute; a note
+  published in the last minute reaches guests a little later. An explicit `asOf` is untouched.
+- **Media:** asset files are `Cache-Control: private, max-age=31536000, immutable`. Trade-off: a hidden or deleted
+  note's image can stay in a browser that already holds it (it was five minutes before); the URL still checks
+  visibility for everyone else.
+- **Served bytes:** new monthly metric `served_bytes` in `"USAGE_COUNTER_T"` (no migration), counted when a file stream
+  starts. `USAGE_CAP_SERVED_BYTES` can lower the 50 GB default (half of Render's free 100 GB); at the cap video
+  requests answer 503 and images and posters keep serving. It appears in the admin usage report.
+- **Other:** 57 file-local exports and four shared deck schemas are no longer exported; a read past the Class B cap says
+  "Media is temporarily unavailable"; the image upload route checks `UPLOADS_DISABLED` before reading and re-encoding.
+- **Alternatives:** a per-limiter class (more code for the same result); counting served bytes on stream end (exact, but
+  an aborted download or a crash would go uncounted); stopping all media at the bandwidth cap (rejected: images are small).
+- **Tests:** CLN-TC1 to CLN-TC3; USE-TC4 and USE-TC7 updated.
+- **Reversibility:** High: no schema change; each item is its own commit.

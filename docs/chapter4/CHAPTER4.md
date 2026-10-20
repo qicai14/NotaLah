@@ -1522,14 +1522,22 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USE-TC1 | Atomic usage counter | 40 concurrent consume calls of 1 against a cap of 25; then 3 and 2 against cap 27; a cap smaller than the amount | Exactly 25 succeed and the stored count is 25; 3 is refused and 2 accepted; an amount above the cap is refused | | |
 | USE-TC2 | Period rollover | Hourly counter filled at 14:59 UTC, then a call at 15:00; month and day keys | The 15:00 call is allowed from zero; keys are `2026-10-18T14`, `2026-10` and `2026-10-18` | | |
 | USE-TC3 | Storage cap refusal | live assets summing to the 8 GB cap, then an upload by another user; the assets then marked deleted | 507 "Image storage is full" and no Class A count; after deletion the upload gives 201 | | |
-| USE-TC4 | Class A and Class B exhausted | Upload and serve once; Class B set to its cap, then the file request and a modules request; Class A set to its cap, then an upload | Counts are 1 and 1; file request 503 "Monthly image limit reached" while modules stays 200; upload 503 with the same message | | |
+| USE-TC4 | Class A and Class B exhausted | Upload and serve once; Class B set to its cap, then the file request and a modules request; Class A set to its cap, then an upload | Counts are 1 and 1; file request 503 "Media is temporarily unavailable" while modules stays 200; upload 503 "Monthly upload limit reached" | | |
 | USE-TC5 | Unsplash app-wide hourly cap | Counter at cap minus 1; two different searches; the first search repeated | First 200, second 503 with no outbound request; the repeated cached search 200 | | |
 | USE-TC6 | Upload kill switch | `UPLOADS_DISABLED=true`, then an upload | 503 "Uploads are turned off"; nothing stored or counted | | |
-| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, unsplash (cap 25) and storage_bytes (cap 8000000000) | | |
+| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, served_bytes (cap 50000000000), unsplash (cap 25) and storage_bytes (cap 8000000000) | | |
 | USE-TC8 | Env cap lowers but never raises | Caps of unset, `5000`, `600000`, `999999999`, `-1` and `lots` for Class A (default 500,000); `9000000000` for storage | 500,000; 5000; 500,000; 500,000; default; default; 8,000,000,000 | | |
 | USE-TC9 | Counter failure | Usage table unreachable; an upload, a file request, a storage delete | Upload 500 and no file written; file request 500; delete still removes the file | | |
 
-*Table 4.39: R2 storage driver test cases (STO)*
+*Table 4.39: Code clean-up test cases (CLN)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| CLN-TC1 | Guest first page cutoff | Two guest requests to `/api/feed` in the same minute, the only note hidden between them | `asOf` is a whole minute and equal in both; the second page-1 answer reuses the cached ranking and drops the hidden note | | |
+| CLN-TC2 | Immutable asset files | A public note image requested | `Cache-Control: private, max-age=31536000, immutable` | | |
+| CLN-TC3 | Served-bytes meter | An image served; a ready video served with `Range: bytes=0-99`; the counter then set to its cap; the video and the image requested again | served_bytes equals the image size, then grows by 100; video 503 "Video is temporarily unavailable"; image 200 | | |
+
+*Table 4.40: R2 storage driver test cases (STO)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1549,7 +1557,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | STO-TC14 | Image put fails | `storage.put` rejects (timeout) on an image upload | 500; `storage.remove` is called with the key the put used | | |
 | STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `o/` key of the original (R40) | | |
 
-*Table 4.40: Deploy readiness test cases (DEP)*
+*Table 4.41: Deploy readiness test cases (DEP)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1565,7 +1573,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | DEP-TC10 | Purge cannot remove a file | An unlinked asset 2 days old; `storage.remove` fails with R2 status 500 | 1 asset purged, 1 orphaned file counted; the row stays deleted; the key is logged and `db:purge` exits 1 | | |
 | DEP-TC11 | Forged entry in a forwarded chain | `TRUST_PROXY=1`, proxy peer 10.0.0.1, `X-Forwarded-For: 6.6.6.6, 203.0.113.5` | 200; the only counter key is `guest:203.0.113.5` | | |
 
-*Table 4.41: Async video pipeline test cases (VID)*
+*Table 4.42: Async video pipeline test cases (VID)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1589,7 +1597,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.42: UAT tester details*
+*Table 4.43: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1597,7 +1605,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.43: UAT scenario tasks*
+*Table 4.44: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1616,7 +1624,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.44: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.45: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1626,7 +1634,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.45: UAT feedback and developer response*
+*Table 4.46: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1637,7 +1645,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.46: Ranking weight re-evaluation (NFR5)*
+*Table 4.47: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |
