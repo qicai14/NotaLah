@@ -169,9 +169,17 @@ describe('free-tier cost guard (R34, D57)', () => {
     const res = await request(app).get('/api/admin/usage').set(asUser(admin));
     expect(res.status).toBe(200);
     const byMetric = Object.fromEntries(res.body.usage.map((r: { metric: string }) => [r.metric, r]));
-    expect(Object.keys(byMetric).sort()).toEqual(['class_a', 'class_b', 'served_bytes', 'storage_bytes', 'unsplash']);
+    expect(Object.keys(byMetric).sort()).toEqual([
+      'class_a',
+      'class_b',
+      'jamendo',
+      'served_bytes',
+      'storage_bytes',
+      'unsplash',
+    ]);
     expect(byMetric.class_a).toMatchObject({ used: 3, cap: 500_000 });
     expect(byMetric.unsplash.cap).toBe(25);
+    expect(byMetric.jamendo.cap).toBe(28_000);
     expect(byMetric.served_bytes).toMatchObject({ used: 0, cap: 50_000_000_000 });
     expect(byMetric.storage_bytes).toMatchObject({
       used: 0,

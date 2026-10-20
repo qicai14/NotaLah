@@ -4,6 +4,7 @@ import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { Coauthors } from '../../components/Coauthors';
 import { EditedBadge } from '../../components/EditedBadge';
 import { LecturerBadge } from '../../components/LecturerBadge';
+import { MusicChip } from '../../components/MusicChip';
 import { NoteActions } from '../../components/NoteActions';
 import { SlideCarousel } from '../../components/board/SlideCarousel';
 import { VerifiedPill } from '../../components/VerifiedPill';
@@ -121,6 +122,7 @@ export const NoteCard = memo(function NoteCard({
               <span className="sr-only">, {item.module.name}</span>
             </p>
           )}
+          {item.music && <MusicChip music={item.music} className="mb-2 self-start max-md:mx-3" />}
           <div className="min-h-0 flex-1">
             <SlideCarousel
               slides={item.slides}

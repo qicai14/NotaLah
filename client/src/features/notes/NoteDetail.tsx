@@ -10,6 +10,7 @@ import { Coauthors } from '../../components/Coauthors';
 import { EditedBadge } from '../../components/EditedBadge';
 import { LecturerBadge } from '../../components/LecturerBadge';
 import { NoteActions } from '../../components/NoteActions';
+import { MusicChip } from '../../components/MusicChip';
 import { SlideCarousel } from '../../components/board/SlideCarousel';
 import { timeAgo, visibilityLabel } from '../../lib/format';
 import { useFetch } from '../../lib/useFetch';
@@ -160,6 +161,7 @@ export default function NoteDetail() {
           <div className="flex items-end gap-4">
             <div className="min-w-0 flex-1 rounded-2xl border bg-card p-4 shadow-(--shadow-card) md:p-6">
               {n.module && <p className="mb-3 text-caption font-semibold text-muted-foreground">{n.module.code}</p>}
+              {n.music && <MusicChip music={n.music} className="mb-3" />}
               <div ref={deck} className="h-[min(36rem,64dvh)]">
                 <SlideCarousel
                   slides={n.slides}

@@ -2,6 +2,7 @@ import { Eye, LogIn, Pencil } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageMessage } from '@/components/PageMessage';
 import { Coauthors } from '@/components/Coauthors';
+import { MusicChip } from '@/components/MusicChip';
 import { SlideCarousel } from '@/components/board/SlideCarousel';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
@@ -132,6 +133,7 @@ export default function SharedNote() {
 
       <div className="rounded-2xl border bg-card p-4 shadow-(--shadow-card) md:p-6">
         {n.module && <p className="mb-3 text-caption font-semibold text-muted-foreground">{n.module.code}</p>}
+        {n.music && <MusicChip music={n.music} className="mb-3" />}
         <div className="h-[min(36rem,64dvh)]">
           <SlideCarousel slides={n.slides} aspect={n.aspect} assets={n.assets} videoStatus={n.videoStatus} />
         </div>

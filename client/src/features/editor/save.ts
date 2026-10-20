@@ -1,6 +1,6 @@
-import { type Deck, deckSchema, type ThemeId } from '@notalah/shared';
+import { type Deck, deckSchema, jamendoStreamUrl, type ThemeId } from '@notalah/shared';
 import { api, ApiError, errorText } from '@/lib/api';
-import type { Note } from '@/types';
+import type { MusicTrack, Note } from '@/types';
 import { BACKUP_PREFIX } from './backup';
 import { type EditorState, type NoteMeta, useEditor } from './store';
 
@@ -23,8 +23,24 @@ export const noteToDeck = (note: Note): Deck => ({
   aspect: note.aspect,
   theme: note.theme as ThemeId,
   slides: note.slides.map((s) => ({ background: s.background, elements: s.elements, notes: s.notes ?? '' })),
-  music: note.music && { provider: 'deezer', trackId: note.music.trackId, volume: note.music.volume },
+  music: note.music && { provider: 'jamendo', trackId: note.music.trackId, volume: note.music.volume },
 });
+
+/** The loaded note's track in the store's shape, so the Music panel can show it without a search. */
+export const noteTracks = (note: Note): Record<string, MusicTrack> =>
+  note.music
+    ? {
+        [note.music.trackId]: {
+          id: note.music.trackId,
+          title: note.music.title ?? '',
+          artist: note.music.artist ?? '',
+          cover: note.music.cover ?? '',
+          licenseUrl: note.music.licenseUrl ?? '',
+          duration: 0,
+          audioUrl: jamendoStreamUrl(note.music.trackId),
+        },
+      }
+    : {};
 
 export const noteToMeta = (note: Note): NoteMeta => ({
   noteId: note.id,

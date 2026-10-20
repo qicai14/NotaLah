@@ -212,18 +212,31 @@ export const slidesSchema = z
   });
 
 export const musicSchema = z.strictObject({
-  provider: z.literal('deezer', { error: 'Unknown music provider' }),
+  provider: z.literal('jamendo', { error: 'Unknown music provider' }),
   trackId: int(1, Number.MAX_SAFE_INTEGER, 'Track'),
   volume: int(0, 100, 'Volume'),
 });
 
+/** A deck with a video cannot carry music (R9): both would play at once. */
+export const MUSIC_VIDEO_CONFLICT = 'Remove videos to add music';
+export const hasMusicVideoConflict = (d: { music?: unknown; slides: { elements: { type: string }[] }[] }) =>
+  Boolean(d.music) && d.slides.some((s) => s.elements.some((e) => e.type === 'video'));
+
 /** The whole deck; the AI assistant's output is validated against the same schema (D33). */
-export const deckSchema = z.strictObject({
-  aspect: aspectSchema,
-  theme: themeSchema,
-  slides: slidesSchema,
-  music: musicSchema.nullable(),
-});
+export const deckSchema = z
+  .strictObject({
+    aspect: aspectSchema,
+    theme: themeSchema,
+    slides: slidesSchema,
+    music: musicSchema.nullable(),
+  })
+  .superRefine((d, ctx) => {
+    if (hasMusicVideoConflict(d)) ctx.addIssue({ code: 'custom', path: ['music'], message: MUSIC_VIDEO_CONFLICT });
+  });
+
+/** Where a Jamendo track streams from, derived from its id alone so no stored or user-supplied URL is ever played. */
+export const jamendoStreamUrl = (trackId: number) =>
+  `https://prod-1.storage.jamendo.com/?trackid=${trackId}&format=mp31`;
 
 export type Fill = z.infer<typeof fillSchema>;
 export type ImageSource = z.infer<typeof imageSourceSchema>;

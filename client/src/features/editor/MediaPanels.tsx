@@ -1,12 +1,14 @@
 import { boardHeight, type ImageSource, LIMITS } from '@notalah/shared';
 import { Film, ImageUp, LoaderCircle, Search } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { ConfirmButton } from '@/components/ConfirmButton';
 import { Button } from '@/components/ui/button';
 import { api, apiOrigin, ApiError, errorText } from '@/lib/api';
 import { usePaged } from '@/lib/usePaged';
 import { cn } from '@/lib/utils';
 import type { VideoStatus } from '@/types';
 import { makeImage, makeVideo } from './elements';
+import { removeMusic } from './MusicPanel';
 import { useEditor } from './store';
 
 interface UploadedImage {
@@ -340,6 +342,7 @@ export function VideoPicker({ onAdd }: { onAdd?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const hasMusic = useEditor((s) => s.deck.music !== null);
 
   useEffect(() => {
     let live = true;
@@ -366,6 +369,7 @@ export function VideoPicker({ onAdd }: { onAdd?: () => void }) {
       const a = await postFile<VideoAsset>('/assets/videos', file);
       const now = useEditor.getState();
       now.setVideoStatus(a.id, a.status);
+      if (now.deck.music) return setError('Music was added while the video uploaded. Remove the music to add a video.');
       // The slide may have gained a video, or another slide become active, while the upload ran.
       if (now.deck.slides[now.activeSlide].elements.some((e) => e.type === 'video')) return setError(VIDEO_FULL);
       now.addElement(makeVideo(boardHeight(now.deck.aspect), a.id, a.width ?? 640, a.height ?? 360));
@@ -376,6 +380,17 @@ export function VideoPicker({ onAdd }: { onAdd?: () => void }) {
       setBusy(false);
       if (input.current) input.current.value = '';
     }
+  }
+
+  if (hasMusic) {
+    return (
+      <div className="col-span-2 flex flex-col gap-2 rounded-md border border-dashed border-input px-3 py-2.5">
+        <p className="text-body-sm">A note cannot have both music and a video. Remove the music to add a video.</p>
+        <div>
+          <ConfirmButton label="Remove music" onConfirm={removeMusic} focusMain={false} />
+        </div>
+      </div>
+    );
   }
 
   return (

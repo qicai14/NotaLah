@@ -38,12 +38,30 @@ export type Visibility = 'public' | 'contacts';
 /** A video's place in the upload pipeline (R40); only a ready one has a file. */
 export type VideoStatus = 'processing' | 'ready' | 'failed';
 
+/** A Jamendo track as the music search returns it (R9). */
+export interface MusicTrack {
+  id: number;
+  title: string;
+  artist: string;
+  cover: string;
+  licenseUrl: string;
+  duration: number;
+  audioUrl: string;
+}
+
 export interface Note {
   id: number;
   title: string;
   theme: string;
   aspect: Aspect;
-  music: { trackId: number; title: string | null; artist: string | null; cover: string | null; volume: number } | null;
+  music: {
+    trackId: number;
+    title: string | null;
+    artist: string | null;
+    cover: string | null;
+    licenseUrl: string | null;
+    volume: number;
+  } | null;
   assets: Record<string, string>;
   /** Every video the note uses, by asset id. */
   videoStatus: Record<string, VideoStatus>;

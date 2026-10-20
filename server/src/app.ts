@@ -13,6 +13,7 @@ import { collaborationRouter } from './features/collaboration/routes';
 import { writeLimiter } from './features/auth/rateLimit';
 import { engagementRouter } from './features/engagement/routes';
 import { feedRouter } from './features/feed/routes';
+import { musicRouter } from './features/music/routes';
 import { messagingRouter } from './features/messaging/routes';
 import { healthRouter } from './lib/health';
 import { modulesRouter, programmesRouter, termsRouter } from './features/modules/routes';
@@ -70,6 +71,7 @@ app.use('/api', annotationsRouter);
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
 app.use('/api/assets', assetsRouter);
 app.use('/api/notes', notesRouter);
+app.use('/api/music', musicRouter);
 app.use('/api/unsplash', unsplashRouter);
 app.use('/api/users', usersRouter);
 app.use('/api', (_req, res) => {
