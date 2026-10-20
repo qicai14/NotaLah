@@ -1534,8 +1534,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
 | CLN-TC1 | Guest first page cutoff | Two guest requests to `/api/feed` in the same minute, the only note hidden between them | `asOf` is a whole minute and equal in both; the second page-1 answer reuses the cached ranking and drops the hidden note | | |
-| CLN-TC2 | Immutable asset files | A public note image requested | `Cache-Control: private, max-age=31536000, immutable` | | |
-| CLN-TC3 | Served-bytes meter | An image served; a ready video served with `Range: bytes=0-99`; the counter then set to its cap; the video and the image requested again | served_bytes equals the image size, then grows by 100; video 503 "Video is temporarily unavailable"; image 200 | | |
+| CLN-TC2 | Immutable asset files | A public note image requested; a logout | `Cache-Control: private, max-age=31536000, immutable` and `Vary: Cookie`; logout answers `Clear-Site-Data: "cache"` | | |
+| CLN-TC3 | Served-bytes meter | An image served; a ready video served with `Range: bytes=0-99` (1000-byte file); the counter then set to its cap; the video and the image requested again | served_bytes equals the image size, then grows by exactly 100 (bytes sent); video 503 "Video is temporarily unavailable"; image 200 | | |
+| CLN-TC4 | Publish drops blank slides | A draft with three slides, the middle one empty, published through `/publish`; a lecturer Super Likes it; the owner then saves a hashtag-only change | Two slides at positions 1 and 2; the note stays verified and no edited-since-verification notification is created | | |
 
 *Table 4.40: R2 storage driver test cases (STO)*
 
@@ -1572,6 +1573,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | DEP-TC9 | Socket reconnects after a server cut | Client socket receives `disconnect` with reason `transport close`, then `io server disconnect`; then another server cut followed by logout | No manual reconnect for the transport drop; none before 1 s and one by 3 s after the server cut; no reconnect after logout | | |
 | DEP-TC10 | Purge cannot remove a file | An unlinked asset 2 days old; `storage.remove` fails with R2 status 500 | 1 asset purged, 1 orphaned file counted; the row stays deleted; the key is logged and `db:purge` exits 1 | | |
 | DEP-TC11 | Forged entry in a forwarded chain | `TRUST_PROXY=1`, proxy peer 10.0.0.1, `X-Forwarded-For: 6.6.6.6, 203.0.113.5` | 200; the only counter key is `guest:203.0.113.5` | | |
+| DEP-TC12 | Purge registers every limiter | `purgeAll` run in a process that never imports the app | The window registry holds all eight prefixes (auth, login, write, guest, upload, video, file, unsplash) and upload is 3,600,000 ms | | |
 
 *Table 4.42: Async video pipeline test cases (VID)*
 

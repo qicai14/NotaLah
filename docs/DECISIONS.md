@@ -1567,18 +1567,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Publish:** `POST /api/notes/:id/publish` is one conditional UPDATE (`publishNote`: status, visibility, published_at,
   only for the owner's draft whose `pst_updated_at` still equals the value read, compared at millisecond precision).
   Completeness rules moved to `publishErrors` (hashtag, non-blank slide, module). `replaceNote` lost `ignoreLock`.
-  Blank slides are no longer stripped on publish; the editor already drops them when it saves a publish through PUT.
+  The same transaction deletes the blank slides and renumbers the rest (as a save of a published note does), so a later
+  save does not read the difference as a content edit and void Super Likes.
 - **Guest feed:** a guest's first page rounds "now" down to 60 s, so guests share one cached ranking per minute; a note
   published in the last minute reaches guests a little later. An explicit `asOf` is untouched.
-- **Media:** asset files are `Cache-Control: private, max-age=31536000, immutable`. Trade-off: a hidden or deleted
+- **Media:** asset files are `Cache-Control: private, max-age=31536000, immutable` with `Vary: Cookie`, and logout
+  sends `Clear-Site-Data: "cache"`, so a shared browser drops its copies when the user signs out. Trade-off: a hidden or deleted
   note's image can stay in a browser that already holds it (it was five minutes before); the URL still checks
   visibility for everyone else.
-- **Served bytes:** new monthly metric `served_bytes` in `"USAGE_COUNTER_T"` (no migration), counted when a file stream
-  starts. `USAGE_CAP_SERVED_BYTES` can lower the 50 GB default (half of Render's free 100 GB); at the cap video
+- **Served bytes:** new monthly metric `served_bytes` in `"USAGE_COUNTER_T"` (no migration), counted by a Transform as the
+  bytes stream, so an aborted download counts what was sent. `USAGE_CAP_SERVED_BYTES` can lower the 50 GB default (half of Render's free 100 GB); at the cap video
   requests answer 503 and images and posters keep serving. It appears in the admin usage report.
 - **Other:** 57 file-local exports and four shared deck schemas are no longer exported; a read past the Class B cap says
   "Media is temporarily unavailable"; the image upload route checks `UPLOADS_DISABLED` before reading and re-encoding.
-- **Alternatives:** a per-limiter class (more code for the same result); counting served bytes on stream end (exact, but
-  an aborted download or a crash would go uncounted); stopping all media at the bandwidth cap (rejected: images are small).
-- **Tests:** CLN-TC1 to CLN-TC3; USE-TC4 and USE-TC7 updated.
+- **Alternatives:** a per-limiter class (more code for the same result); counting served bytes up front (simpler, but an aborted download counts in full); stopping all media at the bandwidth cap (rejected: images are small).
+- **Purge:** `lib/purge.ts` imports every limiter module, so the daily purge knows each hourly window even when it runs
+  without the app (the unsplash limiter moved to `unsplash/rateLimit.ts`). `@types/node` comes from the pnpm catalog.
+- **Tests:** CLN-TC1 to CLN-TC4, DEP-TC12; USE-TC4 and USE-TC7 updated.
 - **Reversibility:** High: no schema change; each item is its own commit.
