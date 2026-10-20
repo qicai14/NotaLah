@@ -14,6 +14,7 @@ export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
 adminRouter.param('userId', idParam('Invalid user id', 400));
 adminRouter.param('noteId', idParam('Invalid note id', 400));
+adminRouter.param('annId', idParam('Invalid annotation id', 400));
 adminRouter.param('moduleId', idParam('Module not found'));
 adminRouter.param('termId', idParam('Term not found'));
 
@@ -76,6 +77,23 @@ adminRouter.post('/reports/:noteId/resolve', async (req, res) => {
   const { resolved, hiddenAuthorId } = await repo.resolveReports(noteId, me(req).id, outcome, remark);
   if (resolved === 0) return res.status(404).json({ error: 'No open reports for this note' });
   if (hiddenAuthorId !== null) await notify({ type: 'note_hidden', actorId: null, noteId }, [hiddenAuthorId]);
+  res.json({ outcome, resolved });
+});
+
+adminRouter.post('/reports/annotations/:annId/resolve', async (req, res) => {
+  const outcome = req.body?.outcome;
+  if (outcome !== 'dismiss' && outcome !== 'hide')
+    return res.status(400).json({ error: 'Outcome must be dismiss or hide' });
+  const remark = requiredText(res, req.body?.remark, 'Remark');
+  if (remark === undefined) return;
+  const { resolved, hidden } = await repo.resolveAnnotationReports(
+    Number(req.params.annId),
+    me(req).id,
+    outcome,
+    remark,
+  );
+  if (resolved === 0) return res.status(404).json({ error: 'No open reports for this annotation' });
+  if (hidden) await notify({ type: 'annotation_hidden', actorId: null, noteId: hidden.noteId }, [hidden.authorId]);
   res.json({ outcome, resolved });
 });
 

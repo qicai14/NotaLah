@@ -46,6 +46,7 @@ entity "POST_T" as POST {
   pst_content_edited_at : TIMESTAMPTZ
   pst_lock_usr_id : INTEGER <<FK>>
   pst_lock_expires_at : TIMESTAMPTZ
+  * pst_annotations_on : BOOLEAN
 }
 entity "SLIDE_T" as SLIDE {
   * sld_id : INTEGER <<PK>>
@@ -98,6 +99,7 @@ entity "REPORT_T" as RPT {
   * rpt_id : INTEGER <<PK>>
   --
   * rpt_pst_id : INTEGER <<FK>>
+  rpt_ant_id : INTEGER <<FK>>
   * rpt_reporter_id : INTEGER <<FK>>
   * rpt_reason : VARCHAR(30)
   rpt_details : VARCHAR(500)
@@ -106,6 +108,20 @@ entity "REPORT_T" as RPT {
   rpt_remark : VARCHAR(300)
   * rpt_created_at : TIMESTAMPTZ
   rpt_resolved_at : TIMESTAMPTZ
+}
+entity "ANNOTATION_T" as ANT {
+  * ant_id : INTEGER <<PK>>
+  --
+  * ant_pst_id : INTEGER <<FK>>
+  * ant_usr_id : INTEGER <<FK>>
+  * ant_slide_id : SMALLINT
+  * ant_element_id : VARCHAR(36)
+  * ant_quote : VARCHAR(300)
+  * ant_offset : INTEGER
+  * ant_body : VARCHAR(500)
+  * ant_created_at : TIMESTAMPTZ
+  ant_deleted_at : TIMESTAMPTZ
+  ant_hidden_at : TIMESTAMPTZ
 }
 entity "BOOKMARK_T" as BMK {
   * bmk_usr_id : INTEGER <<PK, FK>>
@@ -289,6 +305,9 @@ CMT ||--o{ CLK
 USER ||--o{ CLK
 POST ||--o{ RPT
 USER ||--o{ RPT : files
+POST ||--o{ ANT : "annotated by"
+USER ||--o{ ANT : writes
+ANT |o--o{ RPT : "reported in"
 USER ||--o{ BMK
 POST ||--o{ BMK
 USER ||--o{ INTR

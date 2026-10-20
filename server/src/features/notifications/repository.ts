@@ -16,6 +16,8 @@ export const NOTIFICATION_TYPES = [
   'collab_approved',
   'collab_declined',
   'edited_since_verification',
+  'annotation',
+  'annotation_hidden',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
