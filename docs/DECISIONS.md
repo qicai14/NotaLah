@@ -1687,3 +1687,34 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Gap for design:** the sound and play icons are `media` with `media-shadow`; over very bright footage they are faint.
 - **Tests:** CLI-TC71 to CLI-TC76; VID-TC10 now wraps its board in `SlideActive`.
 - **Reversibility:** High: presentation only, no schema or API change.
+
+## D74 - One free origin through a Cloudflare Pages proxy (supersedes the domain part of D65 and D66) (20 Oct 2026)
+- **Context:** D65/D66 needed a registrable domain (`app.` + `api.`) so the SameSite=Lax login cookie reaches the API.
+  The GitHub Student Pack `.me` domain is not available to the user (Malaysia), and the user wants no paid domain.
+- **Decision (user, 20 Oct: option 1):** the client stays on Cloudflare Pages at its free `*.pages.dev` hostname. A Pages
+  Function forwards `/api/*` and `/socket.io/*` (WebSocket upgrades included) to the Render free web service, so the
+  browser only ever talks to one origin and the cookie is first-party. `_routes.json` limits the Function to those two
+  paths, so static assets never invoke it (static requests are free and unlimited).
+  - The Function overwrites `X-Forwarded-For` with `CF-Connecting-IP` (never appends a client-sent value); production
+    sets `TRUST_PROXY=2` (Function + Render), checked once with `DEBUG_PROXY=1` as in D65.
+  - Credentialed CORS is no longer needed in production; the startup guards stay.
+  - Public-note media keep streaming through the API (no R2 custom domain, which needs an owned zone); `r2.dev` public
+    URLs are not used (rate-limited, not for production).
+- **Free-tier caps (the user must never pay; Cloudflare items):**
+  - **Workers/Pages Functions:** stay on the Workers **Free** plan; never subscribe to Workers Paid. Free allows 100,000
+    Function + Worker requests a day (reset 00:00 UTC); past it Cloudflare returns error 1027 instead of billing. The
+    Pages project is set to **fail closed** so the proxy never silently bypasses to static pages. The k6 test (R27) stays
+    well under the daily quota.
+  - **R2:** the only Cloudflare product that bills past its free tier. Already guarded app-side by R34 (D57): storage,
+    Class A/B ops and served bytes capped at 80% (monthly R2 caps 50% until the billing period is confirmed), kill switch.
+  - **Workers AI (R36):** Free plan, 10,000 neurons a day, fails instead of billing; R36 adds an app-side daily cap at 80%.
+  - **Account:** a Cloudflare billing notification (usage-based, lowest threshold) set by the user as a second line.
+- **Limitation and future work:** a free-tier cap, not a design preference. Every API call takes one extra hop through
+  the Function, the daily Function quota bounds total traffic, and the app lives on a platform subdomain. With a paid
+  stack the upgrade is an owned domain with `app.`/`api.` subdomains (D65's layout), an R2 custom domain with CDN caching
+  for public media, and an always-on API instance; no app code change beyond `TRUST_PROXY` and CORS origin. Recorded for
+  Chapter 6 (limitations and future work).
+- **Alternatives:** Vercel rewrites (no WebSocket, Socket.io falls back to polling; Hobby plan non-commercial); Express
+  serving the client on Render (no CDN, cold start on page load); free subdomain services such as is-a.dev (volunteer-run,
+  no zone for R2); a paid domain (rejected by the user: no cost).
+- **Reversibility:** High: delete the Function and point `VITE_API_URL`/CORS at an owned `api.` domain.
