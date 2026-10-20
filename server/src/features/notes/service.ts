@@ -1,6 +1,8 @@
 import {
   aspectSchema,
+  hasMusicVideoConflict,
   LIMITS,
+  MUSIC_VIDEO_CONFLICT,
   musicSchema,
   slidesSchema,
   themeSchema,
@@ -12,6 +14,7 @@ import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
 import { usableAssetKinds } from '../assets/repository';
+import type { TrackMeta } from '../music/service';
 
 // Mirrors the TipTap nodes the editor can produce (D20) plus underline and a text colour span. Box-level font, size and
 // alignment are typed element props, so colour is the only CSS allowed inside the HTML (R21 spec 2.5).
@@ -74,20 +77,24 @@ function cleanSlide(slide: Slide, errors: Record<string, string>, n: number): Sl
   return clean;
 }
 
-const baseSchema = z.object({
-  title: z
-    .string({ error: 'Title is required' })
-    .trim()
-    .min(1, 'Title is required')
-    .max(150, 'Title must be at most 150 characters'),
-  theme: themeSchema.default('plain'),
-  aspect: aspectSchema.default('4:5'),
-  slides: slidesSchema.default([]),
-  music: musicSchema.nullish(),
-  moduleId: z.number({ error: 'Invalid module' }).int('Invalid module').positive('Invalid module').nullish(),
-  status: z.enum(['draft', 'published'], { error: 'Status must be draft or published' }),
-  visibility: z.enum(['public', 'contacts'], { error: 'Visibility must be public or contacts' }).nullish(),
-});
+const baseSchema = z
+  .object({
+    title: z
+      .string({ error: 'Title is required' })
+      .trim()
+      .min(1, 'Title is required')
+      .max(150, 'Title must be at most 150 characters'),
+    theme: themeSchema.default('plain'),
+    aspect: aspectSchema.default('4:5'),
+    slides: slidesSchema.default([]),
+    music: musicSchema.nullish(),
+    moduleId: z.number({ error: 'Invalid module' }).int('Invalid module').positive('Invalid module').nullish(),
+    status: z.enum(['draft', 'published'], { error: 'Status must be draft or published' }),
+    visibility: z.enum(['public', 'contacts'], { error: 'Visibility must be public or contacts' }).nullish(),
+  })
+  .superRefine((d, ctx) => {
+    if (hasMusicVideoConflict(d)) ctx.addIssue({ code: 'custom', path: ['music'], message: MUSIC_VIDEO_CONFLICT });
+  });
 
 export interface NoteInput {
   title: string;
@@ -95,6 +102,8 @@ export interface NoteInput {
   aspect: Aspect;
   slides: Slide[];
   music: MusicRef | null;
+  /** Filled by the route from Jamendo when the track is new to the note; absent means keep what is stored. */
+  musicMeta?: TrackMeta;
   moduleId: number | null;
   hashtags: string[];
   status: 'draft' | 'published';

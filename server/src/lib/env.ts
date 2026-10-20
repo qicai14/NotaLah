@@ -38,6 +38,8 @@ const schema = z
     R2_BUCKET: z.string().optional(),
     // Unsplash search proxy (R22); empty means the routes answer 503.
     UNSPLASH_ACCESS_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+    // Jamendo music search and track lookup (R9); empty means the routes answer 503.
+    JAMENDO_CLIENT_ID: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
     // Kill switch (R34): true refuses every upload with 503.
     UPLOADS_DISABLED: z
       .enum(['true', 'false'])

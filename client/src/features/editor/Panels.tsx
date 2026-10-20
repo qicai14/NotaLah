@@ -23,6 +23,7 @@ import {
   LayoutTemplate,
   Lock,
   MoveRight,
+  Music,
   Palette,
   Shapes,
   Square,
@@ -39,9 +40,19 @@ import type { ModuleRef } from '@/types';
 import { HashtagInput } from '../notes/HashtagInput';
 import { elementLabel, makeCode, makeLine, makeShape, makeTable, makeText, SHAPES, TEXT_PRESETS } from './elements';
 import { PhotosPanel, UploadsPanel, VideoPicker } from './MediaPanels';
+import { MusicPanel } from './MusicPanel';
 import { mapSlide, newId, useEditor } from './store';
 
-export type PanelId = 'design' | 'text' | 'elements' | 'uploads' | 'photos' | 'background' | 'layers' | 'details';
+export type PanelId =
+  | 'design'
+  | 'text'
+  | 'elements'
+  | 'uploads'
+  | 'photos'
+  | 'music'
+  | 'background'
+  | 'layers'
+  | 'details';
 
 export const PANELS: { id: PanelId; label: string; icon: typeof Type }[] = [
   { id: 'design', label: 'Design', icon: LayoutTemplate },
@@ -49,6 +60,7 @@ export const PANELS: { id: PanelId; label: string; icon: typeof Type }[] = [
   { id: 'elements', label: 'Elements', icon: Shapes },
   { id: 'uploads', label: 'Uploads', icon: Upload },
   { id: 'photos', label: 'Photos', icon: ImageIcon },
+  { id: 'music', label: 'Music', icon: Music },
   { id: 'background', label: 'Background', icon: Palette },
   { id: 'layers', label: 'Layers', icon: Layers },
   { id: 'details', label: 'Details', icon: Info },
@@ -445,6 +457,7 @@ export function PanelBody({ id, details, onAdd }: { id: PanelId; details: Detail
       {id === 'elements' && <ElementsPanel onAdd={onAdd} />}
       {id === 'uploads' && <UploadsPanel onAdd={onAdd} />}
       {id === 'photos' && <PhotosPanel onAdd={onAdd} />}
+      {id === 'music' && <MusicPanel />}
       {id === 'background' && <BackgroundPanel />}
       {id === 'layers' && <LayersPanel />}
       {id === 'details' && <DetailsPanel d={details} />}

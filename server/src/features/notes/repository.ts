@@ -60,7 +60,14 @@ export interface Note {
   title: string;
   theme: string;
   aspect: Aspect;
-  music: { trackId: number; title: string | null; artist: string | null; cover: string | null; volume: number } | null;
+  music: {
+    trackId: number;
+    title: string | null;
+    artist: string | null;
+    cover: string | null;
+    licenseUrl: string | null;
+    volume: number;
+  } | null;
   assets: Record<string, string>;
   videoStatus: Record<string, 'processing' | 'ready' | 'failed'>;
   status: string;
@@ -87,6 +94,7 @@ export const noteCols = (
          CASE WHEN p.pst_music_track_id IS NULL THEN NULL
               ELSE json_build_object('trackId', p.pst_music_track_id, 'title', p.pst_music_title,
                                      'artist', p.pst_music_artist, 'cover', p.pst_music_cover,
+                                     'licenseUrl', p.pst_music_license,
                                      'volume', p.pst_music_volume) END AS "music",
          ${ASSETS_COL},
          ${VIDEO_STATUS_COL},
@@ -239,6 +247,8 @@ export interface NoteMeta {
   status: string;
   visibility: 'public' | 'contacts' | null;
   moduleId: number | null;
+  /** The attached Jamendo track, so a save of the same track skips the lookup (R9). */
+  musicTrackId: number | null;
   /** The viewer's access: the owner, a collaborator role, or null. */
   role: NoteRole | null;
   /** The viewer may read the note: VISIBLE or a collaborator. */
@@ -249,7 +259,7 @@ export interface NoteMeta {
 export async function getNoteMeta(id: number, viewerId: number): Promise<NoteMeta | undefined> {
   const { rows } = await pool.query<NoteMeta>(
     `SELECT p.pst_usr_id AS "authorId", p.pst_status AS "status", p.pst_visibility AS "visibility", p.pst_mod_id AS "moduleId",
-            ${MY_ROLE} AS "role", ${READABLE} AS "visible",
+            p.pst_music_track_id::INT AS "musicTrackId", ${MY_ROLE} AS "role", ${READABLE} AS "visible",
             EXISTS (SELECT 1 FROM "USER_T" a WHERE a.usr_id = p.pst_usr_id AND a.usr_status = 'active') AS "authorActive"
      FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status <> 'deleted'`,
     [viewerId, id],
@@ -317,15 +327,24 @@ async function writeChildren(client: PoolClient, postId: number, n: NoteInput): 
   );
 }
 
-/** pst_music_provider, track id and volume. shortcut: title, artist and cover stay NULL until R9's Deezer proxy fills them. */
-const musicParams = (n: NoteInput) => [n.music?.provider ?? null, n.music?.trackId ?? null, n.music?.volume ?? null];
+/** pst_music_provider, track id, volume, then title, artist, cover and licence from the Jamendo lookup (NULL keeps the stored ones on a save). */
+const musicParams = (n: NoteInput) => [
+  n.music?.provider ?? null,
+  n.music?.trackId ?? null,
+  n.music?.volume ?? null,
+  n.musicMeta?.title ?? null,
+  n.musicMeta?.artist ?? null,
+  n.musicMeta?.cover ?? null,
+  n.musicMeta?.licenseUrl ?? null,
+];
 
 export function createNote(authorId: number, n: NoteInput): Promise<number> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{ pst_id: number }>(
       `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_aspect, pst_status, pst_visibility,
-                             pst_music_provider, pst_music_track_id, pst_music_volume, pst_published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CASE WHEN $6::VARCHAR = 'published' THEN NOW() END)
+                             pst_music_provider, pst_music_track_id, pst_music_volume, pst_music_title,
+                             pst_music_artist, pst_music_cover, pst_music_license, pst_published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CASE WHEN $6::VARCHAR = 'published' THEN NOW() END)
        RETURNING pst_id`,
       [authorId, n.moduleId, n.title, n.theme, n.aspect, n.status, n.visibility, ...musicParams(n)],
     );
@@ -377,10 +396,13 @@ export function replaceNote(
     await c.query(
       `UPDATE "POST_T"
        SET pst_mod_id = $2, pst_title = $3, pst_template = $4, pst_aspect = $5, pst_status = $6, pst_visibility = $7,
-           pst_music_provider = $8, pst_music_track_id = $9, pst_music_volume = $10, pst_music_title = NULL,
-           pst_music_artist = NULL, pst_music_cover = NULL,
+           pst_music_provider = $8, pst_music_track_id = $9, pst_music_volume = $10,
+           pst_music_title = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($11, pst_music_title) END,
+           pst_music_artist = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($12, pst_music_artist) END,
+           pst_music_cover = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($13, pst_music_cover) END,
+           pst_music_license = CASE WHEN $9::BIGINT IS NULL THEN NULL ELSE COALESCE($14, pst_music_license) END,
            pst_published_at = CASE WHEN $6::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END,
-           pst_content_edited_at = CASE WHEN $11 THEN NOW() ELSE pst_content_edited_at END
+           pst_content_edited_at = CASE WHEN $15 THEN NOW() ELSE pst_content_edited_at END
        WHERE pst_id = $1`,
       [id, n.moduleId, n.title, n.theme, n.aspect, n.status, n.visibility, ...musicParams(n), contentEdited],
     );
