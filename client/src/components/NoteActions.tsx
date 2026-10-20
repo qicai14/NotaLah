@@ -4,6 +4,8 @@ import {
   Heart,
   Highlighter,
   MessageCircle,
+  MessageSquareOff,
+  MessageSquareQuote,
   MessageSquareText,
   MoreHorizontal,
   Share2,
@@ -103,7 +105,8 @@ function RailButton({
 /**
  * The action rail beside a note: author, like, comments, save, Super Like (approved lecturers) and More. `bar` lays it
  * out in a row (note detail on phones). `onOpenComments` opens the comments panel; without it the button links to
- * the note. Guests get the R31 log-in sheet instead of a write. `onChange` hands the parent every change (like, save, Super Like) so it can keep the note current; the parent remounts this component when the layout changes.
+ * the note. `annotations` (note detail only, R10) adds the annotation count and, for the owner, the on/off switch in More.
+ * Guests get the R31 log-in sheet instead of a write. `onChange` hands the parent every change (like, save, Super Like) so it can keep the note current; the parent remounts this component when the layout changes.
  */
 export function NoteActions({
   note,
@@ -111,6 +114,7 @@ export function NoteActions({
   showAuthor = true,
   commentsLink = true,
   onOpenComments,
+  annotations,
   onChange,
 }: {
   note: Note;
@@ -118,6 +122,7 @@ export function NoteActions({
   showAuthor?: boolean;
   commentsLink?: boolean;
   onOpenComments?: () => void;
+  annotations?: { count: number; on: boolean; onOpen: () => void; onToggled: (on: boolean) => void };
   onChange: (patch: Partial<Note>) => void;
 }) {
   const { user } = useAuth();
@@ -161,6 +166,16 @@ export function NoteActions({
         method: 'DELETE',
       });
       onChange({ ...r, verifiedByMe: false });
+    });
+
+  const toggleAnnotations = () =>
+    annotations &&
+    run(async () => {
+      const r = await api<{ annotationsOn: boolean }>(`/notes/${note.id}/annotations`, {
+        method: 'PATCH',
+        body: { enabled: !annotations.on },
+      });
+      annotations.onToggled(r.annotationsOn);
     });
 
   const report = () => (user ? setReporting(true) : askToLogIn({ action: 'report', returnTo }));
@@ -212,6 +227,15 @@ export function NoteActions({
             icon={<MessageCircle aria-hidden="true" className="size-6" />}
           />
         )}
+        {annotations?.on && (
+          <RailButton
+            bar={bar}
+            label={`Annotations, ${annotations.count}`}
+            onClick={annotations.onOpen}
+            caption={compact.format(annotations.count)}
+            icon={<MessageSquareQuote aria-hidden="true" className="size-6" />}
+          />
+        )}
         <RailButton
           bar={bar}
           label="Save"
@@ -260,6 +284,16 @@ export function NoteActions({
               <DropdownMenuItem className="h-10 rounded-sm" onSelect={() => setSharing(true)}>
                 <Share2 className="size-4" aria-hidden="true" />
                 Share
+              </DropdownMenuItem>
+            )}
+            {owner && annotations && (
+              <DropdownMenuItem className="h-10 rounded-sm" onSelect={toggleAnnotations}>
+                {annotations.on ? (
+                  <MessageSquareOff className="size-4" aria-hidden="true" />
+                ) : (
+                  <MessageSquareQuote className="size-4" aria-hidden="true" />
+                )}
+                {annotations.on ? 'Turn annotations off' : 'Turn annotations on'}
               </DropdownMenuItem>
             )}
             {canRequest && (

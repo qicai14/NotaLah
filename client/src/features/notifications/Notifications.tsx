@@ -17,7 +17,7 @@ type Decided = 'approve' | 'decline';
 /** Lead for rows with no actor: moderation and system outcomes get an icon instead of an avatar. */
 function SystemIcon({ type }: { type: Notification['type'] }) {
   const Icon =
-    type === 'note_hidden'
+    type === 'note_hidden' || type === 'annotation_hidden'
       ? Flag
       : type === 'edited_since_verification'
         ? TriangleAlert
