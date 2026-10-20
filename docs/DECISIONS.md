@@ -1585,3 +1585,21 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   without the app (the unsplash limiter moved to `unsplash/rateLimit.ts`). `@types/node` comes from the pnpm catalog.
 - **Tests:** CLN-TC1 to CLN-TC4, DEP-TC12; USE-TC4 and USE-TC7 updated.
 - **Reversibility:** High: no schema change; each item is its own commit.
+
+## D71 - Feed payload: first slides only (R39, 20 Oct 2026)
+- **Context:** review finding #9: the ranked, Following and guest feeds returned every slide of every note, though a card
+  shows one slide at a time.
+- **Decision (user):** the three feeds return the first 2 slides (the visible one and the hidden neighbour the carousel
+  preloads), `slideCount`, and the `assets` and `videoStatus` entries those slides use. Constant `CARD_SLIDES` in
+  `feed/repository.ts`; `noteCols(slideLimit)` in `notes/repository.ts` builds the columns (`NOTE_COLS` is unchanged, all
+  slides) and every note now carries `slideCount`.
+- **Rest of the slides:** `SlideCarousel` takes `slideCount` and `onNeedMore`; on the last loaded slide the card calls
+  `GET /api/notes/:id` once and keeps the full slides, assets and video status in its own state. No new route, so the
+  detail endpoint's checks (friends-only, hidden, suspended author) apply unchanged. A failed fetch is retried when the
+  reader leaves and returns to the last loaded slide.
+- **Payload (page 1, 10 notes of 8 slides, three text elements each, test DB; the project has no seed script):**
+  228,544 B before, 62,676 B after (-72.6%). Notes with images save more.
+- **Unchanged:** ranking, snapshots and paging. Cost: a swipe past slide 2 shows the slide after one request; the viewer's
+  counts and flags still come from the feed.
+- **Tests:** FEED-TC1 to FEED-TC4, CLI-TC70.
+- **Reversibility:** High: no schema change; raise `CARD_SLIDES` or drop the limit to restore the old payload.

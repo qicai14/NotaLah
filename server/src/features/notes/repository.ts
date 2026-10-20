@@ -68,6 +68,8 @@ export interface Note {
   module: { id: number; code: string; name: string } | null;
   hashtags: string[];
   /** `notes` (private page notes) is only filled for the author and edit collaborators, by getVisibleNote. */
+  /** The slides in `slides` may be only the first few (feed cards); this is the note's full count. */
+  slideCount: number;
   slides: { position: number; background: Fill; elements: SlideElement[]; notes?: string }[];
   author: { id: number; displayName: string; role: string; isVerifiedLecturer: boolean };
   coauthors: { id: number; displayName: string }[];
@@ -79,7 +81,9 @@ export interface Note {
 /**
  * Note columns (contract: alias p = POST_T; use with NOTE_FROM).
  */
-export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "theme", p.pst_aspect AS "aspect", p.pst_status AS "status",
+export const noteCols = (
+  slideLimit?: number,
+) => `p.pst_id AS "id", p.pst_title AS "title", p.pst_template AS "theme", p.pst_aspect AS "aspect", p.pst_status AS "status",
          CASE WHEN p.pst_music_track_id IS NULL THEN NULL
               ELSE json_build_object('trackId', p.pst_music_track_id, 'title', p.pst_music_title,
                                      'artist', p.pst_music_artist, 'cover', p.pst_music_cover,
@@ -92,7 +96,8 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
          COALESCE((SELECT json_agg(json_build_object('position', s.sld_position, 'background', s.sld_doc -> 'background',
                                                      'elements', s.sld_doc -> 'elements')
                                    ORDER BY s.sld_position)
-                   FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id), '[]'::JSON) AS "slides",
+                   FROM "SLIDE_T" s WHERE s.sld_pst_id = p.pst_id${slideLimit ? ` AND s.sld_position <= ${Math.trunc(slideLimit)}` : ''}), '[]'::JSON) AS "slides",
+         (SELECT COUNT(*)::INT FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id) AS "slideCount",
          json_build_object('id', u.usr_id, 'displayName', u.usr_display_name, 'role', u.usr_role,
                            'isVerifiedLecturer', ${approvedLecturer('u')}) AS "author",
          COALESCE((SELECT json_agg(${userRef('cu')} ORDER BY c.clb_edited_at, cu.usr_id)
@@ -100,6 +105,8 @@ export const NOTE_COLS = `p.pst_id AS "id", p.pst_title AS "title", p.pst_templa
                    WHERE c.clb_pst_id = p.pst_id AND ${CREDITED_EDITOR} AND cu.usr_status IN ('active', 'restricted')),
                   '[]'::JSON) AS "coauthors",
          p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"`;
+
+export const NOTE_COLS = noteCols();
 
 /** FROM clause defining the aliases p, u and m that NOTE_COLS uses. */
 export const NOTE_FROM = `

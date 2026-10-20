@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Aspect } from '@notalah/shared';
 import type { VideoStatus } from '@/types';
@@ -39,17 +39,27 @@ export function SlideCarousel({
   aspect,
   assets,
   videoStatus,
+  slideCount,
+  onNeedMore,
 }: {
   slides: BoardSlide[];
   aspect: Aspect;
   assets: Record<string, string>;
   videoStatus?: Record<string, VideoStatus>;
+  /** The note's full count when `slides` holds only the first few; `onNeedMore` fires once the reader is on the last loaded slide (D71). */
+  slideCount?: number;
+  onNeedMore?: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
   const group = useRef<HTMLDivElement>(null);
-  const last = slides.length - 1;
+  const total = Math.max(slideCount ?? 0, slides.length);
+  const last = total - 1;
   const cur = Math.min(index, Math.max(0, last));
+  const more = slides.length < total && cur >= slides.length - 1;
+  useEffect(() => {
+    if (more) onNeedMore?.();
+  }, [more, onNeedMore]);
   const go = (i: number) => setIndex(Math.max(0, Math.min(last, i)));
   /** A chevron that has just reached the end fades out and is disabled, so focus moves to the carousel instead of being lost. */
   const step = (to: number) => {
@@ -98,13 +108,13 @@ export function SlideCarousel({
                 aspect={aspect}
                 assets={assets}
                 videoStatus={videoStatus}
-                label={`Slide ${i + 1} of ${slides.length}`}
+                label={`Slide ${i + 1} of ${total}`}
               />
             </div>
           ),
         )}
       </div>
-      {slides.length > 1 && (
+      {total > 1 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1">
           <button
             type="button"
@@ -116,7 +126,7 @@ export function SlideCarousel({
             <ChevronLeft aria-hidden="true" className="size-6" />
           </button>
           <div aria-hidden="true" className="flex h-11 items-center gap-1.5 media-shadow">
-            {dotWindow(slides.length, cur).map((d) => (
+            {dotWindow(total, cur).map((d) => (
               <span
                 key={d.index}
                 data-dot={d.active ? 'current' : d.edge ? 'edge' : 'idle'}
@@ -139,7 +149,7 @@ export function SlideCarousel({
         </div>
       )}
       <p aria-live="polite" className="sr-only">
-        Slide {cur + 1} of {slides.length}
+        Slide {cur + 1} of {total}
       </p>
     </div>
   );

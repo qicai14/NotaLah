@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { Coauthors } from '../../components/Coauthors';
@@ -58,6 +58,17 @@ export const NoteCard = memo(function NoteCard({
   onOpenComments: (note: Note) => void;
 }) {
   const [item, setItem] = useState(initial);
+  const fetching = useRef(false);
+  /** The feed sends only the first slides; the rest come from the note endpoint when the reader reaches them, kept on this card (D71). */
+  const loadRest = useCallback(() => {
+    if (fetching.current) return;
+    fetching.current = true;
+    api<{ note: Note }>(`/notes/${initial.id}`)
+      .then(({ note }) =>
+        setItem((n) => ({ ...n, slides: note.slides, assets: note.assets, videoStatus: note.videoStatus })),
+      )
+      .catch(() => (fetching.current = false));
+  }, [initial.id]);
   const ref = useViewLogger(item.id, guest);
   const titleId = `note-${item.id}-title`;
   const desktop = useMediaQuery(DESKTOP);
@@ -110,6 +121,8 @@ export const NoteCard = memo(function NoteCard({
               aspect={item.aspect}
               assets={item.assets}
               videoStatus={item.videoStatus}
+              slideCount={item.slideCount}
+              onNeedMore={loadRest}
             />
           </div>
           {!desktop && <div className="absolute right-0.5 bottom-2 z-10">{actions}</div>}

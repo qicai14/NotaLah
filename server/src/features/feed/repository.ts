@@ -3,11 +3,12 @@ import { pool } from '../../lib/pool';
 import {
   CREDITED_EDITOR,
   ENGAGEMENT_COLS,
-  NOTE_COLS,
+  noteCols,
   NOTE_FROM,
   VISIBLE,
   type NoteWithEngagement,
 } from '../notes/repository';
+import { assetRefs } from '../notes/service';
 import { follows } from '../users/repository';
 import { RANKING } from '../ranking/config';
 import type { Components } from '../ranking/service';
@@ -18,13 +19,25 @@ export async function getCutoff(asOf: Date | null): Promise<Date> {
     .t;
 }
 
+/** Slides a feed card carries: the visible one and the hidden neighbour the carousel preloads; the client fetches the rest on demand (D71). */
+const CARD_SLIDES = 2;
+const CARD_COLS = noteCols(CARD_SLIDES);
+
+/** Keeps only the assets the loaded slides reference, so a card does not carry the files of slides it does not have (D71). */
+function trimAssets(note: NoteWithEngagement): NoteWithEngagement {
+  if (note.slides.length >= note.slideCount) return note;
+  const used = new Set(assetRefs(note.slides as Parameters<typeof assetRefs>[0]).map((r) => String(r.id)));
+  const pick = <T>(m: Record<string, T>) => Object.fromEntries(Object.entries(m).filter(([id]) => used.has(id)));
+  return { ...note, assets: pick(note.assets), videoStatus: pick(note.videoStatus) };
+}
+
 /** Published notes only: VISIBLE lets an author see their own hidden note, which a later page must not show. */
 export async function getNotesByIds(viewerId: number, ids: number[]): Promise<NoteWithEngagement[]> {
   const { rows } = await pool.query<NoteWithEngagement>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = ANY($2::INT[]) AND p.pst_status = 'published' AND ${VISIBLE}`,
+    `SELECT ${CARD_COLS}, ${ENGAGEMENT_COLS} ${NOTE_FROM} WHERE p.pst_id = ANY($2::INT[]) AND p.pst_status = 'published' AND ${VISIBLE}`,
     [viewerId, ids],
   );
-  return rows;
+  return rows.map(trimAssets);
 }
 
 /** One page of visible published notes by authors the viewer follows or co-authored by them (an edit collaborator who has saved it, R30, D46), published by the cutoff, newest first; keyset on (published_at, id), D38. */
@@ -34,7 +47,7 @@ export async function getFollowingNotes(
   { cursor, limit }: KeysetPage,
 ): Promise<{ items: NoteWithEngagement[]; nextCursor: string | null }> {
   const { rows } = await pool.query<NoteWithEngagement & { cursor: string }>(
-    `SELECT ${NOTE_COLS}, ${ENGAGEMENT_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor" ${NOTE_FROM}
+    `SELECT ${CARD_COLS}, ${ENGAGEMENT_COLS}, ${micros('p.pst_published_at')} || '_' || p.pst_id AS "cursor" ${NOTE_FROM}
      WHERE p.pst_status = 'published' AND p.pst_published_at <= $2::TIMESTAMPTZ AND ${VISIBLE}
        AND (${follows('$1', 'p.pst_usr_id')}
             OR EXISTS (SELECT 1 FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND ${CREDITED_EDITOR}
@@ -44,7 +57,8 @@ export async function getFollowingNotes(
      LIMIT $5`,
     [viewerId, cutoff, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1],
   );
-  return toPage(rows, limit);
+  const page = toPage(rows, limit);
+  return { ...page, items: page.items.map(trimAssets) };
 }
 
 export interface RankedEntry {
