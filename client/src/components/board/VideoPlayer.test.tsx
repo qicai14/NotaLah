@@ -7,12 +7,21 @@ import { SlideBoard } from './SlideBoard';
 import { SlideActive, VideoPlayer } from './VideoPlayer';
 
 let observers: ((ratio: number) => void)[] = [];
-const play = vi.fn(() => Promise.resolve());
+const play = vi.fn<() => Promise<void>>();
 const pause = vi.fn();
 
 beforeAll(() => {
   Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 500 });
   Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 625 });
+  const paused = (el: HTMLMediaElement, value: boolean) =>
+    Object.defineProperty(el, 'paused', { configurable: true, value });
+  play.mockImplementation(function (this: HTMLMediaElement) {
+    paused(this, false);
+    return Promise.resolve();
+  });
+  pause.mockImplementation(function (this: HTMLMediaElement) {
+    paused(this, true);
+  });
   window.HTMLMediaElement.prototype.play = play;
   window.HTMLMediaElement.prototype.pause = pause;
 });
@@ -69,14 +78,17 @@ describe('Feed video player (R29)', () => {
   });
 
   it('CLI-TC72: pauses when scrolled out of view and when its slide is not the current one', () => {
-    const { rerender } = render(player());
+    const one = (slideActive: boolean) => (
+      <VideoPlayer src="/v0.mp4" poster="/v0.jpg" loop={false} slideActive={slideActive} />
+    );
+    const { rerender } = render(one(true));
     see(0, 1);
     expect(play).toHaveBeenCalledTimes(1);
     see(0, 0.1);
     expect(pause).toHaveBeenCalled();
     see(0, 1);
     pause.mockClear();
-    rerender(<VideoPlayer src="/v0.mp4" poster="/v0.jpg" loop={false} slideActive={false} />);
+    rerender(one(false));
     expect(pause).toHaveBeenCalled();
     cleanup();
     observers = [];
@@ -107,7 +119,7 @@ describe('Feed video player (R29)', () => {
     const [a, b] = Array.from(container.querySelectorAll('video'));
     see(0, 1);
     see(1, 1);
-    const [muteA, muteB] = screen.getAllByRole('button', { name: 'Unmute video' });
+    const [muteA, muteB] = screen.getAllByRole('button', { name: 'Video sound' });
     expect(muteA.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(a);
     expect(a.muted).toBe(false);
@@ -115,7 +127,8 @@ describe('Feed video player (R29)', () => {
     fireEvent.click(muteB);
     expect(a.muted).toBe(true);
     expect(b.muted).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Mute video' }));
+    fireEvent.click(muteB);
+    expect(muteB.getAttribute('aria-pressed')).toBe('false');
     expect(b.muted).toBe(true);
     // Scrolling away hands the sound back.
     fireEvent.click(b);
@@ -140,6 +153,21 @@ describe('Feed video player (R29)', () => {
     expect(play).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Pause video' }));
     expect(pause).toHaveBeenCalled();
+  });
+
+  it('CLI-TC76: when the browser refuses to play, or the video ends, a Play button restarts it', async () => {
+    play.mockImplementationOnce(() => Promise.reject(new Error('NotAllowedError')));
+    const { container } = render(player());
+    see(0, 1);
+    const button = await screen.findByRole('button', { name: 'Play video' });
+    fireEvent.click(button);
+    expect(play).toHaveBeenCalledTimes(2);
+    fireEvent.play(container.querySelector('video')!);
+    expect(screen.queryByRole('button', { name: 'Play video' })).toBeNull();
+    fireEvent.ended(container.querySelector('video')!);
+    expect(screen.getByRole('button', { name: 'Play video' })).toBeTruthy();
+    see(0, 0);
+    expect(screen.queryByRole('button', { name: 'Play video' })).toBeNull();
   });
 
   it('CLI-TC75: shows the poster outside a carousel, and processing and failed tiles instead of a player', () => {

@@ -1647,7 +1647,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   carousel's current one, and pauses otherwise. A tap on the video or the sound button (top right, `aria-pressed`) turns
   sound on; sound goes off when the video pauses or leaves view. Processing and failed tiles are unchanged (`VideoTile`).
   Note view, shared note and feed share the player; the note view also starts muted, so nothing autoplays with sound.
-- **Reduced motion:** no autoplay; poster plus a centred Play button (Pause at top left once started).
+- **Reduced motion:** no autoplay; poster plus a centred Play button (Pause at top left once started). The same Play
+  button appears when the browser refuses to play (low-power or data-saver mode) or a non-looping video ends. Controls
+  show only while the video is on screen on the current slide; leaving view resets them. The sound button is labelled
+  "Video sound" with `aria-pressed`. `preload="none"`: the feed never unmounts cards, so metadata fetches would add up.
 - **Sound rule:** `hooks/useActiveSound.ts` keeps the id that currently holds sound (module store,
   `useSyncExternalStore`). `useActiveSound(id)` returns `{ active, claim, release }`; claiming mutes the previous holder.
   R9 reuses it with its own id for background audio.
@@ -1659,5 +1662,5 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Chrome quirk:** an observer created in the same commit as the board's scale transform could report an empty box
   once and never update (seen with reduced motion), so observation starts two frames after mount.
 - **Gap for design:** the sound and play icons are `media` with `media-shadow`; over very bright footage they are faint.
-- **Tests:** CLI-TC71 to CLI-TC75; VID-TC10 now wraps its board in `SlideActive`.
+- **Tests:** CLI-TC71 to CLI-TC76; VID-TC10 now wraps its board in `SlideActive`.
 - **Reversibility:** High: presentation only, no schema or API change.

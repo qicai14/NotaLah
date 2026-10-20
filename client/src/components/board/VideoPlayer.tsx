@@ -51,6 +51,8 @@ export function VideoPlayer({
   const box = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [started, setStarted] = useState(false);
+  /** The browser refused to play it, or it ended: nothing is playing though it should be, so offer Play. */
+  const [stalled, setStalled] = useState(false);
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const sound = useActiveSound(useId());
   const playing = slideActive && visible && (!reduced || started);
@@ -69,10 +71,12 @@ export function VideoPlayer({
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    if (playing) node.play()?.catch(() => {});
+    if (playing) node.play()?.catch(() => setStalled(true));
     else {
-      node.pause();
+      if (!node.paused) node.pause();
       release();
+      setStalled(false);
+      setStarted(false);
     }
   }, [playing, release]);
   useEffect(() => release, [release]);
@@ -82,6 +86,12 @@ export function VideoPlayer({
     if (ref.current) ref.current.muted = !loud;
   }, [loud]);
 
+  const start = () => {
+    setStarted(true);
+    setStalled(false);
+    if (playing) ref.current?.play()?.catch(() => setStalled(true));
+  };
+  const onScreen = slideActive && visible;
   const toggleSound = () => (loud ? sound.release() : sound.claim());
   return (
     <div ref={box} className="relative size-full">
@@ -91,26 +101,26 @@ export function VideoPlayer({
         poster={poster}
         muted
         playsInline
-        preload="metadata"
+        preload="none"
         loop={loop}
         aria-label="Video"
+        onPlay={() => setStalled(false)}
+        onEnded={() => setStalled(true)}
         onClick={playing ? toggleSound : undefined}
         className="size-full bg-surface-strong object-contain"
       />
       <div className="pointer-events-none absolute inset-0">
-        {reduced && slideActive && (
-          <Pin at={started ? 'tl' : 'center'}>
-            <button
-              type="button"
-              aria-label={started ? 'Pause video' : 'Play video'}
-              onClick={() => setStarted(!started)}
-              className={control}
-            >
-              {started ? (
-                <Pause aria-hidden="true" className="size-6" />
-              ) : (
-                <Play aria-hidden="true" className="size-8" />
-              )}
+        {onScreen && (stalled || (reduced && !started)) && (
+          <Pin at="center">
+            <button type="button" aria-label="Play video" onClick={start} className={control}>
+              <Play aria-hidden="true" className="size-8" />
+            </button>
+          </Pin>
+        )}
+        {onScreen && reduced && started && !stalled && (
+          <Pin at="tl">
+            <button type="button" aria-label="Pause video" onClick={() => setStarted(false)} className={control}>
+              <Pause aria-hidden="true" className="size-6" />
             </button>
           </Pin>
         )}
@@ -118,7 +128,7 @@ export function VideoPlayer({
           <Pin at="tr">
             <button
               type="button"
-              aria-label={loud ? 'Mute video' : 'Unmute video'}
+              aria-label="Video sound"
               aria-pressed={loud}
               onClick={toggleSound}
               className={control}

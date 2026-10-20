@@ -263,11 +263,11 @@ function Video({
   status?: VideoStatus;
   playable: boolean;
 }) {
+  const slideActive = useContext(SlideActive);
   const url = assets[String(el.assetId)];
   if (!url) return <VideoTile status={status} />;
   const src = url.startsWith('/') ? apiOrigin() + url : url;
   const poster = `${src}?poster=1`;
-  const slideActive = useContext(SlideActive);
   if (!playable || slideActive === undefined) {
     return <img src={poster} alt="" className="size-full object-cover" draggable={false} />;
   }
@@ -366,27 +366,27 @@ export function SlideBoard({
 
   const credits = creditsOf(slide);
   return (
-    <div ref={box} className="flex size-full items-center justify-center" data-mode={mode}>
-      <div
-        className="relative shrink-0 rounded-[inherit]"
-        style={{
-          width: BOARD_WIDTH * scale,
-          height: height * scale,
-          visibility: scale ? 'visible' : 'hidden',
-        }}
-      >
+    <BoardScale value={scale}>
+      <div ref={box} className="flex size-full items-center justify-center" data-mode={mode}>
         <div
-          role="group"
-          aria-roledescription="slide"
-          aria-label={label}
-          className="absolute inset-0 overflow-hidden rounded-[inherit]"
+          className="relative shrink-0 rounded-[inherit]"
+          style={{
+            width: BOARD_WIDTH * scale,
+            height: height * scale,
+            visibility: scale ? 'visible' : 'hidden',
+          }}
         >
           <div
-            ref={edit?.boardRef}
-            className="absolute top-0 left-0 origin-top-left"
-            style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={label}
+            className="absolute inset-0 overflow-hidden rounded-[inherit]"
           >
-            <BoardScale value={scale}>
+            <div
+              ref={edit?.boardRef}
+              className="absolute top-0 left-0 origin-top-left"
+              style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+            >
               <div className="absolute inset-0" onPointerDown={edit?.onBackgroundPointerDown}>
                 <Background fill={slide.background} assets={assets} />
               </div>
@@ -417,41 +417,41 @@ export function SlideBoard({
                   )}
                 </div>
               ))}
-            </BoardScale>
+            </div>
+            {credits.length > 0 && (
+              <p className="absolute top-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
+                Photo by{' '}
+                {credits.map((c, i) => (
+                  <span key={c.name}>
+                    {i > 0 && ', '}
+                    <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
+                      {c.name}
+                    </a>
+                  </span>
+                ))}{' '}
+                on{' '}
+                <a
+                  href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-semibold underline"
+                >
+                  Unsplash
+                </a>
+              </p>
+            )}
           </div>
-          {credits.length > 0 && (
-            <p className="absolute top-1.5 left-1.5 max-w-[90%] truncate rounded-sm bg-board-credit px-1.5 py-0.5 text-caption text-board-credit-foreground">
-              Photo by{' '}
-              {credits.map((c, i) => (
-                <span key={c.name}>
-                  {i > 0 && ', '}
-                  <a href={c.url} target="_blank" rel="noreferrer noopener" className="font-semibold underline">
-                    {c.name}
-                  </a>
-                </span>
-              ))}{' '}
-              on{' '}
-              <a
-                href="https://unsplash.com/?utm_source=notalah&utm_medium=referral"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="font-semibold underline"
-              >
-                Unsplash
-              </a>
-            </p>
+          {edit?.overlay && (
+            // Outside the clipped slide, so handles and frames of elements at the edge stay whole and grabbable.
+            <div
+              className="pointer-events-none absolute top-0 left-0 origin-top-left"
+              style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
+            >
+              {edit.overlay}
+            </div>
           )}
         </div>
-        {edit?.overlay && (
-          // Outside the clipped slide, so handles and frames of elements at the edge stay whole and grabbable.
-          <div
-            className="pointer-events-none absolute top-0 left-0 origin-top-left"
-            style={{ width: BOARD_WIDTH, height, transform: `scale(${scale})` }}
-          >
-            {edit.overlay}
-          </div>
-        )}
       </div>
-    </div>
+    </BoardScale>
   );
 }
