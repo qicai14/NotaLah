@@ -34,6 +34,7 @@ async function resolveMusic(
   try {
     const track = await lookupTrack(n.music.trackId, userId);
     if (!track) {
+      if (n.music.trackId === stored?.trackId) return true; // saved during an outage; unrelated edits must not fail
       res.status(400).json({ error: 'Validation failed', errors: { music: 'Unknown music track' } });
       return false;
     }

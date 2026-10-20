@@ -1692,7 +1692,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Context:** FR17 was restored on 14 Oct with Deezer, then switched to Jamendo (D43) because Deezer's terms limit use to
   private use. R21 stored the music reference with the title, artist and cover left empty. Spec: `docs/specs/R9_background_audio.md`.
 - **Decision (user, agreed 20 Oct):** a note has at most one Jamendo track. The reader plays it by tapping (never
-  autoplay); the viewer chip is built after the R29 feed player merges. A deck with a video cannot have music
+  autoplay); the viewer chip (below) is built on R29's `useActiveSound`. A deck with a video cannot have music
   (`MUSIC_VIDEO_CONFLICT`, "Remove videos to add music"), enforced by `deckSchema` and by the note save. In the editor the
   Music panel is disabled with that reason, and the video picker asks to remove the music first.
 - **Schema:** migration `20261020000002_music_jamendo`: `pst_music_provider` CHECK now allows only `jamendo` (no row used
@@ -1703,7 +1703,15 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   looked up again, so autosave does not spend the allowance. Unknown track: 400 `errors.music`. **Jamendo down, monthly cap
   reached or the user's daily budget spent: the save still succeeds** with the track id and volume and NULL details (a changed
   track clears the old details), and the next save retries, so autosave never fails because of music. A track found by
-  search is remembered (500 ids) and reused by the save without a second call.
+  search is remembered (500 ids) and reused by the save without a second call. A track whose details are still NULL and
+  that Jamendo now reports as unknown is a 400 only when the track id changed; the same id saves as is (details stay NULL),
+  so an unrelated edit never fails because of an old outage.
+- **Viewer chip:** `components/MusicChip.tsx` in the feed card, `NoteDetail` and `SharedNote`: cover, "Title — Artist" and a
+  "CC licence" link (new tab, `rel="noopener noreferrer"`), with the stream from `jamendoStreamUrl(trackId)`. One button,
+  label "Background music", `aria-pressed`; it never autoplays, loops, uses the note's volume and `preload="none"`. It claims
+  `useActiveSound` with its own id, so music and feed videos silence each other, and it pauses when under half on screen or
+  unmounted. With NULL details the chip stays (so the track can still be heard) and reads "Music from Jamendo" with no licence
+  link. A deck with music has no video, so the two never share a slide.
 - **Search:** `GET /api/music/search?q=&instrumental=1&page=` proxies `/v3.0/tracks` (20 results, `vocalinstrumental=instrumental`
   when ticked, on by default). Results keep only tracks with a Creative Commons licence page and a Jamendo cover; the
   title is HTML-entity decoded (Jamendo sends `&quot;`). The stream URL is built from the id
@@ -1720,7 +1728,7 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   `img-src https://usercontent.jamendo.com` to the host's policy if R11 introduces one.
 - **Alternatives:** an own-upload music library (storage and copyright moderation); storing the stream URL (Jamendo's `audio`
   URLs carry a signed `from` token and expire); a `MUSIC_T` table (one track per note makes columns enough).
-- **Tests:** MUS-TC1 to MUS-TC17; USE-TC7 and DEP-TC12 updated.
+- **Tests:** MUS-TC1 to MUS-TC21; USE-TC7 and DEP-TC12 updated.
 - **Reversibility:** High: one migration (down restores the Deezer check and drops the licence column), one feature folder.
 
 ## D74 - One free origin through a Cloudflare Pages proxy (supersedes the domain part of D65 and D66) (20 Oct 2026)

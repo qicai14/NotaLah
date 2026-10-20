@@ -259,6 +259,12 @@ describe('Background music (R9)', () => {
     expect(atCap).not.toHaveBeenCalled();
 
     await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
+    stub(() => reply([]));
+    const empty = await put(uid, noteId, note({ music: music(168, 70) }));
+    expect(empty.status).toBe(200);
+    expect(empty.body.note.music).toMatchObject({ trackId: 168, title: null });
+
+    await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
     stub(() => reply([raw(168)]));
     const later = await put(uid, noteId, note({ music: music(168, 70) }));
     expect(later.body.note.music).toMatchObject({ title: 'Track 168', volume: 70 });
