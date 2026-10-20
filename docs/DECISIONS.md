@@ -1585,3 +1585,31 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   without the app (the unsplash limiter moved to `unsplash/rateLimit.ts`). `@types/node` comes from the pnpm catalog.
 - **Tests:** CLN-TC1 to CLN-TC4, DEP-TC12; USE-TC4 and USE-TC7 updated.
 - **Reversibility:** High: no schema change; each item is its own commit.
+
+## D69 - Deck themes, slide layouts and fonts (R21d, 20 Oct 2026)
+- **What:** `shared/src/design.ts` holds the design data the editor and the future AI assistant (R28) share:
+  `FONT_NAMES` for the six curated fonts, six deck themes (`THEMES`: the four old templates `plain`, `lecture`,
+  `revision`, `howto` plus `journal` and `midnight`; each a background, heading, text, accent and muted colour, a heading
+  and a body font and a code-block style), five layouts (`title`, `title-body`, `two-column`, `code`, `image-caption`)
+  built by `layoutSlide(layout, theme, aspect, newId)` for any aspect, and `applyTheme(deck, id)`.
+- **Applying a theme** writes concrete values into every element (R21 spec 2.3), so a later edit to `THEMES` never
+  changes a saved note: text at size 40 or more takes the heading font and colour, smaller text the body ones
+  (a JetBrains Mono box keeps its font; inline span colours are kept); tables take the body font, text colour and muted
+  borders; shapes and lines take the accent, except a shape filled with the previous theme's muted colour (the image
+  placeholder), which stays muted; code blocks take the theme's code style; every slide without a photo background gets
+  the theme background. One undo step. New text, shapes, lines, tables, code and blank slides are created in the current
+  theme. `pst_template` stores the theme id (no migration: the column has no CHECK and the schema already rejects
+  unknown ids).
+- **UI:** a Design panel first in the editor rail and phone tray (theme cards, live layout previews). A layout fills the
+  active slide when it has no elements (keeping its page notes), else becomes a new slide after it. The Template select
+  left the Details panel. The font select lists only the curated fonts, each in its own face.
+- **Fonts:** self-hosted woff2 from `@fontsource` (`source-sans-3` 5.3.1, `lora`, `merriweather`, `montserrat`,
+  `jetbrains-mono` variable 5.3.0; `atkinson-hyperlegible` 5.3.0 static 400/700), upright and italic, imported in
+  `index.css`. `@font-face` files download only when a slide uses them, so the app's own first paint is unchanged.
+- **Alternatives:** storing only the theme id and resolving styles at render time (rejected by the spec: a palette edit
+  would restyle published notes); a role field on elements to mark headings (rejected: the strict schema and the AI
+  output would both need it; the size rule is enough); Google Fonts CDN (rejected: third-party requests and text
+  measurement drift); an image placeholder element type (rejected for now: a muted rectangle the author replaces is
+  enough and needs no schema change).
+- **Tests:** NOTE-TC91 to NOTE-TC94.
+- **Reversibility:** High: no schema change; themes and layouts are constants, and saved notes carry their own values.

@@ -68,6 +68,10 @@ Tracking tightens as size grows; these are built into the classes, so do not add
 | `text-body-sm` | 0.8125rem / 1.25rem | Meta rows, buttons, labels |
 | `text-caption` | 0.75rem / 1rem, +0.01em | Counts, chips, hints |
 
+Slides use their own curated fonts (deck data, never UI type): Source Sans 3, Atkinson Hyperlegible, Lora, Merriweather,
+Montserrat and JetBrains Mono, self-hosted from `@fontsource` in `index.css` (each woff2 downloads only when a slide uses
+it). Ids and names live in `@notalah/shared` (`FONT_IDS`, `FONT_NAMES`); CSS stacks in `components/board/geometry.ts`.
+
 Weights: 400 body, 600 labels and meta names, 700 headings and buttons, 800 display and the wordmark. Sentence case
 everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
 
@@ -156,6 +160,12 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   or a text edit as one step). Selection frame and handles use `--primary`; snap guides use `--editor-guide`. Handles are
   10 px (22 px target) on desktop and 14 px (44 px target) on phones; phones get corner handles only and centre snap.
   Background and shape swatches are deck colours, so they are the one place raw hex values appear in components.
+  **Design panel** (R21d, D69), first in the panel rail and the phone tray: theme cards (`aspect-[4/3]` swatch in the theme's
+  background with "Aa" in its heading font, the body font's name and an accent dot; `aria-pressed` on the current theme;
+  2 columns, 3 in the phone sheet), then layout tiles that render a real `SlideBoard` of each layout in the current theme
+  and aspect. Themes, layouts and `applyTheme` are in `shared/src/design.ts`; a theme writes concrete fonts and colours
+  into every element, so restyling later never changes a published note. The font select (`FontSelect` in
+  `ElementBar.tsx`) lists only the curated fonts, each drawn in its own face.
 
 ## 8. Accessibility checklist
 
