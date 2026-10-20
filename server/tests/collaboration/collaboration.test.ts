@@ -2,8 +2,7 @@ import { createHash } from 'node:crypto';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
-import { replaceNote } from '../../src/features/notes/repository';
-import { parseNoteBody } from '../../src/features/notes/service';
+import { publishNote, replaceNote } from '../../src/features/notes/repository';
 import { getCandidates } from '../../src/features/ranking/repository';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, CSRF, follow, insertNote, insertUser, slidesOf, textSlide, truncateAll } from '../helpers';
@@ -383,14 +382,7 @@ describe('Collaboration (R30)', () => {
     const again = await cast();
     const read = (await api.get(again.owner, `/api/notes/${again.note}`)).body.note;
     await api.put(again.editor, `/api/notes/${again.note}`, await editBody(again.owner, again.note));
-    const body = parseNoteBody({
-      ...(await editBody(again.owner, again.note)),
-      status: 'published',
-      visibility: 'public',
-    });
-    if (!body.ok) throw new Error('fixture');
-    const ignore = { ignoreLock: true };
-    expect(await replaceNote(again.note, body.data, again.owner, new Date(read.updatedAt), ignore)).toBe('stale');
+    expect(await publishNote(again.note, again.owner, 'public', new Date(read.updatedAt))).toBe(false);
   });
 
   it('COL-TC15: a slide edit removes V until the lecturer re-confirms', async () => {

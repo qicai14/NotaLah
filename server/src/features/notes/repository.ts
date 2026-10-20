@@ -334,14 +334,12 @@ export type ReplaceResult = 'ok' | 'gone' | 'forbidden' | 'locked' | 'stale';
  * live soft lock, with 'stale' when `baseUpdatedAt` is given and differs from pst_updated_at, and with 'forbidden' when the
  * editor lost edit access since the route checked it (R30). A co-author's first save starts their credit (clb_edited_at, D46). An edit never moves
  * pst_published_at; a title or slide change to a published note stamps pst_content_edited_at, which voids older Super Likes.
- * `ignoreLock` is only for the owner publishing the last saved version while a co-author holds the lock (D58).
  */
 export function replaceNote(
   id: number,
   n: NoteInput,
   editorId: number,
   baseUpdatedAt: Date | null,
-  { ignoreLock = false }: { ignoreLock?: boolean } = {},
 ): Promise<ReplaceResult> {
   return inTransaction(async (c) => {
     const { rows } = await c.query<{
@@ -363,7 +361,7 @@ export function replaceNote(
     const cur = rows[0];
     if (!cur) return 'gone'; // deleted or hidden since the permission check
     if (cur.role !== 'owner' && cur.role !== 'edit') return 'forbidden';
-    if (cur.lockedByOther && !ignoreLock) return 'locked';
+    if (cur.lockedByOther) return 'locked';
     // Both sides are millisecond Dates: the client was sent pst_updated_at through the same pg parser.
     if (baseUpdatedAt && cur.updatedAt.getTime() !== baseUpdatedAt.getTime()) return 'stale';
     const contentEdited =
@@ -388,6 +386,27 @@ export function replaceNote(
     }
     return 'ok';
   });
+}
+
+/**
+ * Publishes the owner's draft as one UPDATE, ignoring a co-author's edit lock because no content changes (D58). False
+ * when the note is no longer that owner's draft or was saved since `baseUpdatedAt` (pst_updated_at is compared at
+ * millisecond precision, like the Date the client read).
+ */
+export async function publishNote(
+  id: number,
+  ownerId: number,
+  visibility: 'public' | 'contacts',
+  baseUpdatedAt: Date,
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `UPDATE "POST_T"
+     SET pst_status = 'published', pst_visibility = $3, pst_published_at = NOW(), pst_updated_at = NOW()
+     WHERE pst_id = $1 AND pst_usr_id = $2 AND pst_status = 'draft'
+       AND date_trunc('milliseconds', pst_updated_at) = $4`,
+    [id, ownerId, visibility, baseUpdatedAt],
+  );
+  return rowCount === 1;
 }
 
 export async function softDeleteNote(id: number): Promise<void> {
