@@ -1,5 +1,5 @@
 import { Bell, Flag, GraduationCap, TriangleAlert } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageMessage } from '@/components/PageMessage';
 import { Button } from '@/components/ui/button';
@@ -106,13 +106,18 @@ export default function Notifications() {
   const types = FILTERS[filter].types;
   const path = types ? `/notifications?type=${types.join(',')}` : '/notifications';
   const list = usePaged<Notification>(path, 'notifications');
-  const { unread, fresh, markRead } = useNotifications();
+  const { unread, counted, fresh, markRead } = useNotifications();
   const [readIds, setReadIds] = useState<ReadonlySet<number>>(new Set());
   const [readUpTo, setReadUpTo] = useState(0);
   const [decided, setDecided] = useState<Record<number, Decided>>({});
   const [failed, setFailed] = useState(false);
 
   const items = [...liveItems(fresh, list.items, types), ...list.items];
+  // Nothing unread left (marked here or in another tab): everything loaded so far is read.
+  const top = Math.max(0, ...items.map((n) => n.id));
+  useEffect(() => {
+    if (counted && unread === 0) setReadUpTo((u) => Math.max(u, top));
+  }, [counted, unread, top]);
   const reading = (n: Notification) => isRead(n, readIds, readUpTo);
 
   const open = (n: Notification) => {
@@ -121,13 +126,18 @@ export default function Notifications() {
     void markRead([n.id]);
   };
   const markAll = async () => {
-    const top = Math.max(0, ...items.map((n) => n.id));
     const ok = await markRead();
     setFailed(!ok);
     if (ok) setReadUpTo(top);
   };
 
-  let last = '';
+  const groups = items.reduce<[string, Notification[]][]>((acc, n) => {
+    const label = section(n.createdAt);
+    const g = acc.at(-1);
+    if (g?.[0] === label) g[1].push(n);
+    else acc.push([label, [n]]);
+    return acc;
+  }, []);
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -174,32 +184,30 @@ export default function Notifications() {
         />
       )}
 
-      <ul className="mt-4 flex flex-col">
-        {items.map((n) => {
-          const s = section(n.createdAt);
-          const heading = s !== last ? s : null;
-          last = s;
-          return (
-            <li key={n.id} className="list-none">
-              {heading && <h2 className="px-2 pt-4 pb-1 text-body-sm font-bold text-muted-foreground">{heading}</h2>}
-              <ul>
-                <Row
-                  n={n}
-                  read={reading(n)}
-                  decided={decided[n.id]}
-                  onOpen={() => open(n)}
-                  onDecided={(d) => {
-                    setDecided((m) => ({ ...m, [n.id]: d }));
-                    open(n);
-                  }}
-                />
-              </ul>
-            </li>
-          );
-        })}
-      </ul>
+      {groups.map(([label, rows]) => (
+        <section key={label} aria-labelledby={`ntf-${label.replace(' ', '-')}`} className="mt-4">
+          <h2 id={`ntf-${label.replace(' ', '-')}`} className="px-2 pb-1 text-body-sm font-bold text-muted-foreground">
+            {label}
+          </h2>
+          <ul className="flex flex-col">
+            {rows.map((n) => (
+              <Row
+                key={n.id}
+                n={n}
+                read={reading(n)}
+                decided={decided[n.id]}
+                onOpen={() => open(n)}
+                onDecided={(d) => {
+                  setDecided((m) => ({ ...m, [n.id]: d }));
+                  open(n);
+                }}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
 
-      {list.hasMore && (
+      {list.hasMore && !list.loading && (
         <div className="mt-4 flex justify-center">
           <Button variant="outline" onClick={list.loadMore} disabled={list.loadingMore}>
             {list.loadingMore ? 'Loading…' : 'Show more'}

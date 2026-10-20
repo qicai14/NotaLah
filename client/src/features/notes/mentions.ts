@@ -11,7 +11,7 @@ export function findMention(text: string, caret: number): { start: number; query
 
 /** People whose name contains the query, name-start matches first, one row per id, at most `max`. */
 export function suggest(people: Person[], query: string, max = 6): Person[] {
-  const q = query.trim().toLowerCase();
+  const q = query.toLowerCase(); // a trailing space after a full name ends the search
   const seen = new Set<number>();
   return people
     .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), p.displayName.toLowerCase().includes(q))))

@@ -31,13 +31,13 @@ export function describe(n: Notification): { text: string; to: string | null } {
     case 'note_hidden':
       return { text: `Your ${n.note ? `note ${title}` : 'note'} was hidden by an administrator.`, to: note };
     case 'message_request':
-      return { text: 'wants to message you', to: '/messages' };
+      return { text: 'wants to message you', to: '/messages?tab=requests' };
     case 'collab_request':
-      return { text: `asked to collaborate on ${title}`, to: null };
+      return { text: `asked to collaborate on ${title}`, to: note };
     case 'collab_approved':
       return { text: `approved your request to collaborate on ${title}`, to: note };
     case 'collab_declined':
-      return { text: `declined your request to collaborate on ${title}`, to: null };
+      return { text: `declined your request to collaborate on ${title}`, to: note };
     case 'edited_since_verification':
       return { text: `${title} was edited since you verified it.`, to: note };
   }

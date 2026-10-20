@@ -214,6 +214,7 @@ function FeedList({ tab, guest }: { tab: Tab; guest: boolean }) {
               noteId={commentsFor.id}
               slideCount={commentsFor.slideCount}
               noteAuthorId={commentsFor.author.id}
+              noteAuthor={commentsFor.author}
               heading={false}
               className="flex-1 pt-4"
             />

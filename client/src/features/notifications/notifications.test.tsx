@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { describe as say, isRead, liveItems, section } from './helpers';
 import { NotificationsProvider, useNotificationUnread, useNotifications } from './NotificationsContext';
@@ -7,11 +8,13 @@ import type { Notification } from './types';
 
 type Handler = (payload?: unknown) => void;
 const handlers: Record<string, Handler> = {};
-const socket = {
-  on: (e: string, fn: Handler) => void (handlers[e] = fn),
-  off: () => {},
-};
-vi.mock('../messaging/MessagingContext', () => ({ useMessaging: () => ({ socket, connections: 1 }) }));
+const socket = { connected: true };
+vi.mock('../messaging/MessagingContext', () => ({
+  useMessaging: () => ({ socket, connections: 1 }),
+  useSocketEvent: (event: string, fn: Handler) => {
+    useEffect(() => void (handlers[event] = fn));
+  },
+}));
 vi.mock('../auth/AuthContext', () => ({ useAuth: () => ({ user: { id: 1 } }) }));
 const api = vi.fn();
 vi.mock('@/lib/api', () => ({ api: (...a: unknown[]) => api(...a) }));
@@ -63,7 +66,7 @@ describe('R8 UI badge', () => {
     expect(screen.getByTestId('badge').textContent).toBe('0');
   });
 
-  it('NTF-TC20 marking read posts the ids and takes the count from the reply', async () => {
+  it('NTF-TC20 marking read posts the ids; the count comes from the socket while connected, else the reply', async () => {
     render(
       <NotificationsProvider>
         <Probe />
@@ -73,7 +76,14 @@ describe('R8 UI badge', () => {
     api.mockResolvedValueOnce({ unreadCount: { total: 1, byType: {} } });
     await act(async () => screen.getByText('one').click());
     expect(api).toHaveBeenLastCalledWith('/notifications/read', { method: 'POST', body: { ids: [1] } });
+    expect(screen.getByTestId('badge').textContent).toBe('2');
+    act(() => handlers['notification:count']({ unreadCount: { total: 1, byType: {} } }));
     expect(screen.getByTestId('badge').textContent).toBe('1');
+    socket.connected = false;
+    api.mockResolvedValueOnce({ unreadCount: { total: 0, byType: {} } });
+    await act(async () => screen.getByText('one').click());
+    expect(screen.getByTestId('badge').textContent).toBe('0');
+    socket.connected = true;
   });
 });
 
@@ -91,6 +101,10 @@ describe('R8 UI inbox logic', () => {
     expect(liveItems(fresh, [item(1)], null).map((n) => n.id)).toEqual([3, 2]);
     expect(liveItems(fresh, [], ['mention']).map((n) => n.id)).toEqual([2]);
     expect(say(item(1)).to).toBe('/users/7');
+    expect(say(item(1, { type: 'message_request' })).to).toBe('/messages?tab=requests');
+    const note = { id: 4, title: 'Joins' };
+    expect(say(item(1, { type: 'collab_declined', note })).to).toBe('/notes/4');
+    expect(say(item(1, { type: 'collab_request', note })).to).toBe('/notes/4');
     expect(say(item(1, { type: 'super_like', note: { id: 4, title: 'Joins' } }))).toEqual({
       text: 'Super Liked your note “Joins”',
       to: '/notes/4',

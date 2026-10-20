@@ -1,11 +1,13 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '../auth/AuthContext';
-import { useMessaging } from '../messaging/MessagingContext';
+import { useMessaging, useSocketEvent } from '../messaging/MessagingContext';
 import type { Notification, UnreadCount } from './types';
 
 interface NotificationsValue {
   unread: number;
+  /** True once the count is known (the first fetch or push); until then 0 means "not loaded". */
+  counted: boolean;
   /** Items pushed live this session, newest first. */
   fresh: Notification[];
   /** Marks `ids` (or everything when omitted) read; resolves false if the call failed. */
@@ -24,53 +26,64 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { socket, connections } = useMessaging();
   const me = user?.id ?? null;
   const [unread, setUnread] = useState(0);
+  const [counted, setCounted] = useState(false);
   const [fresh, setFresh] = useState<Notification[]>([]);
 
   useEffect(() => {
     setUnread(0);
+    setCounted(false);
     setFresh([]);
   }, [me]);
+
+  // Counts pushed by the socket; a fetch that started before one is stale and is dropped.
+  const pushes = useRef(0);
 
   useEffect(() => {
     if (me === null || connections === 0) return;
     let live = true;
+    const seen = pushes.current;
     api<{ unreadCount: UnreadCount }>('/notifications/unread-count')
-      .then((r) => live && setUnread(r.unreadCount.total))
+      .then((r) => {
+        if (!live || seen !== pushes.current) return;
+        setUnread(r.unreadCount.total);
+        setCounted(true);
+      })
       .catch(() => {}); // the badge stays as it was; the next event or visit corrects it
     return () => {
       live = false;
     };
   }, [me, connections]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const onNew = (p: { notification: Notification; unreadCount: UnreadCount }) => {
-      setFresh((f) => [p.notification, ...f.filter((n) => n.id !== p.notification.id)].slice(0, 50));
-      setUnread(p.unreadCount.total);
-    };
-    const onCount = (p: { unreadCount: UnreadCount }) => setUnread(p.unreadCount.total);
-    socket.on('notification:new', onNew);
-    socket.on('notification:count', onCount);
-    return () => {
-      socket.off('notification:new', onNew);
-      socket.off('notification:count', onCount);
-    };
-  }, [socket]);
+  useSocketEvent<{ notification: Notification; unreadCount: UnreadCount }>('notification:new', (p) => {
+    pushes.current += 1;
+    setFresh((f) => [p.notification, ...f.filter((n) => n.id !== p.notification.id)].slice(0, 50));
+    setUnread(p.unreadCount.total);
+    setCounted(true);
+  });
+  useSocketEvent<{ unreadCount: UnreadCount }>('notification:count', (p) => {
+    pushes.current += 1;
+    setUnread(p.unreadCount.total);
+    setCounted(true);
+  });
 
-  const markRead = useCallback(async (ids?: number[]) => {
-    try {
-      const r = await api<{ unreadCount: UnreadCount }>('/notifications/read', {
-        method: 'POST',
-        body: ids ? { ids } : {},
-      });
-      setUnread(r.unreadCount.total);
-      return true;
-    } catch {
-      return false;
-    }
-  }, []);
+  const markRead = useCallback(
+    async (ids?: number[]) => {
+      try {
+        const r = await api<{ unreadCount: UnreadCount }>('/notifications/read', {
+          method: 'POST',
+          body: ids ? { ids } : {},
+        });
+        // While connected the server also pushes the count; the reply can arrive after a newer push, so it is not used.
+        if (!socket?.connected) setUnread(r.unreadCount.total);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [socket],
+  );
 
-  const value = useMemo(() => ({ unread, fresh, markRead }), [unread, fresh, markRead]);
+  const value = useMemo(() => ({ unread, counted, fresh, markRead }), [unread, counted, fresh, markRead]);
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 

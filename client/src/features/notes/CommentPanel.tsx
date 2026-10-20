@@ -1,5 +1,5 @@
 import { Heart, Pin } from 'lucide-react';
-import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useAction } from '@/lib/useAction';
@@ -17,19 +17,36 @@ import { useGuestPrompt } from '../auth/GuestPrompt';
 
 const MAX = 1000;
 
+/** Fetches the viewer's friends (mounted only once someone types an @) and reports them upward. */
+function FriendsLoader({ onLoad }: { onLoad: (friends: Person[]) => void }) {
+  const { friends } = useFriends();
+  const key = friends.map((f) => f.id).join();
+  useEffect(() => {
+    onLoad(friends.map((f) => ({ id: f.id, displayName: f.displayName })));
+    // friends is a new array each render; its ids are the real dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, onLoad]);
+  return null;
+}
+
 function Composer({
   noteId,
   slideCount,
   parentId,
   people,
+  friends,
+  onWantFriends,
   onDone,
   onCancel,
 }: {
   noteId: number;
   slideCount: number;
   parentId?: number;
-  /** Thread participants; friends are added here. Together they are who the server lets a comment mention. */
+  /** Who the server lets this comment mention besides friends: the note's author and, in a reply, the thread. */
   people: Person[];
+  friends: Person[];
+  /** Called when an @ is first typed, so friends are fetched only when needed. */
+  onWantFriends: () => void;
   onDone: () => void;
   onCancel?: () => void;
 }) {
@@ -37,7 +54,6 @@ function Composer({
   const [slideNo, setSlideNo] = useState('');
   const { run, pending, error, setError } = useAction();
   const idp = `c-${parentId ?? 'new'}`;
-  const { friends } = useFriends();
   const [picked, setPicked] = useState<Map<number, string>>(new Map());
   const [caret, setCaret] = useState(0);
   const [active, setActive] = useState(0);
@@ -47,6 +63,11 @@ function Composer({
   const mention = dismissed ? null : findMention(body, caret);
   const options = mention ? suggest([...people, ...friends], mention.query) : [];
   const open = options.length > 0;
+  const typing = mention !== null;
+
+  useEffect(() => {
+    if (typing) onWantFriends();
+  }, [typing, onWantFriends]);
 
   useEffect(() => {
     if (nextCaret.current === null) return;
@@ -62,6 +83,7 @@ function Composer({
     nextCaret.current = r.caret;
     setPicked((m) => new Map(m).set(p.id, p.displayName));
     setActive(0);
+    setDismissed(true); // "@Name " still looks like a partial name, so keep the list shut until the next keystroke
     field.current?.focus();
   };
 
@@ -138,7 +160,6 @@ function Composer({
           id={`${idp}-body`}
           ref={field}
           value={body}
-          role="combobox"
           aria-expanded={open}
           aria-controls={open ? `${idp}-people` : undefined}
           aria-activedescendant={open && options[active] ? `${idp}-person-${options[active].id}` : undefined}
@@ -299,12 +320,15 @@ export function CommentPanel({
   noteId,
   slideCount,
   noteAuthorId,
+  noteAuthor,
   heading = true,
   className,
 }: {
   noteId: number;
   slideCount: number;
   noteAuthorId?: number;
+  /** Offered in the @ picker: the server lets a comment mention the note's author. */
+  noteAuthor?: Person;
   heading?: boolean;
   className?: string;
 }) {
@@ -315,9 +339,15 @@ export function CommentPanel({
   const [replyTo, setReplyTo] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const headingId = useId();
-  const people: Person[] = (data?.comments ?? [])
-    .flatMap((c) => [c, ...c.replies])
-    .flatMap((c) => (c.author && c.author.id !== user?.id ? [c.author] : []));
+  const [wantFriends, setWantFriends] = useState(false);
+  const [friends, setFriends] = useState<Person[]>([]);
+  const onWantFriends = useCallback(() => setWantFriends(true), []);
+  // Only people the server will notify (thread participants, the note's author, friends); never the viewer.
+  const peopleFor = (thread?: Comment) =>
+    [...(thread ? [thread, ...thread.replies] : []).map((c) => c.author), noteAuthor ?? null]
+      .filter((p): p is Person => p !== null && p.id !== user?.id)
+      .map((p) => ({ id: p.id, displayName: p.displayName }));
+  const composerProps = { friends, onWantFriends };
   const common = { onChanged: () => (setActionError(null), reload()), onError: setActionError, noteAuthorId };
 
   return (
@@ -326,6 +356,7 @@ export function CommentPanel({
       aria-label={heading ? undefined : 'Comments'}
       className={cn('flex min-h-0 flex-col', className)}
     >
+      {wantFriends && user && <FriendsLoader onLoad={setFriends} />}
       {heading && (
         <h2 id={headingId} className="px-5 pt-5 pb-3 text-title-sm font-bold">
           Comments
@@ -368,7 +399,8 @@ export function CommentPanel({
                         noteId={noteId}
                         slideCount={slideCount}
                         parentId={c.id}
-                        people={people}
+                        people={peopleFor(c)}
+                        {...composerProps}
                         onCancel={() => setReplyTo(null)}
                         onDone={() => (setReplyTo(null), reload())}
                       />
@@ -382,7 +414,7 @@ export function CommentPanel({
       </div>
       <div className="border-t bg-background px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {user ? (
-          <Composer noteId={noteId} slideCount={slideCount} people={people} onDone={reload} />
+          <Composer noteId={noteId} slideCount={slideCount} people={peopleFor()} {...composerProps} onDone={reload} />
         ) : (
           <div className="flex items-center justify-between gap-3">
             <p className="text-body-sm text-muted-foreground">Log in to comment.</p>

@@ -16,6 +16,9 @@ describe('R8 UI mentions', () => {
     const r = insertMention('hi @Ai there', 3, 6, 'Aina Rahman');
     expect(r.text).toBe('hi @Aina Rahman  there');
     expect(r.caret).toBe(3 + '@Aina Rahman '.length);
+    // right after a pick the list is closed: "@Aina Rahman " matches nobody
+    const again = findMention(r.text, r.caret)!;
+    expect(suggest(people, again.query)).toEqual([]);
   });
 
   it('NTF-TC24 suggests once per person, prefix matches first, and sends only still-named ids', () => {
