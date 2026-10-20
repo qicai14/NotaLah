@@ -12,9 +12,10 @@ import { timeAgo } from '../../lib/format';
 import type { Annotation } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { useGuestPrompt } from '../auth/GuestPrompt';
-import { type Anchor, MAX_QUOTE, resolveAnchor, selectionAnchor, textRange } from './anchors';
+import { type Anchor, MAX_QUOTE, resolveAnchor, selectionAnchor, slideOf, textRange } from './anchors';
 
 const MAX_BODY = 500;
+const OFF_MESSAGE = 'Annotations are turned off for this note';
 type Deck = Pick<Slide, 'elements'>[];
 export type Draft = Anchor & { slideId: number };
 
@@ -38,13 +39,19 @@ export function useHighlights(root: RefObject<HTMLElement | null>, slides: Deck,
   useEffect(() => {
     const node = root.current;
     if (!node || !canPaint()) return;
-    const ranges = list.filter((a) => a.slideId === slideNo).flatMap((a) => rangeOf(node, slides, a) ?? []);
+    const ranges = list.filter((a) => slideOf(slides, a) === slideNo).flatMap((a) => rangeOf(node, slides, a) ?? []);
     CSS.highlights.set('annotation', new Highlight(...ranges));
     return () => void CSS.highlights.delete('annotation');
   }, [root, slides, list, slideNo]);
 
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      if (canPaint()) CSS.highlights.delete('annotation-flash');
+    },
+    [],
+  );
   return useCallback(
     (a: Annotation) => {
       const node = root.current;
@@ -143,7 +150,8 @@ function Composer({
       () =>
         api<{ annotation: Annotation }>(`/notes/${noteId}/annotations`, { method: 'POST', body: { ...draft, body } }),
       (err) => {
-        if (err instanceof ApiError && err.status === 403) onOff();
+        // Only the off switch is handled here; any other 403 (a restricted account) is just shown.
+        if (err instanceof ApiError && err.status === 403 && err.message === OFF_MESSAGE) onOff();
         return errorText(err);
       },
     );
@@ -218,10 +226,13 @@ function Item({
   const reportButton = useRef<HTMLButtonElement>(null);
   const { run, error } = useAction();
   const remove = async () => {
-    const ok = await run(async () => {
-      await api(`/notes/${noteId}/annotations/${a.id}`, { method: 'DELETE' });
-      return true;
-    });
+    const ok = await run(
+      async () => {
+        await api(`/notes/${noteId}/annotations/${a.id}`, { method: 'DELETE' });
+        return true;
+      },
+      (err) => (err instanceof ApiError && err.status === 404 ? (onRemoved(a.id), null) : errorText(err)), // already gone
+    );
     if (ok) onRemoved(a.id);
   };
 
@@ -315,7 +326,10 @@ export function AnnotationPanel({
   onOff: () => void;
 }) {
   const last = slideNo === slides.length;
-  const here = annotations.filter((a) => a.slideId === slideNo || (last && a.slideId > slides.length));
+  const here = annotations.filter((a) => {
+    const at = slideOf(slides, a);
+    return at === slideNo || (last && at > slides.length);
+  });
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {draft && (

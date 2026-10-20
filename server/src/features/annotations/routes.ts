@@ -61,6 +61,7 @@ annotationsRouter.post('/notes/:noteId/annotations', requireAuth, requireActive,
       errors: { elementId: type ? 'Only text can be annotated' : 'That text is not on this slide' },
     });
   }
+  // shortcut: count then insert is not atomic, so concurrent posts can pass 500 by a few; lock the note row if that ever matters.
   if ((await repo.countLive(noteId)) >= repo.ANNOTATION_LIMIT) {
     return res.status(409).json({ error: 'This note has reached its annotation limit' });
   }

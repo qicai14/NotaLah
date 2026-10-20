@@ -9,7 +9,7 @@ import type { Annotation, Note, User } from '../../types';
 import { NoteActions } from '../../components/NoteActions';
 import { describe as say } from '../notifications/helpers';
 import type { Notification } from '../notifications/types';
-import { resolveAnchor, resolveOffset, selectionAnchor, textRange } from './anchors';
+import { resolveAnchor, resolveOffset, selectionAnchor, slideOf, textRange } from './anchors';
 import { AnnotationPanel, SelectionAnnotate } from './Annotations';
 
 const askToLogIn = vi.fn();
@@ -89,20 +89,22 @@ describe('R10 annotations (client)', () => {
     expect(back.toString()).toBe('big wor');
   });
 
-  it('ANN-TC13 resolves an anchor at its offset, then its first occurrence, else lists it as "Text changed"', () => {
+  it('ANN-TC13 resolves an anchor at its offset, then the nearest occurrence, follows its element, else lists it as "Text changed"', () => {
     expect(resolveOffset('a big day, big', 'big', 11)).toBe(11);
-    expect(resolveOffset('a big day, big', 'big', 7)).toBe(2);
+    expect(resolveOffset('a big day, big', 'big', 7)).toBe(11); // 4 away beats 5 away
+    expect(resolveOffset('big one, big two, big three', 'big', 16)).toBe(18); // nearest to the saved offset, not the first
+    expect(resolveOffset('big one, big two, big three', 'big', 11)).toBe(9);
     expect(resolveOffset('a small day', 'big', 2)).toBeNull();
     expect(resolveAnchor(slides, ann(1, { offset: 17 }))).toBe(17);
     expect(resolveAnchor(slides, ann(1, { quote: 'gone' }))).toBeNull();
-    expect(resolveAnchor(slides, ann(1, { slideId: 4 }))).toBeNull();
+    expect(resolveAnchor(slides, ann(1, { slideId: 4, elementId: 'deleted-el' }))).toBeNull();
 
     render(
       <AnnotationPanel
         noteId={9}
         slides={slides}
         slideNo={1}
-        annotations={[ann(1), ann(2, { quote: 'removed words' }), ann(3, { slideId: 2 })]}
+        annotations={[ann(1), ann(2, { quote: 'removed words' }), ann(3, { slideId: 2, elementId: 'elsewhere-1' })]}
         draft={null}
         onDraftDone={() => {}}
         onPosted={() => {}}
@@ -116,7 +118,30 @@ describe('R10 annotations (client)', () => {
     expect(screen.getByText('“removed words”')).toBeTruthy();
     expect(screen.queryByText('Body 3')).toBeNull(); // another slide's annotation
     cleanup();
-    const orphan = { ...ann(4, { slideId: 7 }), body: 'Orphan' };
+    // A slide inserted in front: the annotation follows its element to slide 2 and still resolves.
+    const moved = [{ elements: [] }, ...slides] as unknown as Pick<Slide, 'elements'>[];
+    expect(slideOf(moved, ann(1))).toBe(2);
+    expect(resolveAnchor(moved, ann(1))).toBe(6);
+    const panel = (slideNo: number) => (
+      <AnnotationPanel
+        noteId={9}
+        slides={moved}
+        slideNo={slideNo}
+        annotations={[ann(1)]}
+        draft={null}
+        onDraftDone={() => {}}
+        onPosted={() => {}}
+        onRemoved={() => {}}
+        onShow={() => {}}
+        onOff={() => {}}
+      />
+    );
+    const { rerender } = render(panel(1));
+    expect(screen.queryByText('Body 1')).toBeNull();
+    rerender(panel(2));
+    expect(screen.getByRole('button', { name: 'Show “big” on the slide' })).toBeTruthy();
+    cleanup();
+    const orphan = { ...ann(4, { slideId: 7, elementId: 'deleted-el' }), body: 'Orphan' };
     render(
       <AnnotationPanel
         noteId={9}

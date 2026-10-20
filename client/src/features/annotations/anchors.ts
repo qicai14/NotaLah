@@ -12,8 +12,9 @@ export interface Anchor {
 
 /** Maps a selection to its anchor, or null unless it lies inside one slide text element (`[data-anchor]`). Edge whitespace is dropped. */
 export function selectionAnchor(range: Range): Anchor | null {
-  const start = (range.startContainer.parentElement ?? null)?.closest<HTMLElement>('[data-anchor]');
-  const end = (range.endContainer.parentElement ?? null)?.closest<HTMLElement>('[data-anchor]');
+  const host = (n: Node) => (n instanceof Element ? n : n.parentElement)?.closest<HTMLElement>('[data-anchor]');
+  const start = host(range.startContainer);
+  const end = host(range.endContainer);
   if (!start || start !== end || start.closest('[inert]')) return null;
   const raw = range.toString();
   const quote = raw.trim();
@@ -28,11 +29,13 @@ export function selectionAnchor(range: Range): Anchor | null {
   };
 }
 
-/** Where the quote starts now: at its offset if still there, else its first occurrence, else null ("Text changed"). */
+/** Where the quote starts now: at its offset if still there, else the occurrence nearest that offset, else null ("Text changed"). */
 export function resolveOffset(text: string, quote: string, offset: number): number | null {
   if (text.startsWith(quote, offset)) return offset;
-  const i = text.indexOf(quote);
-  return i < 0 ? null : i;
+  const before = text.lastIndexOf(quote, offset);
+  const after = text.indexOf(quote, offset);
+  if (before < 0) return after < 0 ? null : after;
+  return after < 0 || offset - before <= after - offset ? before : after;
 }
 
 /** An element's plain text as the slide renders it; a template parses the HTML without running or fetching anything. */
@@ -42,9 +45,15 @@ export function htmlText(html: string): string {
   return t.content.textContent ?? '';
 }
 
-/** The annotation's start in the current deck, or null when its slide, element or quote is gone. */
+/** The annotation's slide now (1-based): the one holding its element, so it follows the element when slides move; its saved `slideId` once the element is gone. */
+export function slideOf(slides: Pick<Slide, 'elements'>[], a: Annotation): number {
+  const i = slides.findIndex((s) => s.elements.some((e) => e.id === a.elementId));
+  return i < 0 ? a.slideId : i + 1;
+}
+
+/** The annotation's start in the current deck, or null when its element or quote is gone. */
 export function resolveAnchor(slides: Pick<Slide, 'elements'>[], a: Annotation): number | null {
-  const el = slides[a.slideId - 1]?.elements.find((e) => e.id === a.elementId);
+  const el = slides[slideOf(slides, a) - 1]?.elements.find((e) => e.id === a.elementId);
   return el?.type === 'text' ? resolveOffset(htmlText(el.html), a.quote, a.offset) : null;
 }
 

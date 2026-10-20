@@ -22,6 +22,7 @@ import { RequestDialog } from '../collaboration/RequestDialog';
 import { CommentPanel } from './CommentPanel';
 
 const NO_SLIDES: Note['slides'] = [];
+const NO_ANNOTATIONS: Annotation[] = [];
 
 function BackBar() {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ export default function NoteDetail() {
   const ann = useFetch<{ annotationsOn: boolean; annotations: Annotation[] }>(
     data?.note.status === 'published' ? `/notes/${id}/annotations` : null,
   );
-  const annotations = ann.data?.annotations ?? [];
+  const annotations = ann.data?.annotations ?? NO_ANNOTATIONS;
   const annotationsOn = ann.data?.annotationsOn ?? false;
   const deck = useRef<HTMLDivElement>(null);
   const [slide, setSlide] = useState(0);

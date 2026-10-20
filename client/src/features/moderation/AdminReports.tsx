@@ -123,7 +123,9 @@ export default function AdminReports() {
     );
     setStatus(`Annotation ${outcome === 'hide' ? 'hidden' : 'kept visible'}; ${count} report(s) resolved.`);
     setHidden(null);
-    if (open.reportCount - count <= 0) setOpenId(null);
+    if (open.reportCount - count > 0) return;
+    setOpenId(null);
+    if (data?.nextCursor && data.groups.every((g) => g.id === open.id)) reload(); // page emptied: fetch the next groups
   }
 
   async function resolve(e: FormEvent, outcome: 'dismiss' | 'hide') {
@@ -302,17 +304,17 @@ export default function AdminReports() {
                   >
                     Hide note
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(null)}
-                    className="rounded-md px-3 py-1 text-muted-foreground"
-                  >
-                    Close
-                  </button>
                 </div>
               </form>
             </>
           )}
+          <button
+            type="button"
+            onClick={() => setOpenId(null)}
+            className="mt-3 rounded-md px-3 py-1 text-muted-foreground"
+          >
+            Close
+          </button>
         </section>
       )}
     </section>
