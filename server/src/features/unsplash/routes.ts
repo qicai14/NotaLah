@@ -3,20 +3,10 @@ import { z } from 'zod';
 import { env } from '../../lib/env';
 import { issueMap } from '../../lib/validation';
 import { requireActive, requireAuth } from '../auth/middleware';
-import { createLimiter, userKey } from '../auth/rateLimit';
-import { ASSETS } from '../assets/config';
+import { unsplashLimiter } from './rateLimit';
 import { searchPhotos, trackDownload, UnsplashNotFound, UnsplashUnavailable } from './service';
 
 export const unsplashRouter = Router();
-
-/** Unsplash searches per signed-in user per hour (R22); the demo tier allows 50 an hour for the whole app. */
-const unsplashLimiter = createLimiter({
-  name: 'unsplash',
-  windowMs: 60 * 60_000,
-  limit: ASSETS.unsplashSearchesPerHour,
-  keyGenerator: userKey,
-  message: 'Too many searches. Try again later.',
-});
 
 const NOT_CONFIGURED = { error: 'Unsplash is not configured' };
 const searchQuery = z.object({

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { logger } from '../../lib/logger';
 import { storage } from '../../lib/storage';
@@ -26,7 +27,7 @@ export async function purgeUnlinkedAssets(): Promise<{ assets: number; orphanedF
 /**
  * Sends an asset's file, or a video's poster with `?poster=1`, answering a `Range` header with 206 (R29). The file is
  * streamed from storage, never held whole. Every call is one Class B read in `metered`, however small the range, so past
- * the cap nothing is served. Bytes sent count towards `served_bytes`, which stops video (not images) at its cap.
+ * the cap nothing is served. Bytes sent (counted as they stream) count towards `served_bytes`, which stops video (not images) at its cap.
  * Readability depends on who asks, so shared caches must not keep it. A file never changes once stored, so the
  * viewer's browser keeps it for a year (R38).
  */
@@ -54,7 +55,7 @@ export async function sendAsset(req: Request, res: Response, asset: StoredFile):
   if ('unsatisfiable' in found)
     return void res.status(416).set('Content-Range', `bytes */${found.unsatisfiable}`).end();
   const length = found.end - found.start + 1;
-  await recordServed(length); // counted when the stream starts, so an aborted download still counts in full
+  res.vary('Cookie'); // the answer depends on who asks, so a cache keyed on URL alone must not reuse it across sign-ins
   res.set({
     'Content-Type': poster ? 'image/webp' : asset.mime,
     'Content-Length': String(length),
@@ -63,5 +64,14 @@ export async function sendAsset(req: Request, res: Response, asset: StoredFile):
     'Accept-Ranges': 'bytes',
   });
   if (found.partial) res.status(206).set('Content-Range', `bytes ${found.start}-${found.end}/${found.size}`);
-  await pipeline(found.stream, res).catch(() => undefined);
+  let sent = 0;
+  const counter = new Transform({
+    transform(chunk: Buffer, _encoding, done) {
+      sent += chunk.length;
+      done(null, chunk);
+    },
+  });
+  await pipeline(found.stream, counter, res).catch(() => undefined);
+  // The bytes that actually left, also when the client aborted part-way.
+  if (sent > 0) await recordServed(sent).catch((err: unknown) => logger.error({ err }, 'served bytes not recorded'));
 }

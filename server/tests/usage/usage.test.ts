@@ -117,7 +117,7 @@ describe('free-tier cost guard (R34, D57)', () => {
     const uid = await insertUser();
     const image = (await upload(uid)).body.asset.id;
     const sent = await request(app).get(`/api/assets/${image}/file`).set(asUser(uid));
-    expect(await countOf('served_bytes')).toBe(Number(sent.headers['content-length']));
+    await vi.waitFor(async () => expect(await countOf('served_bytes')).toBe(Number(sent.headers['content-length'])));
 
     const key = `v/${randomUUID()}.mp4`;
     await storage.put(key, Buffer.alloc(1000));
@@ -129,7 +129,7 @@ describe('free-tier cost guard (R34, D57)', () => {
     const video = `/api/assets/${rows[0].ast_id}/file`;
     const before = await countOf('served_bytes');
     expect((await request(app).get(video).set(asUser(uid)).set('Range', 'bytes=0-99')).status).toBe(206);
-    expect(await countOf('served_bytes')).toBe(before + 100);
+    await vi.waitFor(async () => expect(await countOf('served_bytes')).toBe(before + 100)); // 100 bytes sent, not 1000
 
     await setCount('served_bytes', METRICS.served_bytes.cap);
     const refused = await request(app).get(video).set(asUser(uid));
