@@ -25,6 +25,7 @@ import {
   clearBackup,
   keepMine,
   noteToDeck,
+  noteTracks,
   noteToMeta,
   readBackup,
   saveNote,
@@ -161,7 +162,7 @@ export default function EditorPage() {
     const mine = note.myRole ?? (note.author.id === user?.id ? 'owner' : null);
     if (mine !== 'owner' && mine !== 'edit') return setNotMine(true);
     setRole(mine);
-    useEditor.getState().load(noteToDeck(note), noteToMeta(note), note.assets, note.videoStatus);
+    useEditor.getState().load(noteToDeck(note), noteToMeta(note), note.assets, note.videoStatus, noteTracks(note));
     setBackup(readBackup(note.id, note.updatedAt, user?.id));
   }
 

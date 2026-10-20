@@ -6,6 +6,8 @@ export const FREE = Object.freeze({
   classA: 1_000_000,
   classB: 10_000_000,
   unsplash: 50,
+  /** Jamendo's free non-commercial plan: 35,000 API requests a month (developer.jamendo.com/v3.0, checked 20 Oct 2026). */
+  jamendo: 35_000,
   /** Render's free web service: 100 GB of outbound traffic a month (R38). */
   servedBytes: 100_000_000_000,
 });
@@ -14,7 +16,14 @@ export const FREE = Object.freeze({
  * Share of each allowance the app may use. Monthly R2 caps are 50% until the billing period is confirmed as the UTC
  * calendar month (D57); a cycle spanning two calendar months then still stays under the allowance.
  */
-export const SHARE = Object.freeze({ storage: 0.8, classA: 0.5, classB: 0.5, unsplash: 0.5, servedBytes: 0.5 });
+export const SHARE = Object.freeze({
+  storage: 0.8,
+  classA: 0.5,
+  classB: 0.5,
+  unsplash: 0.5,
+  jamendo: 0.8,
+  servedBytes: 0.5,
+});
 
 /** A cap from the environment. It can lower the default, never raise it: a higher or unusable value falls back to the default. */
 export function capFromEnv(
@@ -57,6 +66,11 @@ export const METRICS = Object.freeze({
   unsplash: {
     period: 'hour' as Period,
     cap: capFromEnv('USAGE_CAP_UNSPLASH', FREE.unsplash, SHARE.unsplash),
+  },
+  /** Search and track-lookup calls to Jamendo; at the cap search pauses and a save with a new track fails (R9). */
+  jamendo: {
+    period: 'month' as Period,
+    cap: capFromEnv('USAGE_CAP_JAMENDO', FREE.jamendo, SHARE.jamendo),
   },
 });
 export type Metric = keyof typeof METRICS;

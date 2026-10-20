@@ -1,14 +1,54 @@
-import { Router } from 'express';
+import { type Response, Router } from 'express';
 import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
 import { idParam } from '../../lib/validation';
 import { parseKeyset } from '../../lib/keyset';
 import { createNote, getVisibleNote, listDrafts, publishNote, replaceNote, softDeleteNote } from './repository';
 import { noteAccess } from './access';
 import { moduleExists } from '../modules/repository';
-import { blankPositions, findBadAsset, parseBaseUpdatedAt, parseNoteBody, publishErrors } from './service';
+import {
+  type NoteInput,
+  blankPositions,
+  findBadAsset,
+  parseBaseUpdatedAt,
+  parseNoteBody,
+  publishErrors,
+} from './service';
+import { lookupTrack, MusicUnavailable } from '../music/service';
 import { notifyVoidedVerifiers } from '../notifications/service';
 
 export const notesRouter = Router();
+
+/**
+ * Fills `n.musicMeta` from Jamendo when the note's track is new or still has no title (R9). An unknown track is a 400.
+ * When Jamendo is down, the monthly cap is reached or the user's daily budget is spent, the save still goes through with the
+ * track id and volume and no details (null clears an old track's), and the next save tries again. Returns false once it has
+ * answered. A track already stored with details is not looked up again, so autosave does not spend the allowance.
+ */
+async function resolveMusic(
+  n: NoteInput,
+  userId: number,
+  stored: { trackId: number | null; title: string | null } | null,
+  res: Response,
+): Promise<boolean> {
+  if (!n.music || (n.music.trackId === stored?.trackId && stored.title !== null)) return true;
+  const { trackId } = n.music;
+  try {
+    const track = await lookupTrack(trackId, userId);
+    if (!track) {
+      if (trackId === stored?.trackId) {
+        n.music = null; // the stored track is gone from Jamendo: drop it so unrelated saves pass and stop re-looking it up
+        return true;
+      }
+      res.status(400).json({ error: 'Validation failed', errors: { music: 'Unknown music track' } });
+      return false;
+    }
+    n.musicMeta = track;
+  } catch (err) {
+    if (!(err instanceof MusicUnavailable)) throw err;
+    if (trackId !== stored?.trackId) n.musicMeta = null;
+  }
+  return true;
+}
 notesRouter.param('id', idParam('Note not found'));
 
 notesRouter.get('/drafts', requireAuth, async (req, res) => {
@@ -27,6 +67,7 @@ notesRouter.post('/', requireAuth, requireActive, async (req, res) => {
   }
   const badAsset = await findBadAsset(n.slides, me(req).id, null);
   if (badAsset) return res.status(400).json({ error: 'Validation failed', errors: { slides: badAsset } });
+  if (!(await resolveMusic(n, me(req).id, null, res))) return;
   const id = await createNote(me(req).id, n);
   res.status(201).json({ note: await getVisibleNote(id, me(req).id) });
 });
@@ -71,6 +112,7 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
   }
   const badAsset = await findBadAsset(n.slides, me(req).id, Number(req.params.id));
   if (badAsset) return res.status(400).json({ error: 'Validation failed', errors: { slides: badAsset } });
+  if (!(await resolveMusic(n, me(req).id, { trackId: meta.musicTrackId, title: meta.musicTitle }, res))) return;
   const id = Number(req.params.id);
   const result = await replaceNote(id, n, me(req).id, base.data);
   if (result === 'gone') return res.status(404).json({ error: 'Note not found' });

@@ -90,7 +90,7 @@ API environment on Render (the server refuses to start in production when a guar
 | `VIDEO_PROFILE` | `free` on the free instance: compatible H.264 MP4 is stream-copied, anything else re-encoded to at most 720p, one job at a time; `standard` on a paid instance (1080p) (D67) |
 | `VIDEO_CONCURRENCY` | jobs a worker runs at once under `standard` (default 2, 1-8); `free` always runs 1 |
 | `VIDEO_WORKER_IN_PROCESS` | `true` (default): the API runs the video worker itself. Set `false` once a separate Render background worker runs `vp run server#worker` with the same environment |
-| `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `USAGE_CAP_*`, `PG_*` | optional, as in `.env.example` |
+| `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `JAMENDO_CLIENT_ID`, `USAGE_CAP_*`, `PG_*` | optional, as in `.env.example` |
 
 Client build on Cloudflare Pages: `VITE_API_URL=https://api.<domain>`.
 

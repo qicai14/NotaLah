@@ -46,6 +46,13 @@ entity "POST_T" as POST {
   pst_content_edited_at : TIMESTAMPTZ
   pst_lock_usr_id : INTEGER <<FK>>
   pst_lock_expires_at : TIMESTAMPTZ
+  pst_music_provider : VARCHAR(10)
+  pst_music_track_id : BIGINT
+  pst_music_title : VARCHAR(200)
+  pst_music_artist : VARCHAR(200)
+  pst_music_cover : VARCHAR(500)
+  pst_music_license : VARCHAR(200)
+  pst_music_volume : SMALLINT
 }
 entity "SLIDE_T" as SLIDE {
   * sld_id : INTEGER <<PK>>

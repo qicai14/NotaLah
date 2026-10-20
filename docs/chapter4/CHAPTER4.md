@@ -436,6 +436,8 @@
 
 	Three entities were added in Sprint 4. TERM_T holds the academic terms (name, start date and end date) that the search filter offers beside lecturer and module (FR15, D2, D47). Terms are maintained by administrators and may overlap, because the start dates of intakes differ between programmes; a check requires the start date to precede the end date, and a note belongs to a term when its publication time falls inside the range, so no column is added to POST_T and a change to a term needs no data migration. It is drawn as a standalone entity. BLOCK_T records that one user has blocked another (D49). Its composite primary key allows one row per direction, a check prevents a user from blocking themselves, and an index on the blocked user lets the queries that hide content in both directions find the blockers of a viewer as quickly as their blocked list. A block removes follows, pending collaboration requests and edit locks between the two users, and every feed, search, profile, comment, messaging and collaboration query excludes blocked pairs through one shared condition. NOTIFICATION_T stores the in-app notifications of R8 (D51). Each row names its recipient, an optional actor (moderation outcomes have none, so an administrator is not named), a type from a fixed list of eleven (mention, Super Like, follow, lecturer approval or rejection, hidden note, message request, collaboration request and its two outcomes, and edited since verification), and nullable references to the note, comment, collaboration request or message request concerned. Separate nullable columns are used instead of a JSON payload so that every reference is a foreign key; deleting the referenced row deletes the notification, so a request removed by a block takes its notification with it. A check prevents a user from notifying themselves, and the read time is null until the recipient opens the notification, which gives the unread count.
 
+	POST_T also carries the note's optional background track (FR17, R9) in seven columns instead of a separate entity, because a note has at most one track and the columns are read with the note on every feed card. The author's choice is the provider (a check allows only jamendo), the Jamendo track identifier and the volume; the title, artist, cover image and Creative Commons licence page are filled by the server from Jamendo when the track is saved, never taken from the client, so the credit shown to readers cannot be forged; when Jamendo cannot answer at that moment the details stay empty and the next save fills them. No audio is stored: the playback address is derived from the track identifier. A check requires the provider and the track identifier to be present together, and the deck schema refuses music on a note that contains a video.
+
 	Two entities hold uploaded media (R22, R29) and a third queues video processing (R40, D67). ASSET_T records each uploaded image or video: its owner, the storage key of the file (the file itself is kept in object storage, not in the database), its type, size and dimensions, and a status. POST_ASSET_T links a note to every asset its slides use, so that an asset is served only to readers of such a note and an asset no note uses can be purged. A video is not usable the moment it arrives: the upload is checked and stored as it was sent with the status processing, and a row in VIDEO_JOB_T asks a background worker to convert it. A worker claims the oldest open job with SELECT ... FOR UPDATE SKIP LOCKED, so several workers never take the same job, and holds it under a lease (vjb_locked_until) that it renews while it works; a job whose worker stopped, for example when the free host restarts, is claimed again once the lease lapses. The worker then marks the asset ready, or failed after three attempts with the reason in vjb_last_error. The attempt count also serves as the claim token, so a worker whose lease lapsed cannot complete a job that another worker has taken.
 
 ## 4.3.2 Database Schema
@@ -478,6 +480,13 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | pst_content_edited_at | TIMESTAMPTZ | | | Last title or slide change after publication; older Super Likes stop counting for V |
 | | pst_lock_usr_id | INTEGER | | FK → USER_T; set together with pst_lock_expires_at | Collaborator holding the soft edit lock |
 | | pst_lock_expires_at | TIMESTAMPTZ | | | Time the soft edit lock lapses unless renewed |
+| | pst_music_provider | VARCHAR | 10 | CHECK (jamendo); set together with pst_music_track_id | Music provider of the background track |
+| | pst_music_track_id | BIGINT | | | Jamendo track identifier; the audio URL is derived from it |
+| | pst_music_title | VARCHAR | 200 | | Track title, filled by the server from Jamendo on save |
+| | pst_music_artist | VARCHAR | 200 | | Track artist, filled the same way |
+| | pst_music_cover | VARCHAR | 500 | | Cover image URL on a Jamendo host |
+| | pst_music_license | VARCHAR | 200 | | Creative Commons licence page shown as the credit |
+| | pst_music_volume | SMALLINT | | CHECK (0 to 100) | Playback volume chosen by the author |
 | SLIDE_T | sld_id | INTEGER (identity) | | PK, NOT NULL | Unique slide identifier |
 | | sld_pst_id | INTEGER | | FK → POST_T, NOT NULL | Owning note |
 | | sld_position | SMALLINT | | NOT NULL, UNIQUE with sld_pst_id | Order of the slide within the note |
@@ -1150,6 +1159,10 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC88 | Keyboard multi-select and cancelled drags (client) | focus one shape, Shift+Space on another twice; a live move cancelled | The second shape joins then leaves the selection; the cancelled move restores the deck with no undo step | | |
 | NOTE-TC89 | Drafts list thumbnails | draft with two 16:9 slides, the first with page notes; a draft with no slides | The list gives aspect 16:9, slideCount 2, the first slide's elements without its notes and an asset map; the empty draft has slideCount 0 and cover null | | |
 | NOTE-TC90 | Draft tiles and publish preview (client) | a drafts reply with one 4-slide draft; the publish dialog with a one-slide 16:9 preview | The tile shows the first slide, module chip, "4 slides" and a Continue editing link to the editor; the dialog shows the title and "1 slide · 16:9" | | |
+| NOTE-TC91 | Apply a deck theme (client) | a two-slide deck (heading, body, monospace text, table, shape, a white-filled text box; a photo background with code and a line) given the Midnight theme | Heading and body take the theme's heading and body fonts and colours, the monospace box keeps its font, the filled box keeps its text colour; the table, shape, line and code take the theme's colours; the colour slide gets the theme background, the photo slide keeps its photo; the input deck is unchanged and the result passes the deck schema | | |
+| NOTE-TC92 | Layouts and inserting one (client) | every layout in every theme and aspect; image-caption moved from Plain to Journal; Title on an empty slide with a photo background, then Code | Every layout passes the deck schema and is already in its theme; the image placeholder takes Journal's muted colour; Title fills the empty slide and keeps its photo, Code adds slide 2 and selects it; one undo removes it | | |
+| NOTE-TC93 | Unknown font or theme | `theme: 'neon'`; a text element with `font: 'Comic Sans'` | The deck schema rejects both; the untouched deck passes | | |
+| NOTE-TC94 | Design panel (client) | a deck with one heading; click Journal, then Two columns, then add a blank slide | Plain starts checked in the theme radio group; Journal becomes checked and the heading turns Lora in Journal's heading colour; Two columns adds slide 2 on Journal's background; the blank slide also gets it | | |
 
 *Table 4.26: User profile module test cases (USR)*
 
@@ -1525,7 +1538,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USE-TC4 | Class A and Class B exhausted | Upload and serve once; Class B set to its cap, then the file request and a modules request; Class A set to its cap, then an upload | Counts are 1 and 1; file request 503 "Media is temporarily unavailable" while modules stays 200; upload 503 "Monthly upload limit reached" | | |
 | USE-TC5 | Unsplash app-wide hourly cap | Counter at cap minus 1; two different searches; the first search repeated | First 200, second 503 with no outbound request; the repeated cached search 200 | | |
 | USE-TC6 | Upload kill switch | `UPLOADS_DISABLED=true`, then an upload | 503 "Uploads are turned off"; nothing stored or counted | | |
-| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, served_bytes (cap 50000000000), unsplash (cap 25) and storage_bytes (cap 8000000000) | | |
+| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, served_bytes (cap 50000000000), unsplash (cap 25), jamendo (cap 28000) and storage_bytes (cap 8000000000) | | |
 | USE-TC8 | Env cap lowers but never raises | Caps of unset, `5000`, `600000`, `999999999`, `-1` and `lots` for Class A (default 500,000); `9000000000` for storage | 500,000; 5000; 500,000; 500,000; default; default; 8,000,000,000 | | |
 | USE-TC9 | Counter failure | Usage table unreachable; an upload, a file request, a storage delete | Upload 500 and no file written; file request 500; delete still removes the file | | |
 
@@ -1538,7 +1551,17 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLN-TC3 | Served-bytes meter | An image served; a ready video served with `Range: bytes=0-99` (1000-byte file); the counter then set to its cap; the video and the image requested again | served_bytes equals the image size, then grows by exactly 100 (bytes sent); video 503 "Video is temporarily unavailable"; image 200 | | |
 | CLN-TC4 | Publish drops blank slides | A draft with three slides, the middle one empty, published through `/publish`; a lecturer Super Likes it; the owner then saves a hashtag-only change | Two slides at positions 1 and 2; the note stays verified and no edited-since-verification notification is created | | |
 
-*Table 4.40: R2 storage driver test cases (STO)*
+*Table 4.40: Feed payload test cases (FEED, R39)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| FEED-TC1 | Ranked feed carries only the first slides | a 6-slide note with images on slides 1 and 5 and a video on slide 6; a 1-slide note; GET /api/feed | The 6-slide note has slideCount 6, slides at positions 1 and 2 and only slide 1's asset and an empty videoStatus; the 1-slide note has slideCount 1 and one slide | | |
+| FEED-TC2 | Following and guest feeds carry only the first slides | a followed author's 5-slide note; the follower's Following feed and a cookie-less GET /api/feed | Both items have slideCount 5 and 2 slides | | |
+| FEED-TC3 | Full note from the detail endpoint | a 5-slide note with an image on slide 5; GET /api/notes/:id | All 5 slides, slideCount 5 and the slide-5 asset | | |
+| FEED-TC4 | Access holds when the rest is fetched | a contacts-only note and a note hidden after listing; a friend, a stranger and a guest fetch them | The friend gets all 5 slides; the stranger and the guest get 404; the hidden note is 404 for the friend and gone from the feed | | |
+| CLI-TC70 | Feed card loads the rest of the slides on demand | a carousel with 2 of 5 slides loaded; stay on slide 1, move to slide 2; a 2-of-2 carousel | No request on slide 1; one request on slide 2 even after re-renders; Next again, as after a failed fetch, requests again; 5 dots from the start; the complete carousel never requests | | |
+
+*Table 4.41: R2 storage driver test cases (STO)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1558,7 +1581,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | STO-TC14 | Image put fails | `storage.put` rejects (timeout) on an image upload | 500; `storage.remove` is called with the key the put used | | |
 | STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `o/` key of the original (R40) | | |
 
-*Table 4.41: Deploy readiness test cases (DEP)*
+*Table 4.42: Deploy readiness test cases (DEP)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1573,9 +1596,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | DEP-TC9 | Socket reconnects after a server cut | Client socket receives `disconnect` with reason `transport close`, then `io server disconnect`; then another server cut followed by logout | No manual reconnect for the transport drop; none before 1 s and one by 3 s after the server cut; no reconnect after logout | | |
 | DEP-TC10 | Purge cannot remove a file | An unlinked asset 2 days old; `storage.remove` fails with R2 status 500 | 1 asset purged, 1 orphaned file counted; the row stays deleted; the key is logged and `db:purge` exits 1 | | |
 | DEP-TC11 | Forged entry in a forwarded chain | `TRUST_PROXY=1`, proxy peer 10.0.0.1, `X-Forwarded-For: 6.6.6.6, 203.0.113.5` | 200; the only counter key is `guest:203.0.113.5` | | |
-| DEP-TC12 | Purge registers every limiter | `purgeAll` run in a process that never imports the app | The window registry holds all eight prefixes (auth, login, write, guest, upload, video, file, unsplash) and upload is 3,600,000 ms | | |
+| DEP-TC12 | Purge registers every limiter | `purgeAll` run in a process that never imports the app | The window registry holds all ten prefixes (auth, login, write, guest, upload, video, file, unsplash, music, musicday) and upload is 3,600,000 ms | | |
 
-*Table 4.42: Async video pipeline test cases (VID)*
+*Table 4.43: Async video pipeline test cases (VID)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1595,11 +1618,33 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | VID-TC14 | Abort kills ffmpeg | an endless ffmpeg run aborted after 200 ms; `processVideo` with an aborted signal | Both reject with "Video processing was stopped" (a retryable error, not a bad-file result) within 5 s | | |
 | VID-TC15 | Video added during the upload (client) | an empty slide; choose an MP4; a video is added to the slide before the upload answers | The picker shows an alert and the slide still holds one video | | |
 
+*Table 4.44: Background music test cases (MUS, R9)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| MUS-TC1 | Music provider | music with provider `jamendo`; with `deezer`; track id 0 | Only `jamendo` with a positive track id passes the music schema | | |
+| MUS-TC2 | A deck with a video cannot have music | a deck with a video element and music, through the deck schema and `POST /api/notes`; the same deck with music null; music with no video | Schema issue on `music` "Remove videos to add music"; save answers 400 with `errors.music` and makes no Jamendo call; the other two pass | | |
+| MUS-TC3 | Search proxy parameters and mapping | `GET /api/music/search?q=piano&instrumental=1&page=2` with Jamendo mocked (a valid track with HTML entities in its title, one with a non-Creative-Commons licence, one with a lookalike-host cover `https://jamendo.com.evil.example/x.png`, one with an `http:` cover); then `instrumental=0` | One call to `/v3.0/tracks/` with client_id, format json, search, limit 20, offset 20 and `vocalinstrumental=instrumental`; the valid track returns id, title (entities decoded), artist, cover, https licence URL, duration and an `audioUrl` built from the id (Jamendo's own `audio` field is ignored); the other three are dropped; with 0 the parameter is absent | | |
+| MUS-TC4 | Search access and validation | no cookie; blank, 101-character and page 0 queries; `JAMENDO_CLIENT_ID` unset | 401; 400 each; 503 with no outbound call | | |
+| MUS-TC5 | Monthly usage cap | one search; counter then set to cap minus 1; a new search; the first search again | The new search is 503 "Music search is paused" with no outbound request; the cached search is 200; the cap is 28,000 (80% of 35,000) | | |
+| MUS-TC6 | Search rate limit | 21 searches by one user in a minute | The first 20 are 200; the 21st is 429 "Too many searches. Try again in a minute." | | |
+| MUS-TC7 | Jamendo failure | the call times out; answers HTTP 500; answers a failed status; answers non-JSON | Each is 502 "Music search is unavailable right now. Try again later" | | |
+| MUS-TC8 | Save fills track details | create a note with a track; save again with a new volume; save with another track; save with no music | Create looks the track up once and stores title, artist, cover and licence, returned as `music.licenseUrl`; the volume-only save makes no call and keeps the details; the other track is looked up; no music clears every music column | | |
+| MUS-TC9 | Unknown track on save | create with a track Jamendo does not know | 400 "Unknown music track" with no note stored | | |
+| MUS-TC10 | Music panel search, preview and pick (client) | open the panel; search `piano`; play and pause a result; untick Instrumental only and search; Use the second track; drag the volume to 25 | Instrumental only starts ticked and nothing is requested or played on opening; the request carries `instrumental=1`, then 0; play and pause control one preview; the deck gets `{ provider: jamendo, trackId, volume: 60 }` and passes the deck schema; the credit shows the title and a Creative Commons licence link; the volume becomes 25 | | |
+| MUS-TC11 | Panel disabled with a video (client) | a deck with a video; open the panel; submit a search | "Remove videos to add music" is shown, the search box and toggle are disabled, no request is made | | |
+| MUS-TC12 | Removing music and adding a video (client) | music set; open the video picker; Remove music and confirm; set music again and remove it in the panel, then undo | The picker shows "A note cannot have both music and a video" instead of the upload control until the music is removed; removal asks "Are you sure?"; one undo brings the music back | | |
+| MUS-TC13 | Search paused message (client) | the search route answers 503 "Music search is paused" | The message is shown in an alert and no result list appears | | |
+| MUS-TC14 | Per-user daily budget | a user at 299 of 300 Jamendo calls today; two more searches; then a save with a new track; another user searches | The first search is 200 and the second 429 "Daily music search limit reached. Try again tomorrow." with no outbound call; the save still succeeds with no track details and makes no call (the lookup counts against the same budget); the other user is 200 | | |
+| MUS-TC15 | Save when Jamendo cannot answer | create with a track while Jamendo answers 503; save again at the monthly cap with a new volume; lift the cap and save; reach the cap and save with another track | 201 and 200 with the track id and volume kept and title, artist, cover and licence NULL; no outbound call at the cap; the later save looks the track up again because its title is NULL and fills the details; the other track is stored with NULL details, not the old track's | | |
+| MUS-TC16 | Save reuses a searched track | search `piano`, then create a note with a track from the result | 201 with the track's title stored and one Jamendo call in total | | |
+| MUS-TC17 | Preview errors and cleanup (client) | play rejected with AbortError; another rejected with NotAllowedError; leave the panel | The abort shows no error and the track stays pressed; the other shows "This track could not be played"; the audio's source is removed and it is reloaded to release it | | |
+
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.43: UAT tester details*
+*Table 4.45: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1607,7 +1652,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.44: UAT scenario tasks*
+*Table 4.46: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1626,7 +1671,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.45: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.47: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1636,7 +1681,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.46: UAT feedback and developer response*
+*Table 4.48: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1647,7 +1692,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.47: Ranking weight re-evaluation (NFR5)*
+*Table 4.49: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |
