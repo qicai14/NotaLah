@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { pipeline } from 'node:stream/promises';
 import { logger } from '../../lib/logger';
 import { storage } from '../../lib/storage';
-import { UsageLimitError } from '../usage/service';
+import { recordServed, servedBytesReached, UsageLimitError } from '../usage/service';
 import { takeUnlinkedAssets, type StoredFile } from './repository';
 
 /**
@@ -26,7 +26,9 @@ export async function purgeUnlinkedAssets(): Promise<{ assets: number; orphanedF
 /**
  * Sends an asset's file, or a video's poster with `?poster=1`, answering a `Range` header with 206 (R29). The file is
  * streamed from storage, never held whole. Every call is one Class B read in `metered`, however small the range, so past
- * the cap nothing is served. Readability depends on who asks, so shared caches must not keep it. A file never changes once stored, so the viewer's browser keeps it for a year (R38).
+ * the cap nothing is served. Bytes sent count towards `served_bytes`, which stops video (not images) at its cap.
+ * Readability depends on who asks, so shared caches must not keep it. A file never changes once stored, so the
+ * viewer's browser keeps it for a year (R38).
  */
 export async function sendAsset(req: Request, res: Response, asset: StoredFile): Promise<void> {
   // A video has no file until the worker finishes (R40): 409 while it may still come, 404 once it never will.
@@ -37,6 +39,10 @@ export async function sendAsset(req: Request, res: Response, asset: StoredFile):
     return void res.status(404).json({ error: 'Video could not be processed', status: asset.status });
   }
   const poster = req.query.poster === '1' && asset.posterKey !== null;
+  // Images keep serving past the bandwidth cap; only video, the bulk of the traffic, stops (R38).
+  if (!poster && asset.mime.startsWith('video/') && (await servedBytesReached())) {
+    return void res.status(503).json({ error: 'Video is temporarily unavailable' });
+  }
   let found;
   try {
     found = await storage.read(poster ? asset.posterKey! : asset.key, req.headers.range);
@@ -47,9 +53,11 @@ export async function sendAsset(req: Request, res: Response, asset: StoredFile):
   if (!found) return void res.status(404).json({ error: 'Asset not found' });
   if ('unsatisfiable' in found)
     return void res.status(416).set('Content-Range', `bytes */${found.unsatisfiable}`).end();
+  const length = found.end - found.start + 1;
+  await recordServed(length); // counted when the stream starts, so an aborted download still counts in full
   res.set({
     'Content-Type': poster ? 'image/webp' : asset.mime,
-    'Content-Length': String(found.end - found.start + 1),
+    'Content-Length': String(length),
     'Cache-Control': 'private, max-age=31536000, immutable',
     'Cross-Origin-Resource-Policy': 'same-site',
     'Accept-Ranges': 'bytes',

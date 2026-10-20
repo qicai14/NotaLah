@@ -13,6 +13,15 @@ export function consume(metric: Metric, n = 1, cap: number = METRICS[metric].cap
   return addIfUnder(metric, periodKey(METRICS[metric].period, now), n, cap);
 }
 
+/** Adds the bytes just sent from storage to this month's total. Never refuses: the cap only stops later video requests. */
+export const recordServed = (bytes: number) => consume('served_bytes', bytes, Number.MAX_SAFE_INTEGER);
+
+/** True once this month's served bytes have reached the cap. */
+export async function servedBytesReached(now = new Date()): Promise<boolean> {
+  const { period, cap } = METRICS.served_bytes;
+  return ((await counts(['served_bytes'], [periodKey(period, now)])).get('served_bytes') ?? 0) >= cap;
+}
+
 /** Like `consume`, but throws when the cap is reached. */
 export async function consumeOrThrow(metric: Metric, message: string): Promise<void> {
   if (!(await consume(metric))) throw new UsageLimitError(message);
