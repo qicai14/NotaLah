@@ -5,7 +5,7 @@ import { parseKeyset } from '../../lib/keyset';
 import { createNote, getVisibleNote, listDrafts, publishNote, replaceNote, softDeleteNote } from './repository';
 import { noteAccess } from './access';
 import { moduleExists } from '../modules/repository';
-import { findBadAsset, parseBaseUpdatedAt, parseNoteBody, publishErrors } from './service';
+import { blankPositions, findBadAsset, parseBaseUpdatedAt, parseNoteBody, publishErrors } from './service';
 import { notifyVoidedVerifiers } from '../notifications/service';
 
 export const notesRouter = Router();
@@ -100,7 +100,7 @@ notesRouter.post('/:id/publish', requireAuth, requireActive, async (req, res) =>
   if (!note) return res.status(404).json({ error: 'Note not found' });
   const errors = publishErrors(note);
   if (Object.keys(errors).length > 0) return res.status(400).json({ error: 'Validation failed', errors });
-  if (!(await publishNote(id, me(req).id, visibility, new Date(note.updatedAt)))) {
+  if (!(await publishNote(id, me(req).id, visibility, new Date(note.updatedAt), blankPositions(note.slides)))) {
     return res.status(409).json({ error: 'This note was saved again just now. Try publishing once more' });
   }
   res.json({ note: await getVisibleNote(id, me(req).id) });

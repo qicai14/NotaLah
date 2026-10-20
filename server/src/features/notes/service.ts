@@ -123,6 +123,11 @@ export function parseBaseUpdatedAt(
 
 type Parsed = { ok: true; data: NoteInput } | { ok: false; errors: Record<string, string> };
 
+/** Positions of the slides a publish drops as blank (the same rule parseNoteBody applies when saving a publish). */
+export const blankPositions = (
+  slides: { position: number; background: Slide['background']; elements: Slide['elements'] }[],
+) => slides.filter(isBlank).map((s) => s.position);
+
 /** What a saved draft still lacks before it can be published; empty when it can. Same rules and messages as parseNoteBody. */
 export function publishErrors(note: {
   hashtags: string[];

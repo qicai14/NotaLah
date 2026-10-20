@@ -389,24 +389,43 @@ export function replaceNote(
 }
 
 /**
- * Publishes the owner's draft as one UPDATE, ignoring a co-author's edit lock because no content changes (D58). False
- * when the note is no longer that owner's draft or was saved since `baseUpdatedAt` (pst_updated_at is compared at
- * millisecond precision, like the Date the client read).
+ * Publishes the owner's draft, ignoring a co-author's edit lock because the text is untouched (D58): one conditional
+ * UPDATE of status, visibility and publish time, then the blank slides at `blankPositions` are removed and the rest
+ * renumbered, as a save of a published note does. False when the note is no longer that owner's draft or was saved
+ * since `baseUpdatedAt` (pst_updated_at is compared at millisecond precision, like the Date the client read).
  */
-export async function publishNote(
+export function publishNote(
   id: number,
   ownerId: number,
   visibility: 'public' | 'contacts',
   baseUpdatedAt: Date,
+  blankPositions: number[],
 ): Promise<boolean> {
-  const { rowCount } = await pool.query(
-    `UPDATE "POST_T"
-     SET pst_status = 'published', pst_visibility = $3, pst_published_at = NOW(), pst_updated_at = NOW()
-     WHERE pst_id = $1 AND pst_usr_id = $2 AND pst_status = 'draft'
-       AND date_trunc('milliseconds', pst_updated_at) = $4`,
-    [id, ownerId, visibility, baseUpdatedAt],
-  );
-  return rowCount === 1;
+  return inTransaction(async (c) => {
+    const { rowCount } = await c.query(
+      `UPDATE "POST_T"
+       SET pst_status = 'published', pst_visibility = $3, pst_published_at = NOW(), pst_updated_at = NOW()
+       WHERE pst_id = $1 AND pst_usr_id = $2 AND pst_status = 'draft'
+         AND date_trunc('milliseconds', pst_updated_at) = $4`,
+      [id, ownerId, visibility, baseUpdatedAt],
+    );
+    if (rowCount !== 1) return false;
+    if (blankPositions.length > 0) {
+      await c.query(`DELETE FROM "SLIDE_T" WHERE sld_pst_id = $1 AND sld_position = ANY($2::INT[])`, [
+        id,
+        blankPositions,
+      ]);
+      // Shifted out of range first: UNIQUE (sld_pst_id, sld_position) is checked row by row.
+      await c.query(`UPDATE "SLIDE_T" SET sld_position = sld_position + 1000 WHERE sld_pst_id = $1`, [id]);
+      await c.query(
+        `UPDATE "SLIDE_T" s SET sld_position = r.n
+         FROM (SELECT sld_id, ROW_NUMBER() OVER (ORDER BY sld_position)::INT AS n FROM "SLIDE_T" WHERE sld_pst_id = $1) r
+         WHERE s.sld_id = r.sld_id`,
+        [id],
+      );
+    }
+    return true;
+  });
 }
 
 export async function softDeleteNote(id: number): Promise<void> {
