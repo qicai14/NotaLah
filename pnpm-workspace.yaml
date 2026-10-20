@@ -10,6 +10,7 @@ catalog:
 overrides:
   vite@*: 'catalog:'
   vitest@*: 'catalog:'
+  '@types/node': 24.19.2
   '@tiptap/core': 3.32.0
   '@tiptap/extension-bubble-menu': 3.32.0
   '@tiptap/extension-floating-menu': 3.32.0
