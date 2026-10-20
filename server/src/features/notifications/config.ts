@@ -13,6 +13,7 @@ export const NOTIFICATIONS = Object.freeze({
     follow: 60,
     super_like: 60,
     edited_since_verification: 1,
+    annotation: 60,
   }),
   mentionMax: 10,
   listPage: 20,

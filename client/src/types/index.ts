@@ -186,7 +186,28 @@ export interface ReportGroup extends Omit<
 > {
   reportCount: number;
   oldestReportAt: string;
-  reports: { id: number; reason: string; details: string | null; reporter: string; createdAt: string }[];
+  reports: {
+    id: number;
+    reason: string;
+    details: string | null;
+    reporter: string;
+    createdAt: string;
+    /** Set when the report targets one annotation (R10); `gone` once it was deleted or hidden. */
+    annotation: { id: number; quote: string; body: string; author: string; gone: boolean } | null;
+  }[];
+}
+
+/** A text-anchored annotation (R10, D75); `slideId` is the 1-based slide position. */
+export interface Annotation {
+  id: number;
+  slideId: number;
+  elementId: string;
+  quote: string;
+  offset: number;
+  body: string;
+  createdAt: string;
+  author: { id: number; displayName: string; avatarUrl: string | null; isVerifiedLecturer: boolean };
+  canDelete: boolean;
 }
 
 /** A row of the report queue: the review panel fetches the full ReportGroup on open. */

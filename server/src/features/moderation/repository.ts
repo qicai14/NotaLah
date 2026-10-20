@@ -3,7 +3,15 @@ import { inTransaction, pool } from '../../lib/pool';
 import { MODULE_COL, NOTE_COLS, NOTE_FROM, type Note } from '../notes/repository';
 import type { LecturerStatus, Role, UserStatus } from '../users/repository';
 
-type Reports = { id: number; reason: string; details: string | null; reporter: string; createdAt: Date }[];
+/** `annotation` is set when the report targets one annotation on the note (R10); `gone` means the annotation was deleted or hidden since. */
+type Reports = {
+  id: number;
+  reason: string;
+  details: string | null;
+  reporter: string;
+  createdAt: Date;
+  annotation: { id: number; quote: string; body: string; author: string; gone: boolean } | null;
+}[];
 
 /** A reported note in the queue: summary columns, no slides (D40). */
 export interface ReportSummary {
@@ -24,12 +32,17 @@ export interface ReportGroup extends Note {
   reports: Reports;
 }
 
-/** Open reports grouped by note ($1 = one note id, or NULL for all); a note its author deleted drops out (D26). */
+/** Open reports (on the note or on one of its annotations) grouped by note ($1 = one note id, or NULL for all); a note its author deleted drops out (D26). */
 const OPEN_GROUPS = `
      WITH g AS (
        SELECT r.rpt_pst_id, COUNT(*)::INT AS n, MIN(r.rpt_created_at) AS oldest,
               json_agg(json_build_object('id', r.rpt_id, 'reason', r.rpt_reason, 'details', r.rpt_details,
-                                         'reporter', ru.usr_display_name, 'createdAt', r.rpt_created_at)
+                                         'reporter', ru.usr_display_name, 'createdAt', r.rpt_created_at,
+                                         'annotation', (SELECT json_build_object('id', a.ant_id, 'quote', a.ant_quote, 'body', a.ant_body,
+                                                                'author', au.usr_display_name,
+                                                                'gone', a.ant_deleted_at IS NOT NULL OR a.ant_hidden_at IS NOT NULL)
+                                                        FROM "ANNOTATION_T" a JOIN "USER_T" au ON au.usr_id = a.ant_usr_id
+                                                        WHERE a.ant_id = r.rpt_ant_id))
                        ORDER BY r.rpt_created_at, r.rpt_id) AS reports
        FROM "REPORT_T" r JOIN "USER_T" ru ON ru.usr_id = r.rpt_reporter_id
        WHERE r.rpt_status = 'open' AND ($1::INT IS NULL OR r.rpt_pst_id = $1)
@@ -70,7 +83,8 @@ export async function getOpenReportGroup(noteId: number): Promise<ReportGroup | 
 
 /**
  * Resolves every open report on the note in one transaction: 'dismiss' marks them dismissed, 'hide' marks them upheld
- * and hides the note if it is published. Returns the number resolved (0 = the note had no open reports or was deleted)
+ * and hides the note if it is published. Reports on the note's annotations are left open: they are resolved one by one
+ * with `resolveAnnotationReports`. Returns the number resolved (0 = the note had no open reports or was deleted)
  * and, when this call hid the note, its author.
  */
 export async function resolveReports(
@@ -83,7 +97,7 @@ export async function resolveReports(
     const { rowCount } = await client.query(
       `UPDATE "REPORT_T"
        SET rpt_status = $2, rpt_resolved_by = $3, rpt_remark = $4, rpt_resolved_at = NOW()
-       WHERE rpt_pst_id = $1 AND rpt_status = 'open'
+       WHERE rpt_pst_id = $1 AND rpt_status = 'open' AND rpt_ant_id IS NULL
          AND EXISTS (SELECT 1 FROM "POST_T" WHERE pst_id = $1 AND pst_status <> 'deleted')`,
       [noteId, outcome === 'hide' ? 'upheld' : 'dismissed', adminId, remark],
     );
@@ -93,6 +107,35 @@ export async function resolveReports(
       [noteId],
     );
     return { resolved: rowCount, hiddenAuthorId: rows[0]?.authorId ?? null };
+  });
+}
+
+/**
+ * Resolves every open report on one annotation in one transaction: 'dismiss' marks them dismissed, 'hide' marks them
+ * upheld and hides the annotation (`ant_hidden_at`, kept apart from a user's own delete). Returns the number resolved
+ * and, when this call hid it, the annotation's author and note.
+ */
+export async function resolveAnnotationReports(
+  annotationId: number,
+  adminId: number,
+  outcome: 'dismiss' | 'hide',
+  remark: string,
+): Promise<{ resolved: number; hidden: { authorId: number; noteId: number } | null }> {
+  return inTransaction(async (client) => {
+    const { rowCount } = await client.query(
+      `UPDATE "REPORT_T"
+       SET rpt_status = $2, rpt_resolved_by = $3, rpt_remark = $4, rpt_resolved_at = NOW()
+       WHERE rpt_ant_id = $1 AND rpt_status = 'open'`,
+      [annotationId, outcome === 'hide' ? 'upheld' : 'dismissed', adminId, remark],
+    );
+    if (!rowCount || outcome !== 'hide') return { resolved: rowCount ?? 0, hidden: null };
+    const { rows } = await client.query<{ authorId: number; noteId: number }>(
+      `UPDATE "ANNOTATION_T" SET ant_hidden_at = NOW()
+       WHERE ant_id = $1 AND ant_hidden_at IS NULL AND ant_deleted_at IS NULL
+       RETURNING ant_usr_id AS "authorId", ant_pst_id AS "noteId"`,
+      [annotationId],
+    );
+    return { resolved: rowCount, hidden: rows[0] ?? null };
   });
 }
 
@@ -110,7 +153,7 @@ interface AdminUserRow {
 const ADMIN_USER_COLS = `u.usr_id AS "id", u.usr_display_name AS "displayName", u.usr_email AS "email", u.usr_role AS "role",
             u.usr_status AS "status", u.usr_lecturer_status AS "lecturerStatus", u.usr_created_at AS "createdAt",
             (SELECT COUNT(*)::INT FROM "REPORT_T" r JOIN "POST_T" rp ON rp.pst_id = r.rpt_pst_id
-             WHERE rp.pst_usr_id = u.usr_id AND r.rpt_status = 'upheld') AS "upheldReports"`;
+             WHERE rp.pst_usr_id = u.usr_id AND r.rpt_status = 'upheld' AND r.rpt_ant_id IS NULL) AS "upheldReports"`;
 
 // shortcut: first 50 matches only; add paging if the user base outgrows a search box.
 export async function searchUsers(q: string): Promise<AdminUserRow[]> {

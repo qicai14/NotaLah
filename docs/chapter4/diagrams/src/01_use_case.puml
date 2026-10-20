@@ -42,6 +42,7 @@ rectangle "Peer-to-Peer Academic Resource Platform (PARP)" {
   usecase "UC20 Review\nReported Content" as UC20
   usecase "UC21 Manage\nUser Accounts" as UC21
   usecase "UC22 Approve\nLecturer Account" as UC22
+  usecase "UC23 Annotate Note" as UC23
 }
 
 G --> UC01
@@ -59,6 +60,7 @@ S --> UC11
 UC11x .> UC11 : <<extend>>
 S --> UC12
 S --> UC13
+S --> UC23
 S --> UC14
 UC14x .> UC14 : <<extend>>
 S --> UC15

@@ -42,6 +42,7 @@ export function SlideCarousel({
   videoStatus,
   slideCount,
   onNeedMore,
+  onSlideChange,
 }: {
   slides: BoardSlide[];
   aspect: Aspect;
@@ -50,6 +51,8 @@ export function SlideCarousel({
   /** The note's full count when `slides` holds only the first few; `onNeedMore` fires once the reader is on the last loaded slide (D71). */
   slideCount?: number;
   onNeedMore?: () => void;
+  /** The 0-based slide on show, whenever it changes (annotations follow it, R10). */
+  onSlideChange?: (index: number) => void;
 }) {
   const [index, setIndex] = useState(0);
   const touchX = useRef<number | null>(null);
@@ -61,6 +64,7 @@ export function SlideCarousel({
   useEffect(() => {
     if (more) onNeedMore?.();
   }, [more, onNeedMore]);
+  useEffect(() => onSlideChange?.(cur), [cur, onSlideChange]);
   /** Asking for a slide that is not loaded yet shows the last loaded one and asks for the rest again, so a failed fetch is retried by the next tap. */
   const go = (i: number) => {
     const to = Math.max(0, Math.min(last, i));

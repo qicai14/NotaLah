@@ -9,7 +9,7 @@ export const FILTERS: { label: string; types: NotificationType[] | null }[] = [
   { label: 'Requests', types: ['message_request', 'collab_request', 'collab_approved', 'collab_declined'] },
   {
     label: 'System',
-    types: ['lecturer_approved', 'lecturer_rejected', 'note_hidden', 'edited_since_verification'],
+    types: ['lecturer_approved', 'lecturer_rejected', 'note_hidden', 'annotation_hidden', 'edited_since_verification'],
   },
 ];
 
@@ -38,6 +38,10 @@ export function describe(n: Notification): { text: string; to: string | null } {
       return { text: `approved your request to collaborate on ${title}`, to: note };
     case 'collab_declined':
       return { text: `declined your request to collaborate on ${title}`, to: note };
+    case 'annotation':
+      return { text: `annotated your note ${title}`, to: note };
+    case 'annotation_hidden':
+      return { text: `Your annotation on ${title} was removed by an administrator.`, to: note };
     case 'edited_since_verification':
       return { text: `${title} was edited since you verified it.`, to: note };
   }

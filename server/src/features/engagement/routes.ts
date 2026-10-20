@@ -6,6 +6,7 @@ import { isApprovedLecturer } from '../users/repository';
 import { optionalAuth, requireActive, requireAuth, me, viewerId } from '../auth/middleware';
 import { NOTIFICATIONS } from '../notifications/config';
 import { notifyMentions } from '../notifications/service';
+import { LECTURER_REASONS, reportSchema } from './report';
 import * as repo from './repository';
 
 /** Mounted at /api; auth is applied per route so unrelated /api paths keep their own behaviour. */
@@ -136,13 +137,6 @@ engagementRouter.post('/comments/:commentId/like', requireAuth, requireActive, a
 
 engagementRouter.delete('/comments/:commentId/like', requireAuth, async (req, res) => {
   res.json({ liked: false, likes: await repo.unlikeComment(Number(req.params.commentId), me(req).id) }); // no visibility check (D22)
-});
-
-const EVERYONE_REASONS = ['inaccurate', 'inappropriate', 'spam', 'other'];
-const LECTURER_REASONS = ['plagiarism', 'copyright'];
-const reportSchema = z.object({
-  reason: z.enum([...EVERYONE_REASONS, ...LECTURER_REASONS], { error: 'Invalid reason' }),
-  details: z.string({ error: 'Invalid details' }).trim().max(500, 'Details must be at most 500 characters').nullish(),
 });
 
 // UC12; a block never stops a report, so harassment can still reach moderators (D49)

@@ -50,6 +50,8 @@
   --like: #e5163f;
   --highlight: #ffe14d;
   --highlight-foreground: #2a2300;
+  --annotation: rgb(43 55 227 / 0.18);
+  --annotation-flash: rgb(43 55 227 / 0.42);
   --overlay: rgb(10 12 18 / 0.55);
   --rail: #fafafb;
   --slide: #ffffff;
@@ -101,6 +103,8 @@
   --like: #ff4d6a;
   --highlight: #ffe14d;
   --highlight-foreground: #2a2300;
+  --annotation: rgb(138 147 255 / 0.3);
+  --annotation-flash: rgb(138 147 255 / 0.6);
   --overlay: rgb(0 0 0 / 0.65);
   --rail: #121319;
   --slide: #1a1c23;
@@ -152,6 +156,7 @@
   --color-like: var(--like);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
+  --color-annotation: var(--annotation);
   --color-overlay: var(--overlay);
   --color-rail: var(--rail);
   --color-slide: var(--slide);
@@ -280,6 +285,16 @@
   );
   color: var(--highlight-foreground);
   box-decoration-break: clone;
+}
+
+/* Annotated text on a slide (R10), painted with the CSS Custom Highlight API so the slide DOM is never changed. The
+ * underline keeps it visible when the tint is close to the slide's own colour. */
+::highlight(annotation) {
+  background-color: var(--annotation);
+  text-decoration: underline 2px var(--primary);
+}
+::highlight(annotation-flash) {
+  background-color: var(--annotation-flash);
 }
 
 /* Server-sanitised text inside a SlideBoard. Sizes are em, so they follow the element's font size in board units;

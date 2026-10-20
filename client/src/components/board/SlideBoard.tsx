@@ -77,6 +77,7 @@ function TextBox({ el }: { el: El<'text'> }) {
   return (
     <div
       className="board-text size-full overflow-hidden break-words"
+      data-anchor={el.id}
       style={style}
       dangerouslySetInnerHTML={{ __html: el.html }}
     />

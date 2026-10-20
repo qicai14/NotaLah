@@ -196,7 +196,7 @@ export async function isBlocked(a: number, b: number, q: Pool | PoolClient = poo
 }
 
 /** SQL: account u may be shown to viewer $1: not deleted, and not suspended unless the viewer is an admin (D26, D47). */
-const SHOWN_USER = `(u.usr_status <> 'deleted' AND (u.usr_status <> 'suspended' OR ${viewerIsAdmin('$1')}))`;
+export const SHOWN_USER = `(u.usr_status <> 'deleted' AND (u.usr_status <> 'suspended' OR ${viewerIsAdmin('$1')}))`;
 
 /** Accounts that appear in follow lists and counts: not deleted or suspended (D38). */
 const LISTED = `IN ('active', 'restricted')`;

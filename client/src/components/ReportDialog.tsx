@@ -17,13 +17,15 @@ const LECTURER = [
   ['copyright', 'Copyright infringement'],
 ];
 
-/** Report a note (UC12, wireframe 41). `returnFocus` gets focus back when the dialog closes (the opener may be gone). */
+/** Report a note (UC12, wireframe 41), or one of its annotations (R10). `returnFocus` gets focus back when the dialog closes (the opener may be gone). */
 export function ReportDialog({
   noteId,
+  annotationId,
   onClose,
   returnFocus,
 }: {
   noteId: number;
+  annotationId?: number;
   onClose: () => void;
   returnFocus?: RefObject<HTMLElement | null>;
 }) {
@@ -40,7 +42,8 @@ export function ReportDialog({
     if (!reason) return setError('Choose a reason');
     if (details.length > 500) return setError('Details must be at most 500 characters');
     const ok = await run(async () => {
-      await api(`/notes/${noteId}/report`, { method: 'POST', body: { reason, details: details.trim() || null } });
+      const path = annotationId ? `/notes/${noteId}/annotations/${annotationId}/report` : `/notes/${noteId}/report`;
+      await api(path, { method: 'POST', body: { reason, details: details.trim() || null } });
       return true;
     });
     if (ok) setDone(true);
@@ -56,7 +59,7 @@ export function ReportDialog({
           returnFocus.current.focus();
         }}
       >
-        <DialogTitle className="text-title font-bold">Report this note</DialogTitle>
+        <DialogTitle className="text-title font-bold">Report this {annotationId ? 'annotation' : 'note'}</DialogTitle>
         <DialogDescription className="text-body-sm text-muted-foreground">
           Moderators review every report. The author is not told who reported it.
         </DialogDescription>

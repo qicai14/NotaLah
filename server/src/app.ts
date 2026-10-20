@@ -8,6 +8,7 @@ import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { assetsRouter } from './features/assets/routes';
 import { authRouter } from './features/auth/routes';
+import { annotationsRouter } from './features/annotations/routes';
 import { collaborationRouter } from './features/collaboration/routes';
 import { writeLimiter } from './features/auth/rateLimit';
 import { engagementRouter } from './features/engagement/routes';
@@ -66,6 +67,7 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api', verificationRouter);
 app.use('/api', collaborationRouter); // before notesRouter so /notes/shared is not read as a note id
 app.use('/api', messagingRouter);
+app.use('/api', annotationsRouter);
 app.use('/api', engagementRouter); // before notesRouter so its /notes/:id/* routes authenticate once
 app.use('/api/assets', assetsRouter);
 app.use('/api/notes', notesRouter);

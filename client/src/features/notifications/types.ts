@@ -9,7 +9,9 @@ export type NotificationType =
   | 'collab_request'
   | 'collab_approved'
   | 'collab_declined'
-  | 'edited_since_verification';
+  | 'edited_since_verification'
+  | 'annotation'
+  | 'annotation_hidden';
 
 /** One inbox item as the API and the `notification:new` event return it (R8, D51). */
 export interface Notification {
