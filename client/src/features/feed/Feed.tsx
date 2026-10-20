@@ -212,7 +212,7 @@ function FeedList({ tab, guest }: { tab: Tab; guest: boolean }) {
           {commentsFor && (
             <CommentPanel
               noteId={commentsFor.id}
-              slideCount={commentsFor.slideCount ?? commentsFor.slides.length}
+              slideCount={commentsFor.slideCount}
               noteAuthorId={commentsFor.author.id}
               heading={false}
               className="flex-1 pt-4"

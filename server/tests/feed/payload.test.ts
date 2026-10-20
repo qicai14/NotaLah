@@ -10,17 +10,19 @@ afterAll(() => pool.end());
 const get = (uid: number, url: string) => request(app).get(url).set(asUser(uid));
 
 /** A ready image asset linked to note `noteId` and drawn on slide `position`. */
-async function imageOnSlide(owner: number, noteId: number, position: number): Promise<number> {
+async function imageOnSlide(owner: number, noteId: number, position: number, kind = 'image'): Promise<number> {
   const { rows } = await pool.query<{ ast_id: number }>(
     `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_mime, ast_bytes, ast_status)
-     VALUES ($1, 'image', $2, 'image/webp', 10, 'ready') RETURNING ast_id`,
-    [owner, `k${noteId}-${position}`],
+     VALUES ($1, $3, $2, 'image/webp', 10, 'ready') RETURNING ast_id`,
+    [owner, `k${noteId}-${position}-${kind}`, kind],
   );
   const id = rows[0].ast_id;
   await pool.query(`INSERT INTO "POST_ASSET_T" (pas_pst_id, pas_ast_id) VALUES ($1, $2)`, [noteId, id]);
   const doc = {
     background: { kind: 'color', color: '#ffffff' },
-    elements: [{ type: 'image', source: { kind: 'upload', assetId: id } }],
+    elements: [
+      kind === 'video' ? { type: 'video', assetId: id } : { type: 'image', source: { kind: 'upload', assetId: id } },
+    ],
   };
   await pool.query(`UPDATE "SLIDE_T" SET sld_doc = $3 WHERE sld_pst_id = $1 AND sld_position = $2`, [
     noteId,
@@ -37,6 +39,7 @@ describe('Feed payload (R39, D71)', () => {
     const note = await insertNote(author, { slides: 6 });
     const first = await imageOnSlide(author, note, 1);
     const late = await imageOnSlide(author, note, 5);
+    await imageOnSlide(author, note, 6, 'video');
     const short = await insertNote(author, { slides: 1 });
 
     const res = await get(viewer, '/api/feed');
@@ -45,6 +48,7 @@ describe('Feed payload (R39, D71)', () => {
     expect(item(note).slides.map((s: { position: number }) => s.position)).toEqual([1, 2]);
     expect(Object.keys(item(note).assets)).toEqual([String(first)]);
     expect(Object.keys(item(note).assets)).not.toContain(String(late));
+    expect(item(note).videoStatus).toEqual({});
     expect(item(short).slideCount).toBe(1);
     expect(item(short).slides).toHaveLength(1);
   });

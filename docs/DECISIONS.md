@@ -1595,11 +1595,15 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   slides) and every note now carries `slideCount`.
 - **Rest of the slides:** `SlideCarousel` takes `slideCount` and `onNeedMore`; on the last loaded slide the card calls
   `GET /api/notes/:id` once and keeps the full slides, assets and video status in its own state. No new route, so the
-  detail endpoint's checks (friends-only, hidden, suspended author) apply unchanged. A failed fetch is retried when the
-  reader leaves and returns to the last loaded slide.
+  detail endpoint's checks (friends-only, hidden, suspended author) apply unchanged. The carousel never moves past the
+  loaded slides: a tap or swipe toward an unloaded slide asks again (the card ignores it while a request is in flight), so
+  after a failed fetch the next Next tap retries. The card also copies `slideCount` from the fetched note, so a note
+  shortened since the feed page shows the right dots.
 - **Payload (page 1, 10 notes of 8 slides, three text elements each, test DB; the project has no seed script):**
   228,544 B before, 62,676 B after (-72.6%). Notes with images save more.
 - **Unchanged:** ranking, snapshots and paging. Cost: a swipe past slide 2 shows the slide after one request; the viewer's
   counts and flags still come from the feed.
-- **Tests:** FEED-TC1 to FEED-TC4, CLI-TC70.
+- **Tests:** FEED-TC1 to FEED-TC4, CLI-TC70. The server suite now makes one temp directory per run
+  (`server/vite.config.ts`: `STORAGE_DIR` under it, `TMPDIR`/`TMP`/`TEMP` pointing at it), so parallel runs no longer
+  see each other's `notalah-video-*` files, which had made `tests/assets/video*.test.ts` flaky.
 - **Reversibility:** High: no schema change; raise `CARD_SLIDES` or drop the limit to restore the old payload.

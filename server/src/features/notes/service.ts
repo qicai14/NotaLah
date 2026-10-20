@@ -194,7 +194,7 @@ interface AssetRef {
 }
 
 /** Every uploaded asset a deck points at: image elements, video elements and image backgrounds. */
-export function assetRefs(slides: Slide[]): AssetRef[] {
+export function assetRefs(slides: Pick<Slide, 'background' | 'elements'>[]): AssetRef[] {
   const refs: AssetRef[] = [];
   slides.forEach((slide, i) => {
     const bg = slide.background;

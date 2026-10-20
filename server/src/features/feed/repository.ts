@@ -26,7 +26,7 @@ const CARD_COLS = noteCols(CARD_SLIDES);
 /** Keeps only the assets the loaded slides reference, so a card does not carry the files of slides it does not have (D71). */
 function trimAssets(note: NoteWithEngagement): NoteWithEngagement {
   if (note.slides.length >= note.slideCount) return note;
-  const used = new Set(assetRefs(note.slides as Parameters<typeof assetRefs>[0]).map((r) => String(r.id)));
+  const used = new Set(assetRefs(note.slides).map((r) => String(r.id)));
   const pick = <T>(m: Record<string, T>) => Object.fromEntries(Object.entries(m).filter(([id]) => used.has(id)));
   return { ...note, assets: pick(note.assets), videoStatus: pick(note.videoStatus) };
 }

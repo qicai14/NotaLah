@@ -71,6 +71,8 @@ describe('lazy slides', () => {
     expect(more).toHaveBeenCalledTimes(1);
     rerender(<SlideCarousel slides={slides(2)} slideCount={5} onNeedMore={more} aspect="4:5" assets={{}} />);
     expect(more).toHaveBeenCalledTimes(1);
+    await userEvent.click(container.querySelector('button[aria-label="Next slide"]')!);
+    expect(more).toHaveBeenCalledTimes(2);
     cleanup();
     const full = vi.fn();
     render(<SlideCarousel slides={slides(2)} slideCount={2} onNeedMore={full} aspect="4:5" assets={{}} />);

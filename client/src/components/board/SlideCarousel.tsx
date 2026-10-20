@@ -55,12 +55,17 @@ export function SlideCarousel({
   const group = useRef<HTMLDivElement>(null);
   const total = Math.max(slideCount ?? 0, slides.length);
   const last = total - 1;
-  const cur = Math.min(index, Math.max(0, last));
+  const cur = Math.min(index, Math.max(0, slides.length - 1));
   const more = slides.length < total && cur >= slides.length - 1;
   useEffect(() => {
     if (more) onNeedMore?.();
   }, [more, onNeedMore]);
-  const go = (i: number) => setIndex(Math.max(0, Math.min(last, i)));
+  /** Asking for a slide that is not loaded yet shows the last loaded one and asks for the rest again, so a failed fetch is retried by the next tap. */
+  const go = (i: number) => {
+    const to = Math.max(0, Math.min(last, i));
+    if (to >= slides.length) onNeedMore?.();
+    setIndex(Math.min(to, slides.length - 1));
+  };
   /** A chevron that has just reached the end fades out and is disabled, so focus moves to the carousel instead of being lost. */
   const step = (to: number) => {
     go(to);

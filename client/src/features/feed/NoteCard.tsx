@@ -65,7 +65,13 @@ export const NoteCard = memo(function NoteCard({
     fetching.current = true;
     api<{ note: Note }>(`/notes/${initial.id}`)
       .then(({ note }) =>
-        setItem((n) => ({ ...n, slides: note.slides, assets: note.assets, videoStatus: note.videoStatus })),
+        setItem((n) => ({
+          ...n,
+          slides: note.slides,
+          slideCount: note.slideCount,
+          assets: note.assets,
+          videoStatus: note.videoStatus,
+        })),
       )
       .catch(() => (fetching.current = false));
   }, [initial.id]);

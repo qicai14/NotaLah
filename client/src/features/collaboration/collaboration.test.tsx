@@ -42,6 +42,7 @@ const note = (over: Partial<Note> = {}): Note => ({
   module: null,
   hashtags: ['sql'],
   slides: [],
+  slideCount: 0,
   author: { id: 1, displayName: 'Lim Qi Cai', role: 'student', isVerifiedLecturer: false },
   createdAt: '2026-10-01T00:00:00Z',
   updatedAt: '2026-10-02T00:00:00Z',
