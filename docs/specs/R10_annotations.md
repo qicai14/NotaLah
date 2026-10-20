@@ -22,7 +22,7 @@ All under `/api`. Errors are `{ error }`; validation errors are `{ error: 'Valid
 | Endpoint | Behaviour |
 |---|---|
 | `GET /notes/:id/annotations` | Optional login (guests read public notes). 404 when the viewer cannot see the published note (friends-only, hidden, blocks; an admin also reads a suspended author's note). `200 { annotationsOn, annotations }`; when off, `{ annotationsOn: false, annotations: [] }`. Oldest first, capped at 500. Annotations by a deleted author, a suspended author (admins still see them) or a user in a block with the viewer are left out. |
-| `POST /notes/:id/annotations` | Login, active account, write limiter. Body `{ slideId, elementId, quote, offset, body }`. 404 note not visible; 403 when off; 400 on validation. `201 { annotation }`. Notifies the note author (`annotation`), never yourself. |
+| `POST /notes/:id/annotations` | Login, active account, write limiter. Body `{ slideId, elementId, quote, offset, body }`. 404 note not visible; 403 when off; 409 when the note already has 500 live annotations; 400 on validation. `201 { annotation }`. Notifies the note author (`annotation`, one per annotator per hour), never yourself. |
 | `DELETE /notes/:id/annotations/:annId` | Login. The annotator or the note author; soft delete. 204; 404 unknown, already deleted or hidden, or the caller cannot see the note; 403 anyone else. |
 | `PATCH /notes/:id/annotations` | Owner only. Body `{ enabled: boolean }`. `200 { annotationsOn }`; 403 for anyone else. Chosen over the note PUT, which replaces the whole deck and takes the edit lock. |
 | `POST /notes/:id/annotations/:annId/report` | Login, active. Body as the note report (`reason`, `details`). 201 `{ reported: true }`; 400 own annotation; 403 lecturer-only reason; 409 duplicate open report; a block does not stop it (D49). |
@@ -42,4 +42,4 @@ All under `/api`. Errors are `{ error }`; validation errors are `{ error: 'Valid
 - Annotation reports do not count towards the note author's upheld-report total.
 
 ## Tests
-`server/tests/annotations/annotations.test.ts`, rows in `docs/chapter4/4.5_test_cases.md`: ANN-TC1 to ANN-TC10 cover create and read, access rules, blocks and account status, the off switch, delete permissions, validation, notification, report, admin hide, and edits keeping annotations.
+`server/tests/annotations/annotations.test.ts`, rows in `docs/chapter4/4.5_test_cases.md`: ANN-TC1 to ANN-TC11 cover create and read, access rules, blocks and account status, the off switch, delete permissions, validation, notification, report, admin hide, and edits keeping annotations, and the 500 limit.

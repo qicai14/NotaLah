@@ -21,6 +21,8 @@ interface Target {
   slideCount: number;
   /** The viewer is an edit collaborator, so the note counts as their own for Super Likes (D46, D47). */
   isEditor: boolean;
+  /** The author allows annotations on the note (R10). */
+  annotationsOn: boolean;
 }
 
 /** Engagement needs a published note the viewer may see; undefined otherwise (callers answer 404). Reporting passes `ignoreBlocks` (D49); reading comments passes `adminRead`, so an admin also sees a suspended author's note (D47). */
@@ -33,6 +35,7 @@ export async function getTarget(
   const { rows } = await pool.query<Target>(
     `SELECT p.pst_usr_id AS "authorId",
             (SELECT COUNT(*)::INT FROM "SLIDE_T" WHERE sld_pst_id = p.pst_id) AS "slideCount",
+            p.pst_annotations_on AS "annotationsOn",
             EXISTS (SELECT 1 FROM "COLLABORATOR_T" c WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = $1 AND c.clb_role = 'edit') AS "isEditor"
      FROM "POST_T" p WHERE p.pst_id = $2 AND p.pst_status = 'published' AND ${ignoreBlocks ? VISIBLE_IGNORING_BLOCKS : adminRead ? VISIBLE_OR_ADMIN : VISIBLE}`,
     [viewerId, noteId],

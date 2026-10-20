@@ -204,6 +204,8 @@ describe('Annotations (R10, FR18)', () => {
     expect(await notifications(author, 'annotation')).toBe(1);
     await post(author, url(note), input(element));
     expect(await notifications(author, 'annotation')).toBe(1);
+    await post(a, url(note), input(element, { body: 'Second' }));
+    expect(await notifications(author, 'annotation')).toBe(1); // same user within the dedupe window
     const inbox = await get(author, '/api/notifications?type=annotation');
     expect(inbox.body.notifications).toHaveLength(1);
     expect(inbox.body.notifications[0]).toMatchObject({ type: 'annotation', note: { id: note }, actor: { id: a } });
@@ -302,5 +304,26 @@ describe('Annotations (R10, FR18)', () => {
     const list = (await get(author, url(note))).body.annotations;
     expect(list).toHaveLength(1);
     expect(list[0].quote).toBe('x');
+  });
+
+  it('ANN-TC11: a note holds at most 500 live annotations; deleting one makes room', async () => {
+    const author = await insertUser();
+    const a = await insertUser();
+    const { note, element } = await noteWithText(author);
+    await pool.query(
+      `INSERT INTO "ANNOTATION_T" (ant_pst_id, ant_usr_id, ant_slide_id, ant_element_id, ant_quote, ant_offset, ant_body)
+       SELECT $1, $2, 1, $3, 'x', 0, 'b' FROM generate_series(1, 500)`,
+      [note, a, element],
+    );
+    const full = await post(a, url(note), input(element));
+    expect(full.status).toBe(409);
+    expect(full.body.error).toBe('This note has reached its annotation limit');
+    await pool.query(
+      `UPDATE "ANNOTATION_T" SET ant_deleted_at = NOW() WHERE ant_id = (SELECT MIN(ant_id) FROM "ANNOTATION_T")`,
+    );
+    const ok = await post(a, url(note), input(element, { body: 'Newest' }));
+    expect(ok.status).toBe(201);
+    expect(ok.body.annotation.body).toBe('Newest');
+    expect((await get(a, url(note))).body.annotations).toHaveLength(500);
   });
 });
