@@ -104,7 +104,7 @@ describe('free-tier cost guard (R34, D57)', () => {
     await setCount('class_b', METRICS.class_b.cap);
     const served = await request(app).get(`/api/assets/${id}/file`).set(asUser(uid));
     expect(served.status).toBe(503);
-    expect(served.body.error).toBe('Monthly upload limit reached');
+    expect(served.body.error).toBe('Media is temporarily unavailable');
     expect((await request(app).get('/api/modules').set(asUser(uid))).status).toBe(200);
 
     await setCount('class_a', METRICS.class_a.cap);

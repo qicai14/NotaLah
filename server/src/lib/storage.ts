@@ -178,7 +178,7 @@ export function metered(inner: Storage): Storage {
       await inner.put(key, body);
     },
     async read(key, range) {
-      await consumeOrThrow('class_b', 'Monthly upload limit reached');
+      await consumeOrThrow('class_b', 'Media is temporarily unavailable');
       return inner.read(key, range);
     },
   };
