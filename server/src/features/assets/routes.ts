@@ -8,7 +8,7 @@ import { idParam } from '../../lib/validation';
 import { env } from '../../lib/env';
 import { storage } from '../../lib/storage';
 import { me, optionalAuthForFiles, requireActive, requireAuth, viewerId } from '../auth/middleware';
-import { fileLimiter, uploadLimiter, videoUploadLimiter } from '../auth/rateLimit';
+import { fileLimiter, uploadLimiter, videoUploadLimiter } from './rateLimit';
 import { storageFits, UsageLimitError } from '../usage/service';
 import { ASSETS, assetUrl, VIDEO } from './config';
 import { reencodeImage } from './image';
