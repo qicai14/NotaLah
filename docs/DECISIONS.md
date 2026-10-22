@@ -1773,3 +1773,14 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - Known gaps: the shared-link page (`SharedNote`) shows no annotations, as a link viewer may fail the note's visibility check the list uses; feed cards show no annotation count, which would need a new note field; Shift+arrow selection in rendered (non-editable) text makes no selection in Chrome without caret browsing (F7), so annotating needs a pointer or touch selection (also noted for Chapter 6). The 500 cap is a count then insert, not atomic, so concurrent posts may pass it by a few (a `shortcut:` comment in the route).
 - **Alternatives:** a separate annotation report table (no queue reuse); marking a moderator hide with a boolean or reusing `ant_deleted_at` (loses who removed it).
 - **Reversibility:** Medium: the migration has a full down; removing the feature drops one table and three columns.
+
+## D76 - Diagrams in Mermaid (22 Oct 2026)
+- **Decision (user):** every diagram source is Mermaid text, not PlantUML. The 14 Chapter 4 sources in
+  `docs/chapter4/diagrams/src/` are now `.md` files with a `mermaid` block; `00_architecture.md` adds the current
+  architecture, deployment (D74) and async video (D67) diagrams. The user renders and styles them on mermaid.live.
+- **Mapping:** class, sequence and ER diagrams map one to one (the ERD's `NOT NULL` comments mark PlantUML's mandatory
+  columns). Mermaid has no use case or swimlane activity type, so those are flowcharts: use cases as stadiums with
+  dotted «include»/«extend» edges, swimlanes as subgraphs, fork/join as thin bar nodes.
+- **Why:** no Java toolchain; the user styles diagrams by hand.
+- **Check:** all 17 blocks render with Mermaid 12.1.0.
+- **Reversibility:** High: the `.puml` files stay in git history.
