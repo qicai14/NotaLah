@@ -1,0 +1,204 @@
+# Class diagram
+
+```mermaid
+classDiagram
+  direction TB
+
+  class Role {
+    <<enumeration>>
+    STUDENT
+    LECTURER
+    ADMIN
+  }
+  class AccountStatus {
+    <<enumeration>>
+    ACTIVE
+    RESTRICTED
+    SUSPENDED
+    DELETED
+  }
+
+  class User {
+    <<abstract>>
+    -id : int
+    -email : string
+    -passwordHash : string
+    -displayName : string
+    -role : Role
+    -status : AccountStatus
+    -programme : string
+    -createdAt : Date
+    +register() void
+    +logIn(email, password) Token
+    +logOut() void
+    +updateProfile(details) void
+    +search(query, filters) SearchResult
+  }
+  class Student {
+    +createNote() Post
+    +like(post) void
+    +comment(post, body, slideNo) Comment
+    +report(post, reason) Report
+    +bookmark(post) void
+    +messageAuthor(post, body) void
+    +respondToRequest(request, accept) void
+    +createGroup(name, members) Conversation
+  }
+  class Lecturer {
+    -staffId : string
+    -lecturerStatus : string
+    +superLike(post, remark) Verification
+    +removeSuperLike(post) void
+  }
+  class Administrator {
+    +resolveReport(report, outcome, remark) void
+    +changeAccountStatus(user, action, reason) AccountAction
+    +reviewLecturerApplication(user, approve) void
+  }
+
+  class Module {
+    -id : int
+    -code : string
+    -name : string
+    -programme : string
+  }
+  class Post {
+    -id : int
+    -title : string
+    -template : string
+    -status : string
+    -visibility : string
+    -publishedAt : Date
+    +addSlide(content, position) Slide
+    +setHashtags(names) void
+    +saveDraft() void
+    +publish(visibility) void
+    +isVisibleTo(user) boolean
+    +softDelete() void
+  }
+  class Slide {
+    -position : int
+    -content : string
+  }
+  class Hashtag {
+    -id : int
+    -name : string
+    +normalise(raw)$ string
+  }
+  class Like {
+    -createdAt : Date
+  }
+  class Verification {
+    -remark : string
+    -createdAt : Date
+  }
+  class Comment {
+    -id : int
+    -body : string
+    -slideNo : int
+    -isDeleted : boolean
+    -createdAt : Date
+    +reply(body) Comment
+    +isPinned() boolean
+  }
+  class Bookmark {
+    -createdAt : Date
+  }
+  class Report {
+    -id : int
+    -reason : string
+    -details : string
+    -status : string
+    -remark : string
+    +resolve(admin, outcome, remark) void
+  }
+  class AccountAction {
+    -action : string
+    -reason : string
+    -createdAt : Date
+  }
+  class Interaction {
+    -type : string
+    -createdAt : Date
+  }
+
+  class MessageRequest {
+    -id : int
+    -body : string
+    -status : string
+    +accept() Conversation
+    +decline() void
+  }
+  class Conversation {
+    -id : int
+    -type : string
+    -name : string
+    +addMember(user) void
+    +removeMember(user) void
+    +send(sender, body, post) Message
+  }
+  class Message {
+    -id : int
+    -body : string
+    -createdAt : Date
+  }
+
+  class RankingService {
+    -config : RankingConfig
+    +rankFeed(viewer, page) Post[]
+    +score(post, interestVector) float
+    +engagement(likes, comments) float
+    +recency(ageHours) float
+    +validation(post) float
+    +relevance(post, interestVector) float
+    +buildInterestVector(viewer) Map
+  }
+  class RankingConfig {
+    <<config>>
+    +w1 : float = 0.30
+    +w2 : float = 0.25
+    +w3 : float = 0.30
+    +w4 : float = 0.15
+    +engagementCap : int = 100
+    +halfLifeHours : int = 72
+    +interestHalfLifeDays : int = 14
+  }
+  class SearchService {
+    +search(viewer, query, filters) SearchResult
+  }
+
+  User <|-- Student
+  Student <|-- Lecturer
+  User <|-- Administrator
+  User --> Role
+  User --> AccountStatus
+
+  User "1" -- "0..*" Post : authors
+  Module "0..1" -- "0..*" Post : classifies
+  Post "1" *-- "1..*" Slide
+  Post "0..*" -- "1..*" Hashtag : tagged with
+  User "1" -- "0..*" Like
+  Post "1" -- "0..*" Like
+  Lecturer "1" -- "0..*" Verification : gives
+  Post "1" -- "0..*" Verification
+  Post "1" *-- "0..*" Comment
+  User "1" -- "0..*" Comment : writes
+  Comment "0..1" -- "0..*" Comment : replies
+  User "1" -- "0..*" Bookmark
+  Post "1" -- "0..*" Bookmark
+  Post "1" -- "0..*" Report
+  User "1" -- "0..*" Report : files
+  Administrator "1" -- "0..*" AccountAction : performs
+  User "1" -- "0..*" Interaction
+  Post "1" -- "0..*" Interaction
+  User "1" -- "0..*" MessageRequest : sends
+  Post "0..1" -- "0..*" MessageRequest : anchors
+  User "0..*" -- "0..*" User : follows
+  Conversation "1" *-- "0..*" Message
+  User "2..*" -- "0..*" Conversation : member of
+  Post "0..1" -- "0..*" Message : anchors
+  RankingService --> RankingConfig
+  RankingService ..> Interaction : reads
+  RankingService ..> Post : scores
+  SearchService ..> Post : queries
+```

@@ -1774,6 +1774,17 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** a separate annotation report table (no queue reuse); marking a moderator hide with a boolean or reusing `ant_deleted_at` (loses who removed it).
 - **Reversibility:** Medium: the migration has a full down; removing the feature drops one table and three columns.
 
+## D76 - Diagrams in Mermaid (22 Oct 2026)
+- **Decision (user):** every diagram source is Mermaid text, not PlantUML. The 14 Chapter 4 sources in
+  `docs/chapter4/diagrams/src/` are now `.md` files with a `mermaid` block; `00_architecture.md` adds the current
+  architecture, deployment (D74) and async video (D67) diagrams. The user renders and styles them on mermaid.live.
+- **Mapping:** class, sequence and ER diagrams map one to one (the ERD's `NOT NULL` comments mark PlantUML's mandatory
+  columns). Mermaid has no use case or swimlane activity type, so those are flowcharts: use cases as stadiums with
+  dotted «include»/«extend» edges, swimlanes as subgraphs, fork/join as thin bar nodes.
+- **Why:** no Java toolchain; the user styles diagrams by hand.
+- **Check:** all 17 blocks render with Mermaid 12.1.0.
+- **Reversibility:** High: the `.puml` files stay in git history.
+
 ## D78 - Admin and Drafts restyle (R19 lane C, 22 Oct 2026)
 
 - **Decision:** the three admin pages (Lecturer applications, Reported content, Users) move onto the design system: each row is a `bg-card` tile with `UserAvatar` (people) or the note title (reports), chips for role and status, `Button` actions (outline, destructive for confirm), `Field` for reasons, `PageMessage` for empty states, a `role="status"` line for the last outcome and a `role="alert"` box for errors. Tables are gone, so nothing scrolls sideways at 375 px; buttons are at least 40 px and the small queue buttons 44 px on phones. Shared bits are in `features/moderation/parts.tsx`. Opening a report review moves focus to its panel; closing it returns focus to that Review button (or the heading).
