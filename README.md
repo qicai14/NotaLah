@@ -54,8 +54,10 @@ survive restyling.
   duration and user id (when signed in); set-cookie and password fields are redacted and headers are never logged. `GET /api/health` is not logged.
 - Every response has an `X-Request-Id` header. A short `[A-Za-z0-9._-]` id sent by the caller is reused, otherwise a UUID is made.
 - `SENTRY_DSN` (optional) turns on Sentry for 5xx errors, tagged with the request id; the request (URL, headers, cookies, body) is stripped.
-  Without it nothing is loaded and no network calls are made.
+  Without it nothing is loaded and no network calls are made. `VITE_SENTRY_DSN` (optional, at client build time) does
+  the same for browser errors, with no user, cookie, header or body data.
 - `GET /api/health` returns `{ status, db }` and 503 when Postgres is unreachable (use it as the readiness check).
+- API responses are gzip-compressed when the caller accepts it; ranged file streams (images, video) are sent as they are.
 - On SIGTERM/SIGINT the server stops accepting connections, waits up to 10 s for in-flight requests, closes the pool and exits 0;
   a second signal or the timeout exits 1.
 
@@ -65,54 +67,99 @@ survive restyling.
 `pnpm audit --prod --audit-level high`. The Vite Task cache is restored after install and saved after a green run.
 Open the failing step in the Actions run: typecheck errors show the file and line, test failures show the Vitest diff,
 and an audit failure lists the vulnerable package and advisory. Reproduce locally with `vp run db:up` and the same
-commands. Newer pushes to a branch cancel its still-running older run.
+commands. Newer pushes to a branch cancel its still-running older run. The audit blocks on any high or critical advisory
+in production dependencies; dev-only tools are not shipped and are not audited.
+
+`.github/workflows/deploy.yml` deploys after a green CI run on `main` (see Deploy notes); `purge.yml` runs the daily purge.
+
+## Run locally (unchanged by the deploy files)
+`vp run db:up`, `vp run server#db:migrate`, `vp run dev`, the tests and CI work exactly as before and need no new
+variable. The client calls `/api` and `/socket.io` on its own origin, which the Vite dev server proxies to `:4000`.
+`Dockerfile`, `render.yaml`, `client/functions/`, `client/public/_routes.json` and `.github/workflows/deploy.yml` are
+used only by the live deploy; `_routes.json` is copied into `client/dist` but nothing reads it locally.
 
 ## Deploy notes
-Target (D65): client on Cloudflare Pages at `app.<domain>`, API on one Render free web service at `api.<domain>`, Neon
-Postgres, R2 uploads. A custom domain is required: `pages.dev` and `onrender.com` are public suffixes, so the login cookie
-would not travel between them.
+Target (D74, D77): one free origin. The client and a Pages Function proxy run on Cloudflare Pages at
+`https://<project>.pages.dev`; the Function forwards `/api/*` and `/socket.io/*` (WebSockets included) to the API, a
+Docker web service on Render's free plan. The database is on Neon and uploads on R2. The browser only ever sees the
+`pages.dev` origin, so the login cookie is first-party and no domain is needed. Nothing here needs a paid plan.
 
-API environment on Render (the server refuses to start in production when a guarded value is wrong, naming the variable):
+`.github/workflows/deploy.yml` runs after CI passes on a push to `main` (or by hand from the Actions tab): it migrates
+Neon, calls the Render deploy hook, then builds the client and runs `wrangler pages deploy` from `client/` (which also
+bundles `client/functions/`). Each step skips with a notice until its secret exists, so the workflow stays green
+before the accounts are set up.
 
-| Variable | Production value |
-|---|---|
-| `NODE_ENV` | `production` |
-| `DATABASE_URL` | the Neon connection string (`sslmode=require`) |
-| `JWT_SECRET` | a long random string, never reused from development |
-| `CLIENT_ORIGIN` | `https://app.<domain>` (guarded: must be https) |
-| `COOKIE_SECURE` | `true` (guarded) |
-| `TRUST_PROXY` | `1`, Render's one proxy hop, with `api.<domain>` DNS-only (grey cloud) in Cloudflare; `2` if it is proxied (orange cloud). Guarded: `loopback` and `0` refused; never `true` |
-| `STORAGE_DRIVER` | `r2` (guarded: the disk is wiped on restart), with `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` |
-| `NODE_VERSION` | `24` (the repo needs Node 24) |
-| `MAX_SESSION_HOURS` | optional; default `12`, the longest a login is renewed |
-| `DEBUG_PROXY` | `1` for the first deploy only, see below |
-| `PORT` | leave unset; Render provides it |
-| `VIDEO_PROFILE` | `free` on the free instance: compatible H.264 MP4 is stream-copied, anything else re-encoded to at most 720p, one job at a time; `standard` on a paid instance (1080p) (D67) |
-| `VIDEO_CONCURRENCY` | jobs a worker runs at once under `standard` (default 2, 1-8); `free` always runs 1 |
-| `VIDEO_WORKER_IN_PROCESS` | `true` (default): the API runs the video worker itself. Set `false` once a separate Render background worker runs `vp run server#worker` with the same environment |
-| `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `JAMENDO_CLIENT_ID`, `USAGE_CAP_*`, `PG_*` | optional, as in `.env.example` |
+### One-time account setup (in this order)
+1. **Neon** (free plan): create a project in AWS Singapore. Copy two connection strings with `sslmode=require`: the
+   pooled one (host contains `-pooler`) for Render's `DATABASE_URL`, and the direct one for GitHub's
+   `PROD_DATABASE_URL` (migrations and the daily purge).
+2. **R2**: the bucket and bucket-scoped token from D60, with the R34 usage caps left at their defaults.
+3. **Render** (free web service): New, Blueprint, pick this repository. It reads `render.yaml` (one free Docker
+   service in Singapore, auto-deploy off, health check `/api/health`, `NODE_ENV=production`, `TRUST_PROXY=2`,
+   `COOKIE_SECURE=true`, `STORAGE_DRIVER=r2`, `VIDEO_PROFILE=free`) and asks for the `sync: false` values:
 
-Client build on Cloudflare Pages: `VITE_API_URL=https://api.<domain>`.
+   | Variable | Value |
+   |---|---|
+   | `CLIENT_ORIGIN` | `https://<project>.pages.dev` (guarded: must be https; also the Socket.io origin check and share links) |
+   | `DATABASE_URL` | Neon pooled connection string |
+   | `JWT_SECRET` | a long random string, never reused from development |
+   | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | the R2 values |
+   | `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `JAMENDO_CLIENT_ID` | optional; leave empty to turn each off |
 
-Render service settings (there is no global `vp` on Render; the repo's own copy runs through pnpm):
-- Build command: `corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm exec vp run server#build`
-  (`--prod=false` because `NODE_ENV=production` would otherwise skip the dev dependencies the build needs).
-- Start command: `pnpm --filter server start`.
+   Add `DEBUG_PROXY=1` for the first deploy only (see the proxy check below). Optional tuning (`MAX_SESSION_HOURS`,
+   `USAGE_CAP_*`, `PG_*`, `VIDEO_*`) is as in the example env file. Leave `PORT` unset; Render provides it. Then, under
+   the service's Settings, copy the **Deploy Hook** URL. Note the service URL (`https://<service>.onrender.com`).
+4. **Cloudflare Pages**:
+   - Stay on the **Workers Free** plan (Workers & Pages, Plans). Never subscribe to Workers Paid: Free answers error
+     1027 past 100,000 Function requests a day instead of billing.
+   - Create the Pages project as Direct Upload, named `notalah` (or set the GitHub variable below), for example with
+     `vp dlx wrangler@4.151.1 pages project create notalah --production-branch main` after `wrangler login`.
+   - Project Settings, Variables and Secrets, Production: `API_ORIGIN` = the Render service URL. Without it the
+     Function answers 502 `{"error":"API origin is not configured"}` (fails closed).
+   - Project Settings (the Runtime or Functions section): set the Functions request limit failure mode to
+     **Fail closed**, so the proxy never falls
+     through to static pages.
+   - Account, Notifications: add a **usage-based billing** notification at the lowest threshold as a second line of
+     defence.
+   - Create an API token with the **Cloudflare Pages: Edit** permission, and note the account id.
+5. **GitHub** repository, Settings, Secrets and variables, Actions:
+   - Secrets: `PROD_DATABASE_URL`, `RENDER_DEPLOY_HOOK_URL`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and the
+     four `R2_*` values (the daily purge also deletes unlinked R2 files).
+   - Variables (optional): `CLOUDFLARE_PAGES_PROJECT` (default `notalah`); `VITE_SENTRY_DSN` turns on client error
+     reporting (a browser DSN is public by design; empty keeps it off).
+6. Run the **Deploy** workflow by hand once (Actions, Deploy, Run workflow). An environment change on Pages or Render
+   takes effect on the next deploy, so re-run it after changing one.
+7. **UptimeRobot** (free): an HTTP(s) monitor on `https://<project>.pages.dev/api/health` every 5 minutes keeps the
+   free instance awake for UAT and the demo (R27) and checks the whole path through the proxy. That is 288 Function
+   requests a day of the 100,000. One always-awake instance uses about 744 of Render's 750 free hours in a 31-day
+   month, so run only this one free service, and check Render's current free-tier terms before turning the monitor on.
 
-First-deploy proxy check: deploy with `DEBUG_PROXY=1`, open `https://api.<domain>/api/health` in a browser and find the
-`proxy check` log line. `ip` must be your own public address; if it is a Render or Cloudflare address, the hop count is
-wrong. Then remove `DEBUG_PROXY`.
+### First-deploy proxy check (D65, D74)
+With `DEBUG_PROXY=1` set on Render, open `https://<project>.pages.dev/api/health` in a browser and find the
+`proxy check` line in the Render logs. `ip` must be your own public address (compare the `ip=` line of
+`https://www.cloudflare.com/cdn-cgi/trace`); if it is a Cloudflare or Render address, `TRUST_PROXY` is wrong. The
+Function overwrites `X-Forwarded-For` with `CF-Connecting-IP`, and Render appends the Function's address, so two hops
+are trusted. Then delete `DEBUG_PROXY` and redeploy.
 
-The service starts with `vp run server#start` and uses `GET /api/health` as its health check. Apply new migrations to
-Neon with `vp run server#db:migrate` (with `DATABASE_URL` pointing at Neon) before deploying code that needs them. The free instance sleeps after 15 idle minutes (about a minute to wake), so the daily purge runs from
-`.github/workflows/purge.yml` (03:30 MYT, or Run workflow by hand). It needs repository secrets `PROD_DATABASE_URL` and the
-four `R2_*` values (unlinked assets are deleted from R2 too); without `PROD_DATABASE_URL` it skips with a notice. The
-server's in-process daily timer remains as a best-effort fallback.
-
-Video uploads return 202 at once and are converted by the worker (D67); the server and any worker need `ffmpeg` and
-`ffprobe` on the PATH. A job held by an instance that slept or restarted is picked up again within two minutes.
-Scale-up path: a paid instance with `VIDEO_PROFILE=standard`, then a separate worker service
-(`VIDEO_WORKER_IN_PROCESS=false` on the API), then a managed video service behind the same job table if volume demands it.
+### Running and operating the live API
+- The image (`Dockerfile`, three stages): the pinned `ghcr.io/voidzero-dev/vite-plus` image builds `@notalah/shared`
+  and the server, a fresh `vp install --frozen-lockfile --prod` stage keeps dev dependencies out, and a pinned
+  `debian:trixie-slim` runtime gets the exact Node from `.node-version` plus `ffmpeg`/`ffprobe` for the video worker.
+  It runs as `nobody` with `NODE_ENV=production` and a Docker health check on `/api/health`. Build it locally with
+  `docker build -t notalah-api .` (no env file is copied into it).
+- Production guards: the server refuses to start when `STORAGE_DRIVER` is `local`, `CLIENT_ORIGIN` is not https,
+  `COOKIE_SECURE` is not true or `TRUST_PROXY` is `loopback` or `0`, naming the variable.
+- Migrations run in the Deploy workflow before Render deploys, so new code never meets an old schema. By hand:
+  `vp run server#db:migrate` with `DATABASE_URL` pointing at Neon.
+- The free instance sleeps after 15 idle minutes (about a minute to wake), so the daily purge runs from
+  `.github/workflows/purge.yml` (03:30 MYT, or Run workflow by hand) with `PROD_DATABASE_URL` and the four `R2_*`
+  secrets; without `PROD_DATABASE_URL` it skips with a notice. The server's in-process timer is a best-effort fallback.
+- Video uploads return 202 at once and are converted by the worker (D67). A job held by an instance that slept or
+  restarted is picked up again within two minutes. Scale-up path: a paid instance with `VIDEO_PROFILE=standard`, then
+  a separate worker service (`VIDEO_WORKER_IN_PROCESS=false` on the API), then a managed video service behind the same
+  job table if volume demands it.
+- On redeploy Render sends SIGTERM: the server stops the video worker, closes Socket.io and the HTTP server, closes the
+  pool and exits 0 (10 s limit).
 
 ## Layout (full map in `docs/ARCHITECTURE.md`)
 - `client/src/` — `App.tsx` routes; `features/<feature>/` pages and components; `components/`, `lib/`, `types/` shared
