@@ -25,6 +25,9 @@ services:
         value: free
       - key: CLIENT_ORIGIN
         sync: false
+      # The same value as the Pages project's PROXY_SECRET secret; requests without it get 403 (D77).
+      - key: PROXY_SECRET
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET

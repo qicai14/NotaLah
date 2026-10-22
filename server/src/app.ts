@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { env } from './lib/env';
 import { reportError } from './lib/errorReporting';
 import { requestLogger } from './lib/logger';
+import { requireProxy } from './lib/proxySecret';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { assetsRouter } from './features/assets/routes';
@@ -44,6 +45,8 @@ app.use(
     exposedHeaders: ['X-Viewer'],
   }),
 );
+
+app.use(requireProxy);
 
 // CSRF (D35): a cross-site page cannot add this header without a preflight, which CORS refuses for other origins.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
