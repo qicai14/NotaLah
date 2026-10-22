@@ -14,6 +14,7 @@ it('DEP-TC12: purgeAll alone registers every limiter window, so no prefix is pur
     'login:',
     'music:',
     'musicday:',
+    'read:',
     'unsplash:',
     'upload:',
     'video:',

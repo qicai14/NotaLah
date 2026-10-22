@@ -10,6 +10,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeployTrigger: 'off'
+    # Liveness only, no database query, so Neon can scale to zero (D81); /api/health/db is the readiness check.
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -23,6 +24,12 @@ services:
         value: r2
       - key: VIDEO_PROFILE
         value: free
+      # 0.1 CPU (D81): cost 12 takes about 3 s per login there, cost 10 about 0.8 s; 20 attempts a minute per IP then
+      # use at most about a quarter of the CPU instead of all of it.
+      - key: BCRYPT_ROUNDS
+        value: '10'
+      - key: AUTH_ATTEMPTS_PER_MINUTE
+        value: '20'
       - key: CLIENT_ORIGIN
         sync: false
       # The same value as the Pages project's PROXY_SECRET secret; requests without it get 403 (D77).

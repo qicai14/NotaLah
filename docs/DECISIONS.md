@@ -1814,6 +1814,8 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     (Render's health check and the deploy poll do not pass through Pages). Socket.io handshakes bypass Express, so
     the same check joins the Origin check in `allowRequest`. Unset outside production, so development is unchanged.
   - *Deployed version:* `/api/health` adds `version` from Render's `RENDER_GIT_COMMIT` (absent locally).
+    *(D81: `/api/health` is now liveness only, with no database query; the database check moved to
+    `/api/health/db`, which needs the proxy secret. The deploy poll and Render's health path are unchanged.)*
   - *Image:* a root `Dockerfile` in three stages: `ghcr.io/voidzero-dev/vite-plus:1.3.0` pinned by digest builds
     `@notalah/shared` and the server (install filtered to the root and `server...`, scripts off because the root
     `prepare` needs the sources), a fresh `vp install --frozen-lockfile --prod` stage, and `debian:trixie-slim` pinned
@@ -1902,3 +1904,78 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - Tests OPS-TC12 to OPS-TC14 (percentile, NFR1 verdict, seed guard).
 - **Alternatives:** installing k6 locally (needs the owner's approval; the Node runner gives the same numbers for the local evidence and k6 stays for the live run); disabling limiters with the test switch (rejected above); one shared address for all VUs (would measure the limiter, not the system); seeding through the API (far slower for 2,000 notes and not needed to measure reads); reusing `notalah_test` (wiped by every server test run).
 - **Reversibility:** High: scripts, docs and one `package.json` entry pair; no schema change and nothing in the request path.
+
+## D81 - Pre-UAT audit fixes (R20, 22 Oct 2026)
+- **Context:** the R20 audit (`docs/testing/R20_audit_2026-10-22.md`, main at `ea331eb`) found one blocker and five
+  should-fix items for the live UAT on one Render free instance (0.1 CPU, 512 MB) with Neon free. The local demo was
+  unaffected. Fixes stay env-driven, so `vp run dev` needs no new variable and behaves as before.
+- **Decision:**
+  - *B1, bcrypt cost:* `BCRYPT_ROUNDS` (zod, 10-14, default 12) replaces the `BCRYPT_COST` constant through one
+    `hashPassword` helper used by register and `admin:create`. `render.yaml` sets 10: about 80 ms of a full core and
+    0.8 s of Render's 0.1 CPU per login, against about 3 s at 12 (the audit measured 314 ms per cost-12 compare). 10 is
+    OWASP's minimum for bcrypt. Old hashes still verify because each stores its cost. The unknown-email dummy hash was
+    a fixed cost-12 string; it is now made once, lazily and asynchronously, at the configured cost, so an unknown email
+    still costs the same as a known one. At 60 attempts a minute per IP, cost 10 still uses about 48 s of the
+    instance's 60 CPU-seconds a minute, so the burst is env-driven too: `AUTH_ATTEMPTS_PER_MINUTE` (default 60, so
+    local and tests are unchanged), set to 20 in `render.yaml` (at most about 16 CPU-seconds a minute per IP).
+    A campus lab shares one IP, so the UAT runner staggers sign-ups or raises the value on Render for the session
+    (README, Render step).
+    Rehash-on-login was left out: there is no password-update query yet. Any account hashed at 12 before the switch
+    still logs in, at the old cost, and its login takes longer than an unknown email's, which hints that it exists;
+    accounts made after the switch match the dummy. Tests: AUTH-TC23, DEP-TC21.
+  - *S1, health:* `GET /api/health` is liveness only (`{ status, version }`, no query), so Render's health check, the
+    Docker HEALTHCHECK and the UptimeRobot monitor no longer keep Neon's compute awake. `GET /api/health/db` keeps the
+    `SELECT 1` readiness answer (`{ status, db, version }`, 503 when down) and, unlike liveness, needs the proxy secret,
+    so the public onrender.com URL cannot make the database work. The deploy workflow still reads `version` from
+    `/api/health`. README, `render.yaml` and Dockerfile comments updated; the D77 note points here. Tests: OPS-TC1,
+    OPS-TC2, OPS-TC8 (now on the right route), OPS-TC11, DEP-TC19.
+  - *S2, reads:* one `readLimiter` (`createLimiter`, `userOrIpKey`, 300 a minute) on every `/api` GET and HEAD
+    (Express answers HEAD with the GET handler), mounted beside the write limiter. Skipped: liveness, and the two
+    asset-file routes that `fileLimiter` already counts. `/api/programmes` and `/api/terms` are now covered. Guests
+    still also meet the 120-a-minute guest limiter. Cost: one more limiter upsert per read. Tests: DEP-TC22, DEP-TC12
+    (eleven prefixes).
+  - *S3, Pages headers:* `client/public/_headers` (copied into `dist` by the build). `/*`: a CSP with `default-src
+    'self'`; `script-src 'self'` plus the SHA-256 of the inline theme script; `style-src 'self' 'unsafe-inline'`
+    (React style props, Radix's injected scroll-lock style); `img-src 'self' data: blob: https://images.unsplash.com
+    https://*.jamendo.com`; `media-src 'self' blob: https://*.jamendo.com`; `font-src 'self' data:` (the built CSS
+    holds two `data:font/woff` URLs); `connect-src 'self' wss: https://*.sentry.io`; `object-src 'none'`; `base-uri
+    'self'`; `form-action 'self'`; `frame-ancestors 'none'`. Also `X-Frame-Options: DENY`, `nosniff`,
+    `Referrer-Policy: strict-origin-when-cross-origin` and `Permissions-Policy: camera=(), microphone=(self),
+    geolocation=(), payment=(), usb=()` (microphone kept for R36 dictation). `/assets/*` gets `public,
+    max-age=31536000, immutable`. `index.html` keeps Pages' default `max-age=0, must-revalidate`: Pages joins a
+    header that two matching rules set, so `/*` must carry no Cache-Control. External origins found by grepping the
+    production build: `prod-1.storage.jamendo.com` (stream URL, in `@notalah/shared`), `www.jamendo.com` and
+    `unsplash.com` (attribution links, not fetched), `o447951.ingest.sentry.io`, `sentry.io`, `docs.sentry.io`,
+    `browser.sentry-cdn.com` and `spotlightjs.com` (strings inside `@sentry/browser`, loaded only with a DSN; the CDN is
+    for lazy integrations NotaLah does not use), plus documentation strings (`react.dev`, `reactrouter.com`,
+    `socket.io`, `prosemirror.net`, `tailwindcss.com`, `github.com`, `www.w3.org`, `json-schema.org`). Unsplash
+    images come from `images.unsplash.com` (the deck schema enforces it) and Jamendo covers from `*.jamendo.com`
+    (`jamendoHost` in the music service). `wss:` is a scheme allowance for the same-origin socket in browsers whose
+    `'self'` does not cover WebSockets; it can be narrowed to the Pages host once the project name is final. Not
+    checked in a browser: Pages applies `_headers` only when deployed, so check each page's console for CSP errors
+    once on the live site (Jamendo audio redirects and Sentry ingest are the likely misses). Test: DEP-TC23 (also
+    fails when the inline script changes without its hash).
+  - *S4, sharp:* `maxInputPixels` 24 MP (6000 x 4000; `maxEdge` 2560 scales anything bigger down anyway), and
+    `sharp.concurrency(1)` and `sharp.cache(false)` at module load in `assets/image.ts`. Measured locally (two
+    concurrent orientation-6 JPEG re-encodes, twice): 6000 x 4000 peaked at +81 MB RSS instead of +167 MB with the
+    defaults (8 threads); 7000 x 7000 at +109 MB instead of +215 MB, and it is now refused. Test: STO-TC16.
+  - *S6, bundle:* `socket.io-client` loads with a dynamic import inside the signed-in effect (guests never fetch it; a
+    logout before it loads opens nothing; a failed load shows the offline message), and the guest prompt's dialog and sheet (`GuestPromptSheet.tsx`) load on
+    first use. Production build: entry chunk 424.51 kB / 134.97 kB gzip before, 332.04 kB / 105.68 kB gzip after;
+    entry plus its modulepreloads (the JS the first paint needs) 152.96 kB gzip before, 138.53 kB gzip after. The
+    socket change gave most of it (about 12 kB gzip); the prompt about 2.4 kB, since the dropdown and tooltip share
+    most Radix internals. The audit's 193 kB entry and the `dev-*.js` chunk (N6) came from CI's `NODE_ENV=test`
+    build, which bundles React's development build; the production build names the Sentry chunk `prod-*.js`
+    (141 kB gzip, loaded only with `VITE_SENTRY_DSN`). Tests: CLI-TC79 to CLI-TC81.
+  - *Nits:* N7 applied (`listPendingLecturers` takes the oldest 100). Left: N1 (two queries per notification
+    recipient; bounded), N2 (the `SELECT NOW()` round trip), N3 (per-user list indexes; a migration if UAT profiles
+    grow), N4 (a 5-minute cache on reference lists would show an admin's new module late, so not clearly safe),
+    N5 (whole-deck autosave rewrite; a Chapter 6 scaling limit).
+  - *Open (policy, for the user):* S5, whether a restricted account may still change its display name and bio
+    (`PUT /api/users/me` has no `requireActive`). Unchanged here.
+  - *Environment:* E1 (stale local `node_modules` on the main checkout) needs `vp install` there before the demo; this
+    worktree's install builds cleanly.
+- **Alternatives:** keeping cost 12 and moving hashing to a worker thread (the 0.1 CPU is the limit, not the event
+  loop); a fixed Render burst in code (would change local behaviour); `?db=1` on one health route (a separate path is
+  easier to keep behind the proxy secret); a `<meta>` CSP in `index.html` (cannot set `frame-ancestors`).
+- **Reversibility:** High: env values, one static file, two client lazy imports and constants; no schema change.

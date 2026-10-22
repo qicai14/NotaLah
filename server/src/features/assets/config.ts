@@ -2,8 +2,9 @@
 export const ASSETS = Object.freeze({
   /** Largest accepted image upload, in bytes, measured before re-encoding. */
   maxImageBytes: 5 * 1024 * 1024,
-  /** Decoded size cap (width x height) that stops a small file from expanding into a memory bomb. */
-  maxInputPixels: 50_000_000,
+  /** Decoded size cap (width x height) that stops a small file from expanding into a memory bomb; 24 MP is 6000 x 4000,
+   * and maxEdge scales anything larger down anyway, so a 512 MB instance never decodes more (D81). */
+  maxInputPixels: 24_000_000,
   /** Longest edge after re-encoding; larger images are scaled down, never up. */
   maxEdge: 2560,
   webpQuality: 80,

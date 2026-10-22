@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
@@ -77,6 +79,20 @@ describe('Deploy configuration (R37)', () => {
     );
   });
 
+  it('DEP-TC21: BCRYPT_ROUNDS defaults to 12 and refuses under 10; Render sets 10 and a lower auth burst', () => {
+    expect(parseEnv(base).BCRYPT_ROUNDS).toBe(12);
+    expect(parseEnv(base).AUTH_ATTEMPTS_PER_MINUTE).toBe(60);
+    expect(parseEnv({ ...base, BCRYPT_ROUNDS: '10', AUTH_ATTEMPTS_PER_MINUTE: '20' })).toMatchObject({
+      BCRYPT_ROUNDS: 10,
+      AUTH_ATTEMPTS_PER_MINUTE: 20,
+    });
+    expect(errorOf({ ...base, BCRYPT_ROUNDS: '9' })).toContain('BCRYPT_ROUNDS');
+    expect(errorOf({ ...base, AUTH_ATTEMPTS_PER_MINUTE: '0' })).toContain('AUTH_ATTEMPTS_PER_MINUTE');
+    const blueprint = readFileSync(path.resolve(import.meta.dirname, '../../../render.yaml'), 'utf8');
+    expect(blueprint).toMatch(/key: BCRYPT_ROUNDS\s+value: '10'/);
+    expect(blueprint).toMatch(/key: AUTH_ATTEMPTS_PER_MINUTE\s+value: '20'/);
+  });
+
   it('DEP-TC7: the purge ends each rate-limit window by its own length, so hourly upload counters survive', async () => {
     await pool.query(
       `INSERT INTO "RATE_LIMIT_T" (rlt_key, rlt_window_start, rlt_hits) VALUES
@@ -96,7 +112,7 @@ describe('Proxy secret (R11, D77)', () => {
     env.PROXY_SECRET = undefined;
   });
 
-  it('DEP-TC19: with PROXY_SECRET set, only requests carrying it reach the API; /api/health stays open', async () => {
+  it('DEP-TC19: with PROXY_SECRET set, only requests carrying it reach the API; /api/health stays open, /api/health/db does not', async () => {
     env.PROXY_SECRET = 'proxy-secret-0123456789';
     const direct = await request(app).get('/api/modules').set('X-Forwarded-For', '6.6.6.6');
     expect(direct.status).toBe(403);
@@ -105,6 +121,7 @@ describe('Proxy secret (R11, D77)', () => {
     const viaProxy = await request(app).get('/api/modules').set('X-Proxy-Secret', env.PROXY_SECRET);
     expect(viaProxy.status).toBe(401); // past the gate: the route itself wants a session
     expect((await request(app).get('/api/health')).status).toBe(200);
+    expect((await request(app).get('/api/health/db')).status).toBe(403); // only liveness is open (D81)
     env.PROXY_SECRET = undefined;
     expect((await request(app).get('/api/modules')).status).toBe(401); // unset: local dev unchanged
   });

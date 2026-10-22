@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
@@ -6,7 +7,7 @@ import { app } from '../../src/app';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { PgStore, purgeOldRateLimits } from '../../src/features/auth/rateLimit';
-import { signToken, tokenSubject } from '../../src/features/auth/passport';
+import { getDummyHash, signToken, tokenSubject } from '../../src/features/auth/passport';
 import type { AuthUser } from '../../src/features/users/repository';
 import type { Request } from 'express';
 import { type Options, rateLimit } from 'express-rate-limit';
@@ -173,6 +174,24 @@ describe('POST /api/auth/login', () => {
       .set('Cookie', `notalah_token=${tokenFrom(res)}`);
     expect(me.status).toBe(200);
     expect(me.body.user).toMatchObject({ email: 'test1@mail.apu.edu.my', displayName: 'Test Student' });
+  });
+
+  it('AUTH-TC23: new hashes use BCRYPT_ROUNDS; a hash stored at another cost still logs in', async () => {
+    const before = env.BCRYPT_ROUNDS;
+    env.BCRYPT_ROUNDS = 10;
+    try {
+      expect((await register({ ...student, email: 'cost@mail.apu.edu.my' })).status).toBe(201);
+    } finally {
+      env.BCRYPT_ROUNDS = before;
+    }
+    const { rows } = await pool.query(
+      `SELECT usr_password_hash FROM "USER_T" WHERE usr_email = 'cost@mail.apu.edu.my'`,
+    );
+    expect(bcrypt.getRounds(rows[0].usr_password_hash)).toBe(10);
+    expect((await login('cost@mail.apu.edu.my', 'Passw0rd!')).status).toBe(200);
+    expect((await login('test1@mail.apu.edu.my', 'Passw0rd!')).status).toBe(200); // helper hash, cost 4
+    // The unknown-email dummy is hashed at the configured cost, so a miss costs the same as a hit.
+    expect(bcrypt.getRounds(await getDummyHash())).toBe(env.BCRYPT_ROUNDS);
   });
 });
 

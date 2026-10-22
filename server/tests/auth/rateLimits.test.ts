@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vite-
 import { app } from '../../src/app';
 import { RATE_LIMITS } from '../../src/features/auth/rateLimit';
 import { pool } from '../../src/lib/pool';
-import { CSRF, insertUser, truncateAll } from '../helpers';
+import { asUser, CSRF, insertUser, truncateAll } from '../helpers';
 
 // env.ts reads it once at import, so it is set before the imports: production's value on Render (D65).
 vi.hoisted(() => {
@@ -94,5 +94,34 @@ describe('Proxy trust and rate-limit keys (R37)', () => {
     expect(await guestRows()).toBe(0);
     expect((await request(app).get(`/api/users/${await insertUser()}`)).status).toBe(200);
     expect(await guestRows()).toBe(1);
+  });
+
+  it('DEP-TC22: GETs are limited per user, or per IP for guests, including programmes and terms; health and asset files are not counted', async () => {
+    vi.stubEnv('RATE_LIMIT_UNDER_TEST', 'read');
+    const readRows = async () =>
+      (await pool.query<{ rlt_key: string }>(`SELECT rlt_key FROM "RATE_LIMIT_T" ORDER BY rlt_key`)).rows.map(
+        (r) => r.rlt_key,
+      );
+    expect((await request(app).get('/api/health')).status).toBe(200);
+    expect((await request(app).get('/api/assets/999999/file')).status).toBe(404);
+    expect((await request(app).get('/api/share/not-a-token/assets/1')).status).toBe(404);
+    expect(await readRows()).toEqual([]);
+
+    const programmes = await request(app).get('/api/programmes');
+    expect(programmes.status).toBe(200);
+    expect(remaining(programmes)).toBe(RATE_LIMITS.reads - 1);
+    expect(remaining(await request(app).get('/api/terms'))).toBe(RATE_LIMITS.reads - 2);
+    const uid = await insertUser();
+    expect(remaining(await request(app).get('/api/auth/me').set(asUser(uid)))).toBe(RATE_LIMITS.reads - 1);
+    expect(await readRows()).toEqual(['read:127.0.0.1', `read:user:${uid}`]);
+
+    await pool.query(`UPDATE "RATE_LIMIT_T" SET rlt_hits = $1 WHERE rlt_key = $2`, [
+      RATE_LIMITS.reads,
+      `read:user:${uid}`,
+    ]);
+    const limited = await request(app).get('/api/feed').set(asUser(uid));
+    expect(limited.status).toBe(429);
+    expect(limited.body).toEqual({ error: 'Too many requests. Try again in a minute.' });
+    expect((await request(app).get('/api/terms')).status).toBe(200); // the guest IP has its own bucket
   });
 });
