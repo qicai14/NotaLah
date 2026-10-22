@@ -1,7 +1,9 @@
 name: Deploy
 
-# Live deploy (R11, D74, D77): after CI passes on a push to main, or by hand. Migrate Neon, then ask Render to deploy the
-# API, then publish the client and its Pages Function proxy. Each step skips with a notice when its secret is absent.
+# Live deploy (R11, D74, D77): after CI passes on a push to main, or by hand from main. Migrate Neon, ask Render to deploy
+# the tested commit and wait until /api/health reports it, then publish the client and its Pages Function proxy. Each
+# step skips with a notice when its secret is absent; the API never deploys unmigrated, and the client never deploys
+# ahead of an API deploy that was configured but did not run.
 on:
   workflow_run:
     workflows: [CI]
@@ -18,9 +20,14 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      # The commit CI tested; deployed by ref to Render and checked out for the migration and the client.
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      # The Render service URL (public, a repository variable), polled until it reports SHA.
+      API_ORIGIN: ${{ vars.API_ORIGIN }}
     # Secrets are given only to the steps that use them, so checkout, setup and install never see them.
     steps:
       - name: Check which deploy secrets are set
@@ -33,14 +40,25 @@ jobs:
         run: |
           check() { if [ -n "$2" ]; then echo "$1=true" >> "$GITHUB_OUTPUT"; else echo "::notice::$3"; fi; }
           check migrate "$PROD_DATABASE_URL" "PROD_DATABASE_URL is not set; skipping migrations."
-          check api "$RENDER_DEPLOY_HOOK_URL" "RENDER_DEPLOY_HOOK_URL is not set; skipping the API deploy."
-          both=""; [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && both=1
-          check pages "$both" "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are not both set; skipping the client deploy."
+          api=""
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::notice::RENDER_DEPLOY_HOOK_URL is not set; skipping the API deploy."
+          elif [ -z "$PROD_DATABASE_URL" ] || [ -z "$API_ORIGIN" ]; then
+            echo "::notice::The API deploy needs PROD_DATABASE_URL (migrations first) and the API_ORIGIN variable; skipping it and the client deploy."
+          else
+            api=1
+          fi
+          if [ -n "$api" ]; then echo "api=true" >> "$GITHUB_OUTPUT"; fi
+          pages=""
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && { [ -n "$api" ] || [ -z "$RENDER_DEPLOY_HOOK_URL" ]; }; then
+            pages=1
+          fi
+          check pages "$pages" "Client deploy skipped (needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID, and the API deploy when it is configured)."
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         if: steps.gate.outputs.migrate == 'true' || steps.gate.outputs.pages == 'true'
         with:
           # Deploy exactly the commit CI tested.
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ env.SHA }}
           persist-credentials: false
       - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
         if: steps.gate.outputs.migrate == 'true' || steps.gate.outputs.pages == 'true'
@@ -59,7 +77,20 @@ jobs:
         if: steps.gate.outputs.api == 'true'
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: curl -fsS -X POST -o /dev/null "$RENDER_DEPLOY_HOOK_URL"
+        # `ref` makes Render deploy exactly this commit rather than the branch head.
+        run: curl -fsS -X POST -o /dev/null "$RENDER_DEPLOY_HOOK_URL&ref=$SHA"
+      - name: Wait for the API to report the new commit
+        if: steps.gate.outputs.api == 'true'
+        timeout-minutes: 16
+        run: |
+          deadline=$((SECONDS + 900))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            version=$(curl -fsS --max-time 20 "$API_ORIGIN/api/health" | jq -r '.version // empty' || true)
+            if [ "$version" = "$SHA" ]; then echo "API is serving $SHA"; exit 0; fi
+            sleep 15
+          done
+          echo "::error::The API did not report $SHA at $API_ORIGIN/api/health within 15 minutes."
+          exit 1
       - name: Build the client
         if: steps.gate.outputs.pages == 'true'
         env:
