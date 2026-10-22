@@ -7,14 +7,12 @@ import { MusicChip } from '@/components/MusicChip';
 import { SlideCarousel } from '@/components/board/SlideCarousel';
 import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
-import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAction } from '@/lib/useAction';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
 import type { Annotation, CollabRole, Note } from '../../types';
-import { AnnotationPanel, useHighlights } from '../annotations/Annotations';
+import { AnnotationSheet, useHighlights } from '../annotations/Annotations';
 
 const NO_ANNOTATIONS: Annotation[] = [];
 
@@ -30,7 +28,6 @@ function SharedAnnotations({
   deck: RefObject<HTMLElement | null>;
   slide: number;
 }) {
-  const desktop = useMediaQuery(DESKTOP);
   const [open, setOpen] = useState(false);
   const { data } = useFetch<{ annotations: Annotation[] }>(`/share/${encodeURIComponent(token)}/annotations`);
   const list = data?.annotations ?? NO_ANNOTATIONS;
@@ -42,34 +39,17 @@ function SharedAnnotations({
         <MessageSquareQuote aria-hidden="true" />
         Annotations ({list.length})
       </Button>
-      <Sheet open={open} onOpenChange={setOpen} modal={!desktop}>
-        <SheetContent
-          side={desktop ? 'right' : 'bottom'}
-          onInteractOutside={desktop ? (e) => e.preventDefault() : undefined}
-          className={
-            desktop ? 'w-[26rem] gap-0 sm:max-w-none' : 'max-h-[75dvh] min-h-[40dvh] gap-0 rounded-t-2xl border-t-0'
-          }
-        >
-          <div className="px-5 pt-5 pb-3">
-            <SheetTitle className="text-title-sm font-bold">Annotations</SheetTitle>
-            <SheetDescription className="text-body-sm text-muted-foreground">
-              Slide {slide + 1} of {note.slides.length}. View only.
-            </SheetDescription>
-          </div>
-          <AnnotationPanel
-            noteId={note.id}
-            slides={note.slides}
-            slideNo={slide + 1}
-            annotations={list}
-            draft={null}
-            readOnly
-            onShow={(a) => {
-              if (!desktop) setOpen(false);
-              show(a);
-            }}
-          />
-        </SheetContent>
-      </Sheet>
+      <AnnotationSheet
+        open={open}
+        onOpenChange={setOpen}
+        noteId={note.id}
+        slides={note.slides}
+        slideNo={slide + 1}
+        annotations={list}
+        draft={null}
+        readOnly
+        onShow={show}
+      />
     </>
   );
 }

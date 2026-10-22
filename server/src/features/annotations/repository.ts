@@ -1,5 +1,4 @@
 import { isUniqueViolation, pool } from '../../lib/pool';
-import { SHAREABLE } from '../notes/repository';
 import { approvedLecturer, blockedWith, SHOWN_USER } from '../users/repository';
 
 /** Live annotations one note can hold; the list is never paged, so this also bounds a response. */
@@ -39,12 +38,12 @@ export async function listAnnotations(noteId: number, viewerId: number, onlyId?:
 
 /**
  * What a share-link holder reads (R10): the list of a published note whose author allows annotations, filtered as for any
- * viewer. The caller has already resolved the link, so the note's own visibility (friends-only) is not asked again;
- * hidden and deleted notes are not SHAREABLE and answer empty.
+ * viewer. Only for a public note, where the annotations are already visible to everyone: a friends-only note's annotations
+ * stay with the people who may see the note, not with whoever holds its link.
  */
 export async function listForLink(noteId: number, viewerId: number): Promise<Annotation[]> {
   const { rows } = await pool.query(
-    `SELECT 1 FROM "POST_T" p WHERE p.pst_id = $1 AND p.pst_status = 'published' AND p.pst_annotations_on AND ${SHAREABLE}`,
+    `SELECT 1 FROM "POST_T" p WHERE p.pst_id = $1 AND p.pst_status = 'published' AND p.pst_annotations_on AND p.pst_visibility = 'public'`,
     [noteId],
   );
   return rows.length ? listAnnotations(noteId, viewerId) : [];

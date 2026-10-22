@@ -89,6 +89,7 @@ async function link(req: Request, res: Response) {
   if (!found || (req.user && (await isBlocked(req.user.id, found.ownerId)))) {
     return void res.status(404).json({ error: 'This link is invalid or was revoked' });
   }
+  if (found.role === 'edit' && !req.user) return void res.status(401).json({ error: 'Log in to edit this note' });
   return found;
 }
 
@@ -100,7 +101,6 @@ collaborationRouter.get(
   async (req, res) => {
     const found = await link(req, res);
     if (!found) return;
-    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
     const note = await getVisibleNote(found.noteId, viewerId(req), true);
     // The link's holder may not pass the asset route's note checks, so images come through this link too.
     if (note) for (const id of Object.keys(note.assets)) note.assets[id] = shareAssetUrl(String(req.params.token), id);
@@ -116,7 +116,6 @@ collaborationRouter.get(
   async (req, res) => {
     const found = await link(req, res);
     if (!found) return;
-    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
     const annotations = (await listForLink(found.noteId, viewerId(req))).map((a) => ({ ...a, canDelete: false }));
     res.json({ annotations });
   },
@@ -129,7 +128,6 @@ collaborationRouter.get(
   async (req, res) => {
     const found = await link(req, res);
     if (!found) return;
-    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
     const assetId = String(req.params.assetId);
     const asset = invalidId(assetId) ? undefined : await getLinkedAsset(found.noteId, Number(assetId));
     if (!asset) return res.status(404).json({ error: 'Asset not found' });

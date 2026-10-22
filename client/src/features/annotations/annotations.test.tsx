@@ -281,7 +281,7 @@ describe('R10 annotations (client)', () => {
         annotations={[ann(1, { canDelete: true }), ann(2)]}
         draft={null}
         readOnly
-        onPick={() => {}}
+        onPick={() => true}
         onShow={() => {}}
       />,
     );
@@ -314,12 +314,15 @@ describe('R10 annotations (client)', () => {
     expect(screen.queryByRole('link', { name: /^Annotations/ })).toBeNull();
   });
 
-  it('ANN-TC21 creates an annotation from the keyboard picker and announces it', async () => {
-    const picked = vi.fn();
+  it('ANN-TC21 creates an annotation from the keyboard picker: last-touched box, focus back on Cancel, announced only when the composer opens', async () => {
+    const two = [
+      { elements: [slides[0].elements[0], { id: 'text-el-2', type: 'text', html: '<p>Second box words</p>' }] },
+    ] as unknown as Pick<Slide, 'elements'>[];
+    const picked = vi.fn(() => true);
     render(
       <AnnotationPanel
         noteId={9}
-        slides={slides}
+        slides={two}
         slideNo={1}
         annotations={[]}
         draft={null}
@@ -327,18 +330,48 @@ describe('R10 annotations (client)', () => {
         onShow={() => {}}
       />,
     );
+    const open = screen.getByRole('button', { name: 'Select text with the keyboard' });
+    await userEvent.click(open);
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Select text with the keyboard' }));
     await userEvent.click(screen.getByRole('button', { name: 'Select text with the keyboard' }));
+
     await userEvent.click(screen.getByRole('button', { name: 'Annotate selection' }));
     expect((await screen.findByRole('alert')).textContent).toMatch(/Select some text first/);
     expect(picked).not.toHaveBeenCalled();
 
-    const box = screen.getByRole('textbox', { name: 'Text box 1' }) as HTMLTextAreaElement;
-    expect(box.readOnly).toBe(true);
-    expect(box.value).toBe('Hello big world, big day'); // the plain text the anchors count in
-    box.focus();
-    box.setSelectionRange(5, 9); // " big"
+    const box1 = screen.getByRole('textbox', { name: 'Text box 1' }) as HTMLTextAreaElement;
+    const box2 = screen.getByRole('textbox', { name: 'Text box 2' }) as HTMLTextAreaElement;
+    expect(box1.readOnly).toBe(true);
+    expect(box1.value).toBe('Hello big world, big day'); // the plain text the anchors count in
+    box1.focus();
+    box1.setSelectionRange(5, 9); // " big"
+    box2.focus();
+    box2.setSelectionRange(0, 6); // "Second"
+    box1.focus(); // both keep a selection; the box touched last wins
     await userEvent.click(screen.getByRole('button', { name: 'Annotate selection' }));
     expect(picked).toHaveBeenCalledWith({ elementId: ELEMENT, quote: 'big', offset: 6, slideId: 1 });
     expect(screen.getByRole('status').textContent).toMatch(/Selected “big”/);
+    cleanup();
+
+    const refused = vi.fn(() => false); // a guest is sent to log in, no composer opens
+    render(
+      <AnnotationPanel
+        noteId={9}
+        slides={slides}
+        slideNo={1}
+        annotations={[]}
+        draft={null}
+        onPick={refused}
+        onShow={() => {}}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Select text with the keyboard' }));
+    const only = screen.getByRole('textbox', { name: 'Text box 1' }) as HTMLTextAreaElement;
+    only.focus();
+    only.setSelectionRange(5, 9);
+    await userEvent.click(screen.getByRole('button', { name: 'Annotate selection' }));
+    expect(refused).toHaveBeenCalled();
+    expect(screen.getByRole('status').textContent).toBe('');
   });
 });

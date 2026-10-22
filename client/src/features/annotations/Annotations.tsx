@@ -2,7 +2,9 @@ import { Keyboard, MessageSquareQuote } from 'lucide-react';
 import { type FormEvent, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { Slide } from '@notalah/shared';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/UserAvatar';
+import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { useAction } from '@/lib/useAction';
 import { ConfirmButton } from '../../components/ConfirmButton';
 import { LecturerBadge } from '../../components/LecturerBadge';
@@ -141,6 +143,13 @@ function KeyboardPicker({
   onPick: (anchor: Anchor & { slideId: number }) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const cancelled = useRef(false);
+  const last = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (!open && cancelled.current) trigger.current?.focus();
+    cancelled.current = false;
+  }, [open]);
   const [error, setError] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const boxes = (slide?.elements ?? []).flatMap((e) =>
@@ -148,11 +157,11 @@ function KeyboardPicker({
   );
 
   const annotate = () => {
-    // A text area keeps its selection after it loses focus, so read it here; the focused box wins over another.
-    const areas = [...(list.current?.querySelectorAll('textarea') ?? [])].filter(
-      (t) => t.selectionEnd > t.selectionStart,
-    );
-    const area = areas.find((t) => t === document.activeElement) ?? areas[0];
+    // A text area keeps its selection after it loses focus, so read it here: the box last touched, else any with a selection.
+    const has = (t: HTMLTextAreaElement | null | undefined) => !!t && t.selectionEnd > t.selectionStart;
+    const area = has(last.current)
+      ? last.current!
+      : [...(list.current?.querySelectorAll('textarea') ?? [])].find((t) => has(t));
     const raw = area ? area.value.slice(area.selectionStart, area.selectionEnd) : '';
     const quote = raw.trim();
     if (!area || !quote) return setError('Select some text first: hold Shift and press the arrow keys.');
@@ -170,7 +179,7 @@ function KeyboardPicker({
   if (!open) {
     return (
       <div className="border-b px-5 pb-3">
-        <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        <Button ref={trigger} type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
           <Keyboard aria-hidden="true" />
           Select text with the keyboard
         </Button>
@@ -196,6 +205,8 @@ function KeyboardPicker({
             value={b.text}
             rows={Math.min(5, Math.max(2, Math.ceil(b.text.length / 40)))}
             data-element={b.id}
+            onFocus={(e) => (last.current = e.currentTarget)}
+            onSelect={(e) => (last.current = e.currentTarget)}
             className="resize-none rounded-md border border-input bg-background px-3 py-2 text-body outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
           />
         </div>
@@ -209,7 +220,15 @@ function KeyboardPicker({
         <Button type="button" size="sm" disabled={boxes.length === 0} onClick={annotate}>
           Annotate selection
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            cancelled.current = true;
+            setOpen(false);
+          }}
+        >
           Cancel
         </Button>
       </div>
@@ -416,7 +435,7 @@ export function AnnotationPanel({
   draft: Draft | null;
   readOnly?: boolean;
   /** Starts an annotation from the keyboard picker; the parent asks guests to log in. */
-  onPick?: (anchor: Anchor) => void;
+  onPick?: (anchor: Anchor) => boolean;
   onDraftDone?: () => void;
   onPosted?: (a: Annotation) => void;
   onRemoved?: (id: number) => void;
@@ -440,8 +459,7 @@ export function AnnotationPanel({
           slide={slides[slideNo - 1]}
           slideNo={slideNo}
           onPick={(a) => {
-            setSaid(`Selected “${a.quote}”. Write your annotation, then choose Post.`);
-            onPick(a);
+            if (onPick(a)) setSaid(`Selected “${a.quote}”. Write your annotation, then choose Post.`);
           }}
         />
       )}
@@ -486,5 +504,43 @@ export function AnnotationPanel({
         )}
       </div>
     </div>
+  );
+}
+
+type PanelProps = Parameters<typeof AnnotationPanel>[0];
+
+/** The annotation panel in a sheet: beside the slide on desktop (non-modal, so text stays selectable), a bottom sheet on phones. */
+export function AnnotationSheet({
+  open,
+  onOpenChange,
+  onShow,
+  ...panel
+}: PanelProps & { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const desktop = useMediaQuery(DESKTOP);
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange} modal={!desktop}>
+      <SheetContent
+        side={desktop ? 'right' : 'bottom'}
+        onInteractOutside={desktop ? (e) => e.preventDefault() : undefined}
+        className={
+          desktop ? 'w-[26rem] gap-0 sm:max-w-none' : 'max-h-[75dvh] min-h-[40dvh] gap-0 rounded-t-2xl border-t-0'
+        }
+      >
+        <div className="px-5 pt-5 pb-3">
+          <SheetTitle className="text-title-sm font-bold">Annotations</SheetTitle>
+          <SheetDescription className="text-body-sm text-muted-foreground">
+            Slide {panel.slideNo} of {panel.slides.length}
+            {panel.readOnly ? '. View only.' : ''}
+          </SheetDescription>
+        </div>
+        <AnnotationPanel
+          {...panel}
+          onShow={(a) => {
+            if (!desktop) onOpenChange(false);
+            onShow(a);
+          }}
+        />
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -327,20 +327,17 @@ describe('Annotations (R10, FR18)', () => {
     expect((await get(a, url(note))).body.annotations).toHaveLength(500);
   });
 
-  it('ANN-TC17: a share link reads the annotations read-only, minus hidden, deleted, blocked and off', async () => {
+  it('ANN-TC17: a share link reads the annotations of a public note read-only, never those of a friends-only note', async () => {
     const author = await insertUser();
     const a = await insertUser();
     const hidden = await insertUser();
     const blocked = await insertUser();
     const viewer = await insertUser();
-    const { note, element } = await noteWithText(author, { visibility: 'contacts' });
+    const { note, element } = await noteWithText(author);
     const link = async (role: string) =>
       (await post(author, `/api/notes/${note}/links`, { role })).body.token as string;
     const view = await link('view');
     const edit = await link('edit');
-    await befriend(author, a);
-    await befriend(author, hidden);
-    await befriend(author, blocked);
     for (const u of [a, hidden, blocked]) await post(u, url(note), input(element, { body: `by ${u}` }));
     await pool.query(`UPDATE "ANNOTATION_T" SET ant_hidden_at = NOW() WHERE ant_usr_id = $1 AND ant_pst_id = $2`, [
       hidden,
@@ -360,8 +357,16 @@ describe('Annotations (R10, FR18)', () => {
     await patch(author, url(note), { enabled: false });
     expect((await read(null, view)).body.annotations).toEqual([]);
     await patch(author, url(note), { enabled: true });
+    await pool.query(`UPDATE "POST_T" SET pst_visibility = 'contacts' WHERE pst_id = $1`, [note]);
+    const friendsOnly = await read(null, view);
+    expect(friendsOnly.status).toBe(200);
+    expect(friendsOnly.body.annotations).toEqual([]);
+    await pool.query(`UPDATE "POST_T" SET pst_visibility = 'public' WHERE pst_id = $1`, [note]);
+    expect((await read(null, view)).body.annotations).toHaveLength(2);
+    expect((await del(author, `/api/notes/${note}/links/view`)).status).toBe(204);
+    expect((await read(null, view)).status).toBe(404);
     await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [note]);
-    expect((await read(null, view)).body.annotations ?? []).toEqual([]);
+    expect((await read(null, edit)).status).toBe(404);
   });
 
   it('ANN-TC18: feed cards and the note carry a live annotation count, not the annotations', async () => {
