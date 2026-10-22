@@ -15,6 +15,8 @@ export const RATE_LIMITS = Object.freeze({
   writes: 120,
   /** Guest-readable GETs per client IP per window (R31, D45); keyed on req.ip, so it needs `trust proxy` set for the host (D35). */
   guestReads: 120,
+  /** Every /api GET per signed-in user (or IP when signed out) per window (R20, D81); the feed and search rank up to 500 notes. */
+  reads: 300,
 });
 
 /**
@@ -119,6 +121,15 @@ export const writeLimiter = createLimiter({
   name: 'write',
   windowMs: RATE_LIMITS.windowMs,
   limit: RATE_LIMITS.writes,
+  keyGenerator: userOrIpKey,
+  message: 'Too many requests. Try again in a minute.',
+});
+
+/** Mounted in app.ts for GETs, except health and asset files, which fileLimiter already counts (D81). */
+export const readLimiter = createLimiter({
+  name: 'read',
+  windowMs: RATE_LIMITS.windowMs,
+  limit: RATE_LIMITS.reads,
   keyGenerator: userOrIpKey,
   message: 'Too many requests. Try again in a minute.',
 });
