@@ -1773,3 +1773,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - Known gaps: the shared-link page (`SharedNote`) shows no annotations, as a link viewer may fail the note's visibility check the list uses; feed cards show no annotation count, which would need a new note field; Shift+arrow selection in rendered (non-editable) text makes no selection in Chrome without caret browsing (F7), so annotating needs a pointer or touch selection (also noted for Chapter 6). The 500 cap is a count then insert, not atomic, so concurrent posts may pass it by a few (a `shortcut:` comment in the route).
 - **Alternatives:** a separate annotation report table (no queue reuse); marking a moderator hide with a boolean or reusing `ant_deleted_at` (loses who removed it).
 - **Reversibility:** Medium: the migration has a full down; removing the feature drops one table and three columns.
+
+## D78 - Admin and Drafts restyle (R19 lane C, 22 Oct 2026)
+
+- **Decision:** the three admin pages (Lecturer applications, Reported content, Users) move onto the design system: each row is a `bg-card` tile with `UserAvatar` (people) or the note title (reports), chips for role and status, `Button` actions (outline, destructive for confirm), `Field` for reasons, `PageMessage` for empty states, a `role="status"` line for the last outcome and a `role="alert"` box for errors. Tables are gone, so nothing scrolls sideways at 375 px; phone action buttons are 44 px. Shared bits are in `features/moderation/parts.tsx`. Opening a report review moves focus to its panel.
+- **Drafts and Saved:** already on the system (tiles, `ConfirmButton`, `usePaged`), so unchanged. There is no modules or usage-report screen in the client; the admin rail has only the three pages above.
+- **Behaviour unchanged:** routes, API calls, validation and button names. Reports still show the first page (20) only (the `shortcut:` stays). Client test CLI-TC77.
+- **Reversibility:** High: presentation only.
