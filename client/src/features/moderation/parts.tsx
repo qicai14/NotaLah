@@ -1,15 +1,27 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { cn } from '@/lib/utils';
 
-/** Page title with an optional count, shared by the admin pages. */
-export function AdminHeading({ children, count }: { children: ReactNode; count?: number }) {
+/** Page title with an optional count beside it (outside the h1, so the heading's name stays the title). `headingRef` lets a page return focus here. */
+export function AdminHeading({
+  children,
+  count,
+  headingRef,
+}: {
+  children: ReactNode;
+  count?: number | string;
+  headingRef?: Ref<HTMLHeadingElement>;
+}) {
   return (
-    <h1 className="text-title font-bold">
-      {children}
-      {count !== undefined && count > 0 && (
-        <span className="ml-2 text-body font-semibold text-muted-foreground tabular-nums">{count}</span>
+    <div className="flex items-baseline gap-2">
+      <h1 ref={headingRef} tabIndex={-1} className="text-title font-bold outline-none">
+        {children}
+      </h1>
+      {count !== undefined && count !== 0 && (
+        <span aria-label={`${count} open`} className="text-body font-semibold text-muted-foreground tabular-nums">
+          {count}
+        </span>
       )}
-    </h1>
+    </div>
   );
 }
 

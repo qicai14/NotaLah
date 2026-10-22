@@ -106,10 +106,20 @@ export default function AdminReports() {
   const [busy, setBusy] = useState(false);
   const open = detail.data?.group;
   const panel = useRef<HTMLElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const reviewButtons = useRef(new Map<number, HTMLButtonElement>());
+  const lastOpen = useRef<number | null>(null);
   // The panel sits below the queue; bring it into view and move focus there when a review opens.
+  const openKey = open?.id;
   useEffect(() => {
-    if (open) panel.current?.focus();
-  }, [open?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (openKey !== undefined) panel.current?.focus();
+  }, [openKey]);
+  // When the panel closes, focus goes back to that group's Review button, or the heading if the row is gone.
+  useEffect(() => {
+    if (openId === null && lastOpen.current !== null)
+      (reviewButtons.current.get(lastOpen.current) ?? heading.current)?.focus();
+    lastOpen.current = openId;
+  }, [openId]);
   const noteReports = open?.reports.filter((r) => !r.annotation) ?? [];
   const byAnnotation = new Map<number, Report[]>();
   for (const r of open?.reports ?? [])
@@ -176,7 +186,12 @@ export default function AdminReports() {
 
   return (
     <section className="flex flex-col gap-4">
-      <AdminHeading count={data?.groups.length}>Reported content</AdminHeading>
+      <AdminHeading
+        headingRef={heading}
+        count={data ? `${data.groups.length}${data.nextCursor ? '+' : ''}` : undefined}
+      >
+        Reported content
+      </AdminHeading>
       <Notices
         error={error ?? detail.error}
         status={
@@ -222,7 +237,7 @@ export default function AdminReports() {
                 className="max-md:min-h-11"
                 onClick={() => (setOpenId(g.id), setRemark(''), setFormError(null))}
                 aria-label={`Review ${g.title}`}
-                aria-expanded={g.id === openId}
+                ref={(el) => void (el ? reviewButtons.current.set(g.id, el) : reviewButtons.current.delete(g.id))}
               >
                 Review
               </Button>
@@ -236,7 +251,7 @@ export default function AdminReports() {
           ref={panel}
           tabIndex={-1}
           aria-label={`Review ${open.title}`}
-          className={cn(cardClass, 'flex scroll-mt-20 flex-col gap-3 outline-none')}
+          className={cn(cardClass, 'flex scroll-mt-20 flex-col gap-3')}
         >
           <h2 className="text-title font-bold">{open.title}</h2>
           <p className="text-body-sm text-muted-foreground">
@@ -298,7 +313,13 @@ export default function AdminReports() {
               </form>
             </>
           )}
-          <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setOpenId(null)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="self-start max-md:min-h-11"
+            onClick={() => setOpenId(null)}
+          >
             Close
           </Button>
         </section>

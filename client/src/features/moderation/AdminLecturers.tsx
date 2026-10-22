@@ -51,7 +51,7 @@ export default function AdminLecturers() {
   return (
     <section className="flex flex-col gap-4">
       <AdminHeading count={apps?.length}>Lecturer applications</AdminHeading>
-      <Notices status={status} error={error} />
+      <Notices status={status} error={rejecting === null ? error : null} />
       {apps === null && !error && <Loading>Loading…</Loading>}
       {apps?.length === 0 && (
         <PageMessage
@@ -87,6 +87,7 @@ export default function AdminLecturers() {
                       autoFocus
                       maxLength={300}
                       value={reason}
+                      error={error ?? undefined}
                       onChange={(e) => setReason(e.target.value)}
                     />
                     <div className="flex flex-wrap gap-2">
