@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { Server, type Socket } from 'socket.io';
 import { env } from '../../lib/env';
 import { logger } from '../../lib/logger';
+import { fromProxy } from '../../lib/proxySecret';
 import { fromAuthCookie, passport } from '../auth/passport';
 import { type AuthUser, isBlocked } from '../users/repository';
 import { MESSAGING } from './config';
@@ -35,8 +36,9 @@ export function attachSocket(server: HttpServer): Server {
     // Clients send only small typing events; every other write is REST.
     maxHttpBufferSize: 1_000,
     cors: { origin: env.CLIENT_ORIGIN, credentials: true },
-    // WebSockets bypass CORS and the CSRF header, so every engine request must come from the client's origin.
-    allowRequest: (req, callback) => callback(null, req.headers.origin === env.CLIENT_ORIGIN),
+    // WebSockets bypass CORS, the CSRF header and Express middleware, so every engine request must come from the client's
+    // origin through the Pages proxy (D77).
+    allowRequest: (req, callback) => callback(null, req.headers.origin === env.CLIENT_ORIGIN && fromProxy(req)),
   });
   io.use(async (socket, next) => {
     try {

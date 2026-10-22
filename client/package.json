@@ -16,6 +16,7 @@
     "@fontsource-variable/source-sans-3": "5.3.1",
     "@fontsource/atkinson-hyperlegible": "5.3.0",
     "@notalah/shared": "workspace:*",
+    "@sentry/browser": "11.8.0",
     "@tiptap/pm": "3.32.0",
     "@tiptap/react": "3.32.0",
     "@tiptap/starter-kit": "3.32.0",

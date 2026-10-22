@@ -1,6 +1,10 @@
 import { env } from './env';
 import { logger } from './logger';
 
+/** Share-link tokens grant access (D46), so none leaves in an event or breadcrumb (D77). */
+export const scrubShareTokens = <T>(value: T): T =>
+  JSON.parse(JSON.stringify(value).replace(/\/share\/[^/?#"\\\s]+/g, '/share/:token'));
+
 type Sentry = typeof import('@sentry/node');
 let sentry: Sentry | undefined;
 
@@ -22,8 +26,9 @@ export async function initErrorReporting(): Promise<void> {
     },
     beforeSend(event) {
       delete event.request;
-      return event;
+      return scrubShareTokens(event);
     },
+    beforeBreadcrumb: (breadcrumb) => scrubShareTokens(breadcrumb),
   });
   sentry = s;
   logger.info('error reporting enabled');

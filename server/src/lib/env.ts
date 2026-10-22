@@ -68,6 +68,10 @@ const schema = z
     // Hard cap on a sliding session (R37): past this many hours since login the cookie is no longer renewed.
     MAX_SESSION_HOURS: z.coerce.number().positive().default(12),
     // First-deploy check (D65): 1 logs req.ip beside the raw X-Forwarded-For on each health check, to confirm TRUST_PROXY.
+    // Shared with the Pages Function (D77): requests without it are refused, so only the proxy reaches the API.
+    PROXY_SECRET: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(16).optional()),
+    // Set by Render on each deploy; reported by /api/health so the deploy workflow can wait for the new commit.
+    RENDER_GIT_COMMIT: z.string().optional(),
     DEBUG_PROXY: z
       .enum(['1', '0'])
       .optional()
@@ -87,7 +91,8 @@ const schema = z
         fail('CLIENT_ORIGIN', 'CLIENT_ORIGIN must be an https:// origin in production');
       if (!v.COOKIE_SECURE) fail('COOKIE_SECURE', 'COOKIE_SECURE must be true in production');
       if (v.TRUST_PROXY === 'loopback' || v.TRUST_PROXY === 0)
-        fail('TRUST_PROXY', 'TRUST_PROXY must be the proxy hop count (1 on Render) in production');
+        fail('TRUST_PROXY', 'TRUST_PROXY must be the proxy hop count (2 behind the Pages proxy) in production');
+      if (!v.PROXY_SECRET) fail('PROXY_SECRET', 'PROXY_SECRET must be set in production (at least 16 characters)');
     }
     if (v.STORAGE_DRIVER !== 'r2') return;
     for (const name of R2_VARS) {

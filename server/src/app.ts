@@ -1,9 +1,11 @@
+import compression from 'compression';
 import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
 import { env } from './lib/env';
 import { reportError } from './lib/errorReporting';
 import { requestLogger } from './lib/logger';
+import { requireProxy } from './lib/proxySecret';
 import { passport } from './features/auth/passport';
 import { adminRouter } from './features/moderation/routes';
 import { assetsRouter } from './features/assets/routes';
@@ -27,11 +29,14 @@ import { verificationRouter } from './features/verification/routes';
 
 export const app = express();
 
-// `loopback` trusts the Vite dev proxy; production trusts exactly the host's proxy hops (1 on Render), so req.ip is the client (D17, D65).
+// `loopback` trusts the Vite dev proxy; production trusts exactly the proxy hops (2: the Pages Function, then Render), so req.ip is the client (D17, D65, D74).
 app.set('trust proxy', env.TRUST_PROXY);
 
 app.use(requestLogger);
 app.use(helmet());
+// Ranged file streams (asset images and video) stay uncompressed so byte ranges and the served-bytes count hold (R11).
+app.use(compression({ filter: (req, res) => !res.getHeader('Accept-Ranges') && compression.filter(req, res) }));
+// Dev (Vite proxy) and production (Pages proxy, D74) are same-origin; this serves a client built with VITE_API_URL elsewhere.
 app.use(
   cors({
     origin: env.CLIENT_ORIGIN,
@@ -40,6 +45,8 @@ app.use(
     exposedHeaders: ['X-Viewer'],
   }),
 );
+
+app.use(requireProxy);
 
 // CSRF (D35): a cross-site page cannot add this header without a preflight, which CORS refuses for other origins.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

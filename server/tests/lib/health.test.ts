@@ -2,6 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeEach, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import pino from 'pino';
+import { env } from '../../src/lib/env';
 import { loggerOptions, logPath } from '../../src/lib/logger';
 import { pool } from '../../src/lib/pool';
 import { truncateAll } from '../helpers';
@@ -13,6 +14,16 @@ it('OPS-TC1: GET /api/health reports the database is up', async () => {
   const res = await request(app).get('/api/health');
   expect(res.status).toBe(200);
   expect(res.body).toEqual({ status: 'ok', db: 'up' });
+});
+
+it('OPS-TC8: GET /api/health reports the deployed commit when Render sets one, and omits it locally', async () => {
+  expect((await request(app).get('/api/health')).body).not.toHaveProperty('version');
+  env.RENDER_GIT_COMMIT = 'abc123';
+  try {
+    expect((await request(app).get('/api/health')).body).toEqual({ status: 'ok', db: 'up', version: 'abc123' });
+  } finally {
+    env.RENDER_GIT_COMMIT = undefined;
+  }
 });
 
 it('OPS-TC2: GET /api/health answers 503 when the database is unreachable', async () => {
