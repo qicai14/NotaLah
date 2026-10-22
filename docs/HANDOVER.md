@@ -18,8 +18,8 @@ NotaLah. Read with `../PLAN.md` (backlog R0-R40), `docs/DECISIONS.md` (D69-D75 a
 3. Rotate keys if you treat agent terminal prints as exposure: Groq `AI_API_KEY`, Cloudflare tokens, Jamendo client id.
 4. Before R11: set a Cloudflare billing notification; stay on the Workers **Free** plan; set the Pages project to
    fail closed (D74). Render, Neon and GitHub secrets as in README "Deploy notes" (now one origin, `TRUST_PROXY=2`).
-5. Re-render PlantUML (needs Java): `10_erd.puml` (music + annotation columns), `01_use_case.puml` (UC23),
-   `13_seq_annotate.puml`, then regenerate the schema PNGs.
+5. Diagram sources are now Mermaid (D76) in `docs/chapter4/diagrams/src/*.md`; render on mermaid.live and replace the
+   PNGs, at least `10_erd` (music + annotation columns), `01_use_case` (UC23) and `13_seq_annotate`.
 6. Delete the empty leftover folders under `../worktrees/` (Windows held them locked during the session).
 
 ## Next work, in order

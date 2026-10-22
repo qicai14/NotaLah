@@ -1774,6 +1774,24 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** a separate annotation report table (no queue reuse); marking a moderator hide with a boolean or reusing `ant_deleted_at` (loses who removed it).
 - **Reversibility:** Medium: the migration has a full down; removing the feature drops one table and three columns.
 
+## D76 - Diagrams in Mermaid (22 Oct 2026)
+- **Decision (user):** every diagram source is Mermaid text, not PlantUML. The 14 Chapter 4 sources in
+  `docs/chapter4/diagrams/src/` are now `.md` files with a `mermaid` block; `00_architecture.md` adds the current
+  architecture, deployment (D74) and async video (D67) diagrams. The user renders and styles them on mermaid.live.
+- **Mapping:** class, sequence and ER diagrams map one to one (the ERD's `NOT NULL` comments mark PlantUML's mandatory
+  columns). Mermaid has no use case or swimlane activity type, so those are flowcharts: use cases as stadiums with
+  dotted «include»/«extend» edges, swimlanes as subgraphs, fork/join as thin bar nodes.
+- **Why:** no Java toolchain; the user styles diagrams by hand.
+- **Check:** all 17 blocks render with Mermaid 12.1.0.
+- **Reversibility:** High: the `.puml` files stay in git history.
+
+## D78 - Admin and Drafts restyle (R19 lane C, 22 Oct 2026)
+
+- **Decision:** the three admin pages (Lecturer applications, Reported content, Users) move onto the design system: each row is a `bg-card` tile with `UserAvatar` (people) or the note title (reports), chips for role and status, `Button` actions (outline, destructive for confirm), `Field` for reasons, `PageMessage` for empty states, a `role="status"` line for the last outcome and a `role="alert"` box for errors. Tables are gone, so nothing scrolls sideways at 375 px; buttons are at least 40 px and the small queue buttons 44 px on phones. Shared bits are in `features/moderation/parts.tsx`. Opening a report review moves focus to its panel; closing it returns focus to that Review button (or the heading).
+- **Drafts and Saved:** already on the system (tiles, `ConfirmButton`, `usePaged`), so unchanged. There is no modules or usage-report screen in the client; the admin rail has only the three pages above.
+- **Behaviour unchanged:** routes, API calls, validation and button names. Reports still show the first page (20) only (the `shortcut:` stays). Client test CLI-TC77.
+- **Reversibility:** High: presentation only.
+
 ## D79 - Annotation gaps and video test fix (R10, 22 Oct 2026)
 - **Context:** D75 left three R10 gaps (no annotations on the shared-link page, no count on feed cards, no keyboard route to create one), and NOTE-TC39 in `tests/assets/video.test.ts` had failed twice in full server runs while passing alone.
 - **Decision:**
@@ -1781,6 +1799,6 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - Feed count: `counts.annotations` is one more column in `countsCol` (shown counts only, so the ranking inputs and their cost are unchanged). It counts live annotations by active or restricted authors not in a block with the viewer, and is 0 while the author has annotations off, so it equals what the list shows (an admin can see a suspended author's annotations in the list but not in the count). The feed rail shows it as a link to the note when above 0 (nothing at 0, to keep the phone rail short); the note page keeps its own button. No annotation text enters the feed payload (D71).
   - Keyboard creation: Chrome and Firefox make no Shift+arrow selection in rendered text without caret browsing, so a "Select text with the keyboard" button in the annotation panel lists the slide's text boxes as read-only text areas holding the element's plain text (the string the anchors count in), where Shift+arrows do select. "Annotate selection" reads the selection (a text area keeps it after blur; the focused box wins), builds the same anchor as a pointer selection and opens the composer. A polite live region announces "Selected ..." after picking, "Annotation posted." and "Annotation deleted."; an empty selection shows an alert. Guests are sent to the log-in sheet as before. The text areas show the text without paragraph breaks, because offsets must match `textContent`.
   - NOTE-TC39 root cause: not shared state, polling or temp directories. The tests run real ffmpeg/ffprobe, whose duration scales with CPU, against vitest's default 5 s test and 10 s hook timeouts. Reproduced by running the file with twice as many busy loops as cores: the `beforeAll` fixture build hit "Hook timed out in 10000ms", and with a 60 s timeout NOTE-TC39 took 35 s (it takes 1.7 s alone). The honest fix is a larger timeout for this file (`vi.setConfig`, 60 s); the 300 ms sleep before the temp-dir check in NOTE-TC74 became `vi.waitFor` so it no longer races a slow cleanup.
-  - Tests: ANN-TC17 to ANN-TC21, CLI-TC77. The create flow is unchanged, so `13_seq_annotate.puml` is not touched.
+  - Tests: ANN-TC17 to ANN-TC21, CLI-TC78. The create flow is unchanged, so `13_seq_annotate.md` is not touched.
 - **Alternatives:** annotations inside the `GET /api/share/:token` payload (adds a query to every shared view, and the client already fetches lists separately); a `pst_annotation_count` column (a write on every annotation change for a value a count query gives); making the rendered slide text focusable with a caret (Chrome needs caret browsing for that); an unconditional zero count on the rail.
 - **Reversibility:** High: no schema change; one route, one count column and one client panel mode.

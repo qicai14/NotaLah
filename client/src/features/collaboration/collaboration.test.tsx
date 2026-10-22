@@ -326,7 +326,7 @@ describe('collaboration UI', () => {
     expect(screen.getByText('This link is invalid or was revoked')).toBeTruthy();
   });
 
-  it("CLI-TC77: a view link lists the note's annotations read-only for a guest, and shows no button when there are none", async () => {
+  it("CLI-TC78: a view link lists the note's annotations read-only for a guest, and shows no button when there are none", async () => {
     signedIn = null;
     handlers['GET /share/tok'] = () => ({ status: 200, body: { role: 'view', note: note() } });
     handlers['GET /share/tok/annotations'] = () => ({
