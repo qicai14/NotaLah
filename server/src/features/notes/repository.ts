@@ -140,8 +140,13 @@ export const VERIFIED_BY = `(SELECT vu.usr_display_name ${VALID_VERIFICATIONS} A
 const OWN_LIKE = `(l.lik_usr_id = p.pst_usr_id OR EXISTS (SELECT 1 FROM "COLLABORATOR_T" c
                   WHERE c.clb_pst_id = p.pst_id AND c.clb_usr_id = l.lik_usr_id AND c.clb_role = 'edit'))`;
 
+/** Annotations on note p ($1 = viewer) as the annotation list shows them: none while the author has them off, and none by a deleted or suspended author or someone in a block with the viewer (R10, D75). A count column only, so the feed carries no annotation text. */
+const ANNOTATION_COUNT = `(SELECT COUNT(*)::INT FROM "ANNOTATION_T" a JOIN "USER_T" au ON au.usr_id = a.ant_usr_id
+              WHERE a.ant_pst_id = p.pst_id AND p.pst_annotations_on AND a.ant_deleted_at IS NULL AND a.ant_hidden_at IS NULL
+                AND au.usr_status IN ('active', 'restricted') AND NOT ${blockedWith('$1', 'au.usr_id')})`;
+
 /**
- * Like and comment counts of note p (the author's own comments are not counted, D22). With `asOf` (an SQL expression)
+ * Like, comment and (shown counts only) annotation counts of note p (the author's own comments are not counted, D22). With `asOf` (an SQL expression)
  * these are the ranking inputs (D24): only rows created by then, and no likes by the author or an edit collaborator (D47).
  * Without it they are the shown counts, which leave out comments by suspended authors as readers do not see them (D47).
  */
@@ -152,7 +157,12 @@ export const countsCol = (asOf?: string) => `json_build_object(
                              asOf
                                ? ` AND cmt_created_at <= ${asOf}`
                                : ` AND NOT EXISTS (SELECT 1 FROM "USER_T" cu WHERE cu.usr_id = cmt_usr_id AND cu.usr_status = 'suspended')`
-                           })) AS "counts"`;
+                           })${
+                             asOf
+                               ? ''
+                               : `,
+              'annotations', ${ANNOTATION_COUNT}`
+                           }) AS "counts"`;
 
 /** Engagement columns (alias p; $1 = viewer id; the author's own comments are not counted, D22; `verified`/`verifiedBy` per VERIFIED, `verifiedByMe` = the viewer's own Super Like) shared by the feed and the note detail so the counts exist once. */
 export const ENGAGEMENT_COLS = `${countsCol()},
@@ -162,7 +172,7 @@ export const ENGAGEMENT_COLS = `${countsCol()},
             EXISTS (SELECT 1 FROM "VERIFICATION_T" WHERE ver_pst_id = p.pst_id AND ver_usr_id = $1) AS "verifiedByMe"`;
 
 export interface NoteWithEngagement extends Note {
-  counts: { likes: number; comments: number };
+  counts: { likes: number; comments: number; annotations: number };
   liked: boolean;
   bookmarked: boolean;
   verified: boolean;

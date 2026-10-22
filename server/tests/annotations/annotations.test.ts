@@ -326,4 +326,61 @@ describe('Annotations (R10, FR18)', () => {
     expect(ok.body.annotation.body).toBe('Newest');
     expect((await get(a, url(note))).body.annotations).toHaveLength(500);
   });
+
+  it('ANN-TC17: a share link reads the annotations read-only, minus hidden, deleted, blocked and off', async () => {
+    const author = await insertUser();
+    const a = await insertUser();
+    const hidden = await insertUser();
+    const blocked = await insertUser();
+    const viewer = await insertUser();
+    const { note, element } = await noteWithText(author, { visibility: 'contacts' });
+    const link = async (role: string) =>
+      (await post(author, `/api/notes/${note}/links`, { role })).body.token as string;
+    const view = await link('view');
+    const edit = await link('edit');
+    await befriend(author, a);
+    await befriend(author, hidden);
+    await befriend(author, blocked);
+    for (const u of [a, hidden, blocked]) await post(u, url(note), input(element, { body: `by ${u}` }));
+    await pool.query(`UPDATE "ANNOTATION_T" SET ant_hidden_at = NOW() WHERE ant_usr_id = $1 AND ant_pst_id = $2`, [
+      hidden,
+      note,
+    ]);
+    await block(viewer, blocked);
+    const read = (who: number | null, token: string) => get(who, `/api/share/${token}/annotations`);
+    const guest = await read(null, view);
+    expect(guest.status).toBe(200);
+    expect(guest.body.annotations.map((x: any) => x.author.id)).toEqual([a, blocked]);
+    expect(guest.body.annotations.every((x: any) => x.canDelete === false)).toBe(true);
+    expect((await read(viewer, view)).body.annotations.map((x: any) => x.author.id)).toEqual([a]);
+    expect((await read(null, edit)).status).toBe(401);
+    expect((await read(a, edit)).status).toBe(200);
+    expect((await read(null, 'x'.repeat(43))).status).toBe(404);
+    expect((await post(a, `/api/share/${view}/annotations`, input(element))).status).toBe(404);
+    await patch(author, url(note), { enabled: false });
+    expect((await read(null, view)).body.annotations).toEqual([]);
+    await patch(author, url(note), { enabled: true });
+    await pool.query(`UPDATE "POST_T" SET pst_status = 'hidden' WHERE pst_id = $1`, [note]);
+    expect((await read(null, view)).body.annotations ?? []).toEqual([]);
+  });
+
+  it('ANN-TC18: feed cards and the note carry a live annotation count, not the annotations', async () => {
+    const author = await insertUser();
+    const viewer = await insertUser();
+    const blocked = await insertUser();
+    const suspended = await insertUser();
+    const { note, element } = await noteWithText(author);
+    for (const u of [viewer, blocked, suspended, viewer]) await post(u, url(note), input(element));
+    await block(viewer, blocked);
+    await pool.query(`UPDATE "USER_T" SET usr_status = 'suspended' WHERE usr_id = $1`, [suspended]);
+    const card = async (who: number | null) => (await get(who, '/api/feed')).body.items.find((n: any) => n.id === note);
+    expect(await card(viewer)).toMatchObject({ counts: { annotations: 2 } });
+    expect(JSON.stringify(await card(viewer))).not.toContain('Nice point');
+    expect((await card(author)).counts.annotations).toBe(3);
+    expect((await get(null, `/api/notes/${note}`)).body.note.counts.annotations).toBe(3);
+    await del(viewer, `${url(note)}/${(await get(viewer, url(note))).body.annotations[0].id}`);
+    expect((await card(viewer)).counts.annotations).toBe(1);
+    await patch(author, url(note), { enabled: false });
+    expect((await card(viewer)).counts.annotations).toBe(0);
+  });
 });
