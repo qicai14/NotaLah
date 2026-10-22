@@ -1,35 +1,38 @@
-# Handover — 20 Oct 2026, evening (session FYP-7 ends; Sprint D UI done, Sprint 5 next)
+# Handover — 22 Oct 2026, evening (session FYP-8 autopilot ends; Sprint 5 code done, report and AI next)
 
-NotaLah. Read with `../PLAN.md` (backlog R0-R40), `docs/DECISIONS.md` (D69-D75 are new) and `docs/README.md`.
+NotaLah. Read with `../PLAN.md`, `docs/DECISIONS.md` (D76-D82 are new), `docs/README.md` and
+`../run-logs/AUTOPILOT_2026-10-22.md` (decisions taken while the user was away, with alternatives).
 
 ## State of `main`
-- Merged this session: #46 R21d themes, layouts, fonts (D69) · #47 R39 feed sends first slides only, per-run test
-  temp dirs (D71) · #48 R8 notifications inbox UI, @mentions, combined phone Inbox badge (D70) · #49 R29 feed video
-  player, `useActiveSound` (D72) · #50 D74 no domain: Cloudflare Pages Function proxies `/api` + `/socket.io` to Render ·
-  #51 R9 Jamendo background music, FR17 (D73) · #52 R10 text-anchored annotations, FR18 (D75).
-- Every IR FR is now built. Tests: server 421 + 2 skipped, client 150; `vp run check`, build and CI green.
-- New guard: `../.claude/hooks/block-env.mjs` blocks agents from sourcing or printing `.env` (rule in every agent file).
-  Worktrees from `ship-feature` point both `DATABASE_URL` and `TEST_DATABASE_URL` at their private test DB.
+- Merged this session: #54 Chapter 4 diagrams in Mermaid (D76) · #55 admin pages restyled (D78) · #56 R11 deploy code:
+  Pages Function proxy with `PROXY_SECRET`, Docker image with ffmpeg, `render.yaml`, deploy workflow that skips each
+  step without its secret, plus R18 client Sentry (D77) · #57 R10 gaps (share-link annotations, feed count, keyboard
+  picker) and the NOTE-TC39 flake (D79) · #58 R20 local audit fixes: bcrypt/auth burst env, liveness without DB, read
+  limiter, Pages `_headers` CSP, sharp memory caps, lazy socket client (D81) · #59 R27 local load evidence (D80).
+- Tests: server 437 + 2 skipped, client 168; check, build and CI green. Audit report: `docs/testing/R20_audit_2026-10-22.md`.
+- NFR1 evidence: `docs/testing/load/2026-10-22_local.md` (10k notes: pass up to 25 VUs, every search < 3 s; fails at 50).
+- Live deploy is optional (D82): nothing is live; the local stack is what the demo and submission use.
 
 ## User steps (exact)
-1. Migrate the dev DB (R9 music and R10 annotation migrations): in `FYP_Project/`, `vp run server#db:migrate`.
-2. Workers AI token for R36: Cloudflare dashboard → AI → Workers AI → Use REST API → Create a Workers AI API Token;
-   put it in `.env` as `CF_AI_TOKEN` and the Account ID as `CF_ACCOUNT_ID`.
-3. Rotate keys if you treat agent terminal prints as exposure: Groq `AI_API_KEY`, Cloudflare tokens, Jamendo client id.
-4. Before R11: set a Cloudflare billing notification; stay on the Workers **Free** plan; set the Pages project to
-   fail closed (D74). Render, Neon and GitHub secrets as in README "Deploy notes" (now one origin, `TRUST_PROXY=2`).
-5. Diagram sources are now Mermaid (D76) in `docs/chapter4/diagrams/src/*.md`; render on mermaid.live and replace the
-   PNGs, at least `10_erd` (music + annotation columns), `01_use_case` (UC23) and `13_seq_annotate`.
-6. Delete the empty leftover folders under `../worktrees/` (Windows held them locked during the session).
+1. Migrate the dev DB (R9, R10 migrations): in `FYP_Project/`, `vp run server#db:migrate`.
+2. Answer the 22 Oct block in `docs/OPEN_QUESTIONS.md` (R28 spec, S5, share-link privacy, R14 plan, auth burst).
+3. Commit the report drafts left uncommitted in `FYP_Submissions/` after checking them: `drafts/1.5_scope.md`,
+   `drafts/2.3.9_web_server_and_hosting.md`, `drafts/6_limitations_notes.md`.
+4. Re-render the Chapter 4 PNGs from the Mermaid sources (D76) on mermaid.live.
+5. Optional go-live: README "Deploy notes" (Neon, Render Blueprint with `PROXY_SECRET`, Pages project + `API_ORIGIN` +
+   `PROXY_SECRET` + fail closed, Workers Free, billing notification, GitHub secrets), then the `DEBUG_PROXY` check,
+   UptimeRobot, `winget install k6.k6` and `docs/testing/load/README.md` live run, Neon restore drill.
+6. Workers AI token for R36 (`CF_AI_TOKEN`, `CF_ACCOUNT_ID`) when R36 starts.
+7. Leftover empty folders under `../worktrees/` can be deleted; test DB `notalah_test_r27_load` holds the 10k load seed
+   (drop it with `docker exec fyp_project-db-1 dropdb -U notalah notalah_test_r27_load` when no longer needed).
 
 ## Next work, in order
-1. R11 deploy per D74 (Pages Function proxy, `_routes.json` for `/api/*` + `/socket.io/*`, `TRUST_PROXY=2`, CORS
-   simplified) with R18 observability; then R27 (k6 under the 100k/day Function quota, keep-awake, Neon restore drill).
-2. Remaining Sprint D: admin and Drafts restyle (R19 lane C).
-3. AI aids R28 / R35 / R36 (keys: Groq set, Gemini set, Workers AI pending), then R20 pre-UAT audit.
-4. Report: keep drafting in `FYP_Submissions/drafts/` (Markdown only; the .docx pass comes at the end). New:
-   `6_limitations_notes.md`; R14 length plan for meeting #2 (28 Oct).
+1. R28 AI writing assistant once its spec (`docs/specs/R28_ai_assistant.md`) is approved; then R35, R36 (spec interviews).
+2. Report for meeting #2 (28 Oct): R14 cut plan `../FYP_Submissions/drafts/R14_cut_plan.md`, supervisor questions.
+3. Chapter 5/6 drafting (Markdown): architecture (Mermaid `00_architecture.md`), load evidence, limitations.
+4. Live-only checks after any go-live: Lighthouse, CSP console, k6 run, WebSocket through the proxy, `TRUST_PROXY=2`.
 
 ## Known limits
-- R10 gaps closed in D79 (share-page list, feed count, keyboard picker); the 500 cap is still count-then-insert (D75).
-- Render free: ~1 min cold start, 512 MB, one instance; video ≤ 720p, one job (D67). Function adds one hop per API call (D74).
+- Render free (if deployed): ~1 min cold start, 0.1 CPU; logins at bcrypt 10 ≈ 0.8 s; 20 auth attempts/min per IP (D81).
+- Local throughput flattens at ~17 req/s on 10k notes (Postgres on the same CPU; not profiled) (D80).
+- R10: the 500-annotation cap is still count-then-insert (D75). Reports queue shows only the first 20 groups (D78).

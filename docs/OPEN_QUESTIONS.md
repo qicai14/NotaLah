@@ -54,3 +54,13 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
 ## Open for the user (20 Oct)
 - FR numbering for the additions (supervisor question 5) decides the Table 33 wording in the R13 drafts.
 - FR8 survey figure: the report says 19 selections (59.4%), the IR says 20 (62%); confirm which is correct.
+
+## Open for the user (22 Oct, autopilot run; defaults in place, reversible)
+- R28 spec (`docs/specs/R28_ai_assistant.md`): approve, and answer its five questions (daily limit 20, .pptx now or
+  later, quiz-me form, AI label removable, build before or after the meeting #2 report work).
+- R20 S5: may a restricted account still edit its display name and bio? Unchanged for now (D81).
+- R10 share links: annotations show on a shared link only for public notes; a contacts-only note shared by link shows
+  none (D79). Alternative: show them, since the link is the grant.
+- R14: Plan A (~25.6k words, also condenses Ch 3 and trims Ch 4, beyond "Ch 4-6 as they are") or Plan B (~20k)?
+  Chapter 2 → 8k was read as the whole chapter (`../FYP_Submissions/drafts/R14_cut_plan.md`).
+- Render auth burst 20/min per IP and bcrypt 10 for production (D81): fine for UAT, or keep 60 and 12?

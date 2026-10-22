@@ -1979,3 +1979,15 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   loop); a fixed Render burst in code (would change local behaviour); `?db=1` on one health route (a separate path is
   easier to keep behind the proxy secret); a `<meta>` CSP in `index.html` (cannot set `frame-ancestors`).
 - **Reversibility:** High: env values, one static file, two client lazy imports and constants; no schema change.
+
+## D82 - Live deployment is optional; the local stack is the demo (user, 22 Oct 2026)
+- **Decision (user):** deployment is not part of the marking scheme; it is the user's personal goal. The demo and the
+  submission can run entirely locally (`vp run db:up`, `vp run dev`).
+- **Consequences:** deploy work (R11, R27 live part, R20 live checks) must never change local behaviour or need a new
+  local env value, and never blocks marked work (FRs, report). Evidence that can be produced locally is preferred:
+  R27's NFR1 runs (D80) and R20's audit (D81) were done against the local stack. Go-live stays ready but switched off
+  until the user creates the accounts (README "Deploy notes").
+- **Also decided (22 Oct, for the unattended run):** merges allowed when CI is green and the reviewer has no
+  blockers; keep-awake via UptimeRobot free (not GitHub cron); deploy path: GitHub Actions runs migrate → Render
+  hook → Pages deploy.
+- **Reversibility:** High.
