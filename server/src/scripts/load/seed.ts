@@ -1,5 +1,4 @@
-import bcrypt from 'bcryptjs';
-import { BCRYPT_COST } from '../../features/auth/passport';
+import { hashPassword } from '../../features/auth/passport';
 import { pool } from '../../lib/pool';
 import { LOAD_PASSWORD, SEED, WORDS, loadEmail } from './data';
 import { assertLoadDatabase } from './guard';
@@ -10,7 +9,7 @@ const client = await pool.connect();
 try {
   const { rows } = await client.query<{ db: string }>('SELECT current_database() AS db');
   assertLoadDatabase(rows[0].db);
-  const hash = await bcrypt.hash(LOAD_PASSWORD, BCRYPT_COST);
+  const hash = await hashPassword(LOAD_PASSWORD);
 
   await client.query('BEGIN');
   const { rows: tables } = await client.query<{ tablename: string }>(
