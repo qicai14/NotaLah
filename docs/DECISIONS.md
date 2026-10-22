@@ -1773,3 +1773,71 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   - Known gaps: the shared-link page (`SharedNote`) shows no annotations, as a link viewer may fail the note's visibility check the list uses; feed cards show no annotation count, which would need a new note field; Shift+arrow selection in rendered (non-editable) text makes no selection in Chrome without caret browsing (F7), so annotating needs a pointer or touch selection (also noted for Chapter 6). The 500 cap is a count then insert, not atomic, so concurrent posts may pass it by a few (a `shortcut:` comment in the route).
 - **Alternatives:** a separate annotation report table (no queue reuse); marking a moderator hide with a boolean or reusing `ant_deleted_at` (loses who removed it).
 - **Reversibility:** Medium: the migration has a full down; removing the feature drops one table and three columns.
+
+## D77 - Live deploy code: Pages Function proxy, Docker image, deploy workflow (R11, R18, 22 Oct 2026)
+- **Context:** D74 fixed the live layout (one free `*.pages.dev` origin, a Pages Function proxying to the Render free
+  web service, Neon, R2) but no deploy code existed. R11 also asked for response compression and a dependency audit,
+  and R18 for request ids, optional Sentry on both sides and graceful shutdown. The local path (`vp run db:up`,
+  `vp run dev`, tests, CI) is what the demo and submission use, so everything here is inert locally and adds no
+  required variable.
+- **Decision:**
+  - *Proxy:* `client/functions/[[path]].ts` re-exports `client/edge/proxy.ts` (kept outside `functions/` so its test
+    is not bundled as a route). It forwards method, headers, cookies and body to `API_ORIGIN` (a Pages variable),
+    removes `Host`, sets `X-Forwarded-For` to `CF-Connecting-IP` (removes it when absent; never appends a client
+    value) and returns the API's response as is, so Set-Cookie and WebSocket upgrades pass through. Unset
+    `API_ORIGIN` answers 502 JSON (fails closed). `client/public/_routes.json` limits the Function to `/api/*` and
+    `/socket.io/*`. The client needed no change: `apiOrigin()` is already empty without `VITE_API_URL`, so calls are
+    relative and the socket uses `window.location`.
+  - *Server:* `compression` gzips compressible responses; responses carrying `Accept-Ranges` (asset image and video
+    streams) are skipped, so byte ranges, `Content-Length` and the served-bytes count hold. Socket.io attaches to the
+    HTTP server and never passes through it; there is no SSE. CORS stays configured (harmless when same-origin, needed
+    only for a client built with `VITE_API_URL` elsewhere) because `CLIENT_ORIGIN` is still the Socket.io origin check
+    and the share-link base. The D65 guards are unchanged; their message and comments now name `TRUST_PROXY=2`.
+  - *Image:* a root `Dockerfile` in three stages: `ghcr.io/voidzero-dev/vite-plus:1.3.0` pinned by digest builds
+    `@notalah/shared` and the server (install filtered to the root and `server...`, scripts off because the root
+    `prepare` needs the sources), a fresh `vp install --frozen-lockfile --prod` stage, and `debian:trixie-slim` pinned
+    by digest with the exact Node from `.node-version` copied from the build stage (the Vite+ guide's pattern) plus
+    `ffmpeg`/`ffprobe` (D67). Runs as `nobody`, `NODE_ENV=production`, Docker health check on `/api/health`.
+    `.dockerignore` excludes every env file, `.git`, docs, tests and the client sources. Built and smoke-tested
+    locally: 273 MB content size, `/api/health` 200 against the branch test database, ffmpeg 7.1, Node 24.22.0, uid
+    nobody, health status healthy, `docker stop` logged a clean shutdown with exit 0.
+  - *Render:* `render.yaml` declares one free Docker web service in Singapore with `autoDeployTrigger: 'off'` (the
+    current name for `autoDeploy: false`), health check `/api/health`, fixed non-secret values and every secret as a
+    `sync: false` key.
+  - *Workflow:* `.github/workflows/deploy.yml` runs on `workflow_run` after CI succeeds for a push to `main`, and on
+    `workflow_dispatch`, checking out the commit CI tested. A gate step reads the secrets once and each step skips with
+    a `::notice::` when its secret is absent: dbmate migrate (`PROD_DATABASE_URL`), then a POST to
+    `RENDER_DEPLOY_HOOK_URL`, then `vp run client#build` and `vp dlx wrangler@4.151.1 pages deploy` from `client/`
+    (`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`, project from the `CLOUDFLARE_PAGES_PROJECT` variable, default
+    `notalah`). Actions pinned by SHA, `persist-credentials: false`, `contents: read`, secrets only on their steps,
+    one `deploy` concurrency group that queues rather than cancels. `wrangler pages functions build` was run locally
+    to confirm the Function bundles.
+  - *Audit:* CI already ran `pnpm audit --prod --audit-level high` as a blocking step. It is kept as it is, stricter
+    than blocking on critical only: high advisories in shipped dependencies are worth a red build, and dev-only tools
+    are not shipped.
+  - *R18:* pino request logs with ids, optional server Sentry and graceful shutdown (SIGTERM stops the video worker,
+    closes Socket.io and the HTTP server, then the pool) already existed and were verified, the shutdown in the
+    container. The gap was the client: `client/src/lib/errorReporting.ts` imports `@sentry/browser` only when
+    `VITE_SENTRY_DSN` is set at build time (a GitHub variable in the deploy), with the same data-collection settings
+    as the server and no tracing. Without the DSN nothing is imported or sent. Sentry stays on its free plan.
+  - *README:* "Deploy notes" rewritten for D74 with the account steps (Neon, R2, Render Blueprint, Pages project with
+    `API_ORIGIN`, fail closed, Workers Free plan, billing notification, GitHub secrets, UptimeRobot every 5 minutes on
+    `/api/health` for R27, the `DEBUG_PROXY` check), plus a "Run locally" note that nothing changes locally.
+- **New dependencies:** `compression` 1.8.2 and `@types/compression` 1.8.1 (server), `@sentry/browser` 11.8.0
+  (client, same version as `@sentry/node`); all past the three-day release-age guard. Wrangler is not a dependency;
+  the workflow runs a pinned version through `vp dlx`.
+- **Tests:** DEP-TC13 to DEP-TC15 (proxy header rewrite, WebSocket upgrade, fail closed), DEP-TC16 (compression and
+  ranged files), OPS-TC7 (client Sentry off without a DSN, no user data with one).
+- **Not verified:** the deploy itself (no accounts or secrets yet), WebSocket upgrades through a real Pages Function,
+  the Cloudflare dashboard labels for the fail-closed setting, and the `TRUST_PROXY=2` hop count, which the
+  `DEBUG_PROXY` check confirms on the first deploy. The Render deploy hook deploys the branch head rather than a
+  specific commit; the concurrency group keeps runs in order.
+- **Alternatives:** Render's native Node runtime with build and start commands (the previous README; rejected: the
+  image pins Node, pnpm and ffmpeg and runs the same anywhere); Render auto-deploy on push (rejected: it could deploy
+  before migrations or before CI passes); `cloudflare/wrangler-action` (rejected: one more third-party action with
+  secrets, where a pinned `vp dlx wrangler` does the same); a `_middleware.ts` Function instead of a catch-all route
+  (equivalent; the catch-all is the documented pattern); dropping CORS in production (rejected: no gain, and
+  `CLIENT_ORIGIN` is still needed).
+- **Reversibility:** High. Deleting `Dockerfile`, `.dockerignore`, `render.yaml`, `deploy.yml`, `client/functions/`,
+  `client/edge/` and `_routes.json` returns the repo to its local-only state; compression and client Sentry are one
+  `app.use` line and one call in `main.tsx`.
