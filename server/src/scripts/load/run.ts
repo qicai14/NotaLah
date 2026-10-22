@@ -4,7 +4,7 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { parseArgs } from 'node:util';
-import { LOAD_PASSWORD, WORDS, loadEmail } from './data';
+import { LOAD_PASSWORD, SEED, WORDS, loadEmail } from './data';
 import { NFR1_LIMIT_MS, type Summary, nfr1Verdict, summarise } from './stats';
 
 const { values: opt } = parseArgs({
@@ -13,9 +13,10 @@ const { values: opt } = parseArgs({
     vus: { type: 'string', default: '50' },
     duration: { type: 'string', default: '60' },
     think: { type: 'string', default: '1000' },
-    users: { type: 'string', default: '300' },
-    label: { type: 'string', default: 'run' },
-    out: { type: 'string', default: path.resolve(import.meta.dirname, '../../../../docs/testing/load/runs') },
+    users: { type: 'string', default: String(SEED.users) },
+    label: { type: 'string' },
+    out: { type: 'string' },
+    notes: { type: 'string', default: String(SEED.notes) },
     'client-ips': { type: 'boolean', default: false },
   },
 });
@@ -26,8 +27,12 @@ const THINK_MS = Number(opt.think);
 const USERS = Number(opt.users);
 const PROXY_SECRET = process.env.LOAD_PROXY_SECRET;
 const TIMEOUT_MS = 30_000;
-const MODULES = 30;
-const NOTES = 2000;
+const MODULES = SEED.modules;
+const NOTES = Number(opt.notes);
+const LABEL = opt.label ?? 'run';
+// Results go into the repo only for a named run; a plain run writes to the temp folder.
+const OUT =
+  opt.out ?? (opt.label ? path.resolve(import.meta.dirname, '../../../../docs/testing/load/runs') : os.tmpdir());
 
 interface Rec {
   label: string;
@@ -107,7 +112,15 @@ const SCENARIO: [number, (vu: Vu) => Promise<unknown>][] = [
   [14, (vu) => search(vu, 'search.keyword', q({ q: pick(WORDS), tab: 'notes' }))],
   [8, (vu) => search(vu, 'search.top', q({ q: pick(WORDS) }))],
   [8, (vu) => search(vu, 'search.hashtag', q({ q: `#${pick(WORDS)}`, tab: 'notes' }))],
-  [7, (vu) => search(vu, 'search.module', q({ q: `LD${String(1 + rand(18)).padStart(3, '0')}-3-2`, tab: 'notes' }))],
+  [
+    7,
+    (vu) =>
+      search(
+        vu,
+        'search.module',
+        q({ q: `LD${String(1 + rand(SEED.extraModules)).padStart(3, '0')}-3-2`, tab: 'notes' }),
+      ),
+  ],
   [
     7,
     (vu) =>
@@ -188,7 +201,8 @@ for (const r of recs.filter((x) => !x.ok)) statuses[r.status] = (statuses[r.stat
 const cpus = os.cpus();
 const machine = `${cpus[0].model.trim()}, ${cpus.length} threads, ${Math.round(os.totalmem() / 2 ** 30)} GB RAM, ${os.platform()} ${os.release()}, Node ${process.version}`;
 const result = {
-  label: opt.label,
+  label: LABEL,
+  notes: NOTES,
   startedAt: startedAt.toISOString(),
   base: BASE,
   vus: VUS,
@@ -214,10 +228,10 @@ const f = (n: number) => (Number.isNaN(n) ? '-' : n.toFixed(0));
 const line = (name: string, s: Summary, rps: number) =>
   `| ${name} | ${s.count} | ${rps.toFixed(1)} | ${(s.errorRate * 100).toFixed(2)}% | ${f(s.p50)} | ${f(s.p95)} | ${f(s.p99)} | ${f(s.max)} |`;
 const md = [
-  `# Load run: ${opt.label}`,
+  `# Load run: ${LABEL}`,
   '',
-  `- Started ${startedAt.toISOString()}; ${VUS} virtual users for ${DURATION_S} s (measured ${elapsedS.toFixed(1)} s), mean think time ${THINK_MS} ms`,
-  `- Target ${BASE}; per-VU client addresses via X-Forwarded-For: ${opt['client-ips'] ? 'yes' : 'no'}; proxy secret sent: ${PROXY_SECRET ? 'yes' : 'no'}`,
+  `- Started ${startedAt.toISOString()}; seeded notes ${NOTES}; ${VUS} virtual users for ${DURATION_S} s (measured ${elapsedS.toFixed(1)} s), mean think time ${THINK_MS} ms`,
+  `- Target ${BASE}; per-VU client addresses sent (X-Forwarded-For): ${opt['client-ips'] ? 'yes' : 'no'}; proxy secret sent: ${PROXY_SECRET ? 'yes' : 'no'}`,
   `- Machine (load generator and server on the same host): ${machine}`,
   `- Login phase: ${logins.length} logins, p50 ${f(result.login.p50)} ms, max ${f(result.login.max)} ms (not in the figures below)`,
   '',
@@ -233,7 +247,7 @@ const md = [
   '',
 ].join('\n');
 
-mkdirSync(opt.out!, { recursive: true });
-writeFileSync(path.join(opt.out!, `${opt.label}.json`), JSON.stringify(result, null, 2));
-writeFileSync(path.join(opt.out!, `${opt.label}.md`), md);
+mkdirSync(OUT, { recursive: true });
+writeFileSync(path.join(OUT, `${LABEL}.json`), JSON.stringify(result, null, 2) + '\n');
+writeFileSync(path.join(OUT, `${LABEL}.md`), md);
 console.log(md);

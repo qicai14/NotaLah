@@ -1,14 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '../../features/auth/passport';
 import { pool } from '../../lib/pool';
-import { LOAD_PASSWORD, WORDS, loadEmail } from './data';
+import { LOAD_PASSWORD, SEED, WORDS, loadEmail } from './data';
 import { assertLoadDatabase } from './guard';
 
-const num = (name: string, fallback: number) => Number(process.env[name] ?? fallback);
-const USERS = num('LOAD_USERS', 300);
-const NOTES = num('LOAD_NOTES', 2000);
-const DAYS = num('LOAD_DAYS', 60);
-const LECTURERS = 20;
+const { users: USERS, notes: NOTES, days: DAYS, lecturers: LECTURERS, extraModules, modules } = SEED;
 
 const client = await pool.connect();
 try {
@@ -28,8 +24,9 @@ try {
     `INSERT INTO "MODULE_T" (mod_code, mod_name, mod_programme)
      SELECT 'LD' || LPAD(g::TEXT, 3, '0') || '-3-2', 'Load Module ' || g,
             (ARRAY['BSc (Hons) Software Engineering', 'BSc (Hons) Computer Science', 'BSc (Hons) Information Technology'])[1 + g % 3]
-     FROM generate_series(1, 18) g
+     FROM generate_series(1, $1) g
      ON CONFLICT DO NOTHING`,
+    [extraModules],
   );
   await client.query(
     `INSERT INTO "USER_T" (usr_email, usr_password_hash, usr_display_name, usr_role, usr_lecturer_status, usr_staff_id, usr_programme)
@@ -47,12 +44,12 @@ try {
   const word = `($1::TEXT[])[1 + floor(random() * cardinality($1::TEXT[]))::INT]`;
   await client.query(
     `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_status, pst_visibility, pst_published_at, pst_created_at)
-     SELECT 1 + floor(power(random(), 1.7) * $2)::INT, (SELECT mod_id FROM "MODULE_T" ORDER BY mod_id OFFSET g % 30 LIMIT 1),
+     SELECT 1 + floor(power(random(), 1.7) * $2)::INT, (SELECT mod_id FROM "MODULE_T" ORDER BY mod_id OFFSET g % $5 LIMIT 1),
             initcap(${word} || ' ' || ${word} || CASE WHEN g % 3 = 0 THEN ' ' || ${word} ELSE '' END),
             'published', CASE WHEN g % 10 = 0 THEN 'contacts' ELSE 'public' END,
             NOW() - INTERVAL '3 minutes' - random() * $3 * INTERVAL '1 day', NOW() - $3 * INTERVAL '1 day' - INTERVAL '1 hour'
      FROM generate_series(1, $4) g`,
-    [WORDS, USERS, DAYS, NOTES],
+    [WORDS, USERS, DAYS, NOTES, modules],
   );
   // 3 to 8 slides per note, one text element each, in the shape the notes API stores.
   await client.query(

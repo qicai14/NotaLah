@@ -4,7 +4,7 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
   staged: {
     '*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}': 'vp check --fix',
-    '*.{json,jsonc,yaml,yml,css}': 'vp fmt',
+    '*.{json,jsonc,yaml,yml,css}': 'vp fmt --no-error-on-unmatched-pattern',
   },
   lint: { ignorePatterns: ['docs/**', 'load/k6/**'], options: { typeAware: true, typeCheck: true } },
   fmt: { singleQuote: true, printWidth: 120, ignorePatterns: ['docs/**', 'load/k6/**', '**/*.md', 'pnpm-lock.yaml'] },

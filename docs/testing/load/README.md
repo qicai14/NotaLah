@@ -7,13 +7,13 @@ Local runs are what Chapter 6 cites; the live run, keep-awake ping and restore d
 |---|---|
 | Seed (300 users, 2,000 notes, 60 days) | `server/src/scripts/load/seed.ts` (`vp run server#load:seed`) |
 | Local runner (Node, no dependencies) | `server/src/scripts/load/run.ts` (`vp run server#load:run`) |
-| Percentiles and NFR1 verdict | `server/src/scripts/load/stats.ts` (tests OPS-TC11 to OPS-TC13) |
+| Percentiles and NFR1 verdict | `server/src/scripts/load/stats.ts` (tests OPS-TC12 to OPS-TC14) |
 | k6 script for the live site | `load/k6/notalah.js` |
 | Local results | `2026-10-22_local.md`; raw output in `runs/` (one `.md` and `.json` per run) |
 
 ## Run it locally
 
-The seed truncates every table, so it refuses to run unless the database name starts with `notalah_test_` (OPS-TC13).
+The seed truncates every table, so it refuses to run unless the database name starts with `notalah_test_` (OPS-TC14).
 Use a database of its own: the server tests truncate `notalah_test` and would wipe the load data.
 
 1. Point `DATABASE_URL` at a new database, for example `.../notalah_test_load` (same host and credentials as the root
@@ -37,20 +37,20 @@ skipping limiters would not be honest, and a test-mode server is a different con
 user with its own client address, as real students are: with `--client-ips` the runner sends
 `X-Forwarded-For: <vu address>, 10.255.255.254`, which `TRUST_PROXY=2` reads the same way as the Pages Function chain
 (D74). Login (60 per minute per address) and signed-in writes (120 per minute per user) then stay far from their limits:
-a VU writes about once every 12 s. A real campus lab behind one address would share the 60 per minute login budget, which
+a VU writes (view, like or comment) in 22% of iterations, about 12 a minute at 25 VUs. A real campus lab behind one address would share the 60 per minute login budget, which
 this test does not model (the guest read limit of 120 per minute per address is also not exercised, as every VU is signed in).
 
 ## Live run (owner to do, not run in this session)
 
 1. Install k6 (free): `winget install k6.k6` or `choco install k6`.
 2. The Pages Function quota is 100,000 requests a day, shared with real users. Every `/api` call is one request.
-   Budget (default 10 VUs, 3 min, think time 1.5 s mean): one iteration is about 1.2 requests per 2 s on average, so
-   about 10 x 90 x 1.2 = 1,100 requests plus 10 logins and 10 registrations: roughly 1.1% of a day. A 25 VU, 5 min run is about
-   4,600 (4.6%). Keep the total for a day under 10,000 and never run during a UAT session.
+   Budget (default 10 VUs, 3 min, think time 1.5 s mean, reads only): one request per iteration of about 2 s, so
+   about 10 x 90 = 900 requests plus 10 registrations and 10 logins: roughly 1% of a day. A 25 VU, 5 min run is about
+   3,800 (3.8%). Keep the total for a day under 10,000 and never run during a UAT session.
 3. Run: `k6 run -e BASE=https://<project>.pages.dev -e PASSWORD=<a throwaway password> load/k6/notalah.js`
-   (`-e VUS=25 -e DURATION=5m` to scale up, 50 VUs at most because registering counts against the 60 per minute auth
-   limit of your address). `setup()` registers `loadtest1` to `loadtestN@mail.apu.edu.my`; they are real accounts, so
-   delete them afterwards from the admin Users page, and expect the likes and comments the run adds on notes.
+   (`-e VUS=25 -e DURATION=5m` to scale up, about 25 VUs at most: register and login share the 60 per minute auth
+   limit of your address, so `setup()` registers first and waits 61 s before the staggered logins). It registers `loadtest1` to `loadtestN@mail.apu.edu.my`; they are real accounts, so
+   delete them afterwards from the admin Users page. The script only reads (feed, search, note, comments): it never views, likes or comments, so it writes nothing to real users' notes.
 4. The threshold `http_req_duration{kind:search}` p(95) < 3000 is NFR1. Screenshot the end-of-test summary for Chapter 6.
 5. Render free runs at 0.1 CPU and may be asleep: the first request after idle takes about a minute. Wake it first
    (open the site, wait for `/api/health`) and note whether the run started warm.

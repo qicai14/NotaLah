@@ -30,7 +30,7 @@ export function summarise(samples: readonly Sample[]): Summary {
     p50: percentile(ms, 50),
     p95: percentile(ms, 95),
     p99: percentile(ms, 99),
-    max: ms.length ? Math.max(...ms) : NaN,
+    max: percentile(ms, 100),
   };
 }
 
