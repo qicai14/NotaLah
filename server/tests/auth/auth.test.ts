@@ -7,7 +7,7 @@ import { app } from '../../src/app';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { PgStore, purgeOldRateLimits } from '../../src/features/auth/rateLimit';
-import { signToken, tokenSubject } from '../../src/features/auth/passport';
+import { getDummyHash, signToken, tokenSubject } from '../../src/features/auth/passport';
 import type { AuthUser } from '../../src/features/users/repository';
 import type { Request } from 'express';
 import { type Options, rateLimit } from 'express-rate-limit';
@@ -190,6 +190,8 @@ describe('POST /api/auth/login', () => {
     expect(bcrypt.getRounds(rows[0].usr_password_hash)).toBe(10);
     expect((await login('cost@mail.apu.edu.my', 'Passw0rd!')).status).toBe(200);
     expect((await login('test1@mail.apu.edu.my', 'Passw0rd!')).status).toBe(200); // helper hash, cost 4
+    // The unknown-email dummy is hashed at the configured cost, so a miss costs the same as a hit.
+    expect(bcrypt.getRounds(await getDummyHash())).toBe(env.BCRYPT_ROUNDS);
   });
 });
 

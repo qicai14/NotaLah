@@ -57,7 +57,7 @@ app.use('/api', (req, res, next) => {
 // Write limit per user, or per IP when signed out, counted in Postgres so it holds across instances (D40).
 app.use('/api', (req, res, next) => (SAFE_METHODS.has(req.method) ? next() : writeLimiter(req, res, next)));
 // Read limit, keyed the same way (D81); health polls and asset files (fileLimiter) are not counted.
-const OWN_READ_LIMIT = /^\/(?:health\/?$|assets\/[^/]+\/file$|share\/[^/]+\/assets\/)/;
+const OWN_READ_LIMIT = /^\/(?:health$|assets\/[^/]+\/file$|share\/[^/]+\/assets\/)/;
 const READ_METHODS = new Set(['GET', 'HEAD']); // Express answers HEAD with the GET handler
 app.use('/api', (req, res, next) =>
   READ_METHODS.has(req.method) && !OWN_READ_LIMIT.test(req.path) ? readLimiter(req, res, next) : next(),

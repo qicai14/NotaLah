@@ -117,6 +117,8 @@ development.
    | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | the R2 values |
    | `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `JAMENDO_CLIENT_ID` | optional; leave empty to turn each off |
 
+   For a UAT session, `AUTH_ATTEMPTS_PER_MINUTE=20` allows 20 logins and registrations a minute per IP, and a lab
+   shares one IP: stagger sign-ups, or raise it on Render for the session and set it back afterwards (D81).
    Add `DEBUG_PROXY=1` for the first deploy only (see the proxy check below). Optional tuning (`MAX_SESSION_HOURS`,
    `USAGE_CAP_*`, `PG_*`, `VIDEO_*`) is as in the example env file. Leave `PORT` unset; Render provides it. Then, under
    the service's Settings, copy the **Deploy Hook** URL. Note the service URL (`https://<service>.onrender.com`).

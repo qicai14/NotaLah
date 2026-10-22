@@ -1905,6 +1905,8 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     still costs the same as a known one. At 60 attempts a minute per IP, cost 10 still uses about 48 s of the
     instance's 60 CPU-seconds a minute, so the burst is env-driven too: `AUTH_ATTEMPTS_PER_MINUTE` (default 60, so
     local and tests are unchanged), set to 20 in `render.yaml` (at most about 16 CPU-seconds a minute per IP).
+    A campus lab shares one IP, so the UAT runner staggers sign-ups or raises the value on Render for the session
+    (README, Render step).
     Rehash-on-login was left out: there is no password-update query yet. Any account hashed at 12 before the switch
     still logs in, at the old cost, and its login takes longer than an unknown email's, which hints that it exists;
     accounts made after the switch match the dummy. Tests: AUTH-TC23, DEP-TC21.
@@ -1945,13 +1947,13 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     concurrent orientation-6 JPEG re-encodes, twice): 6000 x 4000 peaked at +81 MB RSS instead of +167 MB with the
     defaults (8 threads); 7000 x 7000 at +109 MB instead of +215 MB, and it is now refused. Test: STO-TC16.
   - *S6, bundle:* `socket.io-client` loads with a dynamic import inside the signed-in effect (guests never fetch it; a
-    logout before it loads opens nothing), and the guest prompt's dialog and sheet (`GuestPromptSheet.tsx`) load on
+    logout before it loads opens nothing; a failed load shows the offline message), and the guest prompt's dialog and sheet (`GuestPromptSheet.tsx`) load on
     first use. Production build: entry chunk 424.51 kB / 134.97 kB gzip before, 332.04 kB / 105.68 kB gzip after;
     entry plus its modulepreloads (the JS the first paint needs) 152.96 kB gzip before, 138.53 kB gzip after. The
     socket change gave most of it (about 12 kB gzip); the prompt about 2.4 kB, since the dropdown and tooltip share
     most Radix internals. The audit's 193 kB entry and the `dev-*.js` chunk (N6) came from CI's `NODE_ENV=test`
     build, which bundles React's development build; the production build names the Sentry chunk `prod-*.js`
-    (141 kB gzip, loaded only with `VITE_SENTRY_DSN`). Tests: CLI-TC79, CLI-TC80.
+    (141 kB gzip, loaded only with `VITE_SENTRY_DSN`). Tests: CLI-TC79 to CLI-TC81.
   - *Nits:* N7 applied (`listPendingLecturers` takes the oldest 100). Left: N1 (two queries per notification
     recipient; bounded), N2 (the `SELECT NOW()` round trip), N3 (per-user list indexes; a migration if UAT profiles
     grow), N4 (a 5-minute cache on reference lists would show an admin's new module late, so not clearly safe),

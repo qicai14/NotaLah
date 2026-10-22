@@ -22,7 +22,7 @@ const BLOCKED_STATUSES = new Set(['suspended', 'deleted']);
 // Compared against when the email is unknown, so timing does not reveal which accounts exist. Hashed on first use at the
 // configured cost (D81), asynchronously, so importing this module neither blocks the event loop nor pays for it.
 let dummyHash: Promise<string> | undefined;
-const getDummyHash = () => (dummyHash ??= bcrypt.hash(randomUUID(), env.BCRYPT_ROUNDS));
+export const getDummyHash = () => (dummyHash ??= bcrypt.hash(randomUUID(), env.BCRYPT_ROUNDS));
 
 /** New password hashes use the configured cost (D81); verification reads the cost stored in each hash. */
 export const hashPassword = (password: string) => bcrypt.hash(password, env.BCRYPT_ROUNDS);

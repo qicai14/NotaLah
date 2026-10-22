@@ -86,7 +86,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     let reconnect: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
     const listen = (s: Socket) => {
-      s.on('connect_error', () => setError('Live updates are offline. Refresh to try again.'));
+      s.on('connect_error', offline);
       // The server cuts a socket when its token expires; reconnecting picks up the cookie the sliding session renewed (D65).
       // The 1-3 s jitter keeps every tab from reconnecting at once after a server-wide cut.
       s.on('disconnect', (reason) => {
@@ -123,13 +123,17 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       );
     };
     // Loaded on sign-in, so guests never download socket.io-client and it stays off the entry chunk (D81).
-    void import('socket.io-client').then(({ io }) => {
-      if (stopped) return;
-      // WebSocket only: a same-origin polling request carries no Origin header, which the server refuses (D50, D35).
-      current = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
-      setSocket(current);
-      listen(current);
-    });
+    const offline = () => setError('Live updates are offline. Refresh to try again.');
+    void import('socket.io-client').then(
+      ({ io }) => {
+        if (stopped) return;
+        // WebSocket only: a same-origin polling request carries no Origin header, which the server refuses (D50, D35).
+        current = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
+        setSocket(current);
+        listen(current);
+      },
+      () => !stopped && offline(), // the chunk failed to load (offline, or a deploy replaced it)
+    );
     return () => {
       stopped = true;
       clearTimeout(reconnect);
