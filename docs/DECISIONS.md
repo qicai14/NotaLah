@@ -1905,8 +1905,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
     still costs the same as a known one. At 60 attempts a minute per IP, cost 10 still uses about 48 s of the
     instance's 60 CPU-seconds a minute, so the burst is env-driven too: `AUTH_ATTEMPTS_PER_MINUTE` (default 60, so
     local and tests are unchanged), set to 20 in `render.yaml` (at most about 16 CPU-seconds a minute per IP).
-    Rehash-on-login was left out: there is no password-update query yet, and the live database has no cost-12
-    accounts to migrate. Tests: AUTH-TC23, DEP-TC21.
+    Rehash-on-login was left out: there is no password-update query yet. Any account hashed at 12 before the switch
+    still logs in, at the old cost, and its login takes longer than an unknown email's, which hints that it exists;
+    accounts made after the switch match the dummy. Tests: AUTH-TC23, DEP-TC21.
   - *S1, health:* `GET /api/health` is liveness only (`{ status, version }`, no query), so Render's health check, the
     Docker HEALTHCHECK and the UptimeRobot monitor no longer keep Neon's compute awake. `GET /api/health/db` keeps the
     `SELECT 1` readiness answer (`{ status, db, version }`, 503 when down) and, unlike liveness, needs the proxy secret,
