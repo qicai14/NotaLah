@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { io, type Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { api, apiOrigin, errorText } from '@/lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { emptyInbox, type InboxAction, type InboxState, inboxReducer, unreadTotal } from './inboxReducer';
@@ -82,46 +82,58 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
       setSocket(null);
       return;
     }
-    // WebSocket only: a same-origin polling request carries no Origin header, which the server refuses (D50, D35).
-    const s = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
-    setSocket(s);
-    s.on('connect_error', () => setError('Live updates are offline. Refresh to try again.'));
-    // The server cuts a socket when its token expires; reconnecting picks up the cookie the sliding session renewed (D65).
-    // The 1-3 s jitter keeps every tab from reconnecting at once after a server-wide cut.
+    let current: Socket | undefined;
     let reconnect: ReturnType<typeof setTimeout> | undefined;
-    s.on('disconnect', (reason) => {
-      if (reason === 'io server disconnect') reconnect = setTimeout(() => s.connect(), 1000 + Math.random() * 2000);
+    let stopped = false;
+    const listen = (s: Socket) => {
+      s.on('connect_error', () => setError('Live updates are offline. Refresh to try again.'));
+      // The server cuts a socket when its token expires; reconnecting picks up the cookie the sliding session renewed (D65).
+      // The 1-3 s jitter keeps every tab from reconnecting at once after a server-wide cut.
+      s.on('disconnect', (reason) => {
+        if (reason === 'io server disconnect') reconnect = setTimeout(() => s.connect(), 1000 + Math.random() * 2000);
+      });
+      s.on('connect', () => {
+        setError(null);
+        setConnections((n) => n + 1);
+        void loadFirst(); // on a reconnect this also catches up on events missed while offline
+      });
+      s.on('message:new', ({ message }: { message: Message }) => {
+        dispatch({ type: 'message', message, me, open: open.current === message.conversationId });
+        // A message for a chat the list does not hold yet (a new direct chat, or one beyond the loaded pages).
+        if (!held.current.conversations.items.some((c) => c.id === message.conversationId))
+          void fetchConversation(message.conversationId);
+      });
+      s.on('message:deleted', (p: { conversationId: number; messageId: number }) =>
+        dispatch({ type: 'deleted', ...p }),
+      );
+      s.on('request:new', ({ request }: { request: MessageRequest }) => dispatch({ type: 'request', request }));
+      s.on(
+        'request:accepted',
+        ({ conversationId }: { conversationId: number }) => void fetchConversation(conversationId),
+      );
+      s.on('conversation:read', (p: { conversationId: number; userId: number; messageId: number | null }) =>
+        dispatch({ type: 'read', me, ...p }),
+      );
+      s.on(
+        'conversation:updated',
+        ({ conversationId }: { conversationId: number }) => void fetchConversation(conversationId),
+      );
+      s.on('conversation:removed', ({ conversationId }: { conversationId: number }) =>
+        dispatch({ type: 'removed', conversationId }),
+      );
+    };
+    // Loaded on sign-in, so guests never download socket.io-client and it stays off the entry chunk (D81).
+    void import('socket.io-client').then(({ io }) => {
+      if (stopped) return;
+      // WebSocket only: a same-origin polling request carries no Origin header, which the server refuses (D50, D35).
+      current = io(apiOrigin() || undefined, { withCredentials: true, transports: ['websocket'] });
+      setSocket(current);
+      listen(current);
     });
-    s.on('connect', () => {
-      setError(null);
-      setConnections((n) => n + 1);
-      void loadFirst(); // on a reconnect this also catches up on events missed while offline
-    });
-    s.on('message:new', ({ message }: { message: Message }) => {
-      dispatch({ type: 'message', message, me, open: open.current === message.conversationId });
-      // A message for a chat the list does not hold yet (a new direct chat, or one beyond the loaded pages).
-      if (!held.current.conversations.items.some((c) => c.id === message.conversationId))
-        void fetchConversation(message.conversationId);
-    });
-    s.on('message:deleted', (p: { conversationId: number; messageId: number }) => dispatch({ type: 'deleted', ...p }));
-    s.on('request:new', ({ request }: { request: MessageRequest }) => dispatch({ type: 'request', request }));
-    s.on(
-      'request:accepted',
-      ({ conversationId }: { conversationId: number }) => void fetchConversation(conversationId),
-    );
-    s.on('conversation:read', (p: { conversationId: number; userId: number; messageId: number | null }) =>
-      dispatch({ type: 'read', me, ...p }),
-    );
-    s.on(
-      'conversation:updated',
-      ({ conversationId }: { conversationId: number }) => void fetchConversation(conversationId),
-    );
-    s.on('conversation:removed', ({ conversationId }: { conversationId: number }) =>
-      dispatch({ type: 'removed', conversationId }),
-    );
     return () => {
+      stopped = true;
       clearTimeout(reconnect);
-      s.close();
+      current?.close();
       setSocket(null);
     };
   }, [me, loadFirst, fetchConversation]);
