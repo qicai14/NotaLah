@@ -227,6 +227,15 @@ export function NoteActions({
             icon={<MessageCircle aria-hidden="true" className="size-6" />}
           />
         )}
+        {!annotations && note.counts.annotations > 0 && (
+          <RailButton
+            bar={bar}
+            label={`Annotations, ${note.counts.annotations}`}
+            to={`/notes/${note.id}`}
+            caption={compact.format(note.counts.annotations)}
+            icon={<MessageSquareQuote aria-hidden="true" className="size-6" />}
+          />
+        )}
         {annotations?.on && (
           <RailButton
             bar={bar}

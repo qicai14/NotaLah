@@ -1,4 +1,4 @@
-import { MessageSquareQuote } from 'lucide-react';
+import { Keyboard, MessageSquareQuote } from 'lucide-react';
 import { type FormEvent, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { Slide } from '@notalah/shared';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { timeAgo } from '../../lib/format';
 import type { Annotation } from '../../types';
 import { useAuth } from '../auth/AuthContext';
 import { useGuestPrompt } from '../auth/GuestPrompt';
-import { type Anchor, MAX_QUOTE, resolveAnchor, selectionAnchor, slideOf, textRange } from './anchors';
+import { type Anchor, htmlText, MAX_QUOTE, resolveAnchor, selectionAnchor, slideOf, textRange } from './anchors';
 
 const MAX_BODY = 500;
 const OFF_MESSAGE = 'Annotations are turned off for this note';
@@ -126,6 +126,96 @@ export function SelectionAnnotate({
   );
 }
 
+/**
+ * Keyboard route to a new annotation (R10): rendered text takes no Shift+arrow selection in most browsers, so the slide's
+ * text boxes are offered as read-only text areas (the same plain text the anchors count in), which do. The panel's live
+ * region announces the result.
+ */
+function KeyboardPicker({
+  slide,
+  slideNo,
+  onPick,
+}: {
+  slide: Pick<Slide, 'elements'> | undefined;
+  slideNo: number;
+  onPick: (anchor: Anchor & { slideId: number }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const picked = useRef<{ elementId: string; start: number; end: number; text: string } | null>(null);
+  const boxes = (slide?.elements ?? []).flatMap((e) =>
+    e.type === 'text' ? [{ id: e.id, text: htmlText(e.html) }] : [],
+  );
+
+  const annotate = () => {
+    const p = picked.current;
+    const raw = p ? p.text.slice(p.start, p.end) : '';
+    const quote = raw.trim();
+    if (!p || !quote) return setError('Select some text first: hold Shift and press the arrow keys.');
+    if (quote.length > MAX_QUOTE) return setError(`Select up to ${MAX_QUOTE} characters.`);
+    setError(null);
+    setOpen(false);
+    picked.current = null;
+    onPick({
+      elementId: p.elementId,
+      quote,
+      offset: p.start + raw.length - raw.trimStart().length,
+      slideId: slideNo,
+    });
+  };
+
+  if (!open) {
+    return (
+      <div className="border-b px-5 pb-3">
+        <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
+          <Keyboard aria-hidden="true" />
+          Select text with the keyboard
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-3 border-b px-5 pb-4">
+      <p className="text-body-sm text-muted-foreground">
+        {boxes.length === 0
+          ? 'This slide has no text to annotate.'
+          : 'Move into a text box, hold Shift and press the arrow keys to select, then choose Annotate selection.'}
+      </p>
+      {boxes.map((b, i) => (
+        <div key={b.id} className="flex flex-col gap-1">
+          <label htmlFor={`pick-${b.id}`} className="text-caption font-semibold">
+            Text box {i + 1}
+          </label>
+          <textarea
+            id={`pick-${b.id}`}
+            readOnly
+            value={b.text}
+            rows={Math.min(5, Math.max(2, Math.ceil(b.text.length / 40)))}
+            onSelect={(e) => {
+              const t = e.currentTarget;
+              picked.current = { elementId: b.id, start: t.selectionStart, end: t.selectionEnd, text: b.text };
+            }}
+            className="resize-none rounded-md border border-input bg-background px-3 py-2 text-body outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+          />
+        </div>
+      ))}
+      {error && (
+        <p role="alert" className="text-body-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
+      <div className="flex gap-2">
+        <Button type="button" size="sm" disabled={boxes.length === 0} onClick={annotate}>
+          Annotate selection
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function Composer({
   noteId,
   draft,
@@ -211,12 +301,14 @@ function Item({
   a,
   noteId,
   resolved,
+  readOnly,
   onShow,
   onRemoved,
 }: {
   a: Annotation;
   noteId: number;
   resolved: boolean;
+  readOnly: boolean;
   onShow: (a: Annotation) => void;
   onRemoved: (id: number) => void;
 }) {
@@ -264,8 +356,8 @@ function Item({
         )}
         <p className="text-body break-words whitespace-pre-wrap">{a.body}</p>
         <div className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground">
-          {a.canDelete && <ConfirmButton label="Delete" onConfirm={remove} focusMain={false} />}
-          {a.author.id !== user?.id && (
+          {!readOnly && a.canDelete && <ConfirmButton label="Delete" onConfirm={remove} focusMain={false} />}
+          {!readOnly && a.author.id !== user?.id && (
             <button
               ref={reportButton}
               type="button"
@@ -299,7 +391,7 @@ function Item({
 /**
  * Annotations on the slide on show (R10, FR18), with the composer for a new one at the top. An annotation whose quote
  * no longer resolves in the deck is listed as "Text changed" and is not highlighted; ones on a slide that no longer
- * exists are listed on the last slide.
+ * exists are listed on the last slide. `readOnly` (the share-link page) lists them without the composer, delete or report.
  */
 export function AnnotationPanel({
   noteId,
@@ -307,6 +399,8 @@ export function AnnotationPanel({
   slideNo,
   annotations,
   draft,
+  readOnly = false,
+  onPick,
   onDraftDone,
   onPosted,
   onRemoved,
@@ -319,12 +413,16 @@ export function AnnotationPanel({
   slideNo: number;
   annotations: Annotation[];
   draft: Draft | null;
-  onDraftDone: () => void;
-  onPosted: (a: Annotation) => void;
-  onRemoved: (id: number) => void;
+  readOnly?: boolean;
+  /** Starts an annotation from the keyboard picker; the parent asks guests to log in. */
+  onPick?: (anchor: Anchor) => void;
+  onDraftDone?: () => void;
+  onPosted?: (a: Annotation) => void;
+  onRemoved?: (id: number) => void;
   onShow: (a: Annotation) => void;
-  onOff: () => void;
+  onOff?: () => void;
 }) {
+  const [said, setSaid] = useState('');
   const last = slideNo === slides.length;
   const here = annotations.filter((a) => {
     const at = slideOf(slides, a);
@@ -332,20 +430,40 @@ export function AnnotationPanel({
   });
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {draft && (
+      <p role="status" className="sr-only">
+        {said}
+      </p>
+      {!readOnly && !draft && onPick && (
+        <KeyboardPicker
+          key={slideNo}
+          slide={slides[slideNo - 1]}
+          slideNo={slideNo}
+          onPick={(a) => {
+            setSaid(`Selected “${a.quote}”. Write your annotation, then choose Post.`);
+            onPick(a);
+          }}
+        />
+      )}
+      {!readOnly && draft && (
         <Composer
           key={`${draft.slideId}:${draft.elementId}:${draft.offset}:${draft.quote}`}
           noteId={noteId}
           draft={draft}
-          onCancel={onDraftDone}
-          onOff={onOff}
-          onPosted={(a) => (onPosted(a), onDraftDone())}
+          onCancel={() => onDraftDone?.()}
+          onOff={() => onOff?.()}
+          onPosted={(a) => {
+            onPosted?.(a);
+            onDraftDone?.();
+            setSaid('Annotation posted.');
+          }}
         />
       )}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {here.length === 0 ? (
           <p className="py-8 text-center text-body-sm text-muted-foreground">
-            No annotations on this slide. Select text on the slide to add one.
+            {readOnly
+              ? 'No annotations on this slide.'
+              : 'No annotations on this slide. Select text on the slide to add one.'}
           </p>
         ) : (
           <ul className="flex flex-col gap-5">
@@ -355,8 +473,12 @@ export function AnnotationPanel({
                 a={a}
                 noteId={noteId}
                 resolved={resolveAnchor(slides, a) !== null}
+                readOnly={readOnly}
                 onShow={onShow}
-                onRemoved={onRemoved}
+                onRemoved={(id) => {
+                  onRemoved?.(id);
+                  setSaid('Annotation deleted.');
+                }}
               />
             ))}
           </ul>

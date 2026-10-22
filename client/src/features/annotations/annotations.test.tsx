@@ -233,7 +233,7 @@ describe('R10 annotations (client)', () => {
     const note = {
       id: 9,
       author: { id: me.id, displayName: me.displayName, role: 'student', isVerifiedLecturer: false },
-      counts: { likes: 0, comments: 0 },
+      counts: { likes: 0, comments: 0, annotations: 0 },
       liked: false,
       bookmarked: false,
     } as unknown as Note;
@@ -270,5 +270,78 @@ describe('R10 annotations (client)', () => {
       text: 'Your annotation on “Joins” was removed by an administrator.',
       to: '/notes/9',
     });
+  });
+
+  it('ANN-TC19 lists annotations read-only: no picker, composer, Delete or Report', () => {
+    render(
+      <AnnotationPanel
+        noteId={9}
+        slides={slides}
+        slideNo={1}
+        annotations={[ann(1, { canDelete: true }), ann(2)]}
+        draft={null}
+        readOnly
+        onPick={() => {}}
+        onShow={() => {}}
+      />,
+    );
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /^(Delete|Report|Select text with the keyboard)/ })).toBeNull();
+  });
+
+  it('ANN-TC20 shows the annotation count on a feed card note and links to the note; nothing at zero', () => {
+    const base = {
+      id: 9,
+      author: { id: 5, displayName: 'Aina', role: 'student', isVerifiedLecturer: false },
+      liked: false,
+      bookmarked: false,
+    };
+    const card = (annotations: number) =>
+      ({ ...base, counts: { likes: 0, comments: 0, annotations } }) as unknown as Note;
+    const { rerender } = render(
+      <MemoryRouter>
+        <NoteActions note={card(1200)} onChange={() => {}} />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole('link', { name: 'Annotations, 1200' });
+    expect(link.getAttribute('href')).toBe('/notes/9');
+    expect(link.textContent).toContain('1.2K');
+    rerender(
+      <MemoryRouter>
+        <NoteActions note={card(0)} onChange={() => {}} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('link', { name: /^Annotations/ })).toBeNull();
+  });
+
+  it('ANN-TC21 creates an annotation from the keyboard picker and announces it', async () => {
+    const picked = vi.fn();
+    render(
+      <AnnotationPanel
+        noteId={9}
+        slides={slides}
+        slideNo={1}
+        annotations={[]}
+        draft={null}
+        onPick={picked}
+        onShow={() => {}}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Select text with the keyboard' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Annotate selection' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Select some text first/);
+    expect(picked).not.toHaveBeenCalled();
+
+    const box = screen.getByRole('textbox', { name: 'Text box 1' }) as HTMLTextAreaElement;
+    expect(box.readOnly).toBe(true);
+    expect(box.value).toBe('Hello big world, big day'); // the plain text the anchors count in
+    box.focus();
+    act(() => {
+      box.setSelectionRange(5, 9); // " big"
+      box.dispatchEvent(new Event('select', { bubbles: true }));
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Annotate selection' }));
+    expect(picked).toHaveBeenCalledWith({ elementId: ELEMENT, quote: 'big', offset: 6, slideId: 1 });
+    expect(screen.getByRole('status').textContent).toMatch(/Selected “big”/);
   });
 });

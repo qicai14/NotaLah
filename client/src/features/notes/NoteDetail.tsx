@@ -239,6 +239,7 @@ export default function NoteDetail() {
               slideNo={slide + 1}
               annotations={annotations}
               draft={draft}
+              onPick={annotate}
               onDraftDone={() => setDraft(null)}
               onPosted={(a) => setList((l) => [...l, a])}
               onRemoved={(gone) => setList((l) => l.filter((a) => a.id !== gone))}
