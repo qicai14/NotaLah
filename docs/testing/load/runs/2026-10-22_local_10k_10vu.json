@@ -1,0 +1,192 @@
+{
+  "label": "2026-10-22_local_10k_10vu",
+  "notes": 10000,
+  "startedAt": "2026-10-22T08:42:37.344Z",
+  "base": "http://127.0.0.1:4104",
+  "vus": 10,
+  "durationS": 90,
+  "thinkMs": 300,
+  "clientIps": true,
+  "machine": "AMD Ryzen 3 3300X 4-Core Processor, 8 threads, 16 GB RAM, win32 10.0.26300, Node v24.22.0",
+  "elapsedS": 91.70863659999999,
+  "requestsPerSecond": 14.349793528606444,
+  "login": {
+    "count": 10,
+    "errors": 0,
+    "errorRate": 0,
+    "p50": 3691.1985999999997,
+    "p95": 3700.9688,
+    "p99": 3700.9688,
+    "max": 3700.9688
+  },
+  "all": {
+    "count": 1316,
+    "errors": 0,
+    "errorRate": 0,
+    "p50": 155.625,
+    "p95": 1714.2100999999966,
+    "p99": 2239.4367000000057,
+    "max": 2676.9279000000097
+  },
+  "search": {
+    "count": 474,
+    "errors": 0,
+    "errorRate": 0,
+    "p50": 1035.1332999999995,
+    "p95": 2111.3001000000004,
+    "p99": 2398.157500000001,
+    "max": 2676.9279000000097
+  },
+  "nfr1": {
+    "limitMs": 3000,
+    "pass": true,
+    "allUnderLimit": true
+  },
+  "failedStatuses": {},
+  "endpoints": [
+    {
+      "label": "feed.page1",
+      "count": 240,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 333.8570000000036,
+      "p95": 532.4040999999997,
+      "p99": 653.7014999999992,
+      "max": 683.2726000000112,
+      "requestsPerSecond": 2.616983622238257,
+      "avgBytes": 21233
+    },
+    {
+      "label": "feed.page2",
+      "count": 129,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 62.82630000000063,
+      "p95": 171.73140000000421,
+      "p99": 211.3110000000015,
+      "max": 269.17749999999796,
+      "requestsPerSecond": 1.4066286969530633,
+      "avgBytes": 21579
+    },
+    {
+      "label": "note.comment",
+      "count": 38,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 70.3830999999991,
+      "p95": 186.21089999999094,
+      "p99": 204.70109999999113,
+      "max": 204.70109999999113,
+      "requestsPerSecond": 0.4143557401877241,
+      "avgBytes": 121
+    },
+    {
+      "label": "note.comments",
+      "count": 57,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 57.539700000001176,
+      "p95": 174.2509,
+      "p99": 179.75239999999758,
+      "max": 179.75239999999758,
+      "requestsPerSecond": 0.6215336102815862,
+      "avgBytes": 1972
+    },
+    {
+      "label": "note.detail",
+      "count": 159,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 57.45040000000154,
+      "p95": 126.55819999999949,
+      "p99": 163.70060000001104,
+      "max": 235.5798000000068,
+      "requestsPerSecond": 1.7337516497328456,
+      "avgBytes": 4974
+    },
+    {
+      "label": "note.like",
+      "count": 60,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 80.42589999999473,
+      "p95": 235.67179999999644,
+      "p99": 300.1463000000076,
+      "max": 300.1463000000076,
+      "requestsPerSecond": 0.6542459055595643,
+      "avgBytes": 25
+    },
+    {
+      "label": "note.view",
+      "count": 159,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 63.04799999999523,
+      "p95": 187.6238000000012,
+      "p99": 237.15600000000268,
+      "max": 239.54820000000473,
+      "requestsPerSecond": 1.7337516497328456,
+      "avgBytes": 0
+    },
+    {
+      "label": "search.filtered",
+      "count": 70,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 123.46919999999955,
+      "p95": 245.16599999999744,
+      "p99": 410.67200000000594,
+      "max": 410.67200000000594,
+      "requestsPerSecond": 0.7632868898194918,
+      "avgBytes": 37508
+    },
+    {
+      "label": "search.hashtag",
+      "count": 89,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 169.80949999998847,
+      "p95": 323.1529999999984,
+      "p99": 414.1843999999983,
+      "max": 414.1843999999983,
+      "requestsPerSecond": 0.9704647599133538,
+      "avgBytes": 41194
+    },
+    {
+      "label": "search.keyword",
+      "count": 159,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 1405.1394,
+      "p95": 2261.6247000000003,
+      "p99": 2404.782300000006,
+      "max": 2488.872900000002,
+      "requestsPerSecond": 1.7337516497328456,
+      "avgBytes": 41816
+    },
+    {
+      "label": "search.module",
+      "count": 70,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 256.7563000000009,
+      "p95": 430.15699999999197,
+      "p99": 588.5187999999907,
+      "max": 588.5187999999907,
+      "requestsPerSecond": 0.7632868898194918,
+      "avgBytes": 39491
+    },
+    {
+      "label": "search.top",
+      "count": 86,
+      "errors": 0,
+      "errorRate": 0,
+      "p50": 1499.2345999999998,
+      "p95": 2285.5308000000077,
+      "p99": 2676.9279000000097,
+      "max": 2676.9279000000097,
+      "requestsPerSecond": 0.9377524646353755,
+      "avgBytes": 41853
+    }
+  ]
+}
