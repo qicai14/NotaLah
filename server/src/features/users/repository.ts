@@ -110,7 +110,8 @@ export async function listPendingLecturers(): Promise<LecturerApplication[]> {
             usr_staff_id AS "staffId", usr_programme AS "programme", usr_created_at AS "createdAt"
      FROM "USER_T"
      WHERE usr_lecturer_status = 'pending' AND usr_status = 'active'
-     ORDER BY usr_created_at ASC, usr_id ASC`,
+     ORDER BY usr_created_at ASC, usr_id ASC
+     LIMIT 100`, // bounded (D81): oldest first, and each decision lets the next one in
   );
   return rows;
 }
