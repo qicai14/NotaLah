@@ -16,7 +16,7 @@ export function fromProxy(req: IncomingMessage): boolean {
   return typeof sent === 'string' && timingSafeEqual(digest(sent), digest(env.PROXY_SECRET));
 }
 
-/** Refuses direct calls; /api/health stays open for Render's health check, which does not pass through the proxy. */
+/** Refuses direct calls; liveness /api/health stays open for Render's health check, which does not pass the proxy (D81). */
 export const requireProxy: RequestHandler = (req, res, next) => {
   if (req.path === '/api/health' || fromProxy(req)) return next();
   res.status(403).json({ error: 'Forbidden' });

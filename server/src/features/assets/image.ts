@@ -1,6 +1,11 @@
 import sharp from 'sharp';
 import { ASSETS, IMAGE_FORMATS } from './config';
 
+// One libvips thread and no operation cache (D81): a 0.1-CPU, 512 MB container still reports the host's cores, and
+// each extra thread or cached image holds its own decode buffers.
+sharp.concurrency(1);
+sharp.cache(false);
+
 interface ProcessedImage {
   data: Buffer;
   width: number;

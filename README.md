@@ -14,7 +14,7 @@ vp run db:up                # Postgres on localhost:5433 (databases notalah and 
 vp run server#db:migrate
 vp run dev                  # builds shared, then shared watch + server :4000 + client :5173 (proxies /api)
 ```
-Check: `curl http://localhost:4000/api/health` returns `{"status":"ok","db":"up"}`.
+Check: `curl http://localhost:4000/api/health/db` returns `{"status":"ok","db":"up"}`.
 
 ### First administrator
 Admins cannot self-register (D6). Set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ chars, upper, lower case
@@ -56,7 +56,9 @@ survive restyling.
 - `SENTRY_DSN` (optional) turns on Sentry for 5xx errors, tagged with the request id; the request (URL, headers, cookies, body) is stripped.
   Without it nothing is loaded and no network calls are made. `VITE_SENTRY_DSN` (optional, at client build time) does
   the same for browser errors, with no user, cookie, header or body data.
-- `GET /api/health` returns `{ status, db }` and 503 when Postgres is unreachable (use it as the readiness check).
+- `GET /api/health` is the liveness check: `{ status }` without touching Postgres, so health polls let Neon sleep (D81).
+  `GET /api/health/db` is the readiness check: `{ status, db }`, 503 when Postgres is unreachable, and behind
+  `PROXY_SECRET` in production.
 - API responses are gzip-compressed when the caller accepts it; ranged file streams (images, video) are sent as they are.
 - On SIGTERM/SIGINT the server stops accepting connections, waits up to 10 s for in-flight requests, closes the pool and exits 0;
   a second signal or the timeout exits 1.
@@ -103,7 +105,8 @@ development.
 2. **R2**: the bucket and bucket-scoped token from D60, with the R34 usage caps left at their defaults.
 3. **Render** (free web service): New, Blueprint, pick this repository. It reads `render.yaml` (one free Docker
    service in Singapore, auto-deploy off, health check `/api/health`, `NODE_ENV=production`, `TRUST_PROXY=2`,
-   `COOKIE_SECURE=true`, `STORAGE_DRIVER=r2`, `VIDEO_PROFILE=free`) and asks for the `sync: false` values:
+   `COOKIE_SECURE=true`, `STORAGE_DRIVER=r2`, `VIDEO_PROFILE=free`, `BCRYPT_ROUNDS=10`,
+   `AUTH_ATTEMPTS_PER_MINUTE=20` for the 0.1 CPU, D81) and asks for the `sync: false` values:
 
    | Variable | Value |
    |---|---|
@@ -114,6 +117,8 @@ development.
    | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | the R2 values |
    | `SENTRY_DSN`, `UNSPLASH_ACCESS_KEY`, `JAMENDO_CLIENT_ID` | optional; leave empty to turn each off |
 
+   For a UAT session, `AUTH_ATTEMPTS_PER_MINUTE=20` allows 20 logins and registrations a minute per IP, and a lab
+   shares one IP: stagger sign-ups, or raise it on Render for the session and set it back afterwards (D81).
    Add `DEBUG_PROXY=1` for the first deploy only (see the proxy check below). Optional tuning (`MAX_SESSION_HOURS`,
    `USAGE_CAP_*`, `PG_*`, `VIDEO_*`) is as in the example env file. Leave `PORT` unset; Render provides it. Then, under
    the service's Settings, copy the **Deploy Hook** URL. Note the service URL (`https://<service>.onrender.com`).
@@ -161,7 +166,8 @@ are trusted. Then delete `DEBUG_PROXY` and redeploy.
   `docker build -t notalah-api .` (no env file is copied into it).
 - Production guards: the server refuses to start when `STORAGE_DRIVER` is `local`, `CLIENT_ORIGIN` is not https,
   `COOKIE_SECURE` is not true, `TRUST_PROXY` is `loopback` or `0`, or `PROXY_SECRET` is missing, naming the variable.
-- `GET /api/health` includes `version` (Render's `RENDER_GIT_COMMIT`) on Render; locally the field is absent.
+- `GET /api/health` and `/api/health/db` include `version` (Render's `RENDER_GIT_COMMIT`) on Render; locally the field
+  is absent. Check the database through the proxy with `https://<project>.pages.dev/api/health/db`.
 - Migrations run in the Deploy workflow before Render deploys, so new code never meets an old schema. By hand:
   `vp run server#db:migrate` with `DATABASE_URL` pointing at Neon.
 - The free instance sleeps after 15 idle minutes (about a minute to wake), so the daily purge runs from

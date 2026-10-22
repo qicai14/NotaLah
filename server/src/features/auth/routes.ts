@@ -1,7 +1,6 @@
-import bcrypt from 'bcryptjs';
 import { Router } from 'express';
 import { z } from 'zod';
-import { AUTH_COOKIE, authCookieOptions, BCRYPT_COST, type LoginInfo, passport, setAuthCookie } from './passport';
+import { AUTH_COOKIE, authCookieOptions, hashPassword, type LoginInfo, passport, setAuthCookie } from './passport';
 import { type AuthUser, createUser, findUserByEmail } from '../users/repository';
 import { requireAuth } from './middleware';
 import { authLimiter, loginFailureLimiter } from './rateLimit';
@@ -63,7 +62,7 @@ authRouter.post('/register', authLimiter, async (req, res) => {
   try {
     const user = await createUser({
       email: d.email,
-      passwordHash: await bcrypt.hash(d.password, BCRYPT_COST),
+      passwordHash: await hashPassword(d.password),
       displayName: d.displayName,
       programme: d.programme,
       role: 'student', // lecturers keep student rights until an admin approves them (D6)

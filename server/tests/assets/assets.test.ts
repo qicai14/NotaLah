@@ -523,6 +523,16 @@ it('STO-TC14: an image put that fails (such as an R2 timeout) removes the key it
   remove.mockRestore();
 });
 
+it('STO-TC16: images over 24 MP are refused before decoding; sharp runs one thread with its cache off', async () => {
+  const uid = await insertUser();
+  const big = await upload(uid, await png(6001, 4000));
+  expect(big.status).toBe(400);
+  expect(big.body.error).toBe('Image dimensions are too large');
+  expect((await upload(uid, await png(6000, 4000))).status).toBe(201);
+  expect(sharp.concurrency()).toBe(1);
+  expect(sharp.cache()).toMatchObject({ memory: { max: 0 }, items: { max: 0 }, files: { max: 0 } });
+});
+
 it('DEP-TC10: a file the purge cannot remove is counted as orphaned while its row stays deleted', async () => {
   const orphan = await uploadOk(await insertUser());
   await pool.query(`UPDATE "ASSET_T" SET ast_created_at = NOW() - INTERVAL '2 days'`);

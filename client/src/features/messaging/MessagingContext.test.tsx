@@ -88,6 +88,9 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+/** socket.io-client loads with a dynamic import on sign-in (D81), so the socket appears a tick after render. */
+const opened = (count = 1) => act(() => vi.waitFor(() => expect(sockets).toHaveLength(count)));
+
 const tree = () => (
   <MessagingProvider>
     <Probe />
@@ -98,11 +101,12 @@ describe('messaging provider', () => {
   it('CLI-TC65: a guest opens no socket; a signed-in session opens one, loads the inbox and closes it on logout', async () => {
     signedIn = null;
     const view = render(tree());
+    await act(async () => {}); // a guest never loads the client at all
     expect(sockets).toHaveLength(0);
 
     signedIn = sam;
     view.rerender(tree());
-    expect(sockets).toHaveLength(1);
+    await opened();
     await act(async () => sockets[0]!.fire('connect'));
     expect(await screen.findByText('chats 1 unread 1')).toBeTruthy();
 
@@ -113,9 +117,21 @@ describe('messaging provider', () => {
     expect(screen.getByText('chats 0 unread 0')).toBeTruthy();
   });
 
+  it('CLI-TC79: logging out before socket.io-client has loaded opens no socket', async () => {
+    signedIn = sam;
+    const view = render(tree());
+    signedIn = null;
+    view.rerender(tree());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(sockets).toHaveLength(0);
+  });
+
   it('CLI-TC66: message:new from the other person adds to the unread badge', async () => {
     signedIn = sam;
     render(tree());
+    await opened();
     await act(async () => sockets[0]!.fire('connect'));
     await screen.findByText('chats 1 unread 1');
     await act(async () =>
@@ -140,6 +156,7 @@ describe('messaging provider', () => {
   it('DEP-TC9: a socket the server cut (token expiry) reconnects after 1-3 s; a dropped transport is left to socket.io; logout cancels', async () => {
     signedIn = sam;
     const view = render(tree());
+    await opened();
     await act(async () => sockets[0]!.fire('connect'));
     vi.useFakeTimers();
     try {
