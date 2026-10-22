@@ -84,10 +84,17 @@ Target (D74, D77): one free origin. The client and a Pages Function proxy run on
 Docker web service on Render's free plan. The database is on Neon and uploads on R2. The browser only ever sees the
 `pages.dev` origin, so the login cookie is first-party and no domain is needed. Nothing here needs a paid plan.
 
-`.github/workflows/deploy.yml` runs after CI passes on a push to `main` (or by hand from the Actions tab): it migrates
-Neon, calls the Render deploy hook, then builds the client and runs `wrangler pages deploy` from `client/` (which also
-bundles `client/functions/`). Each step skips with a notice until its secret exists, so the workflow stays green
-before the accounts are set up.
+`.github/workflows/deploy.yml` runs after CI passes on a push to `main` (or by hand from the Actions tab, on `main`
+only): it migrates Neon, calls the Render deploy hook for the tested commit (`&ref=<sha>`), waits up to 15 minutes until
+`<API_ORIGIN>/api/health` reports that commit as `version`, then builds the client and runs `wrangler pages deploy`
+from `client/` (which also bundles `client/functions/`). Each step skips with a notice until its secret exists, so the
+workflow stays green before the accounts are set up. The API is never deployed without the migration step, and the
+client is not deployed when an API deploy is configured but did not run.
+
+The Function adds a shared `PROXY_SECRET` as `X-Proxy-Secret`. In production the API refuses (403) every request and
+Socket.io handshake without it, except `GET /api/health` for Render's health check, so nobody can call the public
+`onrender.com` URL directly and forge `X-Forwarded-For` past the per-IP limits. Unset locally, so nothing changes in
+development.
 
 ### One-time account setup (in this order)
 1. **Neon** (free plan): create a project in AWS Singapore. Copy two connection strings with `sslmode=require`: the
@@ -100,6 +107,7 @@ before the accounts are set up.
 
    | Variable | Value |
    |---|---|
+   | `PROXY_SECRET` | a long random string (at least 16 characters; guarded: required in production), the same value as the Pages secret below |
    | `CLIENT_ORIGIN` | `https://<project>.pages.dev` (guarded: must be https; also the Socket.io origin check and share links) |
    | `DATABASE_URL` | Neon pooled connection string |
    | `JWT_SECRET` | a long random string, never reused from development |
@@ -114,19 +122,23 @@ before the accounts are set up.
      1027 past 100,000 Function requests a day instead of billing.
    - Create the Pages project as Direct Upload, named `notalah` (or set the GitHub variable below), for example with
      `vp dlx wrangler@4.151.1 pages project create notalah --production-branch main` after `wrangler login`.
-   - Project Settings, Variables and Secrets, Production: `API_ORIGIN` = the Render service URL. Without it the
-     Function answers 502 `{"error":"API origin is not configured"}` (fails closed).
+   - Project Settings, Variables and Secrets, Production: `API_ORIGIN` = the Render service URL (plain text) and
+     `PROXY_SECRET` = the Render value (type Secret). Without either the Function answers 502
+     `{"error":"API proxy is not configured"}` (fails closed); when Render cannot be reached it answers 502
+     `{"error":"API unreachable"}`.
    - Project Settings (the Runtime or Functions section): set the Functions request limit failure mode to
-     **Fail closed**, so the proxy never falls
-     through to static pages.
+     **Fail closed**, so the proxy never falls through to static pages.
    - Account, Notifications: add a **usage-based billing** notification at the lowest threshold as a second line of
      defence.
    - Create an API token with the **Cloudflare Pages: Edit** permission, and note the account id.
 5. **GitHub** repository, Settings, Secrets and variables, Actions:
    - Secrets: `PROD_DATABASE_URL`, `RENDER_DEPLOY_HOOK_URL`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and the
      four `R2_*` values (the daily purge also deletes unlinked R2 files).
-   - Variables (optional): `CLOUDFLARE_PAGES_PROJECT` (default `notalah`); `VITE_SENTRY_DSN` turns on client error
-     reporting (a browser DSN is public by design; empty keeps it off).
+   - Variables: `API_ORIGIN` = the Render service URL (required for the API deploy; the workflow polls its
+     `/api/health`). Optional: `CLOUDFLARE_PAGES_PROJECT` (default `notalah`); `VITE_SENTRY_DSN` turns on client error
+     reporting (a browser DSN is public by design; empty keeps it off). Sentry on both sides replaces share-link tokens
+     with `/share/:token` before anything is sent.
+   - `PROXY_SECRET` lives only on Render and Pages; GitHub never needs it.
 6. Run the **Deploy** workflow by hand once (Actions, Deploy, Run workflow). An environment change on Pages or Render
    takes effect on the next deploy, so re-run it after changing one.
 7. **UptimeRobot** (free): an HTTP(s) monitor on `https://<project>.pages.dev/api/health` every 5 minutes keeps the
@@ -148,7 +160,8 @@ are trusted. Then delete `DEBUG_PROXY` and redeploy.
   It runs as `nobody` with `NODE_ENV=production` and a Docker health check on `/api/health`. Build it locally with
   `docker build -t notalah-api .` (no env file is copied into it).
 - Production guards: the server refuses to start when `STORAGE_DRIVER` is `local`, `CLIENT_ORIGIN` is not https,
-  `COOKIE_SECURE` is not true or `TRUST_PROXY` is `loopback` or `0`, naming the variable.
+  `COOKIE_SECURE` is not true, `TRUST_PROXY` is `loopback` or `0`, or `PROXY_SECRET` is missing, naming the variable.
+- `GET /api/health` includes `version` (Render's `RENDER_GIT_COMMIT`) on Render; locally the field is absent.
 - Migrations run in the Deploy workflow before Render deploys, so new code never meets an old schema. By hand:
   `vp run server#db:migrate` with `DATABASE_URL` pointing at Neon.
 - The free instance sleeps after 15 idle minutes (about a minute to wake), so the daily purge runs from
