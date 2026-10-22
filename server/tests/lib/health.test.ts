@@ -10,8 +10,8 @@ import { truncateAll } from '../helpers';
 beforeEach(truncateAll);
 afterAll(() => pool.end());
 
-it('OPS-TC1: GET /api/health reports the database is up', async () => {
-  const res = await request(app).get('/api/health');
+it('OPS-TC1: GET /api/health/db reports the database is up', async () => {
+  const res = await request(app).get('/api/health/db');
   expect(res.status).toBe(200);
   expect(res.body).toEqual({ status: 'ok', db: 'up' });
 });
@@ -20,18 +20,31 @@ it('OPS-TC8: GET /api/health reports the deployed commit when Render sets one, a
   expect((await request(app).get('/api/health')).body).not.toHaveProperty('version');
   env.RENDER_GIT_COMMIT = 'abc123';
   try {
-    expect((await request(app).get('/api/health')).body).toEqual({ status: 'ok', db: 'up', version: 'abc123' });
+    expect((await request(app).get('/api/health')).body).toEqual({ status: 'ok', version: 'abc123' });
+    expect((await request(app).get('/api/health/db')).body).toEqual({ status: 'ok', db: 'up', version: 'abc123' });
   } finally {
     env.RENDER_GIT_COMMIT = undefined;
   }
 });
 
-it('OPS-TC2: GET /api/health answers 503 when the database is unreachable', async () => {
+it('OPS-TC2: GET /api/health/db answers 503 when the database is unreachable', async () => {
   const spy = vi.spyOn(pool, 'query').mockRejectedValueOnce(new Error('connection refused') as never);
-  const res = await request(app).get('/api/health');
+  const res = await request(app).get('/api/health/db');
   spy.mockRestore();
   expect(res.status).toBe(503);
   expect(res.body).toEqual({ status: 'degraded', db: 'down' });
+});
+
+it('OPS-TC11: GET /api/health answers 200 without querying the database', async () => {
+  const spy = vi.spyOn(pool, 'query').mockRejectedValue(new Error('connection refused') as never);
+  try {
+    const res = await request(app).get('/api/health');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'ok' });
+    expect(spy).not.toHaveBeenCalled();
+  } finally {
+    spy.mockRestore();
+  }
 });
 
 it('OPS-TC3: every response carries an X-Request-Id, reusing a safe incoming one', async () => {

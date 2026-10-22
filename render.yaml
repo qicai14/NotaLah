@@ -10,6 +10,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeployTrigger: 'off'
+    # Liveness only, no database query, so Neon can scale to zero (D81); /api/health/db is the readiness check.
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV

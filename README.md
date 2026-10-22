@@ -14,7 +14,7 @@ vp run db:up                # Postgres on localhost:5433 (databases notalah and 
 vp run server#db:migrate
 vp run dev                  # builds shared, then shared watch + server :4000 + client :5173 (proxies /api)
 ```
-Check: `curl http://localhost:4000/api/health` returns `{"status":"ok","db":"up"}`.
+Check: `curl http://localhost:4000/api/health/db` returns `{"status":"ok","db":"up"}`.
 
 ### First administrator
 Admins cannot self-register (D6). Set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ chars, upper, lower case
@@ -56,7 +56,9 @@ survive restyling.
 - `SENTRY_DSN` (optional) turns on Sentry for 5xx errors, tagged with the request id; the request (URL, headers, cookies, body) is stripped.
   Without it nothing is loaded and no network calls are made. `VITE_SENTRY_DSN` (optional, at client build time) does
   the same for browser errors, with no user, cookie, header or body data.
-- `GET /api/health` returns `{ status, db }` and 503 when Postgres is unreachable (use it as the readiness check).
+- `GET /api/health` is the liveness check: `{ status }` without touching Postgres, so health polls let Neon sleep (D81).
+  `GET /api/health/db` is the readiness check: `{ status, db }`, 503 when Postgres is unreachable, and behind
+  `PROXY_SECRET` in production.
 - API responses are gzip-compressed when the caller accepts it; ranged file streams (images, video) are sent as they are.
 - On SIGTERM/SIGINT the server stops accepting connections, waits up to 10 s for in-flight requests, closes the pool and exits 0;
   a second signal or the timeout exits 1.
@@ -162,7 +164,8 @@ are trusted. Then delete `DEBUG_PROXY` and redeploy.
   `docker build -t notalah-api .` (no env file is copied into it).
 - Production guards: the server refuses to start when `STORAGE_DRIVER` is `local`, `CLIENT_ORIGIN` is not https,
   `COOKIE_SECURE` is not true, `TRUST_PROXY` is `loopback` or `0`, or `PROXY_SECRET` is missing, naming the variable.
-- `GET /api/health` includes `version` (Render's `RENDER_GIT_COMMIT`) on Render; locally the field is absent.
+- `GET /api/health` and `/api/health/db` include `version` (Render's `RENDER_GIT_COMMIT`) on Render; locally the field
+  is absent. Check the database through the proxy with `https://<project>.pages.dev/api/health/db`.
 - Migrations run in the Deploy workflow before Render deploys, so new code never meets an old schema. By hand:
   `vp run server#db:migrate` with `DATABASE_URL` pointing at Neon.
 - The free instance sleeps after 15 idle minutes (about a minute to wake), so the daily purge runs from

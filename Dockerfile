@@ -45,6 +45,7 @@ WORKDIR /app/server
 ENV NODE_ENV=production PORT=4000
 USER nobody
 EXPOSE 4000
+# Liveness only (D81): /api/health never queries Postgres.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
   CMD ["node", "-e", "fetch('http://127.0.0.1:'+process.env.PORT+'/api/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
 CMD ["node", "dist/server.js"]

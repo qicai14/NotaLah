@@ -112,7 +112,7 @@ describe('Proxy secret (R11, D77)', () => {
     env.PROXY_SECRET = undefined;
   });
 
-  it('DEP-TC19: with PROXY_SECRET set, only requests carrying it reach the API; /api/health stays open', async () => {
+  it('DEP-TC19: with PROXY_SECRET set, only requests carrying it reach the API; /api/health stays open, /api/health/db does not', async () => {
     env.PROXY_SECRET = 'proxy-secret-0123456789';
     const direct = await request(app).get('/api/modules').set('X-Forwarded-For', '6.6.6.6');
     expect(direct.status).toBe(403);
@@ -121,6 +121,7 @@ describe('Proxy secret (R11, D77)', () => {
     const viaProxy = await request(app).get('/api/modules').set('X-Proxy-Secret', env.PROXY_SECRET);
     expect(viaProxy.status).toBe(401); // past the gate: the route itself wants a session
     expect((await request(app).get('/api/health')).status).toBe(200);
+    expect((await request(app).get('/api/health/db')).status).toBe(403); // only liveness is open (D81)
     env.PROXY_SECRET = undefined;
     expect((await request(app).get('/api/modules')).status).toBe(401); // unset: local dev unchanged
   });
