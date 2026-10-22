@@ -1,6 +1,13 @@
+import { GraduationCap } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
+import { Field } from '@/components/Field';
+import { PageMessage } from '@/components/PageMessage';
+import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/UserAvatar';
 import { api, ApiError } from '../../lib/api';
+import { timeAgo } from '../../lib/format';
 import type { LecturerApplication } from '../../types';
+import { AdminHeading, cardClass, dangerOutline, Loading, Notices } from './parts';
 
 export default function AdminLecturers() {
   const [apps, setApps] = useState<LecturerApplication[] | null>(null);
@@ -42,117 +49,93 @@ export default function AdminLecturers() {
   }
 
   return (
-    <section>
-      <h1 className="mb-4 text-xl font-semibold">Lecturer applications</h1>
-      <p role="status" className="mb-2 text-sm text-success">
-        {status}
-      </p>
-      {error && (
-        <p role="alert" className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
+    <section className="flex flex-col gap-4">
+      <AdminHeading count={apps?.length}>Lecturer applications</AdminHeading>
+      <Notices status={status} error={rejecting === null ? error : null} />
+      {apps === null && !error && <Loading>Loading…</Loading>}
+      {apps?.length === 0 && (
+        <PageMessage
+          title="No pending applications"
+          body="New lecturer applications appear here for you to approve or reject."
+        />
       )}
-      {apps === null && !error && <p className="text-muted-foreground">Loading…</p>}
-      {apps?.length === 0 && <p className="text-muted-foreground">No pending applications.</p>}
       {apps && apps.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-input">
-                <th scope="col" className="py-2 pr-3">
-                  Name
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Email
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Staff ID
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Programme
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Applied
-                </th>
-                <th scope="col" className="py-2">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {apps.map((a) => (
-                <tr key={a.id} className="border-b border-border align-top">
-                  <td className="py-2 pr-3">{a.displayName}</td>
-                  <td className="py-2 pr-3 break-all">{a.email}</td>
-                  <td className="py-2 pr-3">{a.staffId}</td>
-                  <td className="py-2 pr-3">{a.programme}</td>
-                  <td className="py-2 pr-3">{new Date(a.createdAt).toLocaleDateString()}</td>
-                  <td className="py-2">
-                    {rejecting === a.id ? (
-                      <form onSubmit={(e) => onReject(e, a)} className="flex flex-col gap-2">
-                        <label htmlFor={`reason-${a.id}`} className="text-xs font-medium">
-                          Reason for rejecting
-                        </label>
-                        <input
-                          id={`reason-${a.id}`}
-                          autoFocus
-                          maxLength={300}
-                          value={reason}
-                          onChange={(e) => setReason(e.target.value)}
-                          className="rounded-md border border-input px-2 py-1"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="submit"
-                            disabled={busy}
-                            className="rounded-md bg-destructive px-3 py-1 text-primary-foreground disabled:opacity-60"
-                          >
-                            Confirm reject
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setRejecting(null);
-                              setError(null);
-                            }}
-                            className="rounded-md border border-input px-3 py-1"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => decide(a, 'approve')}
-                          aria-label={`Approve ${a.displayName}`}
-                          className="rounded-md bg-success px-3 py-1 text-primary-foreground disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => {
-                            setRejecting(a.id);
-                            setReason('');
-                            setError(null);
-                          }}
-                          aria-label={`Reject ${a.displayName}`}
-                          className="rounded-md border border-destructive px-3 py-1 text-destructive"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="flex flex-col gap-3">
+          {apps.map((a) => (
+            <li key={a.id} className={cardClass}>
+              <div className="flex items-start gap-3">
+                <UserAvatar name={a.displayName} className="size-11" />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-title-sm font-semibold">
+                    <GraduationCap aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="break-words">{a.displayName}</span>
+                  </p>
+                  <p className="text-body-sm break-all text-muted-foreground">{a.email}</p>
+                  <p className="mt-1 text-body-sm text-muted-foreground">
+                    {[a.staffId && `Staff ID ${a.staffId}`, a.programme, `Applied ${timeAgo(a.createdAt)}`]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3">
+                {rejecting === a.id ? (
+                  <form onSubmit={(e) => onReject(e, a)} className="flex flex-col gap-3">
+                    <Field
+                      label="Reason for rejecting"
+                      name={`reason-${a.id}`}
+                      autoFocus
+                      maxLength={300}
+                      value={reason}
+                      error={error ?? undefined}
+                      onChange={(e) => setReason(e.target.value)}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" variant="destructive" disabled={busy}>
+                        Confirm reject
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setRejecting(null);
+                          setError(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => decide(a, 'approve')}
+                      aria-label={`Approve ${a.displayName}`}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={busy}
+                      className={dangerOutline}
+                      onClick={() => {
+                        setRejecting(a.id);
+                        setReason('');
+                        setError(null);
+                      }}
+                      aria-label={`Reject ${a.displayName}`}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

@@ -1774,6 +1774,17 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Alternatives:** a separate annotation report table (no queue reuse); marking a moderator hide with a boolean or reusing `ant_deleted_at` (loses who removed it).
 - **Reversibility:** Medium: the migration has a full down; removing the feature drops one table and three columns.
 
+## D76 - Diagrams in Mermaid (22 Oct 2026)
+- **Decision (user):** every diagram source is Mermaid text, not PlantUML. The 14 Chapter 4 sources in
+  `docs/chapter4/diagrams/src/` are now `.md` files with a `mermaid` block; `00_architecture.md` adds the current
+  architecture, deployment (D74) and async video (D67) diagrams. The user renders and styles them on mermaid.live.
+- **Mapping:** class, sequence and ER diagrams map one to one (the ERD's `NOT NULL` comments mark PlantUML's mandatory
+  columns). Mermaid has no use case or swimlane activity type, so those are flowcharts: use cases as stadiums with
+  dotted «include»/«extend» edges, swimlanes as subgraphs, fork/join as thin bar nodes.
+- **Why:** no Java toolchain; the user styles diagrams by hand.
+- **Check:** all 17 blocks render with Mermaid 12.1.0.
+- **Reversibility:** High: the `.puml` files stay in git history.
+
 ## D77 - Live deploy code: Pages Function proxy, Docker image, deploy workflow (R11, R18, 22 Oct 2026)
 - **Context:** D74 fixed the live layout (one free `*.pages.dev` origin, a Pages Function proxying to the Render free
   web service, Neon, R2) but no deploy code existed. R11 also asked for response compression and a dependency audit,
@@ -1860,3 +1871,10 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
 - **Reversibility:** High. Deleting `Dockerfile`, `.dockerignore`, `render.yaml`, `deploy.yml`, `client/functions/`,
   `client/edge/` and `_routes.json` returns the repo to its local-only state; compression and client Sentry are one
   `app.use` line and one call in `main.tsx`.
+
+## D78 - Admin and Drafts restyle (R19 lane C, 22 Oct 2026)
+
+- **Decision:** the three admin pages (Lecturer applications, Reported content, Users) move onto the design system: each row is a `bg-card` tile with `UserAvatar` (people) or the note title (reports), chips for role and status, `Button` actions (outline, destructive for confirm), `Field` for reasons, `PageMessage` for empty states, a `role="status"` line for the last outcome and a `role="alert"` box for errors. Tables are gone, so nothing scrolls sideways at 375 px; buttons are at least 40 px and the small queue buttons 44 px on phones. Shared bits are in `features/moderation/parts.tsx`. Opening a report review moves focus to its panel; closing it returns focus to that Review button (or the heading).
+- **Drafts and Saved:** already on the system (tiles, `ConfirmButton`, `usePaged`), so unchanged. There is no modules or usage-report screen in the client; the admin rail has only the three pages above.
+- **Behaviour unchanged:** routes, API calls, validation and button names. Reports still show the first page (20) only (the `shortcut:` stays). Client test CLI-TC77.
+- **Reversibility:** High: presentation only.

@@ -1,9 +1,14 @@
 import { type FormEvent, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Field } from '../../components/Field';
+import { Field } from '@/components/Field';
+import { PageMessage } from '@/components/PageMessage';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/UserAvatar';
 import { api, errorText } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
 import type { AdminUser } from '../../types';
+import { AdminHeading, cardClass, Chip, dangerOutline, Loading, Notices } from './parts';
 
 type Action = 'restrict' | 'suspend' | 'reinstate' | 'delete';
 const LABEL: Record<Action, string> = {
@@ -63,10 +68,10 @@ export default function AdminUsers() {
   }
 
   return (
-    <section>
-      <h1 className="mb-4 text-xl font-semibold">Users</h1>
-      <form onSubmit={search} role="search" className="mb-4 flex items-end gap-2">
-        <div className="flex-1">
+    <section className="flex flex-col gap-4">
+      <AdminHeading>Users</AdminHeading>
+      <form onSubmit={search} role="search" className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
           <Field
             label="Search by name or email"
             name="user-search"
@@ -74,111 +79,77 @@ export default function AdminUsers() {
             onChange={(e) => setDraft(e.target.value)}
           />
         </div>
-        <button type="submit" className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
+        <Button type="submit" size="lg">
           Search
-        </button>
+        </Button>
       </form>
-      <p role="status" className="mb-2 text-sm text-success">
-        {status}
-      </p>
-      {error && (
-        <p role="alert" className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </p>
+      <Notices status={status} error={error} />
+      {loading && <Loading>Loading…</Loading>}
+      {data?.users.length === 0 && (
+        <PageMessage title="No matching accounts" body="Try a different name or email, or clear the search." />
       )}
-      {loading && <p className="text-muted-foreground">Loading…</p>}
-      {data?.users.length === 0 && <p className="text-muted-foreground">No matching accounts.</p>}
       {data && data.users.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-input">
-                <th scope="col" className="py-2 pr-3">
-                  Name
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Email
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Role
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Status
-                </th>
-                <th scope="col" className="py-2 pr-3">
-                  Upheld reports
-                </th>
-                <th scope="col" className="py-2">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.users.map((u) => (
-                <tr key={u.id} className="border-b border-border align-top">
-                  <td className="py-2 pr-3">{u.displayName}</td>
-                  <td className="py-2 pr-3 break-all">{u.email}</td>
-                  <td className="py-2 pr-3">
-                    {u.role}
-                    {u.lecturerStatus === 'pending' && ' (lecturer pending)'}
-                  </td>
-                  <td className="py-2 pr-3">{u.status}</td>
-                  <td className="py-2 pr-3">{u.upheldReports}</td>
-                  <td className="py-2">
-                    {pending?.id === u.id ? (
-                      <form onSubmit={(e) => confirm(e, u, pending.action)} className="flex flex-col gap-2">
-                        <Field
-                          label={`Reason to ${pending.action} ${u.displayName}`}
-                          name={`reason-${u.id}`}
-                          autoFocus
-                          maxLength={300}
-                          value={reason}
-                          error={formError}
-                          onChange={(e) => setReason(e.target.value)}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="submit"
-                            disabled={busy}
-                            className="rounded-md bg-destructive px-3 py-1 text-primary-foreground disabled:opacity-60"
-                          >
-                            Confirm {pending.action}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => (setPending(null), setFormError(undefined))}
-                            className="rounded-md border border-input px-3 py-1"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {actionsFor(u).map((a) => (
-                          <button
-                            key={a}
-                            type="button"
-                            disabled={busy}
-                            onClick={() => (
-                              setPending({ id: u.id, action: a }),
-                              setReason(''),
-                              setFormError(undefined)
-                            )}
-                            aria-label={`${LABEL[a]} ${u.displayName}`}
-                            className={`rounded-md border px-2 py-1 ${a === 'delete' || a === 'suspend' ? 'border-destructive text-destructive' : 'border-input'}`}
-                          >
-                            {LABEL[a]}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="flex flex-col gap-3">
+          {data.users.map((u) => (
+            <li key={u.id} className={cardClass}>
+              <div className="flex items-start gap-3">
+                <UserAvatar name={u.displayName} className="size-11" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-title-sm font-semibold break-words">{u.displayName}</p>
+                  <p className="text-body-sm break-all text-muted-foreground">{u.email}</p>
+                  <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-muted-foreground">
+                    <Chip>{u.role}</Chip>
+                    <Chip tone={u.status === 'active' ? undefined : 'warn'}>{u.status}</Chip>
+                    {u.lecturerStatus === 'pending' && <Chip>lecturer pending</Chip>}
+                    <span className="tabular-nums">
+                      {u.upheldReports} upheld {u.upheldReports === 1 ? 'report' : 'reports'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3">
+                {pending?.id === u.id ? (
+                  <form onSubmit={(e) => confirm(e, u, pending.action)} className="flex flex-col gap-3">
+                    <Field
+                      label={`Reason to ${pending.action} ${u.displayName}`}
+                      name={`reason-${u.id}`}
+                      autoFocus
+                      maxLength={300}
+                      value={reason}
+                      error={formError}
+                      onChange={(e) => setReason(e.target.value)}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" variant="destructive" disabled={busy}>
+                        Confirm {pending.action}
+                      </Button>
+                      <Button type="button" variant="ghost" onClick={() => (setPending(null), setFormError(undefined))}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {actionsFor(u).map((a) => (
+                      <Button
+                        key={a}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => (setPending({ id: u.id, action: a }), setReason(''), setFormError(undefined))}
+                        aria-label={`${LABEL[a]} ${u.displayName}`}
+                        className={cn('max-md:min-h-11', (a === 'delete' || a === 'suspend') && dangerOutline)}
+                      >
+                        {LABEL[a]}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
