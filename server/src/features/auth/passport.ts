@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { CookieOptions, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
@@ -13,15 +14,18 @@ declare global {
   }
 }
 
-export const BCRYPT_COST = 12;
 const TOKEN_TTL_SECONDS = 3600;
 export const AUTH_COOKIE = 'notalah_token';
 const COOKIE_PATTERN = new RegExp(String.raw`(?:^|;\s*)${AUTH_COOKIE}=([^;]+)`);
 const BLOCKED_STATUSES = new Set(['suspended', 'deleted']);
 
-// bcrypt hash (cost 12) of a random throwaway value. Precomputed so importing this module does not block
-// the event loop; compared against when the email is unknown, so timing does not reveal which accounts exist.
-const DUMMY_HASH = '$2b$12$RlrI9iOSRzy3g1iXWWluwuttoBLEuxgVYd7SRuC8cOnhMVrJEseEW';
+// Compared against when the email is unknown, so timing does not reveal which accounts exist. Hashed on first use at the
+// configured cost (D81), asynchronously, so importing this module neither blocks the event loop nor pays for it.
+let dummyHash: Promise<string> | undefined;
+const getDummyHash = () => (dummyHash ??= bcrypt.hash(randomUUID(), env.BCRYPT_ROUNDS));
+
+/** New password hashes use the configured cost (D81); verification reads the cost stored in each hash. */
+export const hashPassword = (password: string) => bcrypt.hash(password, env.BCRYPT_ROUNDS);
 
 /** `authTime` (seconds) is when the user logged in; a renewed token carries the original so the session cap holds (R37). */
 export function signToken(user: AuthUser, authTime = Math.floor(Date.now() / 1000)): string {
@@ -87,7 +91,7 @@ passport.use(
   new LocalStrategy({ usernameField: 'email', session: false }, async (email, password, done) => {
     try {
       const row = await findUserByEmail(email.trim().toLowerCase());
-      const ok = await bcrypt.compare(password, row?.usr_password_hash ?? DUMMY_HASH);
+      const ok = await bcrypt.compare(password, row?.usr_password_hash ?? (await getDummyHash()));
       const fail = (info: LoginInfo) => done(null, false, info);
       if (!row || !ok) return fail({ status: 401, message: 'Invalid email or password' });
       // A deleted account looks like an unknown one; only suspended reveals itself.

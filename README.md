@@ -103,7 +103,8 @@ development.
 2. **R2**: the bucket and bucket-scoped token from D60, with the R34 usage caps left at their defaults.
 3. **Render** (free web service): New, Blueprint, pick this repository. It reads `render.yaml` (one free Docker
    service in Singapore, auto-deploy off, health check `/api/health`, `NODE_ENV=production`, `TRUST_PROXY=2`,
-   `COOKIE_SECURE=true`, `STORAGE_DRIVER=r2`, `VIDEO_PROFILE=free`) and asks for the `sync: false` values:
+   `COOKIE_SECURE=true`, `STORAGE_DRIVER=r2`, `VIDEO_PROFILE=free`, `BCRYPT_ROUNDS=10`,
+   `AUTH_ATTEMPTS_PER_MINUTE=20` for the 0.1 CPU, D81) and asks for the `sync: false` values:
 
    | Variable | Value |
    |---|---|

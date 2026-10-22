@@ -1,13 +1,14 @@
 import type { Request } from 'express';
 import { type ClientRateLimitInfo, ipKeyGenerator, type Options, rateLimit, type Store } from 'express-rate-limit';
+import { env } from '../../lib/env';
 import { tokenSubject } from './passport';
 import { hitRateLimit, purgeRateLimits, resetRateLimit, unhitRateLimit } from './repository';
 
 /** Rate-limit settings (D40): one window for every per-minute limiter. */
 export const RATE_LIMITS = Object.freeze({
   windowMs: 60_000,
-  /** Login and register attempts per client IP per window; a campus lab shares one IP (R37). */
-  authAttempts: 60,
+  /** Login and register attempts per client IP per window; a campus lab shares one IP (R37). Set by env (D81). */
+  authAttempts: env.AUTH_ATTEMPTS_PER_MINUTE,
   /** Failed logins per client IP and email per window (R37), so one account's guesses do not lock out the lab. */
   loginFailures: 10,
   /** State-changing /api requests per signed-in user (or IP when signed out) per window. */

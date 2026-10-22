@@ -1,6 +1,5 @@
-import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { BCRYPT_COST } from '../features/auth/passport';
+import { hashPassword } from '../features/auth/passport';
 import '../lib/env'; // loads the root .env so ADMIN_* are in process.env
 import { pool } from '../lib/pool';
 import { type AuthUser, upsertAdmin } from '../features/users/repository';
@@ -27,7 +26,7 @@ export async function createAdmin(input: Record<string, string | undefined>): Pr
   const parsed = adminSchema.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues.map((i) => i.message).join('; '));
   const { ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME } = parsed.data;
-  return upsertAdmin(ADMIN_EMAIL, await bcrypt.hash(ADMIN_PASSWORD, BCRYPT_COST), ADMIN_NAME);
+  return upsertAdmin(ADMIN_EMAIL, await hashPassword(ADMIN_PASSWORD), ADMIN_NAME);
 }
 
 if (import.meta.main) {
