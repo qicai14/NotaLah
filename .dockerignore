@@ -1,0 +1,16 @@
+**/.env
+**/.env.*
+.git
+.github
+.vscode
+.vite-hooks
+.claude
+**/node_modules
+**/dist
+**/coverage
+uploads
+docs
+docker
+server/tests
+client/*
+!client/package.json
