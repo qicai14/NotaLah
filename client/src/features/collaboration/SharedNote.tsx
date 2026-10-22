@@ -53,7 +53,7 @@ function SharedAnnotations({
           <div className="px-5 pt-5 pb-3">
             <SheetTitle className="text-title-sm font-bold">Annotations</SheetTitle>
             <SheetDescription className="text-body-sm text-muted-foreground">
-              Slide {slide + 1} of {note.slides.length}. Log in to add your own.
+              Slide {slide + 1} of {note.slides.length}. View only.
             </SheetDescription>
           </div>
           <AnnotationPanel

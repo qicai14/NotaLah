@@ -336,10 +336,7 @@ describe('R10 annotations (client)', () => {
     expect(box.readOnly).toBe(true);
     expect(box.value).toBe('Hello big world, big day'); // the plain text the anchors count in
     box.focus();
-    act(() => {
-      box.setSelectionRange(5, 9); // " big"
-      box.dispatchEvent(new Event('select', { bubbles: true }));
-    });
+    box.setSelectionRange(5, 9); // " big"
     await userEvent.click(screen.getByRole('button', { name: 'Annotate selection' }));
     expect(picked).toHaveBeenCalledWith({ elementId: ELEMENT, quote: 'big', offset: 6, slideId: 1 });
     expect(screen.getByRole('status').textContent).toMatch(/Selected “big”/);

@@ -142,24 +142,27 @@ function KeyboardPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const picked = useRef<{ elementId: string; start: number; end: number; text: string } | null>(null);
+  const list = useRef<HTMLDivElement>(null);
   const boxes = (slide?.elements ?? []).flatMap((e) =>
     e.type === 'text' ? [{ id: e.id, text: htmlText(e.html) }] : [],
   );
 
   const annotate = () => {
-    const p = picked.current;
-    const raw = p ? p.text.slice(p.start, p.end) : '';
+    // A text area keeps its selection after it loses focus, so read it here; the focused box wins over another.
+    const areas = [...(list.current?.querySelectorAll('textarea') ?? [])].filter(
+      (t) => t.selectionEnd > t.selectionStart,
+    );
+    const area = areas.find((t) => t === document.activeElement) ?? areas[0];
+    const raw = area ? area.value.slice(area.selectionStart, area.selectionEnd) : '';
     const quote = raw.trim();
-    if (!p || !quote) return setError('Select some text first: hold Shift and press the arrow keys.');
+    if (!area || !quote) return setError('Select some text first: hold Shift and press the arrow keys.');
     if (quote.length > MAX_QUOTE) return setError(`Select up to ${MAX_QUOTE} characters.`);
     setError(null);
     setOpen(false);
-    picked.current = null;
     onPick({
-      elementId: p.elementId,
+      elementId: area.dataset.element!,
       quote,
-      offset: p.start + raw.length - raw.trimStart().length,
+      offset: area.selectionStart + raw.length - raw.trimStart().length,
       slideId: slideNo,
     });
   };
@@ -175,7 +178,7 @@ function KeyboardPicker({
     );
   }
   return (
-    <div className="flex flex-col gap-3 border-b px-5 pb-4">
+    <div ref={list} className="flex flex-col gap-3 border-b px-5 pb-4">
       <p className="text-body-sm text-muted-foreground">
         {boxes.length === 0
           ? 'This slide has no text to annotate.'
@@ -189,12 +192,10 @@ function KeyboardPicker({
           <textarea
             id={`pick-${b.id}`}
             readOnly
+            autoFocus={i === 0}
             value={b.text}
             rows={Math.min(5, Math.max(2, Math.ceil(b.text.length / 40)))}
-            onSelect={(e) => {
-              const t = e.currentTarget;
-              picked.current = { elementId: b.id, start: t.selectionStart, end: t.selectionEnd, text: b.text };
-            }}
+            data-element={b.id}
             className="resize-none rounded-md border border-input bg-background px-3 py-2 text-body outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
           />
         </div>
