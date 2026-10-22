@@ -7,6 +7,8 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "admin:create": "tsx src/scripts/createAdmin.ts",
+    "load:seed": "tsx src/scripts/load/seed.ts",
+    "load:run": "tsx src/scripts/load/run.ts",
     "db:migrate": "dbmate --env-file ../.env --no-dump-schema up",
     "db:rollback": "dbmate --env-file ../.env --no-dump-schema rollback",
     "db:migrate:test": "dbmate --env-file ../.env --env TEST_DATABASE_URL --no-dump-schema up",
