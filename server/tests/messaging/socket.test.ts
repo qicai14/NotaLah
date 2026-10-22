@@ -34,8 +34,12 @@ afterAll(async () => {
 const cookieOf = (id: number) => asUser(id).Cookie;
 
 /** A socket with the given cookie and Origin; resolves once connected, rejects with the server's refusal. */
-function socketAs(cookie: string | null, origin: string | null = env.CLIENT_ORIGIN): Promise<Socket> {
-  const headers: Record<string, string> = {};
+function socketAs(
+  cookie: string | null,
+  origin: string | null = env.CLIENT_ORIGIN,
+  extra: Record<string, string> = {},
+): Promise<Socket> {
+  const headers: Record<string, string> = { ...extra };
   if (cookie) headers.Cookie = cookie;
   if (origin) headers.Origin = origin;
   const s = connect(url, { transports: ['websocket'], extraHeaders: headers, reconnection: false, forceNew: true });
@@ -85,6 +89,20 @@ describe('Socket.io gateway', () => {
     const id = await insertUser();
     for (const origin of ['https://evil.example', null]) {
       await expect(socketAs(cookieOf(id), origin)).rejects.toThrow();
+    }
+  });
+
+  it('DEP-TC20: with PROXY_SECRET set, a handshake must carry it (direct calls to the API are refused)', async () => {
+    const id = await insertUser();
+    env.PROXY_SECRET = 'proxy-secret-0123456789';
+    try {
+      await expect(socketAs(cookieOf(id))).rejects.toThrow();
+      await expect(
+        socketAs(cookieOf(id), undefined, { 'X-Proxy-Secret': 'wrong-secret-0123456789' }),
+      ).rejects.toThrow();
+      await expect(socketAs(cookieOf(id), undefined, { 'X-Proxy-Secret': env.PROXY_SECRET })).resolves.toBeDefined();
+    } finally {
+      env.PROXY_SECRET = undefined;
     }
   });
 

@@ -10,9 +10,9 @@ healthRouter.get('/', async (req, res) => {
   if (env.DEBUG_PROXY) logger.info({ ip: req.ip, forwardedFor: req.get('X-Forwarded-For') ?? null }, 'proxy check');
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', db: 'up' });
+    res.json({ status: 'ok', db: 'up', version: env.RENDER_GIT_COMMIT });
   } catch (err) {
     logger.warn({ err }, 'health check: database unreachable');
-    res.status(503).json({ status: 'degraded', db: 'down' });
+    res.status(503).json({ status: 'degraded', db: 'down', version: env.RENDER_GIT_COMMIT });
   }
 });

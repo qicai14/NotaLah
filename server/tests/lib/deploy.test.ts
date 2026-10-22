@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { purgeOldRateLimits } from '../../src/features/auth/rateLimit';
 import { env, parseEnv } from '../../src/lib/env';
@@ -44,6 +44,7 @@ describe('Deploy configuration (R37)', () => {
     expect(msg).toContain('CLIENT_ORIGIN must be an https:// origin in production');
     expect(msg).toContain('COOKIE_SECURE must be true in production');
     expect(msg).toContain('TRUST_PROXY must be the proxy hop count');
+    expect(msg).toContain('PROXY_SECRET must be set in production');
     expect(msg).not.toContain('secret-origin');
 
     const valid = {
@@ -51,6 +52,7 @@ describe('Deploy configuration (R37)', () => {
       NODE_ENV: 'production',
       CLIENT_ORIGIN: 'https://app.example.com',
       TRUST_PROXY: '1',
+      PROXY_SECRET: 'proxy-secret-0123456789',
       STORAGE_DRIVER: 'r2',
       R2_ACCOUNT_ID: 'a',
       R2_ACCESS_KEY_ID: 'b',
@@ -61,6 +63,9 @@ describe('Deploy configuration (R37)', () => {
     expect(good.TRUST_PROXY).toBe(1);
     expect(good.COOKIE_SECURE).toBe(true); // the default follows the parsed NODE_ENV
     expect(errorOf({ ...valid, TRUST_PROXY: '0' })).toContain('TRUST_PROXY must be the proxy hop count');
+    const short = errorOf({ ...valid, PROXY_SECRET: 'too-short' });
+    expect(short).toContain('PROXY_SECRET');
+    expect(short).not.toContain('too-short');
     // RENDER=true counts as production even without NODE_ENV.
     const onRender = errorOf({ ...base, RENDER: 'true' });
     expect(onRender).toContain('STORAGE_DRIVER must be r2 in production');
@@ -83,6 +88,25 @@ describe('Deploy configuration (R37)', () => {
     expect(await purgeOldRateLimits()).toBe(2);
     const { rows } = await pool.query<{ rlt_key: string }>(`SELECT rlt_key FROM "RATE_LIMIT_T" ORDER BY rlt_key`);
     expect(rows.map((r) => r.rlt_key)).toEqual(['guest:203.0.113.6', 'upload:user:1']);
+  });
+});
+
+describe('Proxy secret (R11, D77)', () => {
+  afterEach(() => {
+    env.PROXY_SECRET = undefined;
+  });
+
+  it('DEP-TC19: with PROXY_SECRET set, only requests carrying it reach the API; /api/health stays open', async () => {
+    env.PROXY_SECRET = 'proxy-secret-0123456789';
+    const direct = await request(app).get('/api/modules').set('X-Forwarded-For', '6.6.6.6');
+    expect(direct.status).toBe(403);
+    expect(direct.body).toEqual({ error: 'Forbidden' });
+    expect((await request(app).get('/api/modules').set('X-Proxy-Secret', 'wrong-secret-0123456789')).status).toBe(403);
+    const viaProxy = await request(app).get('/api/modules').set('X-Proxy-Secret', env.PROXY_SECRET);
+    expect(viaProxy.status).toBe(401); // past the gate: the route itself wants a session
+    expect((await request(app).get('/api/health')).status).toBe(200);
+    env.PROXY_SECRET = undefined;
+    expect((await request(app).get('/api/modules')).status).toBe(401); // unset: local dev unchanged
   });
 });
 

@@ -62,6 +62,8 @@ docs/testing/unit/ testing/uat/   executed test tables per sprint, UAT
 docs/screenshots/ code-snippets/  Chapter 5.1 screenshots, Chapter 5.2 snippets
 docs/sprints/                     review and retrospective per sprint
 docker/                           Postgres init script (creates notalah_test)
+client/functions/, client/edge/   Cloudflare Pages Function proxying /api and /socket.io to the API (deploy only, D74, D77)
+Dockerfile, render.yaml            API image and Render blueprint; .github/workflows/deploy.yml runs the deploy (D77)
 ```
 
 ## Conventions

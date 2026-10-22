@@ -336,6 +336,20 @@
 | Alternative Process | **Step 4a: Reject** <br> 4a.1 Administrator selects "Reject" with a reason. <br> 4a.2 System keeps the account as a student account and notifies the user. |
 | Exception Flow | None. |
 
+*Table 4.23: UC23 Annotate Note use case specification*
+
+| **Component** | **Description** |
+| --- | --- |
+| Use case | UC23_Annotate Note |
+| Description | Allows a user to attach a short public annotation to selected text on a slide, so that peers can ask or clarify at the exact words concerned. The note's author can turn annotations off. |
+| Actors | Student, Lecturer |
+| Requirements | FR18 |
+| Preconditions | The user is logged in and can see the published note, and its author has not turned annotations off. |
+| Postconditions | The annotation is stored with its slide, text element, quote and offset, is listed for everyone who can see the note, and the note's author is notified. |
+| Standard Process | 1. User selects text in a text box on a slide. <br> 2. System offers "Annotate". <br> 3. User types the annotation (1 to 500 characters). <br> 4. User submits. <br> 5. System stores the annotation, highlights the text and lists it in the side panel. |
+| Alternative Process | **Step 1a: Author or annotator removes an annotation** <br> 1a.1 The annotation's writer or the note's author selects "Delete"; the annotation is removed from the list. <br> **Step 1b: Author turns annotations off** <br> 1b.1 System hides all annotations and refuses new ones until the author turns them on again. <br> **Step 1c: Report** <br> 1c.1 A user reports an annotation; it joins the administrator queue (UC20), where an administrator can hide it. |
+| Exception Flow | **Step 4a: Empty or over-length annotation, or no text selected** <br> 4a.1 System disables submission and shows the limit. <br> **Step 4b: Annotations are off or the text no longer exists** <br> 4b.1 System refuses with a message and stores nothing. |
+
 # 4.2.3 Class Diagram
 
 ![PARP class diagram](diagrams/png/class.png)
@@ -428,7 +442,7 @@
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
-	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. A direct conversation stores its pair of members as a text key (cnv_pair), unique and present only for direct chats, so two first messages sent at the same moment cannot open two chats (D50). Each member row keeps the identifier of the last message read (cmb_last_read_msg_id) rather than a time, and MESSAGE_T can reference an earlier message it replies to and carries a deletion time that blanks the body for readers without removing the row. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T, ACCOUNT_ACTION_T and NOTIFICATION_T are listed in Table 4.23.
+	The remaining entities serve engagement, moderation and messaging. COMMENT_T references itself through cmt_parent_id to support one level of replies (FR16), and COMMENT_LIKE_T supplies the like counts that order student comments beneath pinned lecturer comments. BOOKMARK_T implements the saved-notes list (FR14), and REPORT_T together with ACCOUNT_ACTION_T record the moderation workflow, including which administrator resolved each report or changed each account status. FOLLOW_T records who follows whom, one row per direction; when two users follow each other they are friends, who may see each other's contacts-only notes (FR10) and message each other directly. Messaging is separated into MESSAGE_REQUEST_T, which holds a first message from a non-friend until the recipient approves it (FR6), and CONVERSATION_T, CONV_MEMBER_T and MESSAGE_T, which hold direct and group conversations (FR13); approving a request opens that conversation without making the two users friends. A direct conversation stores its pair of members as a text key (cnv_pair), unique and present only for direct chats, so two first messages sent at the same moment cannot open two chats (D50). Each member row keeps the identifier of the last message read (cmb_last_read_msg_id) rather than a time, and MESSAGE_T can reference an earlier message it replies to and carries a deletion time that blanks the body for readers without removing the row. Both MESSAGE_REQUEST_T and MESSAGE_T carry an optional reference to POST_T, which is how a message is anchored to a specific note (FR7, Objective 4). For legibility, Figure 4.13 draws one relationship line per pair of entities, except FOLLOW_T, which is drawn twice because it references USER_T as both follower and followee; the second foreign keys to USER_T in MESSAGE_REQUEST_T, REPORT_T, CONVERSATION_T, ACCOUNT_ACTION_T and NOTIFICATION_T are listed in Table 4.24.
 
 	Two entities were added after the first design to meet the scale and reliability targets, and a third replaced an earlier one. FOLLOW_T replaced the original CONTACT_T, which stored a symmetric pair created by an accepted message request. A directed follow with a composite primary key and a check that a user cannot follow themselves is a single relationship from which friendship is derived at query time as a pair of follows in opposite directions, so there is no second table that could drift out of step; the migration that introduced it copied each existing contact into both directions. FEED_SNAPSHOT_T stores, for one viewer and one request time, the ranked list of post identifiers and their scores as arrays. The first page of the For You feed ranks the candidates once and writes this row, and later pages read a slice of it, so that a viewer paging through the feed sees a stable order and the ranking work is not repeated for every page; rows are short-lived and are deleted when they expire. RATE_LIMIT_T is an operational table with no foreign key to any other entity: it holds one counter per rate-limit key (a user identifier or an address) and time window, so that the request limits are enforced consistently across several server instances. It is therefore drawn in Figure 4.13 as a standalone entity.
 
@@ -438,13 +452,15 @@
 
 	POST_T also carries the note's optional background track (FR17, R9) in seven columns instead of a separate entity, because a note has at most one track and the columns are read with the note on every feed card. The author's choice is the provider (a check allows only jamendo), the Jamendo track identifier and the volume; the title, artist, cover image and Creative Commons licence page are filled by the server from Jamendo when the track is saved, never taken from the client, so the credit shown to readers cannot be forged; when Jamendo cannot answer at that moment the details stay empty and the next save fills them. No audio is stored: the playback address is derived from the track identifier. A check requires the provider and the track identifier to be present together, and the deck schema refuses music on a note that contains a video.
 
+	One entity was added for annotations (R10, D75). ANNOTATION_T stores a short comment anchored to selected text on a slide: the note, the annotator, the slide position, the id of the text element, the quoted text, the offset of the selection and the annotation body. The element id is used rather than a slide id because slides are re-inserted on every save while element ids are stable, and the quote lets a reader see what the annotation referred to after the author rewrites the text. An edit never deletes annotations. Two timestamps replace a status column: ant_deleted_at records a deletion by the annotator or the note author, and ant_hidden_at records a moderator removal, so the two stay distinguishable. POST_T gained pst_annotations_on, which lets the author switch annotations off for a note without deleting what exists. REPORT_T gained the nullable rpt_ant_id, so an annotation report uses the same queue, reasons and resolution fields as a note report; two partial unique indexes allow one open report per user for the note and one per user for each annotation. NOTIFICATION_T accepts two more types, annotation and annotation_hidden.
+
 	Two entities hold uploaded media (R22, R29) and a third queues video processing (R40, D67). ASSET_T records each uploaded image or video: its owner, the storage key of the file (the file itself is kept in object storage, not in the database), its type, size and dimensions, and a status. POST_ASSET_T links a note to every asset its slides use, so that an asset is served only to readers of such a note and an asset no note uses can be purged. A video is not usable the moment it arrives: the upload is checked and stored as it was sent with the status processing, and a row in VIDEO_JOB_T asks a background worker to convert it. A worker claims the oldest open job with SELECT ... FOR UPDATE SKIP LOCKED, so several workers never take the same job, and holds it under a lease (vjb_locked_until) that it renews while it works; a job whose worker stopped, for example when the free host restarts, is claimed again once the lease lapses. The worker then marks the asset ready, or failed after three attempts with the reason in vjb_last_error. The attempt count also serves as the claim token, so a worker whose lease lapsed cannot complete a job that another worker has taken.
 
 ## 4.3.2 Database Schema
 
-	Table 4.23 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
+	Table 4.24 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
 
-*Table 4.23: PARP database schema*
+*Table 4.24: PARP database schema*
 
 The schema table is also rendered as high-resolution images for the report: `diagrams/png/schema_table_1.png` to `schema_table_5.png`.
 
@@ -487,6 +503,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | pst_music_cover | VARCHAR | 500 | | Cover image URL on a Jamendo host |
 | | pst_music_license | VARCHAR | 200 | | Creative Commons licence page shown as the credit |
 | | pst_music_volume | SMALLINT | | CHECK (0 to 100) | Playback volume chosen by the author |
+| | pst_annotations_on | BOOLEAN | | NOT NULL, DEFAULT TRUE | Whether readers may annotate the note (R10); the author turns it off |
 | SLIDE_T | sld_id | INTEGER (identity) | | PK, NOT NULL | Unique slide identifier |
 | | sld_pst_id | INTEGER | | FK → POST_T, NOT NULL | Owning note |
 | | sld_position | SMALLINT | | NOT NULL, UNIQUE with sld_pst_id | Order of the slide within the note |
@@ -515,11 +532,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | clk_cmt_id | INTEGER | | PK, FK → COMMENT_T | Liked comment |
 | | clk_created_at | TIMESTAMPTZ | | NOT NULL | Time of like |
 | REPORT_T | rpt_id | INTEGER (identity) | | PK, NOT NULL | Unique report identifier |
-| | rpt_pst_id | INTEGER | | FK → POST_T, NOT NULL | Reported note |
+| | rpt_pst_id | INTEGER | | FK → POST_T, NOT NULL | Reported note (for an annotation report, the note it sits on) |
+| | rpt_ant_id | INTEGER | | FK → ANNOTATION_T, ON DELETE CASCADE | Reported annotation; null for a report on the note itself |
 | | rpt_reporter_id | INTEGER | | FK → USER_T, NOT NULL | Reporting user |
 | | rpt_reason | VARCHAR | 30 | NOT NULL, CHECK (inaccurate, inappropriate, spam, plagiarism, copyright, other) | Report category |
 | | rpt_details | VARCHAR | 500 | | Reporter's explanation |
-| | rpt_status | VARCHAR | 10 | NOT NULL, CHECK (open, dismissed, upheld); one open report per user and note | Resolution state |
+| | rpt_status | VARCHAR | 10 | NOT NULL, CHECK (open, dismissed, upheld); one open report per user and note, and one per user and annotation | Resolution state |
 | | rpt_resolved_by | INTEGER | | FK → USER_T | Administrator who resolved the report |
 | | rpt_remark | VARCHAR | 300 | | Administrator's resolution remark |
 | | rpt_created_at | TIMESTAMPTZ | | NOT NULL | Time reported |
@@ -604,13 +622,24 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTIFICATION_T | ntf_id | INTEGER (identity) | | PK, NOT NULL | Unique notification identifier |
 | | ntf_usr_id | INTEGER | | FK → USER_T, NOT NULL, ON DELETE CASCADE | Recipient |
 | | ntf_actor_id | INTEGER | | FK → USER_T, ON DELETE CASCADE, CHECK differs from ntf_usr_id | User who caused it; null for moderation outcomes |
-| | ntf_type | VARCHAR | 30 | NOT NULL, CHECK (mention, super_like, follow, lecturer_approved, lecturer_rejected, note_hidden, message_request, collab_request, collab_approved, collab_declined, edited_since_verification) | Notification kind |
+| | ntf_type | VARCHAR | 30 | NOT NULL, CHECK (mention, super_like, follow, lecturer_approved, lecturer_rejected, note_hidden, message_request, collab_request, collab_approved, collab_declined, edited_since_verification, annotation, annotation_hidden) | Notification kind |
 | | ntf_pst_id | INTEGER | | FK → POST_T, ON DELETE CASCADE | Note concerned |
 | | ntf_cmt_id | INTEGER | | FK → COMMENT_T, ON DELETE CASCADE | Comment concerned |
 | | ntf_crq_id | INTEGER | | FK → COLLAB_REQUEST_T, ON DELETE CASCADE; indexed | Collaboration request concerned |
 | | ntf_mrq_id | INTEGER | | FK → MESSAGE_REQUEST_T, ON DELETE CASCADE | Message request concerned |
 | | ntf_read_at | TIMESTAMPTZ | | | Time the recipient read it; null while unread |
 | | ntf_created_at | TIMESTAMPTZ | | NOT NULL | Time created |
+| ANNOTATION_T | ant_id | INTEGER (identity) | | PK, NOT NULL | Unique annotation identifier |
+| | ant_pst_id | INTEGER | | FK → POST_T, NOT NULL, ON DELETE CASCADE; partial index on live rows | Annotated note |
+| | ant_usr_id | INTEGER | | FK → USER_T, NOT NULL | Annotator |
+| | ant_slide_id | SMALLINT | | NOT NULL, CHECK >= 1 | Position of the slide holding the text; slides have no stable id, so this is a hint |
+| | ant_element_id | VARCHAR | 36 | NOT NULL | Id of the text element in the deck; stable across saves |
+| | ant_quote | VARCHAR | 300 | NOT NULL, CHECK length >= 1 | Selected text; shown as "Text changed" when it no longer matches |
+| | ant_offset | INTEGER | | NOT NULL, CHECK >= 0 | Start of the selection in the element's text |
+| | ant_body | VARCHAR | 500 | NOT NULL, CHECK length >= 1 | Annotation text, plain |
+| | ant_created_at | TIMESTAMPTZ | | NOT NULL | Time written |
+| | ant_deleted_at | TIMESTAMPTZ | | | Time the annotator or note author deleted it (soft delete) |
+| | ant_hidden_at | TIMESTAMPTZ | | | Time a moderator hid it after a report; kept apart from a user's delete |
 | ASSET_T | ast_id | INTEGER (identity) | | PK, NOT NULL | Unique asset identifier |
 | | ast_usr_id | INTEGER | | FK → USER_T, NOT NULL; indexed with ast_created_at | Uploader |
 | | ast_kind | VARCHAR | 5 | NOT NULL, CHECK (image, video) | Media type |
@@ -1039,7 +1068,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 ## 4.5.1 Unit Testing
 
-*Table 4.24: Authentication module test cases (AUTH)*
+*Table 4.25: Authentication module test cases (AUTH)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1066,7 +1095,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC21 | Guest reads are rate-limited by IP | guest GET /api/users/:id; the guest counter set to the limit (120 per minute); the same request again, then signed in | 200; 429 "Too many requests. Log in or try again in a minute."; signed-in request 200 (not counted) | | |
 | AUTH-TC22 | Revalidating a guest response after login | guest GET /api/notes/:id/comments (ETag saved); the same GET signed in with If-None-Match set to that ETag | 200 with X-Viewer: guest; then 304 with X-Viewer: user, so the cached guest header is replaced | | |
 
-*Table 4.25: Note editor and publishing module test cases (NOTE)*
+*Table 4.26: Note editor and publishing module test cases (NOTE)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1164,7 +1193,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC93 | Unknown font or theme | `theme: 'neon'`; a text element with `font: 'Comic Sans'` | The deck schema rejects both; the untouched deck passes | | |
 | NOTE-TC94 | Design panel (client) | a deck with one heading; click Journal, then Two columns, then add a blank slide | Plain starts checked in the theme radio group; Journal becomes checked and the heading turns Lora in Journal's heading colour; Two columns adds slide 2 on Journal's background; the blank slide also gets it | | |
 
-*Table 4.26: User profile module test cases (USR)*
+*Table 4.27: User profile module test cases (USR)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1197,7 +1226,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC27 | Suspended profile hidden except from admins | user with a note and one follower is suspended; guest, the follower and an admin open the profile, its notes, followers and following, and the note | Guest: 404 for the profile and its notes; follower: 404 for all four and for the note; admin: 200 for all four and the note, the profile shows followerCount 1 and the note, while the admin's feed stays empty; the follower's following list is empty | | |
 | USR-TC28 | Profile thumbnail data and likeCount | Note with page notes, one ready and one pending upload, likes from a fan and the author, and a friends-only note liked by a fan; a stranger opens the profile | likeCount is 1; the cover has no notes key; assets lists only the ready upload; the friends-only note is absent | | |
 
-*Table 4.27: Blocking test cases (BLK). BLK covers user blocks (D49): the block endpoints and every path a block closes, each checked from both sides of the pair.*
+*Table 4.28: Blocking test cases (BLK). BLK covers user blocks (D49): the block endpoints and every path a block closes, each checked from both sides of the pair.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1216,7 +1245,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | BLK-TC13 | Admin views ignore blocks | Y blocks X and reports X's note; admin blocks X, then searches users, opens the report and the note | Report 201; admin finds X, the report group with 1 report, and the note (200) | | |
 | BLK-TC14 | isBlocked helper | A blocks B; C is a stranger; guest id 0 | true for (A, B) and (B, A); false for (A, C) and (0, A) | | |
 
-*Table 4.28: Ranking and feed module test cases (RANK)*
+*Table 4.29: Ranking and feed module test cases (RANK)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1253,7 +1282,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | RANK-TC31 | Later guest pages read the shared ranking | 12 notes, the oldest with 30 likes; guest page 1; all likes deleted; guest page 2 with page 1's asOf | Pages 1 and 2 together list all 12 notes once each; no snapshot row stored | | |
 | RANK-TC32 | Own likes do not raise engagement | note liked by its author, an edit collaborator, a view collaborator and a stranger; another user loads the feed | Each like 201; the ranking candidate counts 2 likes; the feed shows likes 4 and E = engagement(2 likes, 0 comments) | | |
 
-*Table 4.29: Engagement module test cases (ENG)*
+*Table 4.30: Engagement module test cases (ENG)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1280,7 +1309,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ENG-TC21 | Guest writes are refused | no cookie, with the CSRF header: like and unlike, save and unsave, comment, delete and like a comment, report, Super Like, follow and unfollow, create, edit and delete a note, edit profile; GET saved notes, drafts and follow lists; one like without the CSRF header | 401 for every write and list; 403 without the CSRF header; no like, bookmark or report rows created | | |
 | ENG-TC22 | Comments by a suspended author | a lecturer writes a comment with a reader reply, a comment with no replies and a reply to a reader comment, then is suspended; guest, a reader and an admin read the thread; then a note's author is suspended and a reader's comment on it is read by an admin, a reader and a guest, and the admin tries to like and comment | Guest and reader: the replied-to comment shows as "[comment unavailable]" with no author and no pin, its reply kept; the other comment and the reply are omitted; the note's comment count is 2; replying to or liking the hidden comment gives 400 and 404. Admin: every comment and reply with its text, the lecturer's two comments pinned. Suspended note: admin 200 with the comment and its author; reader and guest 404; the admin's like, comment and reply give 404 | | |
 
-*Table 4.30: Lecturer verification module test cases (VER)*
+*Table 4.31: Lecturer verification module test cases (VER)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1297,7 +1326,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | VER-TC11 | "Verified by" with two verifiers | lecturers F then S verify P; P bookmarked; F withdraws; S suspended | Feed, detail and saved list show "Verified by F"; after F withdraws "Verified by S"; after S is suspended P is no longer verified | | |
 | VER-TC12 | Invisible note and restricted lecturer | contacts-only note; lecturer restricted after verifying P | 404 for the contacts-only note; restricted lecturer gets 403 on a new Super Like but can still withdraw (200) | | |
 
-*Table 4.31: Search module test cases (SRCH)*
+*Table 4.32: Search module test cases (SRCH)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1319,7 +1348,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | SRCH-TC16 | Visibility in search | public, contacts-only, draft and hidden notes; a suspended author with a note and tag; guest, friend, author, admin | Guest: the public note only (X-Viewer guest); friend and author: public and contacts-only; nobody sees drafts, hidden notes or the suspended user, their notes or tags | | |
 | SRCH-TC17 | Stable paging with asOf | 25 matching notes, limit 10; after page 1, 5 likes on a later-page note and a new stronger match; later pages sent with page 1's asOf | Each of the 25 notes exactly once; the new note absent until a fresh search, where it ranks first | | |
 
-*Table 4.32: Messaging module test cases (MSG)*
+*Table 4.33: Messaging module test cases (MSG)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1351,7 +1380,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | MSG-TC26 | Concurrent adds at the size cap | group of 29; two friends added at the same moment while the group row is held | Exactly one 201 and one 409; the group ends with 30 members | | |
 | MSG-TC27 | Pending request when the pair become friends | A's request with a note waits; A and B follow each other; B messages A | 201; the request is accepted; history holds A's held message (with its note, original time) before B's; B's inbox is empty | | |
 
-*Table 4.33: Notification module test cases (NTF). NTF covers the in-app inbox (R8): every notification type, the delivery rules, the inbox endpoints, retention and the live event.*
+*Table 4.34: Notification module test cases (NTF). NTF covers the in-app inbox (R8): every notification type, the delivery rules, the inbox endpoints, retention and the live event.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1373,8 +1402,15 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NTF-TC16 | 30-day purge | notifications aged 31 and 29 days; purgeAll | 1 purged; the 29-day one remains | | |
 | NTF-TC17 | Live events | A and B connected; A follows B; B marks all read | B receives notification:new with the item and unread {total 1, follow 1}, then notification:count with total 0; A receives nothing | | |
 | NTF-TC18 | No edit notice to a lecturer who lost access | two lecturers Super Like; owner blocks one, then edits the title and makes the note contacts-only | Neither lecturer is notified | | |
+| NTF-TC19 | Nav badge loads and follows live events | provider mounted for a signed-in user; unread-count returns 2; notification:new with total 3; notification:count with total 0 | Badge 2, then 3 with the item held for the inbox, then 0 | | |
+| NTF-TC20 | Mark one read from the inbox | click a row; POST /notifications/read with its id; socket connected, then not | Body {ids:[id]}; while connected the badge changes only on notification:count; without a socket it takes the count in the reply | | |
+| NTF-TC21 | Read state in the inbox | server-read row; row picked here; Mark all read up to id 5; row 6 | Read, read, read; row 6 stays unread | | |
+| NTF-TC22 | Live rows, filter and row targets | fresh items 3, 2 (mention), 1 against loaded page holding 1; filter Mentions; follow, Super Like, message request, declined and pending collaboration rows | Live rows 3 and 2, then only 2; follow opens the actor's profile, Super Like and both collaboration rows the note, message request /messages?tab=requests; day sections Today and Earlier | | |
+| NTF-TC23 | Mention picker text handling | "hi @Ai" with caret at 6; "mail a@b"; pick Aina Rahman | Partial found at 3; no match inside an address; text becomes "hi @Aina Rahman  there" with the caret after the name; the list is closed straight after the pick | | |
+| NTF-TC24 | Mention suggestions and ids sent | people with a repeated id; query "ain"; text keeps one of two picked names | One row per person, name-start matches first; only the id whose @name remains is sent | | |
+| NTF-TC25 | Phone Inbox tab badge | 3 unread messages and 2 unread notifications; then none | Tab badge 5 with label "Inbox, 3 messages and 2 notifications"; with none, no badge and the label "Inbox" | | |
 
-*Table 4.34: Administration module test cases (ADM)*
+*Table 4.35: Administration module test cases (ADM)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1413,7 +1449,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC33 | Invalid term input | blank name; 51-character name; start 2026-02-30; end "01/12/2026"; end equal to start; duplicate name | 400 with a field error for each; 409 "A term with this name already exists"; one term stored | | |
 | ADM-TC34 | Edit and delete a term | PUT new name and dates; PUT to a taken name; PUT end before start; unknown id; DELETE twice | 200 with the new values; 409; 400; 404; 204 then 404 | | |
 
-*Table 4.35: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
+*Table 4.36: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1443,7 +1479,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | COL-TC24 | Concurrent link regeneration | five simultaneous POST /links {role: view} | All 201; exactly one active link | | |
 | COL-TC25 | Owner publishes the last saved version under a lock | editor holds the lock; owner publishes with no hashtags, editor saves, editor and stranger try, bad visibility, owner publishes friends-only, publishes again; editor saves its draft body, then with the server's status and `updatedAt`; a save lands between the publish's read and write | 400 hashtag error; 403, 404, 400; 200 published friends-only with the saved slides; 400 already published; 409, then 200 (Keep mine); the publish write is stale (409) | | |
 
-*Table 4.36: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction), so it has fewer than 10 cases by design.*
+*Table 4.37: Operations module test cases (OPS). OPS covers non-functional checks (health, request tracing, log redaction, error reporting).*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1453,8 +1489,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie notalah_token header and a body with a password | Log output shows [redacted] and contains neither the notalah_token value nor the password | | |
 | OPS-TC5 | Share-link tokens kept out of the request log | paths /api/share/AbC_-123?x=1, /api/notes/5?cursor=abc, no URL | /api/share/[token]; /api/notes/5; undefined | | |
 | OPS-TC6 | Error reporting sends no request data, user info or variables | Sentry initialised with a DSN; an event carrying request url, headers and body; reportError with request id req-1 | init options turn every data category off, tracing stays off, beforeSend removes the request, the exception is tagged request_id req-1 | | |
+| OPS-TC7 | Client error reporting is optional and collects no user data | `initErrorReporting` with an empty DSN; then with a DSN | No Sentry init without the DSN; with it, init gets that DSN, user info, cookies, headers and bodies off, and no tracing | | |
+| OPS-TC8 | Health check reports the deployed commit | GET /api/health without, then with `RENDER_GIT_COMMIT=abc123` | No `version` field; then `{status: ok, db: up, version: abc123}` | | |
+| OPS-TC9 | Server error reports drop share-link tokens | An event with `/api/share/AbC_-123` in an exception value and `/share/Q7w` in a tag; `beforeSend` and `beforeBreadcrumb` with share URLs | Neither token remains; each becomes `/share/:token` | | |
+| OPS-TC10 | Client error reports drop share-link tokens | An event with `/share/AbC_-123#s2` as request URL and breadcrumbs with `/api/share/XyZ-9/assets/1` and an escaped quote after a token | No token remains; URLs keep their fragment and path after `/share/:token` | | |
 
-*Table 4.37: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
+*Table 4.38: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1528,7 +1568,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC27 | Stale search answer | The query changes from `old` to `new` before `old` answers; then the query is set to blanks | The `old` answer is dropped and only `new` is shown; a blank query shows no results and sends no request | | |
 | CLI-TC28 | Search page failure | The first page request answers 500, then the retry answers 200 | The error text is returned; Try again fetches the same page and the error clears | | |
 
-*Table 4.38: Free-tier cost guard test cases (USE)*
+*Table 4.39: Free-tier cost guard test cases (USE)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1542,7 +1582,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USE-TC8 | Env cap lowers but never raises | Caps of unset, `5000`, `600000`, `999999999`, `-1` and `lots` for Class A (default 500,000); `9000000000` for storage | 500,000; 5000; 500,000; 500,000; default; default; 8,000,000,000 | | |
 | USE-TC9 | Counter failure | Usage table unreachable; an upload, a file request, a storage delete | Upload 500 and no file written; file request 500; delete still removes the file | | |
 
-*Table 4.39: Code clean-up test cases (CLN)*
+*Table 4.40: Code clean-up test cases (CLN)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1551,7 +1591,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLN-TC3 | Served-bytes meter | An image served; a ready video served with `Range: bytes=0-99` (1000-byte file); the counter then set to its cap; the video and the image requested again | served_bytes equals the image size, then grows by exactly 100 (bytes sent); video 503 "Video is temporarily unavailable"; image 200 | | |
 | CLN-TC4 | Publish drops blank slides | A draft with three slides, the middle one empty, published through `/publish`; a lecturer Super Likes it; the owner then saves a hashtag-only change | Two slides at positions 1 and 2; the note stays verified and no edited-since-verification notification is created | | |
 
-*Table 4.40: Feed payload test cases (FEED, R39)*
+*Table 4.41: Feed payload test cases (FEED, R39)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1560,8 +1600,14 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | FEED-TC3 | Full note from the detail endpoint | a 5-slide note with an image on slide 5; GET /api/notes/:id | All 5 slides, slideCount 5 and the slide-5 asset | | |
 | FEED-TC4 | Access holds when the rest is fetched | a contacts-only note and a note hidden after listing; a friend, a stranger and a guest fetch them | The friend gets all 5 slides; the stranger and the guest get 404; the hidden note is 404 for the friend and gone from the feed | | |
 | CLI-TC70 | Feed card loads the rest of the slides on demand | a carousel with 2 of 5 slides loaded; stay on slide 1, move to slide 2; a 2-of-2 carousel | No request on slide 1; one request on slide 2 even after re-renders; Next again, as after a failed fetch, requests again; 5 dots from the start; the complete carousel never requests | | |
+| CLI-TC71 | Feed video autoplays when half visible | a video slide; the observer reports 30 % then 60 % visible | No play at 30 %; one play at 60 %; the element is muted, `playsInline` and shows its poster | | |
+| CLI-TC72 | Feed video pauses off-screen and on another slide | playing video scrolled to 10 % visible; the same player with its slide no longer current; a carousel of two video slides, then Next | Each case pauses it; in the carousel only the current slide's video plays and Next hands playback to the second | | |
+| CLI-TC73 | One feed video has sound at a time | two playing videos; tap the first, press the second's sound button, press it again, tap and scroll away | Tapping unmutes only the first; unmuting the second mutes the first; the button (labelled Video sound) shows `aria-pressed` and silences it; leaving view mutes it and it stays muted on return | | |
+| CLI-TC74 | Reduced motion shows poster and Play | `prefers-reduced-motion: reduce`; the video becomes 100 % visible; press Play, then Pause | No autoplay and the poster stays; Play starts it, Pause stops it | | |
+| CLI-TC75 | Video states outside playback | a slide with a video that is processing, then failed; a ready video on a board outside a carousel | "Processing…" and "Video could not be processed" tiles with no player; the outside board shows the poster image only | | |
+| CLI-TC76 | Play button when playback is refused or ends | `play()` rejects once; later the video ends; then scrolls out of view | A Play button appears, restarts it and is gone once playing; it returns on end and is gone after leaving view | | |
 
-*Table 4.41: R2 storage driver test cases (STO)*
+*Table 4.42: R2 storage driver test cases (STO)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1581,12 +1627,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | STO-TC14 | Image put fails | `storage.put` rejects (timeout) on an image upload | 500; `storage.remove` is called with the key the put used | | |
 | STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `o/` key of the original (R40) | | |
 
-*Table 4.42: Deploy readiness test cases (DEP)*
+*Table 4.43: Deploy readiness test cases (DEP)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
 | DEP-TC1 | Proxy trust setting | `TRUST_PROXY` unset, empty, `1`, `0`; then `true`, `-1`, `1.5`, `uniquelocal` | `loopback`, `loopback`, 1, 0; each invalid value fails startup naming `TRUST_PROXY` without echoing the value | | |
-| DEP-TC2 | Production startup guards | `NODE_ENV=production` with local storage, `CLIENT_ORIGIN=http://…`, `COOKIE_SECURE=false`, no `TRUST_PROXY`; a valid production set without `COOKIE_SECURE`; that set with `TRUST_PROXY=0`; only `RENDER=true`; the bad values without production | Startup fails naming `STORAGE_DRIVER`, `CLIENT_ORIGIN`, `COOKIE_SECURE` and `TRUST_PROXY`, never the origin value; the valid set parses with `TRUST_PROXY` 1 and `COOKIE_SECURE` true; `0` is refused; `RENDER=true` triggers the guards; development still parses | | |
+| DEP-TC2 | Production startup guards | `NODE_ENV=production` with local storage, `CLIENT_ORIGIN=http://…`, `COOKIE_SECURE=false`, no `TRUST_PROXY`; a valid production set without `COOKIE_SECURE`; that set with `TRUST_PROXY=0`; only `RENDER=true`; the bad values without production | Startup fails naming `STORAGE_DRIVER`, `CLIENT_ORIGIN`, `COOKIE_SECURE` and `TRUST_PROXY`, never the origin value; the valid set parses with `TRUST_PROXY` 1 and `COOKIE_SECURE` true; a missing `PROXY_SECRET` is named, a 9-character one refused without echoing it; `0` is refused; `RENDER=true` triggers the guards; development still parses | | |
 | DEP-TC3 | Separate buckets behind the proxy | `TRUST_PROXY=1`; three guest reads from proxy peer 10.0.0.1 with `X-Forwarded-For` 203.0.113.5 twice, then 198.51.100.7 | `trust proxy` is 1; remaining guest reads 119, 118, then 119 for the second client | | |
 | DEP-TC4 | Forged forwarding header ignored | `trust proxy` loopback; two guest reads from public peer 198.51.100.20 with different `X-Forwarded-For` values | Remaining 119 then 118; the only counter key is `guest:198.51.100.20` | | |
 | DEP-TC5 | Login failures per IP and email | 10 wrong passwords for a@…; then the right password as " A@…"; a wrong password for b@…; 11 correct logins for b@…, all from one IP | Ten 401s; 429 "Too many failed attempts for this account. Try again in a minute."; b@… gets 401, then 200 eleven times | | |
@@ -1597,8 +1643,16 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | DEP-TC10 | Purge cannot remove a file | An unlinked asset 2 days old; `storage.remove` fails with R2 status 500 | 1 asset purged, 1 orphaned file counted; the row stays deleted; the key is logged and `db:purge` exits 1 | | |
 | DEP-TC11 | Forged entry in a forwarded chain | `TRUST_PROXY=1`, proxy peer 10.0.0.1, `X-Forwarded-For: 6.6.6.6, 203.0.113.5` | 200; the only counter key is `guest:203.0.113.5` | | |
 | DEP-TC12 | Purge registers every limiter | `purgeAll` run in a process that never imports the app | The window registry holds all ten prefixes (auth, login, write, guest, upload, video, file, unsplash, music, musicday) and upload is 3,600,000 ms | | |
+| DEP-TC13 | Pages proxy forwards a request and rewrites the forwarding headers | POST `https://notalah.pages.dev/api/notes?page=2` with `CF-Connecting-IP: 203.0.113.5`, `X-Forwarded-For: 6.6.6.6`, a guessed `X-Proxy-Secret`, a cookie, the CSRF header and a JSON body | Sent to `<API_ORIGIN>/api/notes?page=2` as POST with `X-Forwarded-For: 203.0.113.5`, `X-Proxy-Secret` set to the configured secret, the same cookie, header and body; the API's Set-Cookie comes back unchanged | | |
+| DEP-TC14 | Pages proxy without a client IP, and a WebSocket upgrade | GET `/socket.io/?EIO=4&transport=websocket` with `X-Forwarded-For: 6.6.6.6`, `Upgrade: websocket`, an Origin and no `CF-Connecting-IP` | Same path and query at the API; `X-Forwarded-For` removed; `Upgrade` and `Origin` kept | | |
+| DEP-TC15 | Pages proxy fails closed | GET `/api/health` with `API_ORIGIN` unset; then with `PROXY_SECRET` unset | 502 `{"error":"API proxy is not configured"}` both times; nothing is forwarded | | |
+| DEP-TC16 | Response compression skips ranged files | Signed-in GET `/api/modules` with `Accept-Encoding: gzip`; GET of a public note's image with `Range: bytes=0-9` | Module list sent with `Content-Encoding: gzip`; image answers 206 with no `Content-Encoding` and `Content-Length: 10` | | |
+| DEP-TC17 | Proxy path cannot change the upstream host | GET `/api/%2e%2e//evil.com/x` through the proxy | The forwarded request goes to the Render host | | |
+| DEP-TC18 | Proxy reports an unreachable API | The upstream fetch throws | 502 `{"error":"API unreachable"}` | | |
+| DEP-TC19 | Direct API calls refused in production | `PROXY_SECRET` set; GET `/api/modules` with no secret (and a forged `X-Forwarded-For`), with a wrong secret, with the right one; GET `/api/health` with none; then `PROXY_SECRET` unset | 403 `{"error":"Forbidden"}` twice; the right secret reaches the route (401, no session); health 200; unset secret reaches the route (401) as in development | | |
+| DEP-TC20 | Direct Socket.io handshakes refused | `PROXY_SECRET` set; a signed-in socket from the client origin with no secret, a wrong secret, the right secret | Refused, refused, connected | | |
 
-*Table 4.43: Async video pipeline test cases (VID)*
+*Table 4.44: Async video pipeline test cases (VID)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1618,7 +1672,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | VID-TC14 | Abort kills ffmpeg | an endless ffmpeg run aborted after 200 ms; `processVideo` with an aborted signal | Both reject with "Video processing was stopped" (a retryable error, not a bad-file result) within 5 s | | |
 | VID-TC15 | Video added during the upload (client) | an empty slide; choose an MP4; a video is added to the slide before the upload answers | The picker shows an alert and the slide still holds one video | | |
 
-*Table 4.44: Background music test cases (MUS, R9)*
+*Table 4.45: Background music test cases (MUS, R9)*
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
@@ -1636,15 +1690,40 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | MUS-TC12 | Removing music and adding a video (client) | music set; open the video picker; Remove music and confirm; set music again and remove it in the panel, then undo | The picker shows "A note cannot have both music and a video" instead of the upload control until the music is removed; removal asks "Are you sure?"; one undo brings the music back | | |
 | MUS-TC13 | Search paused message (client) | the search route answers 503 "Music search is paused" | The message is shown in an alert and no result list appears | | |
 | MUS-TC14 | Per-user daily budget | a user at 299 of 300 Jamendo calls today; two more searches; then a save with a new track; another user searches | The first search is 200 and the second 429 "Daily music search limit reached. Try again tomorrow." with no outbound call; the save still succeeds with no track details and makes no call (the lookup counts against the same budget); the other user is 200 | | |
-| MUS-TC15 | Save when Jamendo cannot answer | create with a track while Jamendo answers 503; save again at the monthly cap with a new volume; lift the cap and save; reach the cap and save with another track | 201 and 200 with the track id and volume kept and title, artist, cover and licence NULL; no outbound call at the cap; the later save looks the track up again because its title is NULL and fills the details; the other track is stored with NULL details, not the old track's | | |
+| MUS-TC15 | Save when Jamendo cannot answer | create with a track while Jamendo answers 503; save again at the monthly cap with a new volume; lift the cap and save; reach the cap and save with another track | 201 and 200 with the track id and volume kept and title, artist, cover and licence NULL; no outbound call at the cap; the later save looks the track up again because its title is NULL and fills the details; the other track is stored with NULL details, not the old track's; Jamendo then answering with no such track for the stored track drops the music and still saves (200, music null) | | |
 | MUS-TC16 | Save reuses a searched track | search `piano`, then create a note with a track from the result | 201 with the track's title stored and one Jamendo call in total | | |
 | MUS-TC17 | Preview errors and cleanup (client) | play rejected with AbortError; another rejected with NotAllowedError; leave the panel | The abort shows no error and the track stays pressed; the other shows "This track could not be played"; the audio's source is removed and it is reloaded to release it | | |
+| MUS-TC18 | Viewer music chip credit (client) | render the chip for a note whose track has details and volume 40 | The title and artist, a Creative Commons licence link opening a new tab with `rel="noopener noreferrer"`, an audio element from the track id with `preload="none"`, loop and volume 0.4; nothing plays | | |
+| MUS-TC19 | Chip tap toggles play (client) | tap the chip twice | The first tap plays and sets `aria-pressed` true, the second pauses; the button's label stays "Background music" | | |
+| MUS-TC20 | One sound at a time (client) | a feed video holds the sound; tap the chip; then the video claims the sound again | The video loses the sound when the music starts, and the music pauses when the video takes it back | | |
+| MUS-TC21 | Chip with no track details (client) | a track saved during a Jamendo outage (title, artist, cover, licence NULL) | The chip reads "Music from Jamendo", has no licence link, and still plays | | |
+
+*Table 4.46: Annotation test cases (ANN, R10)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| ANN-TC1 | Create and read an annotation | an approved lecturer annotates a text element with body "  Check this  "; a guest, the author and a signed-out POST | 201 with the trimmed body, `canDelete` true and the author's name, avatar and lecturer flag; the guest reads 1 annotation with `canDelete` false; the signed-out POST is 401 | | |
+| ANN-TC2 | Friends-only, hidden and missing notes | a contacts-only note read and annotated by a friend, a stranger and a guest; the note then hidden; unknown and malformed ids | The friend can annotate and read; the stranger and guest get 404; after hiding, 404 for the friend too; 404 for unknown and malformed ids | | |
+| ANN-TC3 | Blocks, suspended and deleted authors | five annotators (one blocked by the viewer, one suspended, one deleted); the viewer, the note author and an admin read; the note author then blocks the viewer | The viewer sees only the ordinary annotation; the author sees the blocked user's too; the admin also sees the suspended author's; after the block the viewer gets 404 on GET and POST | | |
+| ANN-TC4 | Author turns annotations off | a reader PATCHes `{enabled:false}`; the author PATCHes `"no"`, `false` and then `true` | 403, 400, then `{annotationsOn:false}`; GET returns `{annotationsOn:false, annotations:[]}` to readers and guests; POST is 403 "Annotations are turned off for this note"; turning on restores the existing annotation | | |
+| ANN-TC5 | Delete permissions | the annotator, the note author and an unrelated user delete; a repeat delete; a contacts-only note's annotation deleted by a stranger; a signed-out DELETE | Annotator and note author get 204 and the row keeps `ant_deleted_at`; the unrelated user gets 403; repeat is 404; the stranger on the hidden note gets 404; signed-out is 401 | | |
+| ANN-TC6 | Validation | blank and 501-character body; empty and 301-character quote; offset -1 and 1.5; slideId 0 and "one"; a short and an unknown element id; an element on another slide; a shape element; a 300-character quote with a 500-character body | 400 naming the field for each invalid case, including "Only text can be annotated" for the shape; the limits case is 201; one row stored | | |
+| ANN-TC7 | Notify the author | a user annotates twice; the note author annotates their own note; the author's `type=annotation` inbox | One `annotation` notification naming the annotator and the note (the second annotation within an hour adds none), none for the author's own annotation | | |
+| ANN-TC8 | Report an annotation | a user reports twice; the annotator reports their own; a student uses "plagiarism"; an invalid reason; an unknown annotation; the same user reports the note; a user blocked by the annotator reports | 201, 409, 400, 403, 400, 404; the note report is still 201 (separate index); the blocked user's report is 201; rows carry `rpt_ant_id` only for annotation reports | | |
+| ANN-TC9 | Admin queue and hide | two reported annotations; the queue; the note-level resolve; an invalid outcome and a missing remark; hide one, dismiss the other; a student calls the endpoint | The group shows `annotation` on each report; note-level resolve is 404; 400 for the invalid input; hide gives `{outcome:'hide', resolved:1}`, sets `ant_hidden_at` (not `ant_deleted_at`), leaves the note published, sends `annotation_hidden` to the annotator and removes it from the list; the dismissed one stays; the queue empties; the student gets 403 | | |
+| ANN-TC10 | Editing keeps annotations | an annotation on a note whose text the author then rewrites through `PUT /api/notes/:id` | 200 and the annotation is still listed with its original quote | | |
+| ANN-TC11 | Annotation limit | a note with 500 live annotations; one more; one deleted, then another posted | 409 "This note has reached its annotation limit"; after the delete the post is 201, returns the new annotation and the list holds 500 | | |
+| ANN-TC12 | Selection to anchor (client) | a DOM range from the space before "big" to "wor" inside a text element holding `Hello <b>big</b> world`; a range across two text elements | `{elementId, quote:'big wor', offset:6}` (edge space dropped, offset in the element's plain text); the cross-element range maps to nothing; the range rebuilt from offset 6, length 7 reads "big wor" | | |
+| ANN-TC13 | Anchor resolution and "Text changed" | quotes resolved at their offset, at a stale offset (one with several occurrences), and missing; a slide inserted in front of the annotated one; an annotation whose element and slide are gone; the panel for slide 1, slide 2 and the last slide | Offset kept when the quote is there, else the occurrence nearest the saved offset, else none; after the insert the annotation moves to slide 2 with its element and still resolves; the resolved item has a "Show … on the slide" button, the unresolved one shows "Text changed" with its quote; another slide's annotation is not listed; one whose element and slide are gone is listed on the last slide | | |
+| ANN-TC14 | Panel delete and report permissions | the viewer's own annotation (`canDelete` true) and another user's; Delete confirmed; Report sent with reason Spam | Own item has Delete and no Report; the other has Report and no Delete; Delete calls `DELETE /notes/9/annotations/1` and removes it; Report opens "Report this annotation" and posts to `/notes/9/annotations/2/report` | | |
+| ANN-TC15 | Annotations off | a text selection on a deck with annotations off, then on; the owner's More menu with annotations off | No Annotate button when off, one when on; no Annotations count button while off; "Turn annotations on" sends `PATCH {enabled:true}` and reports `true` | | |
+| ANN-TC16 | Annotation notification texts | `annotation` from Aina and `annotation_hidden` (no actor) on the note "Joins" | "annotated your note “Joins”" and "Your annotation on “Joins” was removed by an administrator.", both linking to `/notes/9` | | |
 
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.45: UAT tester details*
+*Table 4.47: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1652,7 +1731,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
 
-*Table 4.46: UAT scenario tasks*
+*Table 4.48: UAT scenario tasks*
 
 | Task ID | Role | Task | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- |
@@ -1671,7 +1750,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
 | UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
 
-*Table 4.47: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.49: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1681,7 +1760,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.48: UAT feedback and developer response*
+*Table 4.50: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1692,7 +1771,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.49: Ranking weight re-evaluation (NFR5)*
+*Table 4.51: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

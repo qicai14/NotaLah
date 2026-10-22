@@ -532,3 +532,20 @@ it('DEP-TC10: a file the purge cannot remove is counted as orphaned while its ro
   const { rows } = await pool.query(`SELECT ast_status FROM "ASSET_T" WHERE ast_id = $1`, [orphan]);
   expect(rows).toEqual([{ ast_status: 'deleted' }]);
 });
+
+describe('Response compression (R11)', () => {
+  it('DEP-TC16: JSON over 1 KB is gzip-compressed; a ranged asset file keeps its bytes and Content-Length', async () => {
+    const list = await request(app)
+      .get('/api/modules')
+      .set(asUser(await insertUser()))
+      .set('Accept-Encoding', 'gzip');
+    expect(list.status).toBe(200);
+    expect(list.headers['content-encoding']).toBe('gzip');
+
+    const { asset } = await noteWithImage();
+    const file = await getAsset(asset).set('Accept-Encoding', 'gzip').set('Range', 'bytes=0-9');
+    expect(file.status).toBe(206);
+    expect(file.headers['content-encoding']).toBeUndefined();
+    expect(file.headers['content-length']).toBe('10');
+  });
+});

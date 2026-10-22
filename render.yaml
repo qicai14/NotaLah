@@ -1,0 +1,48 @@
+# Render Blueprint for the API (R11, D74, D77): one free Docker web service. Deploys only through the deploy hook that
+# .github/workflows/deploy.yml calls after CI and migrations pass. `sync: false` keys are typed in the Render dashboard
+# when the Blueprint is first applied; no secret lives in this file.
+services:
+  - type: web
+    name: notalah-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: 'off'
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Pages Function + Render's proxy (D74); confirm once with DEBUG_PROXY=1 (README "Deploy notes").
+      - key: TRUST_PROXY
+        value: '2'
+      - key: COOKIE_SECURE
+        value: 'true'
+      - key: STORAGE_DRIVER
+        value: r2
+      - key: VIDEO_PROFILE
+        value: free
+      - key: CLIENT_ORIGIN
+        sync: false
+      # The same value as the Pages project's PROXY_SECRET secret; requests without it get 403 (D77).
+      - key: PROXY_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: UNSPLASH_ACCESS_KEY
+        sync: false
+      - key: JAMENDO_CLIENT_ID
+        sync: false
