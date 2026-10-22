@@ -1,4 +1,5 @@
-import { Eye, LogIn, Pencil } from 'lucide-react';
+import { Eye, LogIn, MessageSquareQuote, Pencil } from 'lucide-react';
+import { type RefObject, useCallback, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageMessage } from '@/components/PageMessage';
 import { Coauthors } from '@/components/Coauthors';
@@ -10,7 +11,48 @@ import { useAction } from '@/lib/useAction';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../../lib/api';
 import { useFetch } from '../../lib/useFetch';
-import type { CollabRole, Note } from '../../types';
+import type { Annotation, CollabRole, Note } from '../../types';
+import { AnnotationSheet, useHighlights } from '../annotations/Annotations';
+
+const NO_ANNOTATIONS: Annotation[] = [];
+
+/** The note's annotations for a link holder (R10): highlighted on the slide and listed in a sheet, never created, deleted or reported here. */
+function SharedAnnotations({
+  token,
+  note,
+  deck,
+  slide,
+}: {
+  token: string;
+  note: Note;
+  deck: RefObject<HTMLElement | null>;
+  slide: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const { data } = useFetch<{ annotations: Annotation[] }>(`/share/${encodeURIComponent(token)}/annotations`);
+  const list = data?.annotations ?? NO_ANNOTATIONS;
+  const show = useHighlights(deck, note.slides, list, slide + 1);
+  if (list.length === 0) return null;
+  return (
+    <>
+      <Button variant="secondary" size="sm" className="self-start" onClick={() => setOpen(true)}>
+        <MessageSquareQuote aria-hidden="true" />
+        Annotations ({list.length})
+      </Button>
+      <AnnotationSheet
+        open={open}
+        onOpenChange={setOpen}
+        noteId={note.id}
+        slides={note.slides}
+        slideNo={slide + 1}
+        annotations={list}
+        draft={null}
+        readOnly
+        onShow={show}
+      />
+    </>
+  );
+}
 
 /**
  * The page behind a share link (R30, D46). A view link opens the note read-only, guests included. An edit link needs
@@ -26,6 +68,9 @@ export default function SharedNote() {
     `/share/${encodeURIComponent(token)}`,
   );
   const join = useAction();
+  const deck = useRef<HTMLDivElement>(null);
+  const [slide, setSlide] = useState(0);
+  const onSlideChange = useCallback((i: number) => setSlide(i), []);
 
   if (loading)
     return (
@@ -134,10 +179,17 @@ export default function SharedNote() {
       <div className="rounded-2xl border bg-card p-4 shadow-(--shadow-card) md:p-6">
         {n.module && <p className="mb-3 text-caption font-semibold text-muted-foreground">{n.module.code}</p>}
         {n.music && <MusicChip music={n.music} className="mb-3" />}
-        <div className="h-[min(36rem,64dvh)]">
-          <SlideCarousel slides={n.slides} aspect={n.aspect} assets={n.assets} videoStatus={n.videoStatus} />
+        <div ref={deck} className="h-[min(36rem,64dvh)]">
+          <SlideCarousel
+            slides={n.slides}
+            aspect={n.aspect}
+            assets={n.assets}
+            videoStatus={n.videoStatus}
+            onSlideChange={onSlideChange}
+          />
         </div>
       </div>
+      <SharedAnnotations token={token} note={n} deck={deck} slide={slide} />
 
       <h1 id="shared-title" className="text-title font-bold text-balance">
         {n.title}

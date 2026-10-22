@@ -158,7 +158,7 @@ describe('Engagement', () => {
     await comment(a, p, { body: 'author reply' });
     await comment(b, p, { body: 'reader comment' });
     const feed = (await get(b, '/api/feed')).body.items[0];
-    expect(feed.counts).toEqual({ likes: 1, comments: 1 }); // the self-like is shown but does not raise E (RANK-TC32)
+    expect(feed.counts).toEqual({ likes: 1, comments: 1, annotations: 0 }); // the self-like is shown but does not raise E (RANK-TC32)
     expect((await get(b, `/api/notes/${p}/comments`)).body.comments).toHaveLength(2);
   });
 

@@ -31,6 +31,5 @@ NotaLah. Read with `../PLAN.md` (backlog R0-R40), `docs/DECISIONS.md` (D69-D75 a
    `6_limitations_notes.md`; R14 length plan for meeting #2 (28 Oct).
 
 ## Known limits
-- R10 gaps (D75): no annotations on the shared-link page, no count on feed cards, creating needs mouse/touch selection.
-- NOTE-TC39 (`tests/assets/video.test.ts`) failed twice in full server runs and passes alone: timing under load, not fixed.
+- R10 gaps closed in D79 (share-page list, feed count, keyboard picker); the 500 cap is still count-then-insert (D75).
 - Render free: ~1 min cold start, 512 MB, one instance; video ≤ 720p, one job (D67). Function adds one hop per API call (D74).

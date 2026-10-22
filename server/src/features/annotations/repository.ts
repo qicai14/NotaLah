@@ -36,6 +36,19 @@ export async function listAnnotations(noteId: number, viewerId: number, onlyId?:
   return rows;
 }
 
+/**
+ * What a share-link holder reads (R10): the list of a published note whose author allows annotations, filtered as for any
+ * viewer. Only for a public note, where the annotations are already visible to everyone: a friends-only note's annotations
+ * stay with the people who may see the note, not with whoever holds its link.
+ */
+export async function listForLink(noteId: number, viewerId: number): Promise<Annotation[]> {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM "POST_T" p WHERE p.pst_id = $1 AND p.pst_status = 'published' AND p.pst_annotations_on AND p.pst_visibility = 'public'`,
+    [noteId],
+  );
+  return rows.length ? listAnnotations(noteId, viewerId) : [];
+}
+
 /** The element's type when slide `slideId` (position) of the note's current deck holds `elementId`, else undefined. */
 export async function elementType(noteId: number, slideId: number, elementId: string): Promise<string | undefined> {
   const { rows } = await pool.query<{ type: string }>(

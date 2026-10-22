@@ -76,7 +76,7 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   publishedAt: string | null;
-  counts: { likes: number; comments: number };
+  counts: { likes: number; comments: number; annotations: number };
   liked: boolean;
   bookmarked: boolean;
   verified: boolean;

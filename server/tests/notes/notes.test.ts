@@ -186,7 +186,7 @@ describe('Notes', () => {
     const id = (await post(author, await publishBody())).body.note.id;
     await request(app).post(`/api/notes/${id}/like`).set(asUser(viewer));
     const note = (await get(viewer, id)).body.note;
-    expect(note.counts).toEqual({ likes: 1, comments: 0 });
+    expect(note.counts).toEqual({ likes: 1, comments: 0, annotations: 0 });
     expect(note.liked).toBe(true);
     expect(note.bookmarked).toBe(false);
     expect(note.verified).toBe(false);

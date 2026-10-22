@@ -47,7 +47,7 @@ const note = (over: Partial<Note> = {}): Note => ({
   createdAt: '2026-10-01T00:00:00Z',
   updatedAt: '2026-10-02T00:00:00Z',
   publishedAt: '2026-10-02T00:00:00Z',
-  counts: { likes: 3, comments: 1 },
+  counts: { likes: 3, comments: 1, annotations: 0 },
   liked: false,
   bookmarked: false,
   verified: false,
@@ -324,6 +324,39 @@ describe('collaboration UI', () => {
     share('/share/gone');
     expect(await screen.findByText('This link does not work')).toBeTruthy();
     expect(screen.getByText('This link is invalid or was revoked')).toBeTruthy();
+  });
+
+  it("CLI-TC78: a view link lists the note's annotations read-only for a guest, and shows no button when there are none", async () => {
+    signedIn = null;
+    handlers['GET /share/tok'] = () => ({ status: 200, body: { role: 'view', note: note() } });
+    handlers['GET /share/tok/annotations'] = () => ({
+      status: 200,
+      body: {
+        annotations: [
+          {
+            id: 1,
+            slideId: 1,
+            elementId: 'gone-element',
+            quote: 'second normal form',
+            offset: 0,
+            body: 'Check this against 3NF',
+            createdAt: '2026-10-21T00:00:00Z',
+            author: { id: 2, displayName: 'Aina Rahman', avatarUrl: null, isVerifiedLecturer: false },
+            canDelete: false,
+          },
+        ],
+      },
+    });
+    share();
+    await userEvent.click(await screen.findByRole('button', { name: 'Annotations (1)' }));
+    expect(await screen.findByText('Check this against 3NF')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Delete|Report/ })).toBeNull();
+    expect(screen.queryByRole('textbox')).toBeNull();
+    cleanup();
+    handlers['GET /share/tok/annotations'] = () => ({ status: 200, body: { annotations: [] } });
+    share();
+    expect(await screen.findByRole('heading', { name: 'Normalisation in one page' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Annotations/ })).toBeNull();
   });
 
   it('CLI-TC57: Request to collaborate sends the trimmed message, blocks one over 300, and shows a duplicate', async () => {

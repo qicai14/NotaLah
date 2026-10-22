@@ -5,6 +5,7 @@ import { env } from '../../lib/env';
 import { parseKeyset } from '../../lib/keyset';
 import { isUniqueViolation, pool } from '../../lib/pool';
 import { bodyOrEmpty, idParam, invalidId } from '../../lib/validation';
+import { listForLink } from '../annotations/repository';
 import { shareAssetUrl } from '../assets/config';
 import { getLinkedAsset } from '../assets/repository';
 import { sendAsset } from '../assets/service';
@@ -88,6 +89,7 @@ async function link(req: Request, res: Response) {
   if (!found || (req.user && (await isBlocked(req.user.id, found.ownerId)))) {
     return void res.status(404).json({ error: 'This link is invalid or was revoked' });
   }
+  if (found.role === 'edit' && !req.user) return void res.status(401).json({ error: 'Log in to edit this note' });
   return found;
 }
 
@@ -99,11 +101,23 @@ collaborationRouter.get(
   async (req, res) => {
     const found = await link(req, res);
     if (!found) return;
-    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
     const note = await getVisibleNote(found.noteId, viewerId(req), true);
     // The link's holder may not pass the asset route's note checks, so images come through this link too.
     if (note) for (const id of Object.keys(note.assets)) note.assets[id] = shareAssetUrl(String(req.params.token), id);
     res.json({ role: found.role, note });
+  },
+);
+
+// Read-only: creating, deleting and reporting stay on the signed-in note routes. Same link checks as the note above.
+collaborationRouter.get(
+  '/share/:token/annotations',
+  optionalAuth,
+  (req, res, next) => (req.user ? guestReadLimiter(req, res, next) : next()),
+  async (req, res) => {
+    const found = await link(req, res);
+    if (!found) return;
+    const annotations = (await listForLink(found.noteId, viewerId(req))).map((a) => ({ ...a, canDelete: false }));
+    res.json({ annotations });
   },
 );
 
@@ -114,7 +128,6 @@ collaborationRouter.get(
   async (req, res) => {
     const found = await link(req, res);
     if (!found) return;
-    if (found.role === 'edit' && !req.user) return res.status(401).json({ error: 'Log in to edit this note' });
     const assetId = String(req.params.assetId);
     const asset = invalidId(assetId) ? undefined : await getLinkedAsset(found.noteId, Number(assetId));
     if (!asset) return res.status(404).json({ error: 'Asset not found' });

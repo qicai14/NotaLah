@@ -15,6 +15,9 @@ import { parseRange, storage } from '../../src/lib/storage';
 import { pool } from '../../src/lib/pool';
 import { asUser, insertUser, truncateAll } from '../helpers';
 
+// Every test here runs real ffmpeg/ffprobe, whose time scales with CPU contention; the 5 s/10 s defaults fail under a loaded full run.
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+
 let dir: string;
 const file = (name: string) => path.join(dir, name);
 const ffmpeg = (...args: string[]) => execFileSync('ffmpeg', ['-v', 'error', '-y', ...args]);
@@ -193,8 +196,7 @@ http://127.0.0.1:${port}/seg.ts
     await upload(uid, readFileSync(file('short.mp4')));
     await upload(uid, Buffer.from('garbage'));
     await upload(uid, Buffer.alloc(VIDEO.maxBytes + 1024));
-    await new Promise((r) => setTimeout(r, 300));
-    expect(tmpDirs()).toEqual([]);
+    await vi.waitFor(() => expect(tmpDirs()).toEqual([]), { timeout: 10_000 });
   });
 
   it('NOTE-TC75: kills ffmpeg that runs past the timeout and reports it', async () => {
