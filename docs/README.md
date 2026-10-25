@@ -6,7 +6,9 @@ Index of everything under `docs/`. Linked from the repo `AGENTS.md`; read only t
 |---|---|
 | Current state and next steps | [HANDOVER.md](HANDOVER.md) |
 | Conventions read on demand (project rules, delivery, testing, agent workflow) | [conventions/](conventions/) |
-| Every design and scope decision (D1 onward), with alternatives and reversibility | [DECISIONS.md](DECISIONS.md) |
+| Milestones and dates (work items are GitHub issues) | [PLAN.md](PLAN.md) |
+| Decisions from 0084 on, one file each | [adr/](adr/) |
+| Decisions D1-D83 (frozen history) | [DECISIONS.md](DECISIONS.md) |
 | Questions only the user can answer, and the supervisor list | [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) |
 | Tiers, request flow, folder map, SQL-fragment conventions | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Agreed specs for larger items | [specs/](specs/) (Sprint 4, Sprint D, R21 editor data model, R30 collaboration, R10 annotations) |
