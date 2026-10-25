@@ -6,7 +6,12 @@
   - The repo is the root for all agent config: `.claude/` (agents, project skills, `.env` hook, settings) is versioned
     here and sessions open in `FYP_Project/`; the workspace is reached through `additionalDirectories: [".."]`.
   - `AGENTS.md` (root and nested in `client/`, `server/`, `shared/`, `docs/`) is the source of truth for Claude Code,
-    Codex, Copilot and Antigravity; each `CLAUDE.md` imports its `AGENTS.md`; `vp run check` enforces it.
+    Codex, Copilot and Antigravity, following the reference pattern (Web Dev Simplified, "Why Your AI Generates Crap
+    Code"): the root file is a short index (pitch, tooling, layout) with "when doing X, read Y" links into
+    `docs/conventions/`; package rules sit in nested files; one-off procedures are skills. Each `CLAUDE.md` is exactly
+    `@AGENTS.md` (an import instead of the video's symlink, which needs admin rights on Windows and which Claude Code's
+    editors refuse). `vp run check` enforces the import, working links and a 4 KiB root limit. Rules are added only
+    after an agent repeats a mistake, in the narrowest file that covers it.
   - Remaining work lives in GitHub issues (mattpocock flow: grill, `/to-spec`, `/to-tickets`); one issue, one branch,
     one PR; `docs/PLAN.md` keeps only milestones and dates.
   - Decisions go to `docs/adr/`, one file each, from 0084; `DECISIONS.md` is frozen at D83.
