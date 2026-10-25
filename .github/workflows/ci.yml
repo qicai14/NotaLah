@@ -46,7 +46,9 @@ jobs:
           node-version: '24'
           cache: true
       - name: Install ffmpeg (video upload tests)
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        timeout-minutes: 6
+        # apt mirrors occasionally hang; retry with a per-attempt limit instead of waiting for the job timeout
+        run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
       - run: vp install
       - name: Restore Vite Task cache
         id: vite-task-cache
