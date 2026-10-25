@@ -1,6 +1,6 @@
 # NotaLah docs
 
-Index of everything under `docs/`. Linked from the repo `CLAUDE.md`; read only the part your task needs.
+Index of everything under `docs/`. Linked from the repo `AGENTS.md`; read only the part your task needs. Doc conventions: [AGENTS.md](AGENTS.md).
 
 | Need | File |
 |---|---|
