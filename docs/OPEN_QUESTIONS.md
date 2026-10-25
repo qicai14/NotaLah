@@ -55,7 +55,7 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
 - FR numbering for the additions (supervisor question 5) decides the Table 33 wording in the R13 drafts.
 - FR8 survey figure: the report says 19 selections (59.4%), the IR says 20 (62%); confirm which is correct.
 
-## Open for the user (22 Oct, autopilot run; defaults in place, reversible)
+## Answered 25 Oct (D83) — was: open for the user (22 Oct autopilot run)
 - R28 spec (`docs/specs/R28_ai_assistant.md`): approve, and answer its five questions (daily limit 20, .pptx now or
   later, quiz-me form, AI label removable, build before or after the meeting #2 report work).
 - R20 S5: may a restricted account still edit its display name and bio? Unchanged for now (D81).
