@@ -154,6 +154,14 @@ describe('Profiles', () => {
     expect((await request(app).get(`/api/users/${author}/notes?cursor=x`).set(asUser(viewer))).status).toBe(400);
   });
 
+  it('USR-TC29: a restricted account cannot edit its profile (UC21)', async () => {
+    const uid = await insertUser({ status: 'restricted' });
+    const res = await putMe(uid, { displayName: 'New name', bio: 'New bio' });
+    expect(res.status).toBe(403);
+    const row = await pool.query(`SELECT usr_display_name FROM "USER_T" WHERE usr_id = $1`, [uid]);
+    expect(row.rows[0].usr_display_name).not.toBe('New name');
+  });
+
   it('USR-TC28: profile thumbnail data and likeCount: no page notes, ready assets only, only likes the viewer can see, no own likes', async () => {
     const author = await insertUser();
     const fan = await insertUser();
