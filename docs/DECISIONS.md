@@ -1,4 +1,6 @@
-# Decision log
+# Decision log (D1-D83, frozen 25 Oct 2026)
+
+> New decisions go in [`adr/`](adr/), one file each, from 0084 (ADR 0084). This file is kept as history.
 
 Choices made during the unattended run of 13 Oct 2026 that belong to the user. All of D1-D28 were reviewed by the user on
 14 Oct 2026; each entry ends with a **User review (14 Oct)** line, which overrides the entry where they differ.
