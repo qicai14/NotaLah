@@ -16,7 +16,8 @@ decides; subagents in `.claude/agents/` do the work. Spawn the cheapest agent th
 | `security-reviewer` | opus | PRs touching auth, cookies, sharing, uploads, proxy, CI secrets |
 | `writer` | sonnet (opus for the final .docx pass) | report drafts in `../FYP_Submissions/drafts/` |
 
-Workflow (mattpocock skills, plugin `mattpocock-skills`):
+Workflow (mattpocock skills, plugin `mattpocock-skills`; these slash commands are user-invoked only, so ask the user to
+type them):
 - New work: align with `/grill-with-docs` or `/grilling`, then `/to-spec` and `/to-tickets` into GitHub issues.
 - Build an issue: the `ship-feature` skill. Hard bug: `/diagnosing-bugs`. Unattended: `autopilot`, only when asked.
 - Periodically: `/improve-codebase-architecture`; turn accepted candidates into issues.
