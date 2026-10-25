@@ -1,10 +1,11 @@
 # NotaLah docs
 
-Index of everything under `docs/`. Linked from the repo `CLAUDE.md`; read only the part your task needs.
+Index of everything under `docs/`. Linked from the repo `AGENTS.md`; read only the part your task needs. Doc conventions: [AGENTS.md](AGENTS.md).
 
 | Need | File |
 |---|---|
 | Current state and next steps | [HANDOVER.md](HANDOVER.md) |
+| Conventions read on demand (project rules, delivery, testing, agent workflow) | [conventions/](conventions/) |
 | Milestones and dates (work items are GitHub issues) | [PLAN.md](PLAN.md) |
 | Decisions from 0084 on, one file each | [adr/](adr/) |
 | Decisions D1-D83 (frozen history) | [DECISIONS.md](DECISIONS.md) |
