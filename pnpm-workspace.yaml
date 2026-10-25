@@ -38,4 +38,8 @@ minimumReleaseAgeExclude:
   - '@oxfmt/*'
   - tsdown
   - rolldown
+  # temporary (25 Oct): security patches GHSA-q7qp-rjg7-q26m (multer) and GHSA-27r3-jxmh-p828 (body-parser),
+  # released 22 Oct 11:40 UTC; remove both lines once they are 3 days old
+  - multer
+  - body-parser
   - '@rolldown/*'

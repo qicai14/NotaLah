@@ -1,7 +1,6 @@
-# R28 AI writing assistant: draft spec (for approval)
+# R28 AI writing assistant: spec
 
-Status: **draft, 22 Oct 2026 (autopilot).** Nothing is built until the user approves this and the open questions at
-the end. Decisions it builds on: D33 (assistant agreed 15 Oct), D57 (cost guard), D69 (themes and layouts shared with
+Status: **approved 25 Oct 2026 (D83).** Answers to the open questions are recorded at the end. Decisions it builds on: D33 (assistant agreed 15 Oct), D57 (cost guard), D69 (themes and layouts shared with
 R28), D74 (free tier only). R35 (photo import) and R36 (dictation) reuse the outline pipeline below.
 
 ## Goal
@@ -55,10 +54,9 @@ on rewrite output. Provider mocked through an injectable `fetch` (as R2 does).
 Chapter 1.6 scope and Chapter 2 AI paragraph (already flagged in D33 and supervisor question 6); Chapter 4 adds a
 use case (UC24 Use AI Assistant) and a Mermaid sequence diagram; Chapter 6 notes the free-tier limits.
 
-## Open questions for the user
-1. Per-user daily limit: 20 calls a day OK?
-2. `.pptx` import: defer to after slice 1 (needs a zip/XML parser), or include now?
-3. Quiz me: a new slide with questions (answers in page notes), or a pop-over quiz that adds nothing to the note?
-4. Label: mark the note "AI-assisted" whenever any AI text was accepted, even if later edited heavily (simplest,
-   most honest), or let the author remove it?
-5. Order: build R28 before or after the remaining report work for meeting #2 (28 Oct)?
+## Decisions (user, 25 Oct, D83)
+1. Per-user limit: 20 AI calls a day.
+2. Import: `.txt`, `.md`, `.docx`, `.pdf` in slice 1; `.pptx` later (PLAN R41).
+3. Quiz me: a new slide with 3-5 questions, answers in its page notes.
+4. Label: stays once AI output is accepted; the author cannot remove it.
+5. Order: build now, alongside the meeting #2 report work.
