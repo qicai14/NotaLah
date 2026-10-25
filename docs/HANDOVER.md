@@ -1,38 +1,33 @@
-# Handover — 22 Oct 2026, evening (session FYP-8 autopilot ends; Sprint 5 code done, report and AI next)
+# Handover — 25 Oct 2026 (workflow restructure done; next: mattpocock setup, then R28)
 
-NotaLah. Read with `../PLAN.md`, `docs/DECISIONS.md` (D76-D82 are new), `docs/README.md` and
-`../run-logs/AUTOPILOT_2026-10-22.md` (decisions taken while the user was away, with alternatives).
+Read with `PLAN.md` (milestones), `adr/` (0084 on) and `DECISIONS.md` (D76-D83 since the 22 Oct handover).
 
 ## State of `main`
-- Merged this session: #54 Chapter 4 diagrams in Mermaid (D76) · #55 admin pages restyled (D78) · #56 R11 deploy code:
-  Pages Function proxy with `PROXY_SECRET`, Docker image with ffmpeg, `render.yaml`, deploy workflow that skips each
-  step without its secret, plus R18 client Sentry (D77) · #57 R10 gaps (share-link annotations, feed count, keyboard
-  picker) and the NOTE-TC39 flake (D79) · #58 R20 local audit fixes: bcrypt/auth burst env, liveness without DB, read
-  limiter, Pages `_headers` CSP, sharp memory caps, lazy socket client (D81) · #59 R27 local load evidence (D80).
-- Tests: server 437 + 2 skipped, client 168; check, build and CI green. Audit report: `docs/testing/R20_audit_2026-10-22.md`.
-- NFR1 evidence: `docs/testing/load/2026-10-22_local.md` (10k notes: pass up to 25 VUs, every search < 3 s; fails at 50).
-- Live deploy is optional (D82): nothing is live; the local stack is what the demo and submission use.
+- Merged since 22 Oct: #61 restricted accounts cannot edit their profile, 25 Oct decisions (D83) · #62 lean root
+  `AGENTS.md` with `docs/conventions/` (reference pattern), every `CLAUDE.md` exactly `@AGENTS.md`, sync check in
+  `vp run check` · #63 agent config versioned in `.claude/`, new roster (ADR 0084) · #64 Playwright, Vercel React and
+  Postgres skills · #65 `docs/adr/`, `docs/PLAN.md`, archived R0-R41 backlog · #66 multer and body-parser advisories,
+  CI ffmpeg retry.
+- `main` is protected by the `protect-main` ruleset: PR and the `verify` check required, no force-push or deletion
+  (repo admins can bypass).
+- Tests: server 438 + 2 skipped, client 168; check, build and CI green.
 
 ## User steps (exact)
-1. Migrate the dev DB (R9, R10 migrations): in `FYP_Project/`, `vp run server#db:migrate`.
-2. Answer the 22 Oct block in `docs/OPEN_QUESTIONS.md` (R28 spec, S5, share-link privacy, R14 plan, auth burst).
-3. Commit the report drafts left uncommitted in `FYP_Submissions/` after checking them: `drafts/1.5_scope.md`,
-   `drafts/2.3.9_web_server_and_hosting.md`, `drafts/6_limitations_notes.md`.
-4. Re-render the Chapter 4 PNGs from the Mermaid sources (D76) on mermaid.live.
-5. Optional go-live: README "Deploy notes" (Neon, Render Blueprint with `PROXY_SECRET`, Pages project + `API_ORIGIN` +
-   `PROXY_SECRET` + fail closed, Workers Free, billing notification, GitHub secrets), then the `DEBUG_PROXY` check,
-   UptimeRobot, `winget install k6.k6` and `docs/testing/load/README.md` live run, Neon restore drill.
-6. Workers AI token for R36 (`CF_AI_TOKEN`, `CF_ACCOUNT_ID`) when R36 starts.
-7. Leftover empty folders under `../worktrees/` can be deleted; test DB `notalah_test_r27_load` holds the 10k load seed
-   (drop it with `docker exec fyp_project-db-1 dropdb -U notalah notalah_test_r27_load` when no longer needed).
+1. Open new sessions in `C:\Users\reymy\Code Projects\FYP\FYP_Project` (not `FYP/`). Memory was copied there.
+2. Run, in order: `/setup-matt-pocock-skills` (GitHub Issues, default triage labels, single-context glossary),
+   `/grill-with-docs` (builds `GLOSSARY.md`), `/to-spec` then `/to-tickets` on `docs/specs/R28_ai_assistant.md`,
+   `/improve-codebase-architecture`. These are user-invoked only.
+3. After 25 Oct 11:40 UTC: remove `multer` and `body-parser` from `minimumReleaseAgeExclude` in `pnpm-workspace.yaml`
+   (a one-line chore PR; Claude can do it when asked).
+4. Migrate the dev DB if not done: `vp run server#db:migrate`. Re-render Chapter 4 PNGs from the Mermaid sources.
+5. Optional: prune unused global plugins (every installed skill's name and description is sent with each request).
 
-## Next work, in order
-1. R28 AI writing assistant once its spec (`docs/specs/R28_ai_assistant.md`) is approved; then R35, R36 (spec interviews).
-2. Report for meeting #2 (28 Oct): R14 cut plan `../FYP_Submissions/drafts/R14_cut_plan.md`, supervisor questions.
-3. Chapter 5/6 drafting (Markdown): architecture (Mermaid `00_architecture.md`), load evidence, limitations.
-4. Live-only checks after any go-live: Lighthouse, CSP console, k6 run, WebSocket through the proxy, `TRUST_PROXY=2`.
+## Next work, in order (become GitHub issues at step 2)
+1. R28 AI writing assistant (spec approved, D83), then R35, R36, R41 (spec interviews first).
+2. R5 admin Modules page (API exists, no UI); R26 Playwright E2E smoke suite in CI.
+3. Flaky client test CLI-TC40 (profile unblock focus) failed once in CI on 25 Oct and passed on rerun.
+4. Meeting #2 (28 Oct): R14 Plan A with B as fallback, supervisor questions in `OPEN_QUESTIONS.md`; Ch 5-6 drafts.
 
 ## Known limits
-- Render free (if deployed): ~1 min cold start, 0.1 CPU; logins at bcrypt 10 ≈ 0.8 s; 20 auth attempts/min per IP (D81).
-- Local throughput flattens at ~17 req/s on 10k notes (Postgres on the same CPU; not profiled) (D80).
-- R10: the 500-annotation cap is still count-then-insert (D75). Reports queue shows only the first 20 groups (D78).
+- The 500-annotation cap is count-then-insert (D75); the reports queue shows the first 20 groups (D78).
+- Live deploy is optional and off (D82); Render free limits apply only if it goes live (D81).
