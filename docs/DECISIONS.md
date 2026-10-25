@@ -1991,3 +1991,17 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   blockers; keep-awake via UptimeRobot free (not GitHub cron); deploy path: GitHub Actions runs migrate → Render
   hook → Pages deploy.
 - **Reversibility:** High.
+
+## D83 - Decisions on the 22 Oct open questions (user, 25 Oct 2026)
+- **S5, restricted accounts:** may no longer edit their display name, programme or bio: `PUT /api/users/me` now uses
+  `requireActive` like every other write (UC21). Undoing a follow and lifting a block stay allowed. Test: USR-TC29.
+- **Share links (confirms D79):** a link to a contacts-only note shows no annotations; public notes show them.
+- **R14:** Plan A (~25.6k words of prose) goes to meeting #2 with Plan B (~20k) as the fallback
+  (`../FYP_Submissions/drafts/R14_cut_plan.md`). No cuts until the supervisor agrees.
+- **Auth on the optional live site (confirms D81):** bcrypt cost 10 and 20 sign-in attempts a minute per IP on Render;
+  local stays 12 and 60. UAT sign-ups are staggered.
+- **R28 spec approved** (`docs/specs/R28_ai_assistant.md`): 20 AI calls per user a day; import of .txt, .md, .docx
+  and .pdf (browser-side extraction, lazy-loaded); "Quiz me" adds a quiz slide with the answers in its page notes; the
+  "AI-assisted" label stays once AI output is accepted; build now, alongside the meeting #2 report work. `.pptx`
+  import is wanted later (PLAN R41).
+- **Reversibility:** High for all; each is a one-line or config change.
