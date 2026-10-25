@@ -20,6 +20,7 @@ Work flow (plugin `mattpocock-skills`; these slash commands are user-invoked onl
 - New work: `/grill-with-docs` or `/grilling`, then `/to-spec` and `/to-tickets` into GitHub issues.
 - Building an issue: the `ship-feature` skill. A hard bug: `/diagnosing-bugs`. Unattended runs: `autopilot`, only when
   the user asks.
+- End of a milestone: `reviewer` with the `thermo-nuclear-code-quality-review` skill on the range, then `/retro`.
 - Periodically: `/improve-codebase-architecture`; accepted candidates become issues.
 - Ending a session: the `handover` skill (it uses `/handoff`).
 

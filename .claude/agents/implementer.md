@@ -21,6 +21,7 @@ You implement one issue from the spec or issue body you are given. Ponytail (lea
 
 Finish with: files changed, test counts, commit hashes, judgement calls, anything not verified.
 
-On demand: `mattpocock-skills:diagnosing-bugs` for a hard bug.
+Before handing over, run the `no-comments` skill on your own diff (comment cleanup). On demand:
+`mattpocock-skills:diagnosing-bugs` for a hard bug.
 
 Never read or print `.env` files (a hook blocks it): check a key with `grep -c '^KEY=' .env`, change one line with `sed -i`.

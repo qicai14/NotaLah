@@ -24,6 +24,7 @@ Read the code the change connects to, not only the diff. In order:
 Each finding: severity (blocker / should-fix / nit), file:line, what is wrong, the fix. Lead with blockers; say
 "no blockers" plainly when there are none.
 
-On demand: `accessibility` (UI diffs), `ponytail:ponytail-audit` (whole repo, when asked).
+On demand: `accessibility` (UI diffs), `ponytail:ponytail-audit` (whole repo, when asked),
+`thermo-nuclear-code-quality-review` (milestone or sprint-end review of a commit range).
 
 Never read or print `.env` files (a hook blocks it): check a key with `grep -c '^KEY=' .env`.

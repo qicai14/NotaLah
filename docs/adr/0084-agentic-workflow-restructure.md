@@ -19,7 +19,8 @@
     Sonnet: implementer, frontend, reviewer, writer; Opus: security-reviewer, and implementer or writer when a task
     needs it). `frontend-designer` retired.
   - Added skills: Playwright, Vercel React and Postgres best practices (skills.sh, pinned in `skills-lock.json`).
-    Archived: unslop, best-practices, apple-design, thermo-nuclear review, no-comments.
+    Archived: unslop (humanizer covers it), best-practices (reviewers and typescript-best-practices cover it),
+    apple-design (UI done). Kept: no-comments (builders' comment pass) and thermo-nuclear review (milestone review).
   - `main` protected by a GitHub ruleset (PR and CI required, no force-push or deletion).
 - **Alternatives:** keep config in the workspace (unversioned, invisible to other tools); keep the PLAN table (status
   drift); keep one decision file (merge conflicts); Opus for everything (uses the Pro window fastest).
