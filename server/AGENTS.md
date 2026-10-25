@@ -10,3 +10,5 @@
   dictionary in `../docs/chapter4/4.3_database_design.md` in the same PR.
 - Tests in `tests/<feature>/` against the real `notalah_test` DB, named with their TC ID; run `vp run server#test`
   (never a bare `vp test` from the repo root: it skips the server test config).
+- SQL style: tables UPPERCASE `_T`, always double-quoted (`"POST_T"`); columns lowercase with a table prefix; keywords
+  UPPERCASE; parameterised `pg` only, no ORM. Never edit an applied migration.
