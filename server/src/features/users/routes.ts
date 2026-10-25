@@ -42,7 +42,7 @@ const profileSchema = z.object({
   bio: z.string({ error: 'Invalid bio' }).trim().max(300, 'Bio must be at most 300 characters').optional(),
 });
 
-usersRouter.put('/me', requireAuth, async (req, res) => {
+usersRouter.put('/me', requireAuth, requireActive, async (req, res) => {
   const parsed = profileSchema.safeParse(bodyOrEmpty(req));
   if (!parsed.success)
     return res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
