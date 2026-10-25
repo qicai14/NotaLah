@@ -1,0 +1,31 @@
+{
+  "env": {
+    "PONYTAIL_SUBAGENT_MATCHER": "^(implementer|frontend|general-purpose|claude)$"
+  },
+  "permissions": {
+    "additionalDirectories": [".."]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|Grep|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-env.mjs\"" }]
+      }
+    ]
+  },
+  "model": "opusplan",
+  "effortLevel": "medium",
+  "askUserQuestionTimeout": "5m",
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "academic-research-skills@academic-research-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "academic-research-skills": {
+      "source": {
+        "source": "github",
+        "repo": "Imbad0202/academic-research-skills"
+      }
+    }
+  }
+}
