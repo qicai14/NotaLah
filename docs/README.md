@@ -6,6 +6,7 @@ Index of everything under `docs/`. Linked from the repo `AGENTS.md`; read only t
 |---|---|
 | Current state and next steps | [HANDOVER.md](HANDOVER.md) |
 | Conventions read on demand (project rules, delivery, testing, agent workflow) | [conventions/](conventions/) |
+| How to start sessions and run the mattpocock workflow | [guides/working-with-agents.md](guides/working-with-agents.md) |
 | Milestones and dates (work items are GitHub issues) | [PLAN.md](PLAN.md) |
 | Decisions from 0084 on, one file each | [adr/](adr/) |
 | Decisions D1-D83 (frozen history) | [DECISIONS.md](DECISIONS.md) |
