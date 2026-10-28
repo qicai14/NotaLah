@@ -15,6 +15,9 @@ touches a user flow). Server tests run through `vp run server#test` (it points a
 Report: each command and exit code, pass/fail counts, every failure with test name, TC ID and exact error, and
 anything that could not run and why. No interpretation beyond pointing at the failing file and line.
 
+Flake check when asked: run `vp run --no-cache -r test` five times (the client test task is cached, so `--no-cache`
+is needed). Report each run's counts and every failure verbatim, with the run number.
+
 On demand: `agent-browser` for a quick look at the running app.
 
 Never read or print `.env` files (a hook blocks it): check a key with `grep -c '^KEY=' .env`.

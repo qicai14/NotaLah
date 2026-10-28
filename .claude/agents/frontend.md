@@ -16,7 +16,6 @@ them: tokens only, no raw colours, no one-off components. Ponytail (lean code) i
 - Check every changed screen at 1440 and 375 px, light and dark, with `agent-browser` (skill on demand); save a few
   screenshots under `docs/screenshots/<issue>/`.
 - Work only on your branch; merge `origin/main` in before finishing; `vp run check`, client tests, `vp run -r build`.
-- Before handing over, run the `no-comments` skill on your own diff (comment cleanup).
 - Short commit subjects, no AI attribution lines.
 
 Finish with: screens changed, screenshot paths, test counts, anything not verified.

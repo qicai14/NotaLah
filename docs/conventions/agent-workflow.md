@@ -18,11 +18,11 @@ do the work; spawn the cheapest one that can do the job. Other tools (Codex, Cop
 
 Work flow (plugin `mattpocock-skills`; these slash commands are user-invoked only, so ask the user to type them):
 - New work: `/grill-with-docs` or `/grilling`, then `/to-spec` and `/to-tickets` into GitHub issues.
-- Building an issue: the `ship-feature` skill. A hard bug: `/diagnosing-bugs`. Unattended runs: `autopilot`, only when
+- Building an issue: the `ship-feature` skill (a ticket session; the orchestrator merges). A hard bug: `/diagnosing-bugs`. Unattended runs: `autopilot`, only when
   the user asks.
 - End of a milestone: `reviewer` with the `thermo-nuclear-code-quality-review` skill on the range, then `/retro`.
 - Periodically: `/improve-codebase-architecture`; accepted candidates become issues.
-- Ending a session: the `handover` skill (it uses `/handoff`).
+- Ending a session: the `handover` skill (the user types `/handoff` for the kickoff).
 
 Lean code is enforced on coding agents by the ponytail hook (`PONYTAIL_SUBAGENT_MATCHER` in `.claude/settings.json`).
 Add a rule to an `AGENTS.md` or a conventions file only after an agent repeats a mistake, and put it in the narrowest

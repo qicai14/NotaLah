@@ -10,7 +10,7 @@ The user is away. Work the queue on safe defaults, never stop abruptly, and leav
 ## Start
 1. Run `date` and `get_usage`. Take the stop time and limits from the user's message.
 2. Create or reuse `../run-logs/AUTOPILOT_<YYYY-MM-DD>.md` with: stop time, **Queue** (open GitHub issues labelled
-   `afk` with an agreed spec, in `docs/HANDOVER.md` order), **Log**, **Decisions made without you**,
+   `ready-for-agent` with an agreed spec, in `docs/HANDOVER.md` order), **Log**, **Decisions made without you**,
    **Needs you** (keys, approvals, screenshots).
 3. Schedule the stop: CronCreate one-shot at the stop time with "Autopilot stop: finish the step in hand, then run
    the Stop section of the autopilot skill".
@@ -23,7 +23,7 @@ The user is away. Work the queue on safe defaults, never stop abruptly, and leav
   deletes, paid services, secrets, deleting user files, force-push) wait in "Needs you"; skip to the next item.
 - Never exceed a free tier, never add payment details, never touch the dev DB or the .docx (writer only), never
   print `.env`.
-- Merge only when CI is green and the reviewer has no blockers.
+- Ticket sessions stop at an open PR; the orchestrator merges it only when CI is green and the reviewer has no blockers.
 - Append one line to the Log per finished step (time, item, PR, result).
 
 ## Usage window (always)

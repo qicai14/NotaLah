@@ -1,6 +1,6 @@
 ---
 name: handover
-description: Closes a NotaLah work session - rewrites docs/HANDOVER.md, updates docs/PLAN.md milestones and the open GitHub issues, records unlogged decisions as ADRs, then runs /handoff for the next session's kickoff. Use when the user is ending or switching sessions, asks for a handover, or context is getting full.
+description: Closes a NotaLah work session - rewrites docs/HANDOVER.md, updates docs/PLAN.md milestones and the open GitHub issues, records unlogged decisions as ADRs, then asks the user for /handoff for the next session's kickoff. Use when the user is ending or switching sessions, asks for a handover, or context is getting full.
 ---
 
 # Handover
@@ -8,7 +8,7 @@ description: Closes a NotaLah work session - rewrites docs/HANDOVER.md, updates 
 ## 1. Check the real state
 `git log --oneline -15`, `gh pr list`, `gh issue list`, `git worktree list`: what merged, what is open, what is half done.
 
-## 2. Update the records (on a `docs/handover-<MMDD>` branch, PR, merge when CI is green)
+## 2. Update the records (on a `docs/handover-<MMDD>` branch, PR; the orchestrator merges it under its merge rule)
 - `docs/HANDOVER.md` (rewrite, under ~50 lines): date and phase; state of `main` (PRs since the last handover, test
   counts); open branches and PRs and what each needs; **user steps** with exact commands; next issues in order; known
   limits. Link to ADRs and issues, don't repeat them.
@@ -18,8 +18,9 @@ description: Closes a NotaLah work session - rewrites docs/HANDOVER.md, updates 
 - Hand the mechanical edits to `scribe`; keep the judgement (what is true, what is next) in the main session.
 
 ## 3. Kickoff
-Run `/handoff` (`mattpocock-skills:handoff`) with the next focus as its argument. Copy its output to
-`../run-logs/KICKOFF_next_session.md` and make sure it starts: "Continue NotaLah from the <date> handover. Catch up
+Ask the user to type `/handoff <next focus>` (`mattpocock-skills:handoff`, user-only). Copy its output to
+`../run-logs/KICKOFF_next_session.md`. Keep the current kickoff's orchestrator structure (Role, merge rule, Rules); refresh
+the Step 0 facts and the queue. Make sure it starts: "Continue NotaLah from the <date> handover. Catch up
 from files only: docs/HANDOVER.md, docs/PLAN.md, the ADRs since <n>, and the open issues." and ends with: "Ask me before
 anything that needs a key, a cost, or a scope change."
 

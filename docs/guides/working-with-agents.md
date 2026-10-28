@@ -59,7 +59,7 @@ setup once, then the per-feature loop for each piece of work.
   (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`); domain docs **single-context**
   (one `GLOSSARY.md` at the root, ADRs in `docs\adr\`).
 - Watch for: it will want to edit `CLAUDE.md`. Tell it to put the block in `AGENTS.md` instead (our `CLAUDE.md` must
-  stay exactly `@AGENTS.md`, or `vp run check` fails). It works on a branch and opens a PR like everything else.
+  stay exactly `@AGENTS.md`, or `vp run check` fails). It doesn't branch: run it in its own worktree session and open the PR yourself.
 
 **Step 2: `/grill-with-docs`**
 - What it does: interviews you about the domain and writes `GLOSSARY.md` (and ADRs for decisions it uncovers).
@@ -89,10 +89,12 @@ setup once, then the per-feature loop for each piece of work.
 
 ### Per-feature loop (every piece of work)
 
-1. Pick an issue (`gh issue list`, or ask "what's next?"; HANDOVER lists the order).
-2. Say: "ship issue #N". The orchestrator runs the `ship-feature` skill: worktree + private test DB, the right builder
-   (`implementer` / `frontend`), `reviewer` (+ `security-reviewer` when needed), `tester`, PR with `Closes #N`.
-3. It asks before merging (unless you allowed merges for the session). Merging closes the issue.
+1. The orchestrator picks the ready issues (`gh issue list`; HANDOVER lists the order) and starts one ticket session
+   per issue.
+2. Each ticket session runs the `ship-feature` skill: worktree + private test DB, the right builder
+   (`implementer` / `frontend`), then in the session itself `no-comments`, `reviewer` (+ `security-reviewer` when
+   needed) and `code-review`, `tester` (with the flake check), and a PR from `pr` with `Closes #N`. It stops at the PR.
+3. The orchestrator verifies the PR and merges it; merging closes the issue. The ticket session then cleans up.
 4. A hard bug: `/diagnosing-bugs`. Test-first work: say "use /tdd" or type it.
 5. End of a milestone: ask for "a thermo-nuclear review of the milestone" (reviewer + that skill), then `/retro`;
    `/code-review` on the range if you want a second opinion.
