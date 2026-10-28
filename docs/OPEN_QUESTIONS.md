@@ -64,3 +64,9 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
 - R14: Plan A (~25.6k words, also condenses Ch 3 and trims Ch 4, beyond "Ch 4-6 as they are") or Plan B (~20k)?
   Chapter 2 → 8k was read as the whole chapter (`../FYP_Submissions/drafts/R14_cut_plan.md`).
 - Render auth burst 20/min per IP and bcrypt 10 for production (D81): fine for UAT, or keep 60 and 12?
+
+## Open for the user (29 Oct, glossary grill)
+- Rename the code's `Module` naming (`MODULE_T`, `mod_*`, `pst_mod_id`) to Subject? **OPEN, not decided.** For: code
+  matches the glossary and the UI term. Against: a migration plus changes in server, client and tests, and
+  the dissertation's Chapter 4 schema names (`MODULE_T`) would need to change too. Not needed for the demo; the glossary
+  lists Module under _Avoid_ as a legacy name meanwhile.

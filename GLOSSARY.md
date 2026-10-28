@@ -1,24 +1,24 @@
 # NotaLah
 
-A peer-to-peer academic note platform: students and lecturers publish slide notes, find them by module, and discuss them.
+A peer-to-peer academic note platform: students and lecturers share slide-style notes, found through a ranked feed and subject search.
 
 ## Language
 
 **Note**:
-The unit a user publishes and shares. It has a title, a Module, a status and a visibility, and exactly one Deck.
+The published unit a user shares, with a title, a Subject, a status and a visibility. It has exactly one Deck and one Owner.
 _Avoid_: Post (legacy table name only)
 
 **Deck**:
-The slide content of a Note: an ordered list of Slides with a theme, an aspect ratio and optional music. Never published on its own.
-_Avoid_: Presentation, slideshow
+The slide content of a Note: an ordered list of Slides. It is never published or shared on its own.
+_Avoid_: Presentation
 
 **Slide**:
-One page of a Deck, holding positioned elements such as text, images, video and shapes.
-_Avoid_: Board, page, card
+One page of a Deck, holding positioned elements such as text, images and video.
+_Avoid_: Board, page
 
-**Module**:
-An APU module with a code, a name and a programme. Every published Note belongs to one. "Subject search" means searching by Module.
-_Avoid_: Subject, course
+**Subject**:
+The general academic subject a Note is filed under and searched by, such as science, chemistry or physics. It has a name and no code, because module codes differ across universities. Whether the code's `Module` naming is renamed to match: not decided.
+_Avoid_: Module (legacy code name), module code
 
 ## Discovery
 
@@ -27,31 +27,35 @@ The ranked vertical list of published Notes shown to a viewer.
 _Avoid_: Timeline, home
 
 **Following**:
-The separate, time-ordered list of Notes from users the viewer follows. Not ranked.
-_Avoid_: Following feed
+The separate list of Notes from followed users, newest first. It is not ranked.
+_Avoid_: Feed (reserved for the ranked list)
 
 **Ranking**:
-The deterministic heuristic that orders the Feed, from four weighted components: engagement, recency, lecturer validation and relevance. It does not order search results, which have their own search order.
+The deterministic heuristic that orders the Feed from engagement, recency, lecturer validation and relevance. It orders the Feed only.
 _Avoid_: Algorithm, recommendation
+
+**Search order**:
+The order of subject-search results; it reuses part of Ranking's inputs but has no personal relevance.
+_Avoid_: Ranking
 
 ## People
 
+**Owner**:
+The author of a Note, who holds full control of it.
+_Avoid_: Creator, uploader
+
+**Collaborator**:
+A named user with edit access to a Note. A user with view access only is a Viewer.
+_Avoid_: Contributor, co-author
+
+**Viewer**:
+A user who can see a Note without edit access, whether through a view role or a share link.
+_Avoid_: Reader
+
 **Lecturer**:
-A user whose lecturer account an admin has approved. A user awaiting approval is an applicant, not a Lecturer.
+An approved lecturer account. An account awaiting admin approval is an applicant, not a Lecturer.
 _Avoid_: Teacher, staff
 
 **Validation**:
 A Lecturer's endorsement of a Note, shown to users as the "Super Like" and counted in Ranking.
 _Avoid_: Verification, approval
-
-**Owner**:
-The user who authored a Note.
-_Avoid_: Creator, uploader
-
-**Collaborator**:
-A named user added to a Note with a view or edit role. The Owner is not a Collaborator, and neither is someone using a share link.
-_Avoid_: Contributor, co-author, member
-
-## Not decided
-
-Nothing yet: every core term above was settled in the grill.
