@@ -20,3 +20,17 @@ subject search, a slide-note editor and note-anchored messaging. It runs locally
 - When writing or running tests: [docs/conventions/testing.md](docs/conventions/testing.md)
 - When planning work or delegating to subagents: [docs/conventions/agent-workflow.md](docs/conventions/agent-workflow.md)
 - Current state and what's next: [docs/HANDOVER.md](docs/HANDOVER.md); every other doc: [docs/README.md](docs/README.md)
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `qicai14/NotaLah`, via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context. See `docs/agents/domain.md`.
