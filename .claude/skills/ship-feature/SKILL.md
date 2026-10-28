@@ -34,7 +34,7 @@ One builder per issue, given the issue body, branch, the absolute worktree path 
 - Blockers and should-fix items go back to the same builder (SendMessage), then re-review only the fix.
 
 ## 4. Test
-`tester` in the worktree: `vp run check`, `vp run -r build`, then the flake check, `vp run -r test --no-cache` five
+`tester` in the worktree: `vp run check`, `vp run -r build`, then the flake check, `vp run --no-cache -r test` five
 times (every run's counts, any failure verbatim), plus the E2E suite for user flows. UI issues: browser pass at 1440
 and 375 px, light and dark.
 

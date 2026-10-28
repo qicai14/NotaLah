@@ -23,7 +23,7 @@ The user is away. Work the queue on safe defaults, never stop abruptly, and leav
   deletes, paid services, secrets, deleting user files, force-push) wait in "Needs you"; skip to the next item.
 - Never exceed a free tier, never add payment details, never touch the dev DB or the .docx (writer only), never
   print `.env`.
-- Merge only when CI is green and the reviewer has no blockers.
+- Ticket sessions stop at an open PR; the orchestrator merges it only when CI is green and the reviewer has no blockers.
 - Append one line to the Log per finished step (time, item, PR, result).
 
 ## Usage window (always)
