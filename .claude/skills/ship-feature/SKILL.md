@@ -21,7 +21,7 @@ user); if not, grill the user first (`mattpocock-skills:grilling`). This skill e
 ## 2. Build
 One builder per issue, given the issue body, branch, the absolute worktree path (every Bash call starts with
 `cd "<path>" &&`, edits use absolute paths inside it) and the test DB:
-- `implementer` (server and logic; `model: opus` for ranking, auth, real-time), `frontend` (UI), `scribe` (pure text).
+- `implementer` (server and logic; `model: opus` for ranking, auth, real-time), `frontend` (UI), `scribe` (pure text edits).
 - Use `mattpocock-skills:tdd` at the seams in the issue's testing decisions (pre-agreed).
 - The builder names the next free ADR number (`docs/adr/`) and TC IDs; if two branches run at once, the orchestrator
   reserves numbers for each up front.
@@ -39,7 +39,8 @@ times (every run's counts, any failure verbatim), plus the E2E suite for user fl
 and 375 px, light and dark.
 
 ## 5. PR, then stop
-- The `docs/PLAN.md` milestone line, ADR and TC rows go in this PR, never after the merge.
+- The `docs/PLAN.md` milestone line, ADR, TC rows and any other record `docs/conventions/delivery.md` lists go in this
+  PR, never after the merge.
 - Merge `origin/main` into the branch right before opening the PR; resolve conflicts there, never on `main`.
 - Body from `mattpocock-skills:pr` (Summary / Evidence / Merge Danger), ADR number and `Closes #<issue>`. No AI
   attribution lines. Open the PR and stop.
