@@ -41,7 +41,7 @@ export const RAIL: NavItem[] = [
 
 export const ADMIN_RAIL: NavItem[] = [
   { to: '/admin/lecturers', label: 'Lecturer applications', icon: GraduationCap },
-  { to: '/admin/modules', label: 'Subjects', icon: BookOpen },
+  { to: '/admin/modules', label: 'Modules', icon: BookOpen },
   { to: '/admin/reports', label: 'Reports', icon: Flag },
   { to: '/admin/users', label: 'Users', icon: Users },
 ];

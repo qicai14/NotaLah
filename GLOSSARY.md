@@ -5,7 +5,7 @@ A peer-to-peer academic note platform: students and lecturers share slide-style 
 ## Language
 
 **Note**:
-The published unit a user shares, with a title, a Subject, a status and a visibility. It has exactly one Deck and one Owner.
+The published unit a user shares, with a title, a Module, a status and a visibility. It has exactly one Deck and one Owner.
 _Avoid_: Post (legacy table name only)
 
 **Deck**:
@@ -16,9 +16,11 @@ _Avoid_: Presentation
 One page of a Deck, holding positioned elements such as text, images and video.
 _Avoid_: Board, page
 
+**Module**:
+The course unit a Note is filed under and searched by, with a code, a name and a programme. Admins add and rename Modules; the code never changes.
+
 **Subject**:
-The general academic subject a Note is filed under and searched by, such as science, chemistry or physics. It has a name and no code, because module codes differ across universities. Whether the code's `Module` naming is renamed to match: not decided.
-_Avoid_: Module (legacy code name), module code
+The hashtags on a post, such as #science #physics #newtonslaw. Free text; it is not a Module.
 
 ## Discovery
 

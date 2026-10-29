@@ -63,7 +63,7 @@ export default function AdminModules() {
     if (!out) return;
     setData((d) => ({ modules: [...(d?.modules ?? []), out.module].sort((a, b) => a.code.localeCompare(b.code)) }));
     setDraft(EMPTY);
-    setStatus(`Subject ${out.module.code} added.`);
+    setStatus(`Module ${out.module.code} added.`);
   }
 
   async function onRename(ev: FormEvent) {
@@ -79,16 +79,16 @@ export default function AdminModules() {
     );
     if (!out) return;
     setData((d) => ({ modules: d?.modules.map((m) => (m.id === out.module.id ? out.module : m)) ?? [] }));
-    setStatus(`Subject ${out.module.code} renamed.`);
+    setStatus(`Module ${out.module.code} renamed.`);
     closeEditor();
   }
 
   const modules = data?.modules;
   return (
     <section className="flex flex-col gap-4">
-      <AdminHeading>Subjects</AdminHeading>
+      <AdminHeading>Modules</AdminHeading>
       <Notices status={status} error={loadError ?? add.error ?? rename.error} />
-      <form onSubmit={onAdd} className={`${cardClass} flex flex-col gap-3`} aria-label="Add a subject">
+      <form onSubmit={onAdd} className={`${cardClass} flex flex-col gap-3`} aria-label="Add a module">
         <Field
           label="Code"
           name="code"
@@ -112,12 +112,12 @@ export default function AdminModules() {
         />
         <div>
           <Button type="submit" disabled={add.pending}>
-            Add subject
+            Add module
           </Button>
         </div>
       </form>
       {loading && <Loading>Loading…</Loading>}
-      {modules?.length === 0 && <PageMessage title="No subjects yet" body="Add the first subject above." />}
+      {modules?.length === 0 && <PageMessage title="No modules yet" body="Add the first module above." />}
       {modules && modules.length > 0 && (
         <ul className="flex flex-col gap-3">
           {modules.map((m) => (
