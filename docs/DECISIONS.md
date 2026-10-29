@@ -1466,10 +1466,9 @@ Reversibility: **Easy** (edit text/config), **Medium** (redo a diagram or migrat
   cookie (same flags, new hour), so an active user is not logged out mid-session. Tokens carry an `auth_time` claim (the
   login time), copied into each renewal; past `MAX_SESSION_HOURS` (default 12) since login the cookie is no longer
   renewed, so a session left open on a shared lab PC ends within 13 hours. Tokens issued before R37 have no `auth_time`
-  and simply expire. The server cuts a socket 10 minutes before its token expires (at once for a renewable token already
-  inside that margin, at real expiry for one that cannot be renewed); after a server-side disconnect the client waits a
-  random 1-3 s, calls `GET /api/auth/me` to renew the cookie, then reconnects, so socket expiry follows the new token
-  (amended by [ADR 0088](adr/0088-socket-cut-before-expiry.md)).
+  and simply expire. The server still cuts a socket when its token expires; the client reconnects after a server-side
+  disconnect, after a random 1-3 s delay so tabs do not reconnect at once, and the handshake reads the renewed cookie,
+  so socket expiry follows the new token.
 - **Domain requirement:** both `pages.dev` and `onrender.com` are on the Public Suffix List, so `*.pages.dev` and
   `*.onrender.com` are different sites: the SameSite=Lax login cookie set by the API would not be sent from the client's
   requests. The app therefore needs its own domain with `app.` and `api.` subdomains before the live deploy.
