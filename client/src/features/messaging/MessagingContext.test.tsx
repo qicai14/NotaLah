@@ -162,7 +162,7 @@ describe('messaging provider', () => {
     await opened();
     await act(async () => sockets[0]!.fire('connect'));
     const fetched = vi.mocked(fetch);
-    const renewals = () => fetched.mock.calls.filter(([url]) => String(url) === '/api/auth/me').length;
+    const renewals = () => fetched.mock.calls.filter(([url]) => url === '/api/auth/me').length;
     vi.useFakeTimers();
     try {
       sockets[0]!.fire('disconnect', 'transport close');
