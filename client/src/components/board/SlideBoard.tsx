@@ -73,7 +73,8 @@ export const textBoxStyle = (el: El<'text'>): CSSProperties => ({
 
 function TextBox({ el }: { el: El<'text'> }) {
   const style = textBoxStyle(el);
-  // The server sanitised this HTML against the editor allow-list (R21 spec 2.5), so it is safe to inject.
+  // Unsaved html is not server-sanitised yet: builders escape (shared escapeHtml), TipTap emits only its schema,
+  // backups go through cleanHtml; the server sanitises on save (R21 spec 2.5).
   return (
     <div
       className="board-text size-full overflow-hidden break-words"

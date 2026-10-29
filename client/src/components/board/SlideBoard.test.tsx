@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vite-plus/test';
-import type { Slide, SlideElement } from '@notalah/shared';
+import { bullets, para, type Slide, type SlideElement } from '@notalah/shared';
 import { cropBox, fitScale, inReadingOrder } from './geometry';
 import { SlideBoard } from './SlideBoard';
 import { SlideCarousel } from './SlideCarousel';
@@ -226,5 +226,17 @@ describe('SlideBoard', () => {
     fireEvent.keyDown(screen.getByRole('group', { name: 'Slides' }), { key: 'ArrowLeft' });
     await userEvent.click(prev);
     expect(live.textContent).toBe('Slide 1 of 4');
+  });
+});
+
+describe('board text safety', () => {
+  it('CLI-TC82: text built by the shared builders shows literally and injects no elements', () => {
+    const script = '<script>alert(1)</script>';
+    const img = '<img src=x onerror=alert(1)>';
+    const text = { ...slide.elements[0], html: para(script) + bullets(img) } as SlideElement;
+    const { container } = render(<SlideBoard slide={{ ...slide, elements: [text] }} aspect="4:5" />);
+    expect(container.textContent).toContain(script);
+    expect(container.textContent).toContain(img);
+    expect(container.querySelector('script, img')).toBeNull();
   });
 });

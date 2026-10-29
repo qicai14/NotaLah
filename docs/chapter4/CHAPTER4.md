@@ -1193,6 +1193,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC92 | Layouts and inserting one (client) | every layout in every theme and aspect; image-caption moved from Plain to Journal; Title on an empty slide with a photo background, then Code | Every layout passes the deck schema and is already in its theme; the image placeholder takes Journal's muted colour; Title fills the empty slide and keeps its photo, Code adds slide 2 and selects it; one undo removes it | | |
 | NOTE-TC93 | Unknown font or theme | `theme: 'neon'`; a text element with `font: 'Comic Sans'` | The deck schema rejects both; the untouched deck passes | | |
 | NOTE-TC94 | Design panel (client) | a deck with one heading; click Journal, then Two columns, then add a blank slide | Plain starts checked in the theme radio group; Journal becomes checked and the heading turns Lora in Journal's heading colour; Two columns adds slide 2 on Journal's background; the blank slide also gets it | | |
+| NOTE-TC95 | Layout text is escaped | `para` and `bullets` given `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>`; every built-in layout | The html holds `&lt;script&gt;` and `&lt;img ...&gt;` as text; `& < > " '` are escaped; every layout's html is unchanged | | |
 
 *Table 4.27: User profile module test cases (USR)*
 
@@ -1621,6 +1622,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC79 | Logout before the socket client loads | Sign in, then sign out before `socket.io-client` has been imported | No socket is ever opened | | |
 | CLI-TC80 | Guest prompt loads on first use | Render the provider on `/notes/7?s=2`; a guest presses Like; then Log in | No dialog at first; the dialog "Log in to like this note" appears; Log in opens `/login` with `from` `/notes/7?s=2` | | |
 | CLI-TC81 | Socket client fails to load | Signed in; the `socket.io-client` import rejects | "Live updates are offline. Refresh to try again." is shown | | |
+| CLI-TC82 | Board shows markup as plain text | A text element built by `para` and `bullets` from `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>` | Both strings show as literal text; no script or img element is created | | |
 
 *Table 4.42: R2 storage driver test cases (STO)*
 
