@@ -5,7 +5,6 @@ import { pool } from '../../src/lib/pool';
 import { asUser, truncateAll } from '../helpers';
 import { ASOF, LABEL_STATUS, NOTES, SUBJECTS, seedNfr3 } from '../ranking/nfr3-seed';
 
-// NFR3 search half (#77): precision@5 per Subject query on the labelled seed; a hit is a note whose topic is the query.
 let perQuery: Record<string, number>;
 let mean: number;
 

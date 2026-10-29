@@ -5,7 +5,6 @@ import { pool } from '../../src/lib/pool';
 import { asUser, truncateAll } from '../helpers';
 import { ASOF, LABEL_STATUS, NOTES, VIEWERS, seedNfr3 } from './nfr3-seed';
 
-// NFR3 feed half (#77): share of viewer cases whose top 5 holds a verified note, a subject-relevant note, or either.
 let result: { verified: number; relevant: number; combined: number; misses: number[] };
 
 beforeAll(async () => {
@@ -43,9 +42,7 @@ describe('NFR3 feed relevance on the labelled seed', () => {
     expect(result).toEqual({ verified: 1, relevant: 0.2, combined: 1, misses: [1, 2, 3, 5, 6, 7, 8, 9] });
   });
 
-  // Known gap: measured 20% (only the viewers whose Subject has a lecturer-written note pass); popular off-topic notes fill
-  // the slots under the verified ones. it.fails keeps CI green and turns red once ranking meets the target (NFR5 / #77).
-  it.fails('RANK-TC34: a subject-relevant note is in every viewer top 5 at default weights (NFR3 target 100%)', () => {
+  it.fails('RANK-TC34: a subject-relevant note is in every viewer top 5 at default weights (NFR3 target 100%, measured 20% in RANK-TC33)', () => {
     expect(result.relevant).toBe(1);
   });
 });

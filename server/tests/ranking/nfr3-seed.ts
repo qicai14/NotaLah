@@ -179,7 +179,6 @@ export const NOTES: SeedNote[] = [
   offTopic('Hackathon weekend recap', 'We built an encryption chat app with subnetting labs.', 'hackathon', 30, 20),
 ];
 
-/** Each viewer's history: one interaction (type, days before ASOF) on the history note of each of their Subjects. */
 export const VIEWERS: { subjects: Subject[]; history: ['view' | 'like' | 'comment', number][] }[] = [
   { subjects: ['recursion'], history: [['comment', 2]] },
   { subjects: ['normalisation'], history: [['like', 1]] },
@@ -220,7 +219,6 @@ export const VIEWERS: { subjects: Subject[]; history: ['view' | 'like' | 'commen
 
 const at = (hoursAgo: number) => new Date(ASOF.getTime() - hoursAgo * 3_600_000);
 
-/** Writes the seed into an empty database; returns note ids (index-aligned with NOTES) and viewer ids (with VIEWERS). */
 export async function seedNfr3(): Promise<{ noteIds: number[]; viewerIds: number[] }> {
   const author = await insertUser();
   const lecturerAuthor = await insertUser({ role: 'lecturer', lecturerStatus: 'approved', staffId: 'S-NFR3-A' });
