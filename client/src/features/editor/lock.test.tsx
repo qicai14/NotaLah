@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { IDLE_LIMIT_MS } from '@/lib/activity';
 import { afterLockWon, LOCK_RENEW_MS, LOCK_RETRY_MS, useEditLock } from './lock';
 import { emptyDeck, useEditor } from './store';
 import { LockedNotice } from './LockedNotice';
@@ -81,5 +82,68 @@ describe('editor soft lock', () => {
     expect(calls.filter((c) => c.startsWith('DELETE'))).toEqual([]); // the other run still holds it
     b.unmount();
     expect(calls.filter((c) => c.startsWith('DELETE'))).toEqual(['DELETE /api/notes/6/lock']);
+  });
+
+  const posts = () => calls.filter((c) => c === 'POST /api/notes/7/lock').length;
+  const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+  it('CLI-TC96: an idle editor stops renewing the lock, and the next tick after activity renews', async () => {
+    reply = () => ({ status: 200, body: {} });
+    const { result } = renderHook(() => useEditLock(7, () => {}));
+    await flush();
+    await wait(IDLE_LIMIT_MS);
+    const before = posts();
+    await wait(10 * LOCK_RENEW_MS);
+    expect(posts()).toBe(before);
+    fireEvent.keyDown(window, { key: 'a' });
+    await wait(LOCK_RENEW_MS);
+    expect(posts()).toBe(before + 1);
+    expect(result.current.state).toEqual({ kind: 'held' });
+  });
+
+  it('CLI-TC97: an editor in use keeps renewing past the idle limit', async () => {
+    reply = () => ({ status: 200, body: {} });
+    renderHook(() => useEditLock(7, () => {}));
+    await flush();
+    for (let i = 0; i < 12; i++) {
+      await wait(10 * 60_000);
+      fireEvent.pointerMove(window);
+    }
+    const before = posts();
+    await wait(LOCK_RENEW_MS);
+    expect(posts()).toBe(before + 1);
+  });
+
+  it('CLI-TC98: an idle editor stops retrying a held lock, and the next retry after activity asks again', async () => {
+    reply = () => ({ status: 423, body: { lockedBy: { id: 9, displayName: 'Aina Rahman' } } });
+    renderHook(() => useEditLock(7, () => {}));
+    await flush();
+    await wait(IDLE_LIMIT_MS);
+    const before = posts();
+    await wait(10 * LOCK_RETRY_MS);
+    expect(posts()).toBe(before);
+    fireEvent.pointerDown(window);
+    await wait(LOCK_RETRY_MS);
+    expect(posts()).toBe(before + 1);
+  });
+
+  it('CLI-TC99: a lock lost while idle turns read-only on return and keeps unsaved edits', async () => {
+    useEditor.getState().load(emptyDeck());
+    reply = () => ({ status: 200, body: {} });
+    const onAcquired = vi.fn();
+    const { result } = renderHook(() => useEditLock(7, onAcquired));
+    await flush();
+    useEditor.getState().setMeta({ title: 'typed before leaving' });
+    await wait(IDLE_LIMIT_MS);
+    const before = posts();
+    await wait(10 * LOCK_RENEW_MS);
+    expect(posts()).toBe(before);
+    reply = () => ({ status: 423, body: { lockedBy: { id: 9, displayName: 'Aina Rahman' } } });
+    fireEvent.keyDown(window, { key: 'a' });
+    await wait(LOCK_RENEW_MS);
+    expect(posts()).toBeGreaterThan(before);
+    expect(result.current.state).toMatchObject({ kind: 'locked', holder: { id: 9 } });
+    expect(useEditor.getState().dirty).toBe(true);
+    expect(onAcquired).not.toHaveBeenCalled();
   });
 });
