@@ -73,8 +73,8 @@ export const textBoxStyle = (el: El<'text'>): CSSProperties => ({
 
 function TextBox({ el }: { el: El<'text'> }) {
   const style = textBoxStyle(el);
-  // Built from escaped text by the shared builders, and sanitised by the server on save (R21 spec 2.5). Unsaved
-  // slides are not sanitised yet, so every builder must escape.
+  // Unsaved html is not server-sanitised yet: builders escape (shared escapeHtml), TipTap emits only its schema,
+  // backups go through cleanHtml; the server sanitises on save (R21 spec 2.5).
   return (
     <div
       className="board-text size-full overflow-hidden break-words"

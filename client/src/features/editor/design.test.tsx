@@ -127,9 +127,10 @@ describe('themes and layouts', () => {
   });
 
   it('NOTE-TC95: the html builders escape plain text, and layout output is unchanged', () => {
-    const hostile = ['<script>alert(1)</script>', '<img src=x onerror=alert(1)>'];
-    expect(para(hostile[0])).toBe('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
-    expect(bullets(...hostile)).toBe(
+    const script = '<script>alert(1)</script>';
+    const img = '<img src=x onerror=alert(1)>';
+    expect(para(script)).toBe('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
+    expect(bullets(script, img)).toBe(
       '<ul><li><p>&lt;script&gt;alert(1)&lt;/script&gt;</p></li><li><p>&lt;img src=x onerror=alert(1)&gt;</p></li></ul>',
     );
     expect(escapeHtml(`&"'<>`)).toBe('&amp;&quot;&#39;&lt;&gt;');
@@ -137,6 +138,8 @@ describe('themes and layouts', () => {
     expect(slide.elements[1]).toMatchObject({
       html: '<p><strong>Left</strong></p><ul><li><p>Point</p></li><li><p>Point</p></li></ul>',
     });
-    expect(layoutSlide('title', THEMES.plain, '4:5', newId).elements[0]).toMatchObject({ html: '<p>Note title</p>' });
+    for (const id of LAYOUT_IDS)
+      for (const e of layoutSlide(id, THEMES.plain, '4:5', newId).elements)
+        if (e.type === 'text') expect(e.html, id).not.toContain('&'); // placeholders have nothing to escape
   });
 });

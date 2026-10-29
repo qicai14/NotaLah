@@ -171,7 +171,6 @@ export const LAYOUT_NAMES: Record<LayoutId, string> = {
 export const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-// Builders take plain text and escape it, so model or imported text can never inject markup.
 export const para = (t: string) => `<p>${escapeHtml(t)}</p>`;
 export const bullets = (...items: string[]) => `<ul>${items.map((i) => `<li>${para(i)}</li>`).join('')}</ul>`;
 

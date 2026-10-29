@@ -231,11 +231,12 @@ describe('SlideBoard', () => {
 
 describe('board text safety', () => {
   it('CLI-TC82: text built by the shared builders shows literally and injects no elements', () => {
-    const hostile = ['<script>alert(1)</script>', '<img src=x onerror=alert(1)>'];
-    const text = { ...slide.elements[0], html: para(hostile[0]) + bullets(hostile[1]) } as SlideElement;
+    const script = '<script>alert(1)</script>';
+    const img = '<img src=x onerror=alert(1)>';
+    const text = { ...slide.elements[0], html: para(script) + bullets(img) } as SlideElement;
     const { container } = render(<SlideBoard slide={{ ...slide, elements: [text] }} aspect="4:5" />);
-    expect(container.textContent).toContain(hostile[0]);
-    expect(container.textContent).toContain(hostile[1]);
+    expect(container.textContent).toContain(script);
+    expect(container.textContent).toContain(img);
     expect(container.querySelector('script, img')).toBeNull();
   });
 });

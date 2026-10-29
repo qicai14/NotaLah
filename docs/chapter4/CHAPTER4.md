@@ -1094,6 +1094,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AUTH-TC20 | Rate-limit key ignores invalid tokens | auth cookie from signToken for user 42; a token signed with another secret; an expired token; no cookie | tokenSubject returns "42" for the valid cookie and null for the forged, expired and missing ones | | |
 | AUTH-TC21 | Guest reads are rate-limited by IP | guest GET /api/users/:id; the guest counter set to the limit (120 per minute); the same request again, then signed in | 200; 429 "Too many requests. Log in or try again in a minute."; signed-in request 200 (not counted) | | |
 | AUTH-TC22 | Revalidating a guest response after login | guest GET /api/notes/:id/comments (ETag saved); the same GET signed in with If-None-Match set to that ETag | 200 with X-Viewer: guest; then 304 with X-Viewer: user, so the cached guest header is replaced | | |
+| AUTH-TC23 | Password hash cost | Register with `BCRYPT_ROUNDS=10`; log in as that user and as a user whose stored hash has cost 4; read the unknown-email dummy hash | Stored hash has cost 10; both logins 200; the dummy hash has the configured cost | | |
 
 *Table 4.26: Note editor and publishing module test cases (NOTE)*
 
@@ -1192,6 +1193,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | NOTE-TC92 | Layouts and inserting one (client) | every layout in every theme and aspect; image-caption moved from Plain to Journal; Title on an empty slide with a photo background, then Code | Every layout passes the deck schema and is already in its theme; the image placeholder takes Journal's muted colour; Title fills the empty slide and keeps its photo, Code adds slide 2 and selects it; one undo removes it | | |
 | NOTE-TC93 | Unknown font or theme | `theme: 'neon'`; a text element with `font: 'Comic Sans'` | The deck schema rejects both; the untouched deck passes | | |
 | NOTE-TC94 | Design panel (client) | a deck with one heading; click Journal, then Two columns, then add a blank slide | Plain starts checked in the theme radio group; Journal becomes checked and the heading turns Lora in Journal's heading colour; Two columns adds slide 2 on Journal's background; the blank slide also gets it | | |
+| NOTE-TC95 | Layout text is escaped | `para` and `bullets` given `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>`; every built-in layout | The html holds `&lt;script&gt;` and `&lt;img ...&gt;` as text; `& < > " '` are escaped; every layout's html is unchanged | | |
 
 *Table 4.27: User profile module test cases (USR)*
 
@@ -1225,6 +1227,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USR-TC26 | Guest views a profile | no cookie: GET /api/users/:id and /api/users/:id/notes of an author with a public and a contacts-only note; user 99999 | 200 with follower and following counts, followedByMe false, no draftCount, and only the public note in both lists; 404; a signed-in friend sees both notes | | |
 | USR-TC27 | Suspended profile hidden except from admins | user with a note and one follower is suspended; guest, the follower and an admin open the profile, its notes, followers and following, and the note | Guest: 404 for the profile and its notes; follower: 404 for all four and for the note; admin: 200 for all four and the note, the profile shows followerCount 1 and the note, while the admin's feed stays empty; the follower's following list is empty | | |
 | USR-TC28 | Profile thumbnail data and likeCount | Note with page notes, one ready and one pending upload, likes from a fan and the author, and a friends-only note liked by a fan; a stranger opens the profile | likeCount is 1; the cover has no notes key; assets lists only the ready upload; the friends-only note is absent | | |
+| USR-TC29 | Restricted account cannot edit its profile (UC21, D83) | Restricted user sends a new display name and bio | 403; name and bio unchanged | | |
 
 *Table 4.28: Blocking test cases (BLK). BLK covers user blocks (D49): the block endpoints and every path a block closes, each checked from both sides of the pair.*
 
@@ -1483,16 +1486,20 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 | TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
 | --- | --- | --- | --- | --- | --- |
-| OPS-TC1 | Health check with the database up | GET /api/health | 200 with status ok, db up | | |
-| OPS-TC2 | Health check with the database unreachable | GET /api/health while the database query fails | 503 with status degraded, db down | | |
+| OPS-TC1 | Readiness check with the database up | GET /api/health/db | 200 with status ok, db up | | |
+| OPS-TC2 | Readiness check with the database unreachable | GET /api/health/db while the database query fails | 503 with status degraded, db down | | |
 | OPS-TC3 | Request id reused or replaced | no X-Request-Id; "abc-123"; "bad id<script>" | Response carries a generated UUID; "abc-123" echoed; a new UUID instead of the unsafe value | | |
 | OPS-TC4 | Logger redaction options hide set-cookie and password fields | a pino logger built with the app's redaction options logs a response with a set-cookie notalah_token header and a body with a password | Log output shows [redacted] and contains neither the notalah_token value nor the password | | |
 | OPS-TC5 | Share-link tokens kept out of the request log | paths /api/share/AbC_-123?x=1, /api/notes/5?cursor=abc, no URL | /api/share/[token]; /api/notes/5; undefined | | |
 | OPS-TC6 | Error reporting sends no request data, user info or variables | Sentry initialised with a DSN; an event carrying request url, headers and body; reportError with request id req-1 | init options turn every data category off, tracing stays off, beforeSend removes the request, the exception is tagged request_id req-1 | | |
 | OPS-TC7 | Client error reporting is optional and collects no user data | `initErrorReporting` with an empty DSN; then with a DSN | No Sentry init without the DSN; with it, init gets that DSN, user info, cookies, headers and bodies off, and no tracing | | |
-| OPS-TC8 | Health check reports the deployed commit | GET /api/health without, then with `RENDER_GIT_COMMIT=abc123` | No `version` field; then `{status: ok, db: up, version: abc123}` | | |
+| OPS-TC8 | Health checks report the deployed commit | GET /api/health without, then with `RENDER_GIT_COMMIT=abc123`; GET /api/health/db with it | No `version` field; then `{status: ok, version: abc123}`; readiness `{status: ok, db: up, version: abc123}` | | |
 | OPS-TC9 | Server error reports drop share-link tokens | An event with `/api/share/AbC_-123` in an exception value and `/share/Q7w` in a tag; `beforeSend` and `beforeBreadcrumb` with share URLs | Neither token remains; each becomes `/share/:token` | | |
 | OPS-TC10 | Client error reports drop share-link tokens | An event with `/share/AbC_-123#s2` as request URL and breadcrumbs with `/api/share/XyZ-9/assets/1` and an escaped quote after a token | No token remains; URLs keep their fragment and path after `/share/:token` | | |
+| OPS-TC11 | Liveness check never touches the database | GET /api/health while every database query fails | 200 `{status: ok}` and no query was made | | |
+| OPS-TC12 | Latency percentiles (R27) | 100 unsorted latencies 1 to 100 ms; one value; an empty list | p50 50, p95 95, p99 99, p100 100 (nearest rank); the single value for any p; NaN when empty | | |
+| OPS-TC13 | NFR1 verdict from a load run (R27) | 100 search samples at 10 to 1,000 ms; the same plus one at 4,000 ms; samples with p95 above 3,000 ms; one failed search; no searches | Pass and all under 3 s; pass but not all under 3 s; fail; fail; fail | | |
+| OPS-TC14 | Load seed refuses a non-test database (R27) | Database names `notalah`, `notalah_prod`, `postgres`, `notalah_tes`, `x_notalah_test_1`; then `notalah_test_r27_load` | The first five throw "load seed refused" before any table is touched; the last is accepted | | |
 
 *Table 4.38: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
@@ -1606,6 +1613,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC74 | Reduced motion shows poster and Play | `prefers-reduced-motion: reduce`; the video becomes 100 % visible; press Play, then Pause | No autoplay and the poster stays; Play starts it, Pause stops it | | |
 | CLI-TC75 | Video states outside playback | a slide with a video that is processing, then failed; a ready video on a board outside a carousel | "Processing…" and "Video could not be processed" tiles with no player; the outside board shows the poster image only | | |
 | CLI-TC76 | Play button when playback is refused or ends | `play()` rejects once; later the video ends; then scrolls out of view | A Play button appears, restarts it and is gone once playing; it returns on end and is gone after leaving view | | |
+| CLI-TC77 | Admin lecturer applications | Reject without a reason, then with one; approve the other application | "Reason is required" and no request until a reason is typed; a decided row leaves the list and the status line names the outcome | | |
+| CLI-TC78 | Shared page annotations (client) | a view link whose annotation list holds one item, then none | "Annotations (1)" opens a list with the body and no Delete, Report or text box; with none the button is absent | | |
+| CLI-TC79 | Logout before the socket client loads | Sign in, then sign out before `socket.io-client` has been imported | No socket is ever opened | | |
+| CLI-TC80 | Guest prompt loads on first use | Render the provider on `/notes/7?s=2`; a guest presses Like; then Log in | No dialog at first; the dialog "Log in to like this note" appears; Log in opens `/login` with `from` `/notes/7?s=2` | | |
+| CLI-TC81 | Socket client fails to load | Signed in; the `socket.io-client` import rejects | "Live updates are offline. Refresh to try again." is shown | | |
+| CLI-TC82 | Board shows markup as plain text | A text element built by `para` and `bullets` from `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>` | Both strings show as literal text; no script or img element is created | | |
 
 *Table 4.42: R2 storage driver test cases (STO)*
 
@@ -1626,6 +1639,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | STO-TC13 | Malformed read responses | 206 without Content-Range; 200 with a non-numeric content-length; 416 without a size | Each throws before any stream is created | | |
 | STO-TC14 | Image put fails | `storage.put` rejects (timeout) on an image upload | 500; `storage.remove` is called with the key the put used | | |
 | STO-TC15 | Video put fails | `storage.put` rejects on a video upload | 500; `storage.remove` is called with the `o/` key of the original (R40) | | |
+| STO-TC16 | Image decode cap and sharp settings | Upload a 6001 x 4000 PNG, then a 6000 x 4000 PNG; read `sharp.concurrency()` and `sharp.cache()` | 400 "Image dimensions are too large"; 201; concurrency 1 and every cache maximum 0 | | |
 
 *Table 4.43: Deploy readiness test cases (DEP)*
 
@@ -1642,15 +1656,18 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | DEP-TC9 | Socket reconnects after a server cut | Client socket receives `disconnect` with reason `transport close`, then `io server disconnect`; then another server cut followed by logout | No manual reconnect for the transport drop; none before 1 s and one by 3 s after the server cut; no reconnect after logout | | |
 | DEP-TC10 | Purge cannot remove a file | An unlinked asset 2 days old; `storage.remove` fails with R2 status 500 | 1 asset purged, 1 orphaned file counted; the row stays deleted; the key is logged and `db:purge` exits 1 | | |
 | DEP-TC11 | Forged entry in a forwarded chain | `TRUST_PROXY=1`, proxy peer 10.0.0.1, `X-Forwarded-For: 6.6.6.6, 203.0.113.5` | 200; the only counter key is `guest:203.0.113.5` | | |
-| DEP-TC12 | Purge registers every limiter | `purgeAll` run in a process that never imports the app | The window registry holds all ten prefixes (auth, login, write, guest, upload, video, file, unsplash, music, musicday) and upload is 3,600,000 ms | | |
+| DEP-TC12 | Purge registers every limiter | `purgeAll` run in a process that never imports the app | The window registry holds all eleven prefixes (auth, login, write, read, guest, upload, video, file, unsplash, music, musicday) and upload is 3,600,000 ms | | |
 | DEP-TC13 | Pages proxy forwards a request and rewrites the forwarding headers | POST `https://notalah.pages.dev/api/notes?page=2` with `CF-Connecting-IP: 203.0.113.5`, `X-Forwarded-For: 6.6.6.6`, a guessed `X-Proxy-Secret`, a cookie, the CSRF header and a JSON body | Sent to `<API_ORIGIN>/api/notes?page=2` as POST with `X-Forwarded-For: 203.0.113.5`, `X-Proxy-Secret` set to the configured secret, the same cookie, header and body; the API's Set-Cookie comes back unchanged | | |
 | DEP-TC14 | Pages proxy without a client IP, and a WebSocket upgrade | GET `/socket.io/?EIO=4&transport=websocket` with `X-Forwarded-For: 6.6.6.6`, `Upgrade: websocket`, an Origin and no `CF-Connecting-IP` | Same path and query at the API; `X-Forwarded-For` removed; `Upgrade` and `Origin` kept | | |
 | DEP-TC15 | Pages proxy fails closed | GET `/api/health` with `API_ORIGIN` unset; then with `PROXY_SECRET` unset | 502 `{"error":"API proxy is not configured"}` both times; nothing is forwarded | | |
 | DEP-TC16 | Response compression skips ranged files | Signed-in GET `/api/modules` with `Accept-Encoding: gzip`; GET of a public note's image with `Range: bytes=0-9` | Module list sent with `Content-Encoding: gzip`; image answers 206 with no `Content-Encoding` and `Content-Length: 10` | | |
 | DEP-TC17 | Proxy path cannot change the upstream host | GET `/api/%2e%2e//evil.com/x` through the proxy | The forwarded request goes to the Render host | | |
 | DEP-TC18 | Proxy reports an unreachable API | The upstream fetch throws | 502 `{"error":"API unreachable"}` | | |
-| DEP-TC19 | Direct API calls refused in production | `PROXY_SECRET` set; GET `/api/modules` with no secret (and a forged `X-Forwarded-For`), with a wrong secret, with the right one; GET `/api/health` with none; then `PROXY_SECRET` unset | 403 `{"error":"Forbidden"}` twice; the right secret reaches the route (401, no session); health 200; unset secret reaches the route (401) as in development | | |
+| DEP-TC19 | Direct API calls refused in production | `PROXY_SECRET` set; GET `/api/modules` with no secret (and a forged `X-Forwarded-For`), with a wrong secret, with the right one; GET `/api/health` and `/api/health/db` with none; then `PROXY_SECRET` unset | 403 `{"error":"Forbidden"}` twice; the right secret reaches the route (401, no session); health 200, health/db 403; unset secret reaches the route (401) as in development | | |
 | DEP-TC20 | Direct Socket.io handshakes refused | `PROXY_SECRET` set; a signed-in socket from the client origin with no secret, a wrong secret, the right secret | Refused, refused, connected | | |
+| DEP-TC21 | Password cost and auth burst settings | `BCRYPT_ROUNDS` and `AUTH_ATTEMPTS_PER_MINUTE` unset; `10` and `20`; `BCRYPT_ROUNDS=9`; `AUTH_ATTEMPTS_PER_MINUTE=0`; `render.yaml` | 12 and 60; 10 and 20; both bad values fail startup naming the variable; the Blueprint sets `BCRYPT_ROUNDS` 10 and `AUTH_ATTEMPTS_PER_MINUTE` 20 | | |
+| DEP-TC22 | Read limit per user or IP | GET `/api/health`, a missing asset file and a share-link asset; guest GET `/api/programmes` and `/api/terms`; signed-in GET `/api/auth/me`; the user's counter set to 300, then a signed-in feed read and a guest terms read | No counter for the first three; remaining 299 then 298 for the guest IP and 299 for the user (keys `read:127.0.0.1`, `read:user:<id>`); feed 429 "Too many requests. Try again in a minute."; the guest still gets 200 | | |
+| DEP-TC23 | Pages security and cache headers | `client/public/_headers` and the inline script in `client/index.html` | CSP has `frame-ancestors 'none'`, `object-src 'none'`, no `'unsafe-inline'` scripts and the SHA-256 of the one inline script; `X-Frame-Options: DENY`, `nosniff`; one Cache-Control, `public, max-age=31536000, immutable` on `/assets/*` | | |
 
 *Table 4.44: Async video pipeline test cases (VID)*
 
@@ -1718,6 +1735,11 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ANN-TC14 | Panel delete and report permissions | the viewer's own annotation (`canDelete` true) and another user's; Delete confirmed; Report sent with reason Spam | Own item has Delete and no Report; the other has Report and no Delete; Delete calls `DELETE /notes/9/annotations/1` and removes it; Report opens "Report this annotation" and posts to `/notes/9/annotations/2/report` | | |
 | ANN-TC15 | Annotations off | a text selection on a deck with annotations off, then on; the owner's More menu with annotations off | No Annotate button when off, one when on; no Annotations count button while off; "Turn annotations on" sends `PATCH {enabled:true}` and reports `true` | | |
 | ANN-TC16 | Annotation notification texts | `annotation` from Aina and `annotation_hidden` (no actor) on the note "Joins" | "annotated your note “Joins”" and "Your annotation on “Joins” was removed by an administrator.", both linking to `/notes/9` | | |
+| ANN-TC17 | Share link reads annotations | a public note with a view and an edit link; annotations by three users (one hidden by a moderator, one by a user the viewer blocked); a guest and the blocked-by viewer read through the links; a POST to the share URL; annotations off; the note switched to friends-only and back; the view link revoked; the note hidden | The guest gets both live annotations with `canDelete` false; the viewer who blocked an annotator does not get that one; the edit link is 401 for a guest and 200 signed in; an unknown token is 404; the POST is 404; off gives an empty list; friends-only gives 200 with an empty list (not shown to link holders); public again gives 2; the revoked link is 404; a hidden note's link is 404 | | |
+| ANN-TC18 | Annotation count on feed and note | four annotations (one by a user the viewer blocked, one by a suspended user, two by the viewer); the feed as the viewer, the author and the note as a guest; one deleted; annotations switched off | The card carries `counts.annotations` 2 for the viewer and 3 for the author and the guest, with no annotation text; 1 after the delete; 0 when off | | |
+| ANN-TC19 | Read-only panel (client) | the panel with `readOnly` and an annotation the viewer could delete | Both items listed; no Delete, Report or keyboard-selection button | | |
+| ANN-TC20 | Count on the feed rail (client) | a note with 1200 annotations, then 0 | A link "Annotations, 1200" to `/notes/9` captioned 1.2K; no link at 0 | | |
+| ANN-TC21 | Keyboard creation (client) | open the picker and Cancel; Annotate selection with nothing selected; two text boxes both holding a selection with Text box 1 touched last; a guest's pick refused | Focus returns to "Select text with the keyboard" on Cancel; an alert "Select some text first"; the areas are read-only and hold the elements' plain text; the pick is `{elementId, quote:'big', offset:6, slideId:1}` from the last-touched box and the live region says "Selected “big”"; a refused pick announces nothing | | |
 
 ## 4.5.2 User Acceptance Testing
 
