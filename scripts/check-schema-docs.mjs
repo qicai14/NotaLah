@@ -60,12 +60,27 @@ function applyStatement(schema, stmt) {
   }
   m = stmt.match(/^ALTER TABLE\s+(?:IF EXISTS\s+)?("?\w+"?)\s+([\s\S]*)$/i);
   if (!m) return;
-  const cols = schema.get(unquote(m[1]));
+  let table = unquote(m[1]);
+  const cols = schema.get(table);
+  if (!cols) throw new Error(`ALTER TABLE on unknown table ${table}`);
   for (const action of splitTop(m[2], ',')) {
-    let a = action.match(/^ADD\s+(?:COLUMN\s+)?(?:IF NOT EXISTS\s+)?(\w+)\s+([\s\S]*)$/i);
-    if (a && !CONSTRAINT_START.test(a[0].replace(/^ADD\s+/i, ''))) cols.set(a[1], typeOfColumnDef(a[2]));
-    a = action.match(/^DROP COLUMN\s+(?:IF EXISTS\s+)?(\w+)/i);
-    if (a) cols.delete(a[1]);
+    let hit;
+    if (/^(ADD\s+(CONSTRAINT|CHECK|PRIMARY KEY|FOREIGN KEY|UNIQUE)|DROP CONSTRAINT|ENABLE|DISABLE)\b/i.test(action))
+      continue;
+    if (/^ALTER COLUMN\s+\w+\s+(SET|DROP)\s+(NOT NULL|DEFAULT)\b/i.test(action)) continue;
+    if ((hit = action.match(/^ADD\s+(?:COLUMN\s+)?(?:IF NOT EXISTS\s+)?(\w+)\s+([\s\S]*)$/i)))
+      cols.set(hit[1], typeOfColumnDef(hit[2]));
+    else if ((hit = action.match(/^DROP COLUMN\s+(?:IF EXISTS\s+)?(\w+)/i))) cols.delete(hit[1]);
+    else if ((hit = action.match(/^ALTER COLUMN\s+(\w+)\s+(?:SET DATA\s+)?TYPE\s+([\s\S]*)$/i)))
+      cols.set(hit[1], typeOfColumnDef(hit[2]));
+    else if ((hit = action.match(/^RENAME COLUMN\s+(\w+)\s+TO\s+(\w+)$/i))) {
+      cols.set(hit[2], cols.get(hit[1]));
+      cols.delete(hit[1]);
+    } else if ((hit = action.match(/^RENAME TO\s+("?\w+"?)$/i))) {
+      schema.delete(table);
+      table = unquote(hit[1]);
+      schema.set(table, cols);
+    } else throw new Error(`unsupported ALTER TABLE action: ${action}`);
   }
 }
 
@@ -76,7 +91,13 @@ export function migrationSchema(dir) {
     .sort()) {
     const up = readFileSync(path.join(dir, f), 'utf8').split(/^-- migrate:down/m)[0];
     const sql = up.replace(/--[^\n]*/g, '');
-    for (const stmt of splitTop(sql, ';')) applyStatement(schema, stmt.replace(/\s+/g, ' '));
+    for (const stmt of splitTop(sql, ';')) {
+      try {
+        applyStatement(schema, stmt.replace(/\s+/g, ' '));
+      } catch (e) {
+        throw new Error(`${f}: ${e.message} (in: ${stmt.replace(/\s+/g, ' ').slice(0, 80)})`);
+      }
+    }
   }
   return schema;
 }
@@ -87,7 +108,7 @@ export function docSchema(file) {
   let inTable = false;
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     if (!line.startsWith('|')) {
-      inTable &&= false;
+      inTable = false;
       continue;
     }
     const cells = line
@@ -96,6 +117,7 @@ export function docSchema(file) {
       .map((c) => c.trim());
     if (/^Table name$/i.test(cells[0])) inTable = true;
     else if (inTable && !/^-+$/.test(cells[0] || cells[1])) {
+      if (!cells[0] && !table) throw new Error(`${file}: schema row ${cells[1]} comes before any table name`);
       if (cells[0]) {
         table = cells[0];
         schema.set(table, new Map());
