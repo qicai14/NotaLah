@@ -13,11 +13,13 @@ design pattern interface class object inheritance polymorphism api rest json htt
 
 const fromEnv = (name: string, fallback: number) => Number(process.env[name] ?? fallback);
 
-/** Size of the seeded data: the seed builds it and the runner picks ids from it (LOAD_USERS, LOAD_NOTES, LOAD_DAYS override). */
+/** Size of the seeded data: the seed builds it and the runner picks ids from it (LOAD_USERS, LOAD_NOTES, LOAD_DAYS, LOAD_VIDEO_EVERY override). */
 export const SEED = {
   users: fromEnv('LOAD_USERS', 300),
   notes: fromEnv('LOAD_NOTES', 2000),
   days: fromEnv('LOAD_DAYS', 60),
+  /** Every Nth note gets one shared video on its first slide; 0 means none. */
+  videoEvery: fromEnv('LOAD_VIDEO_EVERY', 0),
   lecturers: 20,
   /** Modules the seed adds (LD001-3-2 and on) to the 12 that migration 20261013000002 inserts. */
   extraModules: 18,
