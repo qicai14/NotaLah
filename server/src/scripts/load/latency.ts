@@ -1,19 +1,17 @@
 import { performance } from 'node:perf_hooks';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { parseArgs } from 'node:util';
+import { RATE_LIMITS } from '../../features/auth/rateLimit';
 import { LOAD_PASSWORD, SEED, WORDS, loadEmail } from './data';
 import { type Sample, summarise } from './stats';
 
-/** Sequential latency probe (#78): one signed-in client, one request at a time, p95 per endpoint against a 300 ms target. */
 const { values: opt } = parseArgs({
   options: {
     base: { type: 'string', default: 'http://127.0.0.1:4000' },
-    // Load accounts above the 20 lecturers are students; each follows about ten others (seed.ts FOLLOW_T).
-    user: { type: 'string', default: '21' },
+    user: { type: 'string', default: String(SEED.lecturers + 1) },
     warmup: { type: 'string', default: '5' },
     n: { type: 'string', default: '100' },
-    // The read limiter allows 300 GETs per user per minute (RATE_LIMITS.reads); 210 ms apart stays under it.
-    gap: { type: 'string', default: '210' },
+    gap: { type: 'string', default: String(RATE_LIMITS.windowMs / RATE_LIMITS.reads) },
   },
 });
 const BASE = opt.base!;
@@ -41,7 +39,6 @@ if (!login.ok || !cookie)
   throw new Error(`login failed (${login.status}): check the seed, the proxy secret and --base`);
 
 const q = (params: Record<string, string>) => new URLSearchParams(params).toString();
-// Fixed rotation by request index, so two runs send the same requests.
 const word = (i: number) => WORDS[i % WORDS.length];
 const ENDPOINTS: [string, (i: number) => string][] = [
   [
@@ -58,14 +55,9 @@ const ENDPOINTS: [string, (i: number) => string][] = [
 
 async function probe(url: string): Promise<Sample> {
   const t0 = performance.now();
-  let ok = false;
-  try {
-    const res = await fetch(BASE + url, { headers: headers(), signal: AbortSignal.timeout(30_000) });
-    await res.arrayBuffer();
-    ok = res.ok;
-  } catch {
-    /* network error or timeout counts as an error */
-  }
+  const ok = await fetch(BASE + url, { headers: headers(), signal: AbortSignal.timeout(30_000) })
+    .then(async (res) => (await res.arrayBuffer(), res.ok))
+    .catch(() => false);
   const sample = { ms: performance.now() - t0, ok };
   await sleep(GAP_MS);
   return sample;

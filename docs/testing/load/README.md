@@ -29,8 +29,8 @@ Use a database of its own: the server tests truncate `notalah_test` and would wi
 4. `LOAD_PROXY_SECRET=<same secret> vp run server#load:run --vus 50 --duration 90 --client-ips --label my_run`.
    Options: `--base` (default `http://127.0.0.1:4104`), `--vus` (50), `--duration` seconds (60), `--think` mean think time
    ms (1000), `--users` (300), `--out` (default `docs/testing/load/runs`), `--client-ips`.
-5. Sequential p95 probe (300 ms target, #78): `vp run server#load:latency` (`--base` default `http://127.0.0.1:4000`, `--user` 21,
-   `--warmup` 5, `--n` 100, `--gap` 210 ms between requests to stay under the 300 reads per minute limit).
+5. Sequential p95 probe (300 ms target, #78; its 10x seed is `LOAD_USERS=3000 LOAD_NOTES=20000`, results in `2026-10-29_latency.md`): `vp run server#load:latency` (`--base` default `http://127.0.0.1:4000`, `--user` 21 (the first student),
+   `--warmup` 5, `--n` 100, `--gap` 200 ms between requests, from the 300 reads per minute limit).
    The seeded video's files live where the local driver reads keys, `STORAGE_DIR` (default `<repo>/uploads`):
    `uploads/v/00000000-0000-4000-8000-000000000078.mp4` and poster `uploads/p/00000000-0000-4000-8000-000000000078.webp`.
 

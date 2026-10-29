@@ -4,7 +4,6 @@ import { LOAD_PASSWORD, SEED, WORDS, loadEmail } from './data';
 import { assertLoadDatabase } from './guard';
 
 const { users: USERS, notes: NOTES, days: DAYS, lecturers: LECTURERS, extraModules, modules, videoEvery } = SEED;
-// Storage keys must match storage.ts KEY (`v/<uuid>.mp4`), so the files can be dropped on disk for a Lighthouse run.
 const VIDEO_ID = '00000000-0000-4000-8000-000000000078';
 
 const client = await pool.connect();
@@ -82,7 +81,6 @@ try {
 
   let videoNotes = 0;
   if (videoEvery > 0) {
-    // One ready 720p, 30 s video (as the worker would leave it) shared by every Nth note, on its first slide.
     const { rows: asset } = await client.query<{ id: number }>(
       `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_poster_key, ast_mime, ast_bytes, ast_width, ast_height,
                               ast_duration_ms, ast_status)
