@@ -20,6 +20,7 @@ const EditorPage = lazy(() => import('./features/editor/EditorPage'));
 const EditProfile = lazy(() => import('./features/users/EditProfile'));
 const Profile = lazy(() => import('./features/users/Profile'));
 const AdminLecturers = lazy(() => import('./features/moderation/AdminLecturers'));
+const AdminModules = lazy(() => import('./features/moderation/AdminModules'));
 const AdminReports = lazy(() => import('./features/moderation/AdminReports'));
 const AdminUsers = lazy(() => import('./features/moderation/AdminUsers'));
 
@@ -61,6 +62,7 @@ function ShellRoutes() {
           <Route path="/profile/edit" element={signedIn(<EditProfile />)} />
           <Route path="/users/:id" element={<Profile />} />
           <Route path="/admin/lecturers" element={signedIn(<AdminLecturers />, ['admin'])} />
+          <Route path="/admin/modules" element={signedIn(<AdminModules />, ['admin'])} />
           <Route path="/admin/reports" element={signedIn(<AdminReports />, ['admin'])} />
           <Route path="/admin/users" element={signedIn(<AdminUsers />, ['admin'])} />
         </Routes>
