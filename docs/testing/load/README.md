@@ -9,7 +9,7 @@ Local runs are what Chapter 6 cites; the live run, keep-awake ping and restore d
 | Local runner (Node, no dependencies) | `server/src/scripts/load/run.ts` (`vp run server#load:run`) |
 | Percentiles and NFR1 verdict | `server/src/scripts/load/stats.ts` (tests OPS-TC12 to OPS-TC14) |
 | k6 script for the live site | `load/k6/notalah.js` |
-| Local results | `2026-10-22_local.md`; raw output in `runs/` (one `.md` and `.json` per run) |
+| Local results | `2026-10-22_local.md`, 10x latency `2026-10-29_latency.md`; raw output in `runs/` (one `.md` and `.json` per run) |
 
 ## Run it locally
 
