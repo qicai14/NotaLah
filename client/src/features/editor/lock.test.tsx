@@ -94,7 +94,7 @@ describe('editor soft lock', () => {
     await wait(IDLE_LIMIT_MS);
     const before = posts();
     await wait(10 * LOCK_RENEW_MS);
-    expect(posts()).toBe(before); // idle past the limit: the server lock lapses as for a closed tab
+    expect(posts()).toBe(before);
     fireEvent.keyDown(window, { key: 'a' });
     await wait(LOCK_RENEW_MS);
     expect(posts()).toBe(before + 1);
@@ -112,5 +112,38 @@ describe('editor soft lock', () => {
     const before = posts();
     await wait(LOCK_RENEW_MS);
     expect(posts()).toBe(before + 1);
+  });
+
+  it('CLI-TC98: an idle editor stops retrying a held lock, and the next retry after activity asks again', async () => {
+    reply = () => ({ status: 423, body: { lockedBy: { id: 9, displayName: 'Aina Rahman' } } });
+    renderHook(() => useEditLock(7, () => {}));
+    await flush();
+    await wait(IDLE_LIMIT_MS);
+    const before = posts();
+    await wait(10 * LOCK_RETRY_MS);
+    expect(posts()).toBe(before);
+    fireEvent.pointerDown(window);
+    await wait(LOCK_RETRY_MS);
+    expect(posts()).toBe(before + 1);
+  });
+
+  it('CLI-TC99: a lock lost while idle turns read-only on return and keeps unsaved edits', async () => {
+    useEditor.getState().load(emptyDeck());
+    reply = () => ({ status: 200, body: {} });
+    const onAcquired = vi.fn();
+    const { result } = renderHook(() => useEditLock(7, onAcquired));
+    await flush();
+    useEditor.getState().setMeta({ title: 'typed before leaving' });
+    await wait(IDLE_LIMIT_MS);
+    const before = posts();
+    await wait(10 * LOCK_RENEW_MS);
+    expect(posts()).toBe(before);
+    reply = () => ({ status: 423, body: { lockedBy: { id: 9, displayName: 'Aina Rahman' } } });
+    fireEvent.keyDown(window, { key: 'a' });
+    await wait(LOCK_RENEW_MS);
+    expect(posts()).toBeGreaterThan(before);
+    expect(result.current.state).toMatchObject({ kind: 'locked', holder: { id: 9 } });
+    expect(useEditor.getState().dirty).toBe(true);
+    expect(onAcquired).not.toHaveBeenCalled();
   });
 });

@@ -20,11 +20,11 @@
   `IDLE_LIMIT_MS` (50 minutes; focus and visibility do not count). That cut is final until the next activity, which runs
   the same renew-then-reconnect once. An unattended tab is signed out when its cookie expires, about 60 to 110 minutes
   after the last activity depending on where in the token hour it went idle; coming back later meets the 401 sign-in.
-  This is a client-side limit, not a server-enforced idle timeout, and it covers messaging only: an open editor still
-  renews its edit lock every 45 s (`useEditLock`), which slides the session up to the 12 h cap.
-- **Amended 29 Oct (#96):** the editor lock follows the same limit. `useEditLock` skips its 45 s renewal while the tab
-  has been idle for `IDLE_LIMIT_MS` and checks again each 45 s, so the lock and the session lapse as for a closed tab;
-  the first tick after activity takes the lock again, or meets 423 and waits read-only with unsaved edits kept. The
-  first take on open and the retries while locked or on error are not gated. Both features read one activity tracker,
+  This is a client-side limit, not a server-enforced idle timeout; #96 extends it to the editor lock.
+- **Amended 29 Oct (#96):** the editor lock follows the same limit, since every lock request slides the session.
+  `useEditLock` skips its 45 s renewal and its 20 s retries (while another editor holds the lock, or after an error)
+  while the tab has been idle for `IDLE_LIMIT_MS`, checking again at the same interval, so the lock and the session
+  lapse as for a closed tab. The first tick after activity takes the lock again, or meets 423 and waits read-only with
+  unsaved edits kept. Only the first take on open is not gated. Both features read one activity tracker,
   `client/src/lib/activity.ts`.
-- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC97.
+- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC99.

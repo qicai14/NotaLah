@@ -1,7 +1,5 @@
-// The server cuts a socket 50 minutes into its token hour (ADR 0088); a tab idle that long stops renewing itself (#93, #96).
 export const IDLE_LIMIT_MS = 50 * 60_000;
-// Focus and visibility are not activity: a visible but unattended tab must not renew.
-const ACTIVITY = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as const;
+const USER_INPUT_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as const;
 
 let lastActive = 0;
 const subscribers = new Set<() => void>();
@@ -17,12 +15,12 @@ const active = () => {
 export function onActivity(fn: () => void = () => {}): () => void {
   if (!subscribers.size) {
     lastActive = Date.now();
-    for (const e of ACTIVITY) window.addEventListener(e, active, { passive: true });
+    for (const e of USER_INPUT_EVENTS) window.addEventListener(e, active, { passive: true });
   }
   subscribers.add(fn);
   return () => {
     subscribers.delete(fn);
-    if (!subscribers.size) for (const e of ACTIVITY) window.removeEventListener(e, active);
+    if (!subscribers.size) for (const e of USER_INPUT_EVENTS) window.removeEventListener(e, active);
   };
 }
 
