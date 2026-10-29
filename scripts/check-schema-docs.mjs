@@ -1,10 +1,6 @@
-// Keeps the Chapter 4.3 schema table in sync with the migrations. Parses the `migrate:up` half of every migration in
-// filename order with regexes (no database) into table -> column -> "TYPE[(size)]", and compares it with the table in
-// docs/chapter4/4.3_database_design.md. Usage: node scripts/check-schema-docs.mjs [docPath] [migrationsDir]
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-// Splits on a separator outside parentheses and quotes.
 function splitTop(text, sep) {
   const parts = [];
   let depth = 0;
@@ -29,8 +25,6 @@ function splitTop(text, sep) {
 
 const unquote = (s) => s.replace(/"/g, '');
 
-// "VARCHAR(255) NOT NULL ..." or "INTEGER GENERATED ALWAYS AS IDENTITY" -> "VARCHAR(255)" / "INTEGER".
-// "INTEGER (identity)" from the doc is cut at the space before the parenthesis.
 function normType(base, size = '') {
   let t = base.toUpperCase().replace(/\s+/g, ' ').trim();
   t = t.replace(/^TIMESTAMP WITH TIME ZONE$/, 'TIMESTAMPTZ').replace(/^INT$/, 'INTEGER');
