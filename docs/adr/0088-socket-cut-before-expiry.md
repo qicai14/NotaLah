@@ -16,4 +16,8 @@
 - **Alternatives:** renew from the client on a timer (a second clock to keep in step with the server); reconnect
   without renewing and let the handshake fail (the bug); a socket-side token refresh event (new protocol surface).
 - **Reversibility:** High; a constant and a few lines in `socket.ts` and `MessagingContext.tsx`.
-- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9.
+- **Amended 29 Oct (#93):** the client skips the renewal when the tab has had no pointer or key activity for
+  `IDLE_LIMIT_MS` (50 minutes; focus and visibility do not count). That cut is final until the next activity, which runs
+  the same renew-then-reconnect once. An unattended tab is signed out when its cookie expires, about 60 to 110 minutes
+  after the last activity depending on where in the token hour it went idle; coming back later meets the 401 sign-in.
+- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC95.

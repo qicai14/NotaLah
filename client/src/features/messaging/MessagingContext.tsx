@@ -33,6 +33,11 @@ interface MessagingValue {
   setOpen: (id: number | null) => void;
 }
 
+// The server cuts a socket 50 minutes into its token hour (ADR 0088); a tab idle that long stops renewing itself (#93).
+const IDLE_LIMIT_MS = 50 * 60_000;
+// Focus and visibility are not activity: a visible but unattended tab must not renew.
+const ACTIVITY = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as const;
+
 const MessagingContext = createContext<MessagingValue | null>(null);
 
 /**
@@ -85,16 +90,28 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     let current: Socket | undefined;
     let reconnect: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
+    let lastActive = Date.now();
+    let idleCut: Socket | undefined;
+    const renewThenReconnect = (s: Socket) => {
+      const renew = () =>
+        api('/auth/me').then(
+          () => !stopped && s.connect(),
+          () => !stopped && offline(),
+        );
+      reconnect = setTimeout(() => void renew(), 1000 + Math.random() * 2000);
+    };
+    const active = () => {
+      lastActive = Date.now();
+      if (idleCut) renewThenReconnect(idleCut);
+      idleCut = undefined;
+    };
+    for (const e of ACTIVITY) window.addEventListener(e, active, { passive: true });
     const listen = (s: Socket) => {
       s.on('connect_error', offline);
       s.on('disconnect', (reason) => {
         if (reason !== 'io server disconnect') return;
-        const renewThenReconnect = () =>
-          api('/auth/me').then(
-            () => !stopped && s.connect(),
-            () => !stopped && offline(),
-          );
-        reconnect = setTimeout(() => void renewThenReconnect(), 1000 + Math.random() * 2000);
+        if (Date.now() - lastActive < IDLE_LIMIT_MS) renewThenReconnect(s);
+        else idleCut = s; // an unattended tab lets its cookie expire; activity before then renews it
       });
       s.on('connect', () => {
         setError(null);
@@ -141,6 +158,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     return () => {
       stopped = true;
       clearTimeout(reconnect);
+      for (const e of ACTIVITY) window.removeEventListener(e, active);
       current?.close();
       setSocket(null);
     };
