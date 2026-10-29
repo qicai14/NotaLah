@@ -47,9 +47,12 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
 5. Restored FR15/FR17/FR18 and the additions beyond the IR (collaboration, guest browsing, blocking, Canva-style editor,
    video, cost guard): number them FR20 onward in Table 33, or list them as enhancements without FR numbers?
 6. Optional AI aids (R28 writing assistant, R35 photo/handwriting import, R36 dictation) reverse the IR's AI exclusion
-   while the ranking stays heuristic: acceptable as a logged extension?
+   while the ranking stays heuristic: acceptable as a logged extension? **Updated 29 Oct:** R35 and R36 now move to
+   future work (ADR 0085); see item 8.
 7. The R13 report-sync drafts add about 3,800 words; fold them into the length cut plan (question 1)?
-5. Confirm the exact final submission date.
+8. Confirm the AI addition (R28 and R41 in scope; R35 and R36 to future work) as overdelivery beyond the IR 1.5 Scope.
+   User decision 29 Oct; ADR 0085; nothing waits on it.
+9. Confirm the exact final submission date.
 
 ## Open for the user (20 Oct)
 - FR numbering for the additions (supervisor question 5) decides the Table 33 wording in the R13 drafts.
