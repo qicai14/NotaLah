@@ -4,6 +4,8 @@ on:
   push:
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
 
 permissions:
   contents: read
@@ -14,6 +16,7 @@ concurrency:
 
 jobs:
   verify:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -74,5 +77,19 @@ jobs:
         with:
           path: node_modules/.vite/task-cache
           key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
+
+  # Not a required check: a new advisory shows red here without blocking merges.
+  audit:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level high
