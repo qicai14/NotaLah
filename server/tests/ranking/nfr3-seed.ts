@@ -1,13 +1,17 @@
 /*
  * NFR3 labelled seed (#77): 40 notes, 10 feed viewers and 6 search queries, all timed against one fixed ASOF so every run
  * scores the same. Labels: PROVISIONAL until #86 (the UAT label set replaces them).
+ * Adversarial by design (off-topic notes have 10-40 likes, Subject notes at most 5), so the figures show that the weakness
+ * exists, not how often it happens.
  *
- * Label definitions (independent of the ranking code, so the measure cannot agree with it by construction):
+ * Label definitions:
  * - Subject: one of SUBJECTS. Lifestyle tags (#campuslife, #memes, ...) are not Subjects.
  * - Verified: Super Liked by an approved, active lecturer (`verified: true`). Global, the same for every viewer.
- * - Subject-relevant to a viewer: the note carries at least one hashtag in the viewer's `subjects`, i.e. a Subject the
- *   viewer has viewed, liked or commented on within the interest window (the seed's history notes). History notes
- *   themselves, which the viewer has already opened, are not counted as surfaced relevant notes.
+ * - Subject-relevant to a viewer (`isRelevant`): the note carries a hashtag with viewer interest > 0, i.e. M > 0 in
+ *   ranking's relevance(), the binary form of M. Here that means a Subject in the viewer's history. History notes, which
+ *   the viewer has already opened, never count.
+ * - Relevant on M alone (`isRelevantOnM`): subject-relevant with V = 0 (not verified, not lecturer-written), so only M
+ *   can lift it over engagement.
  * - Relevant to a search query q: the note's `topic` (the Subject it is about) is q. A note that only mentions q in its
  *   text, however popular, is a distractor.
  */
@@ -179,43 +183,27 @@ export const NOTES: SeedNote[] = [
   offTopic('Hackathon weekend recap', 'We built an encryption chat app with subnetting labs.', 'hackathon', 30, 20),
 ];
 
-export const VIEWERS: { subjects: Subject[]; history: ['view' | 'like' | 'comment', number][] }[] = [
-  { subjects: ['recursion'], history: [['comment', 2]] },
-  { subjects: ['normalisation'], history: [['like', 1]] },
-  { subjects: ['subnetting'], history: [['view', 3]] },
-  { subjects: ['deadlock'], history: [['comment', 5]] },
-  { subjects: ['encryption'], history: [['like', 2]] },
-  { subjects: ['uml'], history: [['view', 1]] },
-  {
-    subjects: ['recursion', 'deadlock'],
-    history: [
-      ['comment', 1],
-      ['like', 4],
-    ],
-  },
-  {
-    subjects: ['encryption', 'subnetting'],
-    history: [
-      ['like', 3],
-      ['view', 1],
-    ],
-  },
-  {
-    subjects: ['uml', 'normalisation'],
-    history: [
-      ['comment', 10],
-      ['view', 2],
-    ],
-  },
-  {
-    subjects: ['deadlock', 'encryption', 'uml'],
-    history: [
-      ['view', 1],
-      ['view', 3],
-      ['view', 6],
-    ],
-  },
+type Viewer = { history: { subject: Subject; type: 'view' | 'like' | 'comment'; daysAgo: number }[] };
+const viewer = (...history: [Subject, Viewer['history'][number]['type'], number][]): Viewer => ({
+  history: history.map(([subject, type, daysAgo]) => ({ subject, type, daysAgo })),
+});
+
+export const VIEWERS: Viewer[] = [
+  viewer(['recursion', 'comment', 2]),
+  viewer(['normalisation', 'like', 1]),
+  viewer(['subnetting', 'view', 3]),
+  viewer(['deadlock', 'comment', 5]),
+  viewer(['encryption', 'like', 2]),
+  viewer(['uml', 'view', 1]),
+  viewer(['recursion', 'comment', 1], ['deadlock', 'like', 4]),
+  viewer(['encryption', 'like', 3], ['subnetting', 'view', 1]),
+  viewer(['uml', 'comment', 10], ['normalisation', 'view', 2]),
+  viewer(['deadlock', 'view', 1], ['encryption', 'view', 3], ['uml', 'view', 6]),
 ];
+
+export const isRelevant = (n: SeedNote, v: Viewer) =>
+  !n.history && n.tags.some((t) => v.history.some((h) => h.subject === t));
+export const isRelevantOnM = (n: SeedNote, v: Viewer) => isRelevant(n, v) && !n.verified && !n.byLecturer;
 
 const at = (hoursAgo: number) => new Date(ASOF.getTime() - hoursAgo * 3_600_000);
 
@@ -258,11 +246,10 @@ export async function seedNfr3(): Promise<{ noteIds: number[]; viewerIds: number
   const viewerIds: number[] = [];
   for (const v of VIEWERS) {
     const uid = await insertUser();
-    for (const [i, s] of v.subjects.entries()) {
-      const [type, daysAgo] = v.history[i];
+    for (const { subject, type, daysAgo } of v.history) {
       await pool.query(
         `INSERT INTO "INTERACTION_T" (int_usr_id, int_pst_id, int_type, int_created_at) VALUES ($1, $2, $3, $4)`,
-        [uid, noteIds[NOTES.findIndex((n) => n.history && n.topic === s)], type, at(daysAgo * 24)],
+        [uid, noteIds[NOTES.findIndex((n) => n.history && n.topic === subject)], type, at(daysAgo * 24)],
       );
     }
     viewerIds.push(uid);
