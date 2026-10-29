@@ -41,10 +41,10 @@ describe('NFR3 feed relevance on the labelled seed', () => {
         `(verified notes are global, so verified-or-relevant is trivially 100%), subject-relevant any V ${result.relevant * 100}%, ` +
         `subject-relevant on M alone (V = 0) ${result.relevantOnM * 100}%; M-alone misses: viewers ${result.missesOnM.join(', ') || 'none'}\n`,
     );
-    expect(result).toEqual({ verified: 1, relevant: 0.6, relevantOnM: 0, missesOnM: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+    expect(result).toEqual({ verified: 1, relevant: 1, relevantOnM: 1, missesOnM: [] });
   });
 
-  it.fails('RANK-TC34: a subject-relevant note on M alone is in every viewer top 5 at default weights (NFR3 target 100%, measured 0%)', () => {
+  it('RANK-TC34: a subject-relevant note on M alone is in every viewer top 5 at default weights (NFR3 target 100%)', () => {
     expect(result.relevantOnM).toBe(1);
   });
 });

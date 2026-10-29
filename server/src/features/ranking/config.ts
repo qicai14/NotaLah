@@ -1,10 +1,10 @@
 // All feed-ranking constants live here (IR 2.3.4, NFR5). Never inline them elsewhere.
 export const RANKING = Object.freeze({
   weights: Object.freeze({
-    engagement: 0.3, // w1
+    engagement: 0.24, // w1
     recency: 0.25, // w2
     lecturerValidation: 0.3, // w3
-    relevance: 0.15, // w4
+    relevance: 0.21, // w4
   }),
   /** Raw engagement = likes + commentEngagementWeight × comments (IR 2.3.4.2). */
   commentEngagementWeight: 2,

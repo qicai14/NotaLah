@@ -155,10 +155,10 @@ classDiagram
   }
   class RankingConfig {
     <<config>>
-    +w1 : float = 0.30
+    +w1 : float = 0.24
     +w2 : float = 0.25
     +w3 : float = 0.30
-    +w4 : float = 0.15
+    +w4 : float = 0.21
     +engagementCap : int = 100
     +halfLifeHours : int = 72
     +interestHalfLifeDays : int = 14
