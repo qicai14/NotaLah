@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { ADMIN_RAIL } from '@/components/shell/nav';
 import AdminModules from './AdminModules';
 
 const list = [
@@ -40,6 +41,10 @@ const renderPage = () =>
 const writes = () => fetchMock.mock.calls.filter(([, init]) => init?.method && init.method !== 'GET');
 
 describe('admin subjects', () => {
+  it('ADM-TC35: the admin rail links to Subjects', () => {
+    expect(ADMIN_RAIL.filter((i) => i.label === 'Subjects').map((i) => i.to)).toEqual(['/admin/modules']);
+  });
+
   it('CLI-TC87: lists every subject with its programme and note count', async () => {
     renderPage();
     expect(await screen.findByText('CT001 · Intro to Computing')).toBeTruthy();

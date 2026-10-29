@@ -24,7 +24,7 @@ Read with `PLAN.md` (milestones), `adr/` (0084 on) and `DECISIONS.md` (D76-D83 s
 
 ## Next work, in order (become GitHub issues at step 2)
 1. R28 AI writing assistant (spec approved, D83), then R35, R36, R41 (spec interviews first).
-2. R5 admin Modules page (API exists, no UI); R26 Playwright E2E smoke suite in CI.
+2. R26 Playwright E2E smoke suite in CI.
 3. Flaky client test CLI-TC40 (profile unblock focus) failed once in CI on 25 Oct and passed on rerun.
 4. Meeting #2 (28 Oct): R14 Plan A with B as fallback, supervisor questions in `OPEN_QUESTIONS.md`; Ch 5-6 drafts.
 

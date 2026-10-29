@@ -1460,6 +1460,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ADM-TC32 | Create overlapping terms | "Semester 2 2026" 2026-09-01 to 2026-12-20; "Intake Oct 2026" 2026-10-05 to 2027-01-30 | 201 each; GET /api/terms lists both, latest start first, dates as YYYY-MM-DD | | |
 | ADM-TC33 | Invalid term input | blank name; 51-character name; start 2026-02-30; end "01/12/2026"; end equal to start; duplicate name | 400 with a field error for each; 409 "A term with this name already exists"; one term stored | | |
 | ADM-TC34 | Edit and delete a term | PUT new name and dates; PUT to a taken name; PUT end before start; unknown id; DELETE twice | 200 with the new values; 409; 400; 404; 204 then 404 | | |
+| ADM-TC35 | Subjects page is in the admin rail | `ADMIN_RAIL` | One entry labelled "Subjects" that links to `/admin/modules` | | |
 
 *Table 4.36: Collaboration module test cases (COL). COL covers shared notes (R30): access through collaborators and share links, requests, the edit lock and the effect of edits on verification.*
 
@@ -1632,6 +1633,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC80 | Guest prompt loads on first use | Render the provider on `/notes/7?s=2`; a guest presses Like; then Log in | No dialog at first; the dialog "Log in to like this note" appears; Log in opens `/login` with `from` `/notes/7?s=2` | | |
 | CLI-TC81 | Socket client fails to load | Signed in; the `socket.io-client` import rejects | "Live updates are offline. Refresh to try again." is shown | | |
 | CLI-TC82 | Board shows markup as plain text | A text element built by `para` and `bullets` from `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>` | Both strings show as literal text; no script or img element is created | | |
+| CLI-TC87 | Admin subjects list | Render the page; GET /api/admin/modules returns two subjects with 3 and 1 notes | Both rows show code, name, programme; "3 notes" and "1 note" | | |
+| CLI-TC88 | Admin adds a subject | Fill code, name, programme; Add subject | POST sends the three fields; the new row appears; "Subject CT003 added."; the form clears | | |
+| CLI-TC89 | Duplicate subject code | POST answers 409 "Module code already exists" | The message shows in an alert; no row is added | | |
+| CLI-TC90 | Subject validation errors inline | POST answers 400 with errors for code and name | Each message shows beside its field and the field is marked invalid | | |
+| CLI-TC91 | Admin renames a subject | Rename CT002, change the name, Save | PATCH /api/admin/modules/2 sends only the name; the row shows the new name | | |
+| CLI-TC92 | Rejected subject rename | Rename CT001 to a blank name; PATCH answers 400 | The form stays open with "Name is required" on the field | | |
 
 *Table 4.42: R2 storage driver test cases (STO)*
 

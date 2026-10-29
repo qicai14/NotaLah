@@ -8,7 +8,7 @@ of 9 Nov). Current state and next issues: `HANDOVER.md`. History: `sprints/backl
 - Every IR FR (FR1-FR19) is built and tested; NFR1 has local load evidence (D80); NFR5 is reviewed at UAT.
 - Done since 13 Oct: Sprints 0-5 build, Sprint D UI, R11 deploy code (live deploy optional, D82), R20 local audit,
   R27 local evidence, R14 cut plan. Workflow restructured to issues, ADRs and AGENTS.md (ADR 0084).
-- Open: R28 AI assistant (spec approved, D83), then R41 if time remains (R35 and R36 are future work, ADR 0085); admin Modules page (R5); Playwright E2E suite (R26);
+- Open: R28 AI assistant (spec approved, D83), then R41 if time remains (R35 and R36 are future work, ADR 0085); Playwright E2E suite (R26);
   report Chapters 5-6 and the meeting #2 length plan.
 
 ```mermaid
