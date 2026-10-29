@@ -73,3 +73,8 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
   matches the glossary and the UI term. Against: a migration plus changes in server, client and tests, and
   the dissertation's Chapter 4 schema names (`MODULE_T`) would need to change too. Not needed for the demo; the glossary
   lists Module under _Avoid_ as a legacy name meanwhile.
+
+## Open for the user (29 Oct, issue #79)
+- Idle tabs: since ADR 0088 an open tab with messaging renews its own cookie, so an unattended signed-in tab stays
+  signed in up to the 12 h `MAX_SESSION_HOURS` cap. **OPEN:** keep that, or add an idle limit (for example skip the
+  renewal after about 50 minutes with no pointer or key activity, so an unattended tab logs out after about an hour)?

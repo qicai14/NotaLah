@@ -46,7 +46,11 @@ export function setAuthCookie(res: Response, user: AuthUser, authTime?: number):
 }
 
 /** Sliding session (R37, D65): a token with less than this left is re-issued by the next authenticated request. */
-const REFRESH_BELOW_SECONDS = 15 * 60;
+export const REFRESH_BELOW_SECONDS = 15 * 60;
+
+/** A token may be re-issued only within MAX_SESSION_HOURS of login; one without `auth_time` (issued before R37) never is. */
+export const isRenewable = (authTime: unknown): authTime is number =>
+  typeof authTime === 'number' && Date.now() - authTime * 1000 <= env.MAX_SESSION_HOURS * 3_600_000;
 
 /**
  * Use after the JWT strategy accepted the request's cookie: re-issues it with a fresh hour when it is near expiry, unless
@@ -56,10 +60,7 @@ export function slideSession(req: Request, res: Response, user: AuthUser): void 
   const payload = jwt.decode(fromAuthCookie(req) ?? '', { json: true });
   const exp = payload?.exp;
   const authTime: unknown = payload?.auth_time;
-  if (exp === undefined || typeof authTime !== 'number') return;
-  const now = Date.now();
-  if (exp * 1000 - now >= REFRESH_BELOW_SECONDS * 1000) return;
-  if (now - authTime * 1000 > env.MAX_SESSION_HOURS * 3_600_000) return;
+  if (exp === undefined || exp * 1000 - Date.now() >= REFRESH_BELOW_SECONDS * 1000 || !isRenewable(authTime)) return;
   setAuthCookie(res, user, authTime);
 }
 

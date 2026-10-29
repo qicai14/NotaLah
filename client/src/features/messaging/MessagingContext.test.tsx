@@ -60,12 +60,15 @@ const conversation = {
 };
 
 function Probe() {
-  const { inbox } = useMessaging();
+  const { inbox, error } = useMessaging();
   const unread = useUnread();
   return (
-    <p>
-      chats {inbox.conversations.items.length} unread {unread}
-    </p>
+    <>
+      <p>
+        chats {inbox.conversations.items.length} unread {unread}
+      </p>
+      {error && <p>{error}</p>}
+    </>
   );
 }
 
@@ -153,27 +156,37 @@ describe('messaging provider', () => {
     expect(screen.getByText('chats 1 unread 2')).toBeTruthy();
   });
 
-  it('DEP-TC9: a socket the server cut (token expiry) reconnects after 1-3 s; a dropped transport is left to socket.io; logout cancels', async () => {
+  it('DEP-TC9: a socket the server cut (token expiry) renews the cookie through /auth/me, then reconnects after 1-3 s; a dropped transport is left to socket.io; a failed renewal shows offline; logout cancels', async () => {
     signedIn = sam;
     const view = render(tree());
     await opened();
     await act(async () => sockets[0]!.fire('connect'));
+    const fetched = vi.mocked(fetch);
+    const renewals = () => fetched.mock.calls.filter(([url]) => url === '/api/auth/me').length;
     vi.useFakeTimers();
     try {
       sockets[0]!.fire('disconnect', 'transport close');
-      vi.advanceTimersByTime(5000);
-      expect(sockets[0]!.connects).toBe(0);
+      await vi.advanceTimersByTimeAsync(5000);
+      expect([renewals(), sockets[0]!.connects]).toEqual([0, 0]);
       sockets[0]!.fire('disconnect', 'io server disconnect');
-      vi.advanceTimersByTime(999);
-      expect(sockets[0]!.connects).toBe(0);
-      vi.advanceTimersByTime(2001);
-      expect(sockets[0]!.connects).toBe(1);
+      await vi.advanceTimersByTimeAsync(999);
+      expect([renewals(), sockets[0]!.connects]).toEqual([0, 0]);
+      await vi.advanceTimersByTimeAsync(2001);
+      expect([renewals(), sockets[0]!.connects]).toEqual([1, 1]);
+
+      fetched.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      await act(async () => {
+        sockets[0]!.fire('disconnect', 'io server disconnect');
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+      expect([renewals(), sockets[0]!.connects]).toEqual([2, 1]);
+      expect(screen.getByText(/Live updates are offline/)).toBeTruthy();
 
       sockets[0]!.fire('disconnect', 'io server disconnect');
       signedIn = null;
       view.rerender(tree());
-      vi.advanceTimersByTime(5000);
-      expect(sockets[0]!.connects).toBe(1);
+      await vi.advanceTimersByTimeAsync(5000);
+      expect([renewals(), sockets[0]!.connects]).toEqual([2, 1]);
     } finally {
       vi.useRealTimers();
     }

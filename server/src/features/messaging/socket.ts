@@ -4,7 +4,7 @@ import { Server, type Socket } from 'socket.io';
 import { env } from '../../lib/env';
 import { logger } from '../../lib/logger';
 import { fromProxy } from '../../lib/proxySecret';
-import { fromAuthCookie, passport } from '../auth/passport';
+import { fromAuthCookie, isRenewable, passport, REFRESH_BELOW_SECONDS } from '../auth/passport';
 import { type AuthUser, isBlocked } from '../users/repository';
 import { MESSAGING } from './config';
 import * as repo from './repository';
@@ -12,6 +12,15 @@ import * as repo from './repository';
 // shortcut: rooms, typing throttles and the kicks done through them (suspension, removal from a group) live in this
 // process's memory, so the app runs as one Render instance (D50, D65); add the Socket.io Postgres adapter (R27) before scaling out.
 let io: Server | undefined;
+
+export const CUT_BEFORE_EXPIRY_MS = (REFRESH_BELOW_SECONDS - 5 * 60) * 1000;
+
+/** Until a socket is cut: early while renewable, at once when renewable but already inside the margin, else at expiry. */
+function cutDelayMs(token: { exp: number; auth_time?: unknown }): number {
+  const left = token.exp * 1000 - Date.now();
+  if (left > CUT_BEFORE_EXPIRY_MS) return left - CUT_BEFORE_EXPIRY_MS;
+  return isRenewable(token.auth_time) ? 0 : left;
+}
 
 export const userRoom = (id: number) => `user:${id}`;
 export const convRoom = (id: number) => `conv:${id}`;
@@ -63,9 +72,8 @@ async function onConnection(socket: Socket): Promise<void> {
   const { user } = data;
   void socket.join(userRoom(user.id));
   data.typingAt = new Map();
-  // A socket must not outlive its token, so it is cut when the JWT expires.
-  const { exp } = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number };
-  const expiry = setTimeout(() => socket.disconnect(true), exp * 1000 - Date.now());
+  const token = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number; auth_time?: unknown };
+  const expiry = setTimeout(() => socket.disconnect(true), cutDelayMs(token));
   socket.on('disconnect', () => clearTimeout(expiry));
 
   // Typing is relayed, never stored, at most once per throttle window per conversation; members only, never across a block.
