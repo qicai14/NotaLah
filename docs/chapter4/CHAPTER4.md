@@ -1648,7 +1648,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC99 | Lock lost while idle keeps unsaved edits | Editor holds the lock and has an unsaved title; idle for 50 minutes, then 7.5 more; the server answers 423; then a key press | No lock request while idle; after the key press a lock request gets 423, the editor shows locked, the edits stay unsaved and no reload runs | | |
 | CLI-TC100 | Idle tab stops polling a processing video | A video is processing; no pointer or key activity for 50 minutes, then 32 more seconds | No `/assets/{id}` request in the 32 seconds | | |
 | CLI-TC101 | Activity resumes video polling | Idle as in CLI-TC100; then a click | The next 4 s tick makes one status request | | |
-| CLI-TC102 | A stuck video stops polling after the limit | A video stays processing; pointer movement every 10 minutes for 60 minutes | The tile shows "Video could not be processed" and no further status requests are made | | |
+| CLI-TC102 | A stuck video stops polling after the limit | A video stays processing; pointer movement every 10 minutes for 60 minutes | The video's status becomes failed (its tile then reads "Video could not be processed", VID-TC10) and no further status requests are made | | |
 | CLI-TC103 | Active tab polls until the video is ready | A video is processing; the server answers ready on the first poll | The video becomes ready after 4 s and no further requests are made | | |
 
 *Table 4.42: R2 storage driver test cases (STO)*

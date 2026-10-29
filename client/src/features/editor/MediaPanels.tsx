@@ -453,9 +453,10 @@ export function useVideoPolling() {
   );
   const notMine = useRef(new Set<string>());
   const started = useRef<Record<string, number>>({});
+  const polling = pending !== '';
+  useEffect(() => (polling ? onActivity() : undefined), [polling]);
   useEffect(() => {
     if (!pending) return;
-    const untrack = onActivity();
     const timer = setInterval(() => {
       for (const id of pending.split(',')) {
         if (notMine.current.has(id)) continue;
@@ -477,9 +478,6 @@ export function useVideoPolling() {
         );
       }
     }, POLL_MS);
-    return () => {
-      clearInterval(timer);
-      untrack();
-    };
+    return () => clearInterval(timer);
   }, [pending]);
 }
