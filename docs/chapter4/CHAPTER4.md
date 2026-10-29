@@ -1639,6 +1639,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | CLI-TC90 | Module validation errors inline | POST answers 400 with errors for code and name | Each message shows beside its field and the field is marked invalid | | |
 | CLI-TC91 | Admin renames a module | Rename CT002, change the name, Save | PATCH /api/admin/modules/2 sends only the name; the row shows the new name | | |
 | CLI-TC92 | Rejected module rename | Rename CT001 to a blank name; PATCH answers 400 | The form stays open with "Name is required" on the field | | |
+| CLI-TC93 | Idle tab leaves a server cut standing | Signed in; no pointer or key activity for 51 minutes; the server cuts the socket (`io server disconnect`); wait 2 hours | No /auth/me call, no reconnect, no offline banner | | |
+| CLI-TC94 | Active tab renews on a server cut | Pointer activity at 40 minutes; the server cuts the socket at 51 minutes | After the 1-3 s jitter /auth/me is called once and the socket reconnects | | |
+| CLI-TC95 | Returning user renews after an idle cut | Idle cut as in CLI-TC93; a key press 5 minutes later, then a click | One /auth/me call and one reconnect 1-3 s after the key press; the click adds none | | |
 
 *Table 4.42: R2 storage driver test cases (STO)*
 

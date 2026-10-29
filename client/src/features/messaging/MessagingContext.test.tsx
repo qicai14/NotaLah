@@ -191,4 +191,65 @@ describe('messaging provider', () => {
       vi.useRealTimers();
     }
   });
+
+  /** Signs in, connects and switches to fake timers (Date included), returning the renewal and reconnect counts. */
+  const cutReady = async () => {
+    signedIn = sam;
+    render(tree());
+    await opened();
+    await act(async () => sockets[0]!.fire('connect'));
+    vi.useFakeTimers();
+    const counts = () => [
+      vi.mocked(fetch).mock.calls.filter(([url]) => url === '/api/auth/me').length,
+      sockets[0]!.connects,
+    ];
+    return counts;
+  };
+  const minutes = (n: number) => vi.advanceTimersByTimeAsync(n * 60_000);
+
+  it('CLI-TC93: a tab with no pointer or key activity for over 50 minutes leaves a server cut standing: no /auth/me, no reconnect, no offline banner', async () => {
+    const counts = await cutReady();
+    try {
+      await minutes(51);
+      sockets[0]!.fire('disconnect', 'io server disconnect');
+      await minutes(120);
+      expect(counts()).toEqual([0, 0]);
+      expect(screen.queryByText(/Live updates are offline/)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('CLI-TC94: activity within the last 50 minutes keeps the jittered renew-then-reconnect on a server cut', async () => {
+    const counts = await cutReady();
+    try {
+      await minutes(40);
+      window.dispatchEvent(new Event('pointermove'));
+      await minutes(11);
+      sockets[0]!.fire('disconnect', 'io server disconnect');
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(counts()).toEqual([1, 1]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('CLI-TC95: after an idle cut, the next key or pointer activity renews and reconnects once; more activity does not repeat it', async () => {
+    const counts = await cutReady();
+    try {
+      await minutes(51);
+      sockets[0]!.fire('disconnect', 'io server disconnect');
+      await minutes(5);
+      window.dispatchEvent(new Event('keydown'));
+      await vi.advanceTimersByTimeAsync(999);
+      expect(counts()).toEqual([0, 0]);
+      await vi.advanceTimersByTimeAsync(2001);
+      expect(counts()).toEqual([1, 1]);
+      window.dispatchEvent(new Event('pointerdown'));
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(counts()).toEqual([1, 1]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
