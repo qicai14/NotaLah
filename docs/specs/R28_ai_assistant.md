@@ -1,11 +1,11 @@
 # R28 AI writing assistant: spec
 
 Status: **approved 25 Oct 2026 (D83).** Answers to the open questions are recorded at the end. Decisions it builds on: D33 (assistant agreed 15 Oct), D57 (cost guard), D69 (themes and layouts shared with
-R28), D74 (free tier only). R35 (photo import) and R36 (dictation) reuse the outline pipeline below.
+R28), D74 (free tier only). R35 (photo import) and R36 (dictation) reuse the outline pipeline below (now future work, ADR 0085).
 
 ## Goal
 Help a student turn rough material into a clean slide note faster (Objective 3, FR8), without touching the feed:
-ranking stays the deterministic heuristic (NFR5). AI output is always an editable draft, never published by itself.
+ranking stays the deterministic heuristic (NFR3). AI output is always an editable draft, never published by itself.
 
 ## Features (slice 1)
 1. **Tidy into slides:** paste messy text (lecture notes, chat summary) → a draft deck in the note's current theme
