@@ -3,6 +3,7 @@ import { Film, ImageUp, LoaderCircle, Search } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { Button } from '@/components/ui/button';
+import { isIdle, onActivity } from '@/lib/activity';
 import { api, apiOrigin, ApiError, errorText } from '@/lib/api';
 import { usePaged } from '@/lib/usePaged';
 import { cn } from '@/lib/utils';
@@ -434,10 +435,14 @@ export function VideoPicker({ onAdd }: { onAdd?: () => void }) {
 }
 
 const POLL_MS = 4000;
+/** Past the server's 10 minute encode timeout and IDLE_LIMIT_MS (the idle gate acts first); then a processing video shows as failed. */
+export const POLL_LIMIT_MS = 60 * 60_000;
 
 /**
  * Polls each video in the open deck that is still processing until the server says ready (its file URL joins the
  * board's assets) or failed (R40). Only the uploader may ask, so a co-author's processing video stays as it is.
+ * An idle tab (lib/activity) skips the request so a stuck video cannot keep the session alive, and a video still
+ * processing after POLL_LIMIT_MS is shown as failed; reloading the editor asks the server again.
  */
 export function useVideoPolling() {
   const pending = useEditor((s) =>
@@ -447,11 +452,20 @@ export function useVideoPolling() {
       .join(','),
   );
   const notMine = useRef(new Set<string>());
+  const started = useRef<Record<string, number>>({});
+  const polling = pending !== '';
+  useEffect(() => (polling ? onActivity() : undefined), [polling]);
   useEffect(() => {
     if (!pending) return;
     const timer = setInterval(() => {
       for (const id of pending.split(',')) {
         if (notMine.current.has(id)) continue;
+        const since = (started.current[id] ??= Date.now());
+        if (Date.now() - since >= POLL_LIMIT_MS) {
+          useEditor.getState().setVideoStatus(Number(id), 'failed');
+          continue;
+        }
+        if (isIdle()) continue;
         api<{ asset: VideoAsset }>(`/assets/${id}`).then(
           ({ asset }) => {
             const st = useEditor.getState();
