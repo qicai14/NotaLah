@@ -3,7 +3,9 @@ import { pool } from '../../lib/pool';
 import { LOAD_PASSWORD, SEED, WORDS, loadEmail } from './data';
 import { assertLoadDatabase } from './guard';
 
-const { users: USERS, notes: NOTES, days: DAYS, lecturers: LECTURERS, extraModules, modules } = SEED;
+const { users: USERS, notes: NOTES, days: DAYS, lecturers: LECTURERS, extraModules, modules, videoEvery } = SEED;
+// Storage keys must match storage.ts KEY (`v/<uuid>.mp4`), so the files can be dropped on disk for a Lighthouse run.
+const VIDEO_ID = '00000000-0000-4000-8000-000000000078';
 
 const client = await pool.connect();
 try {
@@ -78,6 +80,40 @@ try {
                     WHERE ph.phs_pst_id = p.pst_id), ''))`,
   );
 
+  let videoNotes = 0;
+  if (videoEvery > 0) {
+    // One ready 720p, 30 s video (as the worker would leave it) shared by every Nth note, on its first slide.
+    const { rows: asset } = await client.query<{ id: number }>(
+      `INSERT INTO "ASSET_T" (ast_usr_id, ast_kind, ast_key, ast_poster_key, ast_mime, ast_bytes, ast_width, ast_height,
+                              ast_duration_ms, ast_status)
+       VALUES (1, 'video', $1, $2, 'video/mp4', 4200000, 1280, 720, 30000, 'ready') RETURNING ast_id AS id`,
+      [`v/${VIDEO_ID}.mp4`, `p/${VIDEO_ID}.webp`],
+    );
+    const video = {
+      id: 'video-001',
+      type: 'video',
+      x: 60,
+      y: 700,
+      w: 880,
+      h: 495,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      assetId: asset[0].id,
+      loop: false,
+    };
+    await client.query(
+      `UPDATE "SLIDE_T" SET sld_doc = jsonb_set(sld_doc, '{elements}', (sld_doc -> 'elements') || jsonb_build_array($1::JSONB))
+       WHERE sld_position = 1 AND sld_pst_id % $2 = 0`,
+      [video, videoEvery],
+    );
+    const linked = await client.query(
+      `INSERT INTO "POST_ASSET_T" (pas_pst_id, pas_ast_id) SELECT pst_id, $1 FROM "POST_T" WHERE pst_id % $2 = 0`,
+      [asset[0].id, videoEvery],
+    );
+    videoNotes = linked.rowCount ?? 0;
+  }
+
   // Random (user, note) pairs, drawn in a subquery so each row is drawn once; the note pick is skewed so a few notes are popular.
   const pairs = (count: string, skew: string) =>
     `(SELECT g, 1 + floor(random() * $2)::INT AS uid, 1 + floor(${skew} * $1)::INT AS pid FROM generate_series(1, ${count}) g) x
@@ -128,6 +164,7 @@ try {
             (SELECT COUNT(*) FROM "VERIFICATION_T") AS verifications`,
   );
   console.log(`Seeded ${rows[0].db}:`, counts[0]);
+  if (videoEvery > 0) console.log(`videoNotes: ${videoNotes} (every ${videoEvery}th note)`);
   console.log(`Accounts ${loadEmail(1)} to ${loadEmail(USERS)}; the first ${LECTURERS} are approved lecturers.`);
 } catch (err) {
   await client.query('ROLLBACK').catch(() => undefined);
