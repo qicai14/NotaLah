@@ -4,7 +4,7 @@ import { Server, type Socket } from 'socket.io';
 import { env } from '../../lib/env';
 import { logger } from '../../lib/logger';
 import { fromProxy } from '../../lib/proxySecret';
-import { fromAuthCookie, passport } from '../auth/passport';
+import { fromAuthCookie, isRenewable, passport, REFRESH_BELOW_SECONDS } from '../auth/passport';
 import { type AuthUser, isBlocked } from '../users/repository';
 import { MESSAGING } from './config';
 import * as repo from './repository';
@@ -13,8 +13,14 @@ import * as repo from './repository';
 // process's memory, so the app runs as one Render instance (D50, D65); add the Socket.io Postgres adapter (R27) before scaling out.
 let io: Server | undefined;
 
-/** Under the 15-minute sliding-session refresh window (passport.ts), so a cut socket's next REST call renews its cookie. */
-const CUT_BEFORE_EXPIRY_MS = 10 * 60_000;
+export const CUT_BEFORE_EXPIRY_MS = (REFRESH_BELOW_SECONDS - 5 * 60) * 1000;
+
+/** Until a socket is cut: early while renewable, at once when renewable but already inside the margin, else at expiry. */
+function cutDelayMs(token: { exp: number; auth_time?: unknown }): number {
+  const left = token.exp * 1000 - Date.now();
+  if (left > CUT_BEFORE_EXPIRY_MS) return left - CUT_BEFORE_EXPIRY_MS;
+  return isRenewable(token.auth_time) ? 0 : left;
+}
 
 export const userRoom = (id: number) => `user:${id}`;
 export const convRoom = (id: number) => `conv:${id}`;
@@ -66,13 +72,8 @@ async function onConnection(socket: Socket): Promise<void> {
   const { user } = data;
   void socket.join(userRoom(user.id));
   data.typingAt = new Map();
-  // A socket must not outlive its token: cut early so it can still be renewed, or at expiry when too late (session cap).
-  const { exp } = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number };
-  const left = exp * 1000 - Date.now();
-  const expiry = setTimeout(
-    () => socket.disconnect(true),
-    left > CUT_BEFORE_EXPIRY_MS ? left - CUT_BEFORE_EXPIRY_MS : left,
-  );
+  const token = jwt.decode(fromAuthCookie(socket.request) ?? '') as { exp: number; auth_time?: unknown };
+  const expiry = setTimeout(() => socket.disconnect(true), cutDelayMs(token));
   socket.on('disconnect', () => clearTimeout(expiry));
 
   // Typing is relayed, never stored, at most once per throttle window per conversation; members only, never across a block.

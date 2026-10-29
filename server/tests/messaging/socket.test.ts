@@ -5,7 +5,7 @@ import { io as connect, type Socket } from 'socket.io-client';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
-import { attachSocket } from '../../src/features/messaging/socket';
+import { attachSocket, CUT_BEFORE_EXPIRY_MS } from '../../src/features/messaging/socket';
 import { env } from '../../src/lib/env';
 import { pool } from '../../src/lib/pool';
 import { asUser, befriend, insertNote, insertUser, truncateAll } from '../helpers';
@@ -33,9 +33,11 @@ afterAll(async () => {
 
 const cookieOf = (id: number) => asUser(id).Cookie;
 
-/** A cookie whose token expires `expiresIn` seconds from now, for a login made 50 minutes ago. */
-const cookieExpiring = (id: number, expiresIn: number) =>
-  `notalah_token=${jwt.sign({ role: 'student', auth_time: Math.floor(Date.now() / 1000) - 3000 }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(id), expiresIn })}`;
+const loggedInAt = (secondsAgo: number) => Math.floor(Date.now() / 1000) - secondsAgo;
+const cookieExpiring = (id: number, expiresIn: number, authTime: number | null = loggedInAt(3000)) =>
+  `notalah_token=${jwt.sign({ role: 'student', ...(authTime === null ? {} : { auth_time: authTime }) }, env.JWT_SECRET, { algorithm: 'HS256', subject: String(id), expiresIn })}`;
+/** A renewable cookie the server cuts `seconds` (less up to 1 s of exp rounding) after it is signed. */
+const cookieCutIn = (id: number, seconds: number) => cookieExpiring(id, CUT_BEFORE_EXPIRY_MS / 1000 + seconds);
 
 /** A socket with the given cookie and Origin; resolves once connected, rejects with the server's refusal. */
 function socketAs(
@@ -252,26 +254,39 @@ describe('Socket.io gateway', () => {
     expect((await toC).message).toMatchObject({ note: null, noteUnavailable: true });
   });
 
-  it('MSG-TC28: a socket is cut 10 minutes before its token expires', async () => {
-    const s = await socketAs(cookieExpiring(await insertUser(), 10 * 60 + 2));
+  it('MSG-TC28: a socket is cut CUT_BEFORE_EXPIRY_MS before its token expires', async () => {
+    const s = await socketAs(cookieCutIn(await insertUser(), 4));
     const started = Date.now();
-    expect(await next(s, 'disconnect', 3000)).toBe('io server disconnect');
-    expect(Date.now() - started).toBeGreaterThan(500);
-  });
-
-  it('MSG-TC29: a token with under 10 minutes left (session cap reached) is cut at its real expiry, not at once', async () => {
-    const s = await socketAs(cookieExpiring(await insertUser(), 3));
-    expect(await silent(s, 'disconnect', 1000)).toBe(true);
-    expect(await next(s, 'disconnect', 3500)).toBe('io server disconnect');
+    expect(await next(s, 'disconnect', 6000)).toBe('io server disconnect');
+    expect(Date.now() - started).toBeGreaterThan(1000);
   }, 10_000);
+
+  it('MSG-TC29: a token that cannot be renewed (session cap, or no login time) is cut at its real expiry, not at once', async () => {
+    const id = await insertUser();
+    const capped = loggedInAt(env.MAX_SESSION_HOURS * 3600 + 60);
+    const sockets = await Promise.all([socketAs(cookieExpiring(id, 5, capped)), socketAs(cookieExpiring(id, 5, null))]);
+    expect(await Promise.all(sockets.map((s) => silent(s, 'disconnect', 1000)))).toEqual([true, true]);
+    const cuts = await Promise.all(sockets.map((s) => next(s, 'disconnect', 6000)));
+    expect(cuts).toEqual(['io server disconnect', 'io server disconnect']);
+  }, 10_000);
+
+  it('MSG-TC31: a renewable token connecting inside the margin is cut at once, so the client renews it', async () => {
+    const s = connect(url, {
+      transports: ['websocket'],
+      extraHeaders: { Cookie: cookieExpiring(await insertUser(), 5 * 60), Origin: env.CLIENT_ORIGIN },
+      reconnection: false,
+      forceNew: true,
+    });
+    open.push(s);
+    expect(await next(s, 'disconnect', 2000)).toBe('io server disconnect');
+  });
 
   it('MSG-TC30: a message sent across a reconnect near token expiry arrives exactly once', async () => {
     const [a, b] = [await insertUser(), await insertUser()];
     await befriend(a, b);
-    const old = cookieExpiring(b, 10 * 60 + 1);
+    const old = cookieCutIn(b, 3);
     const first = await socketAs(old);
-    expect(await next(first, 'disconnect', 3000)).toBe('io server disconnect');
-    // The client's GET /auth/me before reconnecting renews the cookie (10 min left is inside the refresh window).
+    expect(await next(first, 'disconnect', 5000)).toBe('io server disconnect');
     const me = await request(app).get('/api/auth/me').set('Cookie', old);
     const renewed = ([] as string[]).concat(me.headers['set-cookie'] ?? []).find((c) => c.startsWith('notalah_token='));
     expect(renewed).toMatch(/Max-Age=3600/);
