@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { isIdle, onActivity } from '@/lib/activity';
 import { api, apiOrigin, ApiError } from '@/lib/api';
 import { useEditor } from './store';
 
@@ -54,8 +55,9 @@ function release(noteId: number) {
 
 /**
  * Holds the note's soft edit lock (R30, D46) while the editor is open: takes it on open, renews it, releases it on
- * leave. When another editor holds it the editor turns read-only and retries in the background; `onAcquired` runs
- * when the lock is won after a wait, so the caller can load what the other editor saved. `retry` asks at once.
+ * leave, skipping renewals while the tab is idle. When another editor holds it the editor turns read-only and retries
+ * in the background; `onAcquired` runs when the lock is won after a wait, so the caller can load what the other editor
+ * saved. `retry` asks at once.
  */
 export function useEditLock(noteId: number | null, onAcquired: () => void) {
   const [state, setState] = useState<LockState>({ kind: 'none' });
@@ -71,6 +73,13 @@ export function useEditLock(noteId: number | null, onAcquired: () => void) {
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let held = false;
+    const untrack = onActivity();
+    // An unattended editor stops renewing, so its lock and session lapse as for a closed tab (#96); the next tick after
+    // activity takes it again, or meets 423 and waits read-only.
+    const renew = () => {
+      if (isIdle()) timer = setTimeout(renew, LOCK_RENEW_MS);
+      else void take();
+    };
     const take = async () => {
       try {
         await api(`/notes/${noteId}/lock`, { method: 'POST' });
@@ -84,7 +93,7 @@ export function useEditLock(noteId: number | null, onAcquired: () => void) {
           acquired.current();
         }
         setState({ kind: 'held' });
-        timer = setTimeout(take, LOCK_RENEW_MS);
+        timer = setTimeout(renew, LOCK_RENEW_MS);
       } catch (e) {
         if (!alive) return;
         held = false;
@@ -106,6 +115,7 @@ export function useEditLock(noteId: number | null, onAcquired: () => void) {
     return () => {
       alive = false;
       clearTimeout(timer);
+      untrack();
       window.removeEventListener('pagehide', onHide);
       if (stop(noteId) && held) release(noteId);
     };

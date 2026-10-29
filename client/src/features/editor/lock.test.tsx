@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { IDLE_LIMIT_MS } from '@/lib/activity';
 import { afterLockWon, LOCK_RENEW_MS, LOCK_RETRY_MS, useEditLock } from './lock';
 import { emptyDeck, useEditor } from './store';
 import { LockedNotice } from './LockedNotice';
@@ -81,5 +82,35 @@ describe('editor soft lock', () => {
     expect(calls.filter((c) => c.startsWith('DELETE'))).toEqual([]); // the other run still holds it
     b.unmount();
     expect(calls.filter((c) => c.startsWith('DELETE'))).toEqual(['DELETE /api/notes/6/lock']);
+  });
+
+  const posts = () => calls.filter((c) => c === 'POST /api/notes/7/lock').length;
+  const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+  it('CLI-TC96: an idle editor stops renewing the lock, and the next tick after activity renews', async () => {
+    reply = () => ({ status: 200, body: {} });
+    const { result } = renderHook(() => useEditLock(7, () => {}));
+    await flush();
+    await wait(IDLE_LIMIT_MS);
+    const before = posts();
+    await wait(10 * LOCK_RENEW_MS);
+    expect(posts()).toBe(before); // idle past the limit: the server lock lapses as for a closed tab
+    fireEvent.keyDown(window, { key: 'a' });
+    await wait(LOCK_RENEW_MS);
+    expect(posts()).toBe(before + 1);
+    expect(result.current.state).toEqual({ kind: 'held' });
+  });
+
+  it('CLI-TC97: an editor in use keeps renewing past the idle limit', async () => {
+    reply = () => ({ status: 200, body: {} });
+    renderHook(() => useEditLock(7, () => {}));
+    await flush();
+    for (let i = 0; i < 12; i++) {
+      await wait(10 * 60_000);
+      fireEvent.pointerMove(window);
+    }
+    const before = posts();
+    await wait(LOCK_RENEW_MS);
+    expect(posts()).toBe(before + 1);
   });
 });

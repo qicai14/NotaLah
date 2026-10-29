@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react';
 import type { Socket } from 'socket.io-client';
+import { isIdle, onActivity } from '@/lib/activity';
 import { api, apiOrigin, errorText } from '@/lib/api';
 import { useAuth } from '../auth/AuthContext';
 import { emptyInbox, type InboxAction, type InboxState, inboxReducer, unreadTotal } from './inboxReducer';
@@ -32,11 +33,6 @@ interface MessagingValue {
   /** The chat on screen, so its new messages are not counted unread. */
   setOpen: (id: number | null) => void;
 }
-
-// The server cuts a socket 50 minutes into its token hour (ADR 0088); a tab idle that long stops renewing itself (#93).
-const IDLE_LIMIT_MS = 50 * 60_000;
-// Focus and visibility are not activity: a visible but unattended tab must not renew.
-const ACTIVITY = ['pointerdown', 'pointermove', 'keydown', 'wheel'] as const;
 
 const MessagingContext = createContext<MessagingValue | null>(null);
 
@@ -90,7 +86,6 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     let current: Socket | undefined;
     let reconnect: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
-    let lastActive = Date.now();
     let idleCut: Socket | undefined;
     const renewThenReconnect = (s: Socket) => {
       const renew = () =>
@@ -100,17 +95,15 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
         );
       reconnect = setTimeout(() => void renew(), 1000 + Math.random() * 2000);
     };
-    const active = () => {
-      lastActive = Date.now();
+    const untrack = onActivity(() => {
       if (idleCut) renewThenReconnect(idleCut);
       idleCut = undefined;
-    };
-    for (const e of ACTIVITY) window.addEventListener(e, active, { passive: true });
+    });
     const listen = (s: Socket) => {
       s.on('connect_error', offline);
       s.on('disconnect', (reason) => {
         if (reason !== 'io server disconnect') return;
-        if (Date.now() - lastActive < IDLE_LIMIT_MS) renewThenReconnect(s);
+        if (!isIdle()) renewThenReconnect(s);
         else idleCut = s; // an unattended tab lets its cookie expire; activity before then renews it
       });
       s.on('connect', () => {
@@ -158,7 +151,7 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     return () => {
       stopped = true;
       clearTimeout(reconnect);
-      for (const e of ACTIVITY) window.removeEventListener(e, active);
+      untrack();
       current?.close();
       setSocket(null);
     };

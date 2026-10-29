@@ -22,4 +22,9 @@
   after the last activity depending on where in the token hour it went idle; coming back later meets the 401 sign-in.
   This is a client-side limit, not a server-enforced idle timeout, and it covers messaging only: an open editor still
   renews its edit lock every 45 s (`useEditLock`), which slides the session up to the 12 h cap.
-- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC95.
+- **Amended 29 Oct (#96):** the editor lock follows the same limit. `useEditLock` skips its 45 s renewal while the tab
+  has been idle for `IDLE_LIMIT_MS` and checks again each 45 s, so the lock and the session lapse as for a closed tab;
+  the first tick after activity takes the lock again, or meets 423 and waits read-only with unsaved edits kept. The
+  first take on open and the retries while locked or on error are not gated. Both features read one activity tracker,
+  `client/src/lib/activity.ts`.
+- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC97.
