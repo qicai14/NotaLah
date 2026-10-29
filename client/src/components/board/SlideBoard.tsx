@@ -73,7 +73,8 @@ export const textBoxStyle = (el: El<'text'>): CSSProperties => ({
 
 function TextBox({ el }: { el: El<'text'> }) {
   const style = textBoxStyle(el);
-  // The server sanitised this HTML against the editor allow-list (R21 spec 2.5), so it is safe to inject.
+  // Built from escaped text by the shared builders, and sanitised by the server on save (R21 spec 2.5). Unsaved
+  // slides are not sanitised yet, so every builder must escape.
   return (
     <div
       className="board-text size-full overflow-hidden break-words"

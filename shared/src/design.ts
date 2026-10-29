@@ -168,7 +168,12 @@ export const LAYOUT_NAMES: Record<LayoutId, string> = {
   'image-caption': 'Image and caption',
 };
 
-const bullets = (...items: string[]) => `<ul>${items.map((i) => `<li><p>${i}</p></li>`).join('')}</ul>`;
+export const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+// Builders take plain text and escape it, so model or imported text can never inject markup.
+export const para = (t: string) => `<p>${escapeHtml(t)}</p>`;
+export const bullets = (...items: string[]) => `<ul>${items.map((i) => `<li>${para(i)}</li>`).join('')}</ul>`;
 
 /** A slide laid out for the aspect in the theme's style; `newId` makes the element ids. */
 export function layoutSlide(layout: LayoutId, theme: Theme, aspect: Aspect, newId: () => string): Slide {
@@ -198,7 +203,7 @@ export function layoutSlide(layout: LayoutId, theme: Theme, aspect: Aspect, newI
       padding: 0,
     }) satisfies El<'text'>;
   const headSize = Math.max(HEADING_MIN + 4, 64 * f);
-  const head = (t: string) => text(`<p>${t}</p>`, m, m, width, headSize, 1);
+  const head = (t: string) => text(para(t), m, m, width, headSize, 1);
   const below = m + headSize * 1.3 + 40 * f;
   const rest = H - below - m;
   const body = Math.min(32, Math.max(22, 32 * f));
@@ -209,8 +214,8 @@ export function layoutSlide(layout: LayoutId, theme: Theme, aspect: Aspect, newI
       const size = Math.max(56, 88 * f);
       const y = H * 0.36;
       elements = [
-        text('<p>Note title</p>', m, y, width, size, 1, true),
-        text('<p>Module, topic or week</p>', m, y + size * 1.3 + 24 * f, width, Math.min(36, 36 * f + 6), 1, true),
+        text(para('Note title'), m, y, width, size, 1, true),
+        text(para('Module, topic or week'), m, y + size * 1.3 + 24 * f, width, Math.min(36, 36 * f + 6), 1, true),
       ];
       break;
     }
@@ -226,7 +231,7 @@ export function layoutSlide(layout: LayoutId, theme: Theme, aspect: Aspect, newI
     case 'two-column': {
       const w = (width - 40) / 2;
       const col = (x: number, name: string) => ({
-        ...text(`<p><strong>${name}</strong></p>${bullets('Point', 'Point')}`, x, below, w, body, 1),
+        ...text(`<p><strong>${escapeHtml(name)}</strong></p>${bullets('Point', 'Point')}`, x, below, w, body, 1),
         h: round1(rest),
       });
       elements = [head('Compare'), col(m, 'Left'), col(m + w + 40, 'Right')];
@@ -272,7 +277,7 @@ export function layoutSlide(layout: LayoutId, theme: Theme, aspect: Aspect, newI
           strokeWidth: 0,
           radius: round1(24 * f),
         },
-        text('<p>Caption: what the image shows and why it matters</p>', m, H - m - capH, width, capSize, 2, true),
+        text(para('Caption: what the image shows and why it matters'), m, H - m - capH, width, capSize, 2, true),
       ];
       break;
     }
