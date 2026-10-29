@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Field } from '@/components/Field';
 import { PageMessage } from '@/components/PageMessage';
 import { ProgrammeSelect } from '@/components/ProgrammeSelect';
@@ -39,11 +39,23 @@ export default function AdminModules() {
   const [editing, setEditing] = useState<AdminModule | null>(null);
   const [newName, setNewName] = useState('');
   const [renameError, setRenameError] = useState<string>();
+  const lastEdited = useRef<number | null>(null);
+
+  // The edit form unmounts on Save or Cancel; return focus to that row's Rename button.
+  useEffect(() => {
+    if (!editing && lastEdited.current !== null) document.getElementById(`rename-${lastEdited.current}`)?.focus();
+  }, [editing]);
+
+  function closeEditor() {
+    lastEdited.current = editing?.id ?? null;
+    setEditing(null);
+  }
 
   async function onAdd(ev: FormEvent) {
     ev.preventDefault();
     setStatus(null);
     setAddErrors({});
+    rename.setError(null);
     const out = await add.run(
       () => api<{ module: AdminModule }>('/admin/modules', { method: 'POST', body: draft }),
       fieldErrors(setAddErrors),
@@ -59,6 +71,8 @@ export default function AdminModules() {
     if (!editing) return;
     setStatus(null);
     setRenameError(undefined);
+    add.setError(null);
+    if (newName.trim() === editing.name) return closeEditor();
     const out = await rename.run(
       () => api<{ module: AdminModule }>(`/admin/modules/${editing.id}`, { method: 'PATCH', body: { name: newName } }),
       fieldErrors((f) => setRenameError(f.name ?? Object.values(f)[0])),
@@ -66,7 +80,7 @@ export default function AdminModules() {
     if (!out) return;
     setData((d) => ({ modules: d?.modules.map((m) => (m.id === out.module.id ? out.module : m)) ?? [] }));
     setStatus(`Subject ${out.module.code} renamed.`);
-    setEditing(null);
+    closeEditor();
   }
 
   const modules = data?.modules;
@@ -123,7 +137,7 @@ export default function AdminModules() {
                     <Button type="submit" disabled={rename.pending}>
                       Save
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
+                    <Button type="button" variant="ghost" onClick={closeEditor}>
                       Cancel
                     </Button>
                   </div>
@@ -141,12 +155,14 @@ export default function AdminModules() {
                   <Button
                     type="button"
                     variant="outline"
+                    id={`rename-${m.id}`}
                     aria-label={`Rename ${m.code}`}
                     onClick={() => {
                       setEditing(m);
                       setNewName(m.name);
                       setRenameError(undefined);
                       setStatus(null);
+                      add.setError(null);
                     }}
                   >
                     Rename
