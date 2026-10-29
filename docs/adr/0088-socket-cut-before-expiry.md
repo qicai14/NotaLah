@@ -27,4 +27,9 @@
   lapse as for a closed tab. The first tick after activity takes the lock again, or meets 423 and waits read-only with
   unsaved edits kept. Only the first take on open is not gated. Both features read one activity tracker,
   `client/src/lib/activity.ts`.
-- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC99.
+- **Amended 29 Oct (#98):** video status polling follows the same limit, since each poll slides the session.
+  `useVideoPolling` skips its 4 s request while the tab has been idle for `IDLE_LIMIT_MS` and asks again on the first
+  tick after activity. A video still processing `POLL_LIMIT_MS` (60 minutes, well past the 10 minute encode timeout)
+  after the editor first saw it is shown as failed and no longer polled; reloading the editor asks the server again,
+  and a failed video can be uploaded again. Client only; the server's status is unchanged.
+- **Tests:** MSG-TC28 to MSG-TC31, DEP-TC9, CLI-TC93 to CLI-TC103.

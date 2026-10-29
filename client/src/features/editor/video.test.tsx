@@ -4,7 +4,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vite-plus/test';
 import type { SlideElement } from '@notalah/shared';
 import { SlideBoard } from '@/components/board/SlideBoard';
 import { SlideActive } from '@/components/board/VideoPlayer';
-import { limitsText, useVideoPolling, VideoPicker } from './MediaPanels';
+import { IDLE_LIMIT_MS } from '@/lib/activity';
+import { limitsText, POLL_LIMIT_MS, useVideoPolling, VideoPicker } from './MediaPanels';
 import { emptyDeck, useEditor } from './store';
 
 const video: SlideElement = {
@@ -120,5 +121,57 @@ describe('Video states (R40)', () => {
     );
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(useEditor.getState().deck.slides[0].elements.filter((e) => e.type === 'video')).toHaveLength(1);
+  });
+
+  describe('polling gates (#98)', () => {
+    const answer = (status: string) =>
+      vi.fn(() => json({ asset: { id: 5, status, width: 1280, height: 720, url: '/api/assets/5/file' } }));
+    const start = (status = 'processing') => {
+      vi.useFakeTimers();
+      const fetchMock = answer(status);
+      vi.stubGlobal('fetch', fetchMock);
+      useEditor.getState().load(emptyDeck(), undefined, {}, { '5': 'processing' });
+      renderHook(() => useVideoPolling());
+      return fetchMock;
+    };
+    const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+    it('CLI-TC100: an idle tab makes no status requests', async () => {
+      const f = start();
+      await wait(IDLE_LIMIT_MS);
+      const before = f.mock.calls.length;
+      await wait(8 * 4000);
+      expect(f.mock.calls.length).toBe(before);
+    });
+
+    it('CLI-TC101: the next activity resumes the polling', async () => {
+      const f = start();
+      await wait(IDLE_LIMIT_MS + 8 * 4000);
+      const before = f.mock.calls.length;
+      fireEvent.pointerDown(window);
+      await wait(4000);
+      expect(f.mock.calls.length).toBe(before + 1);
+    });
+
+    it('CLI-TC102: after the time limit the video shows as failed and polling stops', async () => {
+      const f = start();
+      for (let t = 0; t < POLL_LIMIT_MS; t += 10 * 60_000) {
+        await wait(10 * 60_000);
+        fireEvent.pointerMove(window);
+      }
+      await wait(4000);
+      expect(useEditor.getState().videoStatus).toEqual({ '5': 'failed' });
+      const before = f.mock.calls.length;
+      await wait(60_000);
+      expect(f.mock.calls.length).toBe(before);
+    });
+
+    it('CLI-TC103: an active tab polls until the video is ready', async () => {
+      const f = start('ready');
+      await wait(4000);
+      expect(useEditor.getState().videoStatus).toEqual({ '5': 'ready' });
+      await wait(60_000);
+      expect(f).toHaveBeenCalledTimes(1);
+    });
   });
 });
