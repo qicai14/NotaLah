@@ -438,7 +438,7 @@
 
 *Figure 4.13: PARP entity relationship diagram (crow's foot notation)*
 
-	Figure 4.13 presents the relational data model of PARP as twenty-seven entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
+	Figure 4.13 presents the relational data model of PARP as thirty-two entities in crow's foot notation. The model is organised around two central entities. USER_T holds every account, with a single role attribute distinguishing students, lecturers and administrators rather than three separate tables, because the three roles share all identity attributes and a lecturer differs from a student only in permissions. POST_T holds each slide note and references its author and its module; the slides themselves are stored in SLIDE_T as an ordered one-to-many child, since a note contains a variable number of slides that must keep their sequence. A post may exist without a module only while it is a draft, and a check constraint enforces that a published post always has a module, a visibility value and a publication time, which keeps the feed and search queries free of incomplete rows.
 
 	The entities around POST_T map directly to the four components of the ranking formula in Section 2.3.4. LIKE_T and COMMENT_T provide the like and comment counts for the engagement component E. The publication time on POST_T provides the age for the recency component R. VERIFICATION_T records each lecturer Super Like and, together with the author's role, determines the lecturer validation component V. HASHTAG_T, linked to posts through the associative entity POST_HASHTAG_T, and INTERACTION_T together provide the relevance component M: INTERACTION_T is an append-only log of the views, likes and comments each user performs, from which the viewer's decayed interest weight for each hashtag is calculated. Storing raw interactions instead of a pre-computed interest vector keeps the 14-day decay exact and allows the weights to be re-tuned after user acceptance testing (NFR5) without migrating stored data.
 
@@ -458,7 +458,7 @@
 
 ## 4.3.2 Database Schema
 
-	Table 4.24 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, TEXT holds slide content of unpredictable length, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
+	Table 4.24 lists every table, field, data type, size and constraint of the schema. Table names follow the uppercase singular form with a _T suffix, and field names are lowercase with a three-letter table prefix, so that a field's origin is visible in any query. Because PostgreSQL folds unquoted identifiers to lowercase, table names are written in double quotes in every SQL statement so that the live database matches this schema exactly. Six PostgreSQL-specific types are used where a generic type would be weaker: identity columns generate primary keys without separate sequences, TIMESTAMPTZ stores times with their offset so that recency decay is correct regardless of server time zone, JSONB holds each slide's background and ordered elements as one document, because the number of elements varies from slide to slide, TSVECTOR stores the pre-processed search document for full-text search (FR12), array types (INTEGER[] and DOUBLE PRECISION[]) hold the ranked list in FEED_SNAPSHOT_T as one row, and BIGINT is used for the two tables expected to grow fastest, INTERACTION_T and MESSAGE_T. The password hash uses CHAR(60) because bcrypt output is always exactly sixty characters.
 
 *Table 4.24: PARP database schema*
 
@@ -496,6 +496,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | pst_content_edited_at | TIMESTAMPTZ | | | Last title or slide change after publication; older Super Likes stop counting for V |
 | | pst_lock_usr_id | INTEGER | | FK → USER_T; set together with pst_lock_expires_at | Collaborator holding the soft edit lock |
 | | pst_lock_expires_at | TIMESTAMPTZ | | | Time the soft edit lock lapses unless renewed |
+| | pst_aspect | VARCHAR | 4 | NOT NULL, DEFAULT '4:5', CHECK (4:5, 9:16, 16:9) | Aspect ratio of the note's slides |
 | | pst_music_provider | VARCHAR | 10 | CHECK (jamendo); set together with pst_music_track_id | Music provider of the background track |
 | | pst_music_track_id | BIGINT | | | Jamendo track identifier; the audio URL is derived from it |
 | | pst_music_title | VARCHAR | 200 | | Track title, filled by the server from Jamendo on save |
@@ -507,7 +508,8 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | SLIDE_T | sld_id | INTEGER (identity) | | PK, NOT NULL | Unique slide identifier |
 | | sld_pst_id | INTEGER | | FK → POST_T, NOT NULL | Owning note |
 | | sld_position | SMALLINT | | NOT NULL, UNIQUE with sld_pst_id | Order of the slide within the note |
-| | sld_content | TEXT | | NOT NULL | Sanitised formatted slide content |
+| | sld_doc | JSONB | | NOT NULL, CHECK (elements is an array) | Slide background and ordered elements |
+| | sld_notes | VARCHAR | 2000 | NOT NULL, DEFAULT '' | Notes on the slide |
 | HASHTAG_T | hsh_id | INTEGER (identity) | | PK, NOT NULL | Unique hashtag identifier |
 | | hsh_name | VARCHAR | 50 | NOT NULL, UNIQUE, CHECK lowercase letters, digits, underscore | Normalised hashtag text without "#" |
 | POST_HASHTAG_T | phs_pst_id | INTEGER | | PK, FK → POST_T | Tagged note |
@@ -654,6 +656,9 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | ast_created_at | TIMESTAMPTZ | | NOT NULL | Time uploaded |
 | POST_ASSET_T | pas_pst_id | INTEGER | | PK, FK → POST_T, ON DELETE CASCADE | Note using the asset |
 | | pas_ast_id | INTEGER | | PK, FK → ASSET_T; indexed | Asset used |
+| USAGE_COUNTER_T | ucn_metric | VARCHAR | 30 | PK, NOT NULL | Metric counted (R34 cost guard) |
+| | ucn_period | VARCHAR | 16 | PK, NOT NULL | Period the count covers |
+| | ucn_count | BIGINT | | NOT NULL, DEFAULT 0, CHECK ≥ 0 | Count for the metric in the period |
 | VIDEO_JOB_T | vjb_id | INTEGER (identity) | | PK, NOT NULL | Unique job identifier |
 | | vjb_ast_id | INTEGER | | FK → ASSET_T, NOT NULL, UNIQUE | Video to process |
 | | vjb_status | VARCHAR | 10 | NOT NULL, CHECK (queued, running, done, failed) | Job state |
@@ -1500,6 +1505,10 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC12 | Latency percentiles (R27) | 100 unsorted latencies 1 to 100 ms; one value; an empty list | p50 50, p95 95, p99 99, p100 100 (nearest rank); the single value for any p; NaN when empty | | |
 | OPS-TC13 | NFR1 verdict from a load run (R27) | 100 search samples at 10 to 1,000 ms; the same plus one at 4,000 ms; samples with p95 above 3,000 ms; one failed search; no searches | Pass and all under 3 s; pass but not all under 3 s; fail; fail; fail | | |
 | OPS-TC14 | Load seed refuses a non-test database (R27) | Database names `notalah`, `notalah_prod`, `postgres`, `notalah_tes`, `x_notalah_test_1`; then `notalah_test_r27_load` | The first five throw "load seed refused" before any table is touched; the last is accepted | | |
+| OPS-TC15 | Schema-drift check passes on the repo | Schema-drift check run on the committed migrations and Chapter 4.3 | Exit 0; no column reported as missing, renamed or of a different type | | |
+| OPS-TC16 | Schema-drift check fails when a column in 4.3 is renamed | One column name in 4.3 changed from its migration name | Non-zero exit; the renamed column is reported | | |
+| OPS-TC17 | Schema-drift check fails when a migration column is missing from 4.3 | One column row removed from 4.3 while the migration still creates it | Non-zero exit; the missing column is reported | | |
+| OPS-TC18 | Schema-drift check fails when a column's data type in 4.3 differs from the migration | One data type in 4.3 changed from the type in the migration | Non-zero exit; the column with the differing type is reported | | |
 
 *Table 4.38: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 

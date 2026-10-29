@@ -39,6 +39,7 @@ erDiagram
     TIMESTAMPTZ pst_content_edited_at
     INTEGER pst_lock_usr_id FK
     TIMESTAMPTZ pst_lock_expires_at
+    VARCHAR(4) pst_aspect "NOT NULL"
     VARCHAR(10) pst_music_provider
     BIGINT pst_music_track_id
     VARCHAR(200) pst_music_title
@@ -52,7 +53,8 @@ erDiagram
     INTEGER sld_id PK
     INTEGER sld_pst_id FK "NOT NULL"
     SMALLINT sld_position "NOT NULL"
-    TEXT sld_content "NOT NULL"
+    JSONB sld_doc "NOT NULL"
+    VARCHAR(2000) sld_notes "NOT NULL"
   }
   HASHTAG_T {
     INTEGER hsh_id PK
@@ -246,6 +248,11 @@ erDiagram
   POST_ASSET_T {
     INTEGER pas_pst_id PK, FK
     INTEGER pas_ast_id PK, FK
+  }
+  USAGE_COUNTER_T {
+    VARCHAR(30) ucn_metric PK
+    VARCHAR(16) ucn_period PK
+    BIGINT ucn_count "NOT NULL"
   }
   VIDEO_JOB_T {
     INTEGER vjb_id PK
