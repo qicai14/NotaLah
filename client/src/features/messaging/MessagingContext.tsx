@@ -87,10 +87,16 @@ export function MessagingProvider({ children }: { children: ReactNode }) {
     let stopped = false;
     const listen = (s: Socket) => {
       s.on('connect_error', offline);
-      // The server cuts a socket when its token expires; reconnecting picks up the cookie the sliding session renewed (D65).
-      // The 1-3 s jitter keeps every tab from reconnecting at once after a server-wide cut.
+      // The server cuts a socket 10 minutes before its token expires; /auth/me renews the cookie (sliding session, D65)
+      // before reconnecting, and a 401 there ends the session in api(). The 1-3 s jitter spreads tabs after a server-wide cut.
       s.on('disconnect', (reason) => {
-        if (reason === 'io server disconnect') reconnect = setTimeout(() => s.connect(), 1000 + Math.random() * 2000);
+        if (reason !== 'io server disconnect') return;
+        const renew = () =>
+          api('/auth/me').then(
+            () => !stopped && s.connect(),
+            () => !stopped && offline(),
+          );
+        reconnect = setTimeout(() => void renew(), 1000 + Math.random() * 2000);
       });
       s.on('connect', () => {
         setError(null);
