@@ -1,7 +1,7 @@
 # Agent workflow (solo developer, Claude Pro)
 
 The main session orchestrates: it plans with the user, writes specs, reviews and decides. Subagents in `.claude/agents/`
-do the work; spawn the cheapest one that can do the job. Other tools (Codex, Copilot, Antigravity) follow the same
+do the work; give each the model and effort its task needs, and save usage by running fewer at once. Other tools (Codex, Copilot, Antigravity) follow the same
 `AGENTS.md` files and these conventions, usually for reviews or one-off checks.
 
 | Agent | Model | For |

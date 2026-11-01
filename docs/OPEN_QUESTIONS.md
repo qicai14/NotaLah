@@ -2,12 +2,12 @@
 
 Reviewed with the user on 14 Oct 2026. Answers are recorded under each question; still-open items are marked **OPEN**.
 
-1. Final submission date? **Answered:** around end of December 2026 to early January 2027, not 29 Nov. Exact date
-   still to confirm at the final briefing (week of 9 Nov). PLAN.md re-planned: same build pace, an extra Sprint 5,
-   UAT on the live site, December for the report and buffer.
+1. Final submission date? **Answered (official timeline, 29 Oct):** Wed 16 Dec 2026 before 11:59 pm (document and
+   source code); the presentation is from the week of 4 Jan 2027. PLAN.md proposes UAT by 30 Nov and the report by
+   12 Dec.
 2. Has Form 421 been emailed to the supervisor? **Answered:** yes.
 3. Has supervisor meeting #1 (9 Oct) been logged on PG Bank? **OPEN:** not yet; to-do in PLAN.md Admin row.
-4. Meeting #2 booked? **OPEN:** not yet; to-do in PLAN.md Admin row (target ~28 Oct).
+4. Meeting #2 booked? **OPEN:** week of 2 Nov per the official timeline; to-do in PLAN.md Admin row.
 5. Lecturer sign-up: an APU staff email domain? **Answered:** unknown; admin approval alone (D6) stands.
 6. Stray folder C:/Users/reymy/Code%20Projects. **Closed:** deleted by the user.
 7. Report length (questions 7, 9 and 11 merged): Chapters 1-4 hold about 39k words of prose against an 18-20k
@@ -38,24 +38,19 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
     - **Closed:** the writer applies all four entries (PLAN R15). Not independently verified by the researcher.
 11. (Merged into 7.)
 
-## To ask the supervisor at meeting #2 (~28 Oct)
+## To ask the supervisor at meeting #2 (week of 2 Nov)
 1. Report length: Chapters 1-4 hold about 39k words of prose against the 18-20k standard. Approve the cut plan (question 7)?
 2. Wireframes (4.4): the UI is being redesigned (TikTok-style layout). Must Chapter 4.4 wireframes match the final
    product, or may the 25 wireframes stay as the pre-coding design with differences explained in Chapter 5?
 3. Is a clickable prototype expected, or are the 25 wireframes sufficient?
 4. FR changes: confirm the requirement additions (FR19 lecturer approval, follows/friends, notifications, live deployment).
 5. Restored FR15/FR17/FR18 and the additions beyond the IR (collaboration, guest browsing, blocking, Canva-style editor,
-   video, cost guard): number them FR20 onward in Table 33, or list them as enhancements without FR numbers?
-6. Optional AI aids (R28 writing assistant, R35 photo/handwriting import, R36 dictation) reverse the IR's AI exclusion
-   while the ranking stays heuristic: acceptable as a logged extension? **Updated 29 Oct:** R35 and R36 now move to
-   future work (ADR 0085); see item 8.
-7. The R13 report-sync drafts add about 3,800 words; fold them into the length cut plan (question 1)?
-8. Confirm the AI addition (R28 and R41 in scope; R35 and R36 to future work) as overdelivery beyond the IR 1.5 Scope.
+   video, cost guard): **user decision 29 Oct (ADR 0092):** FR20 onward (NFR numbers where non-functional), each with
+   its justification (meeting #1, L36). Confirm with the supervisor.
+6. Confirm the AI addition (R28 and R41 in scope; R35 and R36 to future work) as overdelivery beyond the IR 1.5 Scope.
    User decision 29 Oct; ADR 0085; nothing waits on it.
-9. Confirm the exact final submission date.
 
 ## Open for the user (20 Oct)
-- FR numbering for the additions (supervisor question 5) decides the Table 33 wording in the R13 drafts.
 - FR8 survey figure: the report says 19 selections (59.4%), the IR says 20 (62%); confirm which is correct.
 
 ## Answered 25 Oct (D83) — was: open for the user (22 Oct autopilot run)
