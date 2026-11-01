@@ -25,7 +25,7 @@ const parseJson = (s: string): unknown => {
  * A validated outline cut to the room left on the Note. An invalid first reply is retried once with the validation
  * error; a second invalid reply is refused. Logs hold counts and latency only, never text.
  */
-export async function draftOutline(text: string, currentSlides: number): Promise<Outline> {
+export async function draftOutline(text: string, currentSlides: number, userId: number): Promise<Outline> {
   const started = Date.now();
   const messages: Message[] = [
     { role: 'system', content: OUTLINE_PROMPT },
@@ -33,7 +33,7 @@ export async function draftOutline(text: string, currentSlides: number): Promise
   ];
   let tokens = 0;
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const reply = await complete(messages, AI.outlineMaxTokens);
+    const reply = await complete(messages, AI.outlineMaxTokens, userId);
     tokens += reply.tokens;
     const parsed = parseOutline(parseJson(reply.content), currentSlides);
     const stats = { inputChars: text.length, attempts: attempt, tokens, latencyMs: Date.now() - started };

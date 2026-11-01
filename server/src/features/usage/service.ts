@@ -13,11 +13,23 @@ export function consume(metric: Metric, n = 1, cap: number = METRICS[metric].cap
   return addIfUnder(metric, periodKey(METRICS[metric].period, now), n, cap);
 }
 
-/** Moves a reservation made with `consume(metric, reserved, cap, now)` to the actual amount. Never refuses. */
-export const settle = (metric: Metric, reserved: number, actual: number, now: Date) =>
-  actual >= reserved
-    ? consume(metric, actual - reserved, Number.MAX_SAFE_INTEGER, now)
-    : subtract(metric, periodKey(METRICS[metric].period, now), reserved - actual);
+/** One user's share of a metric, counted in the same table as `<metric>:<userId>`; it is not in the usage report. */
+const userCounter = (metric: Metric, userId?: number) => (userId === undefined ? metric : `${metric}:${userId}`);
+
+/** Like `consume`, against one user's share of the metric for the current period. */
+export const consumeForUser = (metric: Metric, userId: number, n: number, cap: number, now = new Date()) =>
+  addIfUnder(userCounter(metric, userId), periodKey(METRICS[metric].period, now), n, cap);
+
+/**
+ * Moves a reservation made with `consume` (or `consumeForUser` when `userId` is given) at `now` to the actual amount.
+ * Never refuses.
+ */
+export const settle = async (metric: Metric, reserved: number, actual: number, now: Date, userId?: number) => {
+  const name = userCounter(metric, userId);
+  const period = periodKey(METRICS[metric].period, now);
+  if (actual >= reserved) await addIfUnder(name, period, actual - reserved, Number.MAX_SAFE_INTEGER);
+  else await subtract(name, period, reserved - actual);
+};
 
 /** Adds the bytes just sent from storage to this month's total. Never refuses: the cap only stops later video requests. */
 export const recordServed = (bytes: number) => consume('served_bytes', bytes, Number.MAX_SAFE_INTEGER);

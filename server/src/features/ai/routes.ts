@@ -2,7 +2,7 @@ import { LIMITS } from '@notalah/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 import { bodyOrEmpty, issueMap } from '../../lib/validation';
-import { requireActive, requireAuth } from '../auth/middleware';
+import { me, requireActive, requireAuth } from '../auth/middleware';
 import { AI, aiEnabled } from './config';
 import { AiError } from './provider';
 import { aiDailyLimiter, aiMinuteLimiter } from './rateLimit';
@@ -41,10 +41,10 @@ aiRouter.post(
   },
   aiMinuteLimiter,
   aiDailyLimiter,
-  async (_req, res) => {
+  async (req, res) => {
     const { text, currentSlides } = res.locals.body as z.infer<typeof outlineBody>;
     try {
-      res.json({ outline: await draftOutline(text, currentSlides) });
+      res.json({ outline: await draftOutline(text, currentSlides, me(req).id) });
     } catch (err) {
       if (err instanceof AiError) return void res.status(err.status).json({ error: err.message });
       throw err;

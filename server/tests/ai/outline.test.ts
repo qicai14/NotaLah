@@ -1,9 +1,10 @@
 import request from 'supertest';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
+import { AI } from '../../src/features/ai/config';
 import { METRICS } from '../../src/features/usage/config';
 import { consume, periodKey } from '../../src/features/usage/service';
-import { env } from '../../src/lib/env';
+import { env, parseEnv } from '../../src/lib/env';
 import { logger } from '../../src/lib/logger';
 import { pool } from '../../src/lib/pool';
 import { asUser, CSRF, insertUser, truncateAll } from '../helpers';
@@ -49,7 +50,7 @@ const outline = (uid: number | null, body: object = { text: SECRET }) => {
   const req = request(app).post('/api/ai/outline');
   return (uid === null ? req.set(CSRF) : req.set(asUser(uid))).send(body);
 };
-const count = async (metric: 'ai_requests' | 'ai_tokens') =>
+const count = async (metric: string) =>
   Number(
     (
       await pool.query(`SELECT ucn_count FROM "USAGE_COUNTER_T" WHERE ucn_metric = $1 AND ucn_period = $2`, [
@@ -62,22 +63,32 @@ const count = async (metric: 'ai_requests' | 'ai_tokens') =>
 describe('AI outline draft (R28)', () => {
   it('AI-TC6: a signed-in active user gets a validated outline from one OpenAI-compatible call', async () => {
     const fetchMock = stub(() => completion(good, 1234));
-    const res = await outline(await insertUser());
+    const uid = await insertUser();
+    const res = await outline(uid);
     expect(res.status).toBe(200);
     expect(res.body.outline).toEqual(good);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('https://ai.test/v1/chat/completions');
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer test-key');
+    expect(init.redirect).toBe('error');
     const body = sent(fetchMock);
     expect(body.model).toBe('test-model');
     expect(body.messages.map((m: { role: string }) => m.role)).toEqual(['system', 'user']);
     expect(body.messages[1].content).toBe(SECRET);
     expect(await count('ai_requests')).toBe(1);
     expect(await count('ai_tokens')).toBe(1234);
+    expect(await count(`ai_tokens:${uid}`)).toBe(1234);
   });
 
-  it('AI-TC7: with no key, no base URL or the kill switch on, the route is 404 and nothing is called', async () => {
+  it('AI-TC7: with no key, no base URL or the kill switch on, the route is 404; production needs an https base URL', async () => {
+    const base = { DATABASE_URL: 'postgres://x', JWT_SECRET: 'x'.repeat(16) };
+    expect(() => parseEnv({ ...base, NODE_ENV: 'production', AI_BASE_URL: 'http://ai.example/v1' })).toThrow(
+      'AI_BASE_URL must be an https:// URL in production',
+    );
+    expect(parseEnv({ ...base, AI_BASE_URL: 'http://localhost:11434/v1' }).AI_BASE_URL).toBe(
+      'http://localhost:11434/v1',
+    );
     const fetchMock = stub();
     const uid = await insertUser();
     env.AI_API_KEY = undefined;
@@ -159,13 +170,21 @@ describe('AI outline draft (R28)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('AI-TC14: a provider rate limit is a friendly 503 and is not retried', async () => {
+  it('AI-TC14: a provider rate limit is a friendly 503, not retried, and any 4xx hands the reserved tokens back', async () => {
     const fetchMock = stub(() => new Response(`rate limited: ${SECRET}`, { status: 429 }));
-    const res = await outline(await insertUser());
+    const uid = await insertUser();
+    const res = await outline(uid);
     expect(res.status).toBe(503);
     expect(res.body.error).toBe('AI help is busy right now. Try again in a minute');
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(await count('ai_requests')).toBe(1);
+    expect(await count('ai_tokens')).toBe(0);
+    expect(await count(`ai_tokens:${uid}`)).toBe(0);
+    stub(() => new Response('bad request', { status: 400 }));
+    expect((await outline(uid)).status).toBe(502);
+    expect(await count('ai_requests')).toBe(2);
+    expect(await count('ai_tokens')).toBe(0);
+    expect(await count(`ai_tokens:${uid}`)).toBe(0);
   });
 
   it('AI-TC15: an invalid first outline is retried once with the validation error, counted before each call', async () => {
@@ -220,6 +239,26 @@ describe('AI outline draft (R28)', () => {
     const down = await outline(uid);
     expect(down.status).toBe(502);
     expect(JSON.stringify(down.body)).not.toContain('Photosynthesis');
+    // A timeout or 5xx may still have used tokens, so both reservations are kept.
+    expect(await count('ai_tokens')).toBeGreaterThan(2 * 4_000);
+    expect(await count(`ai_tokens:${uid}`)).toBe(await count('ai_tokens'));
+  });
+
+  it("AI-TC20: a user's daily token share stops them long before the app-wide cap", async () => {
+    expect(AI.userTokensPerDay).toBe(METRICS.ai_tokens.cap / 10);
+    const fetchMock = stub();
+    fetchMock.mockImplementation(async () => completion(good, 9_000));
+    const uid = await insertUser();
+    expect((await outline(uid)).status).toBe(200);
+    expect((await outline(uid)).status).toBe(200);
+    const spent = await outline(uid);
+    expect(spent.status).toBe(429);
+    expect(spent.body.error).toBe("You have used today's AI allowance. Try again tomorrow.");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(await count('ai_requests')).toBe(2);
+    expect(await count('ai_tokens')).toBe(18_000);
+    expect(await count('ai_tokens')).toBeLessThan(METRICS.ai_tokens.cap);
+    expect((await outline(await insertUser())).status).toBe(200);
   });
 
   it('AI-TC18: no database client is checked out or in a transaction during the provider call', async () => {

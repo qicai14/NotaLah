@@ -106,6 +106,9 @@ const schema = z
       if (v.TRUST_PROXY === 'loopback' || v.TRUST_PROXY === 0)
         fail('TRUST_PROXY', 'TRUST_PROXY must be the proxy hop count (2 behind the Pages proxy) in production');
       if (!v.PROXY_SECRET) fail('PROXY_SECRET', 'PROXY_SECRET must be set in production (at least 16 characters)');
+      // The key and the students' text travel to this URL.
+      if (v.AI_BASE_URL && !v.AI_BASE_URL.startsWith('https://'))
+        fail('AI_BASE_URL', 'AI_BASE_URL must be an https:// URL in production');
     }
     if (v.STORAGE_DRIVER !== 'r2') return;
     for (const name of R2_VARS) {
