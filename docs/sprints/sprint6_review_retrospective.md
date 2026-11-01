@@ -97,7 +97,7 @@ review (`run-logs/retro_2026-10-29/fyp1-8_review.md`) and the 29 October kickoff
 | 5 | Agents run on the model the task needs; usage is saved by running fewer at once | `docs/conventions/agent-workflow.md` |
 | 6 | Weekly thresholds (no new session at 85%, pause tickets at 92%), a resume card instead of a scheduled session start, corrected keep-warm cost | next orchestrator kickoff |
 | 7 | Hand over at the end of each batch or about 400k tokens of context, whichever comes first | next orchestrator kickoff |
-| 8 | A check in `vp run check` that `docs/CHAPTER4.md` matches its sources | issue proposal |
+| 8 | A check in `vp run check` that `docs/chapter4/CHAPTER4.md` matches its sources | #105 |
 | 9 | `docs/PLAN.md` dates follow `FYP_TIMELINE.pdf` | `docs/PLAN.md` |
 
 ## Summary

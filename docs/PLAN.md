@@ -6,7 +6,7 @@ physical, week of 4 Jan 2027 onwards. Current state and next issues: `HANDOVER.m
 `backlog_R0-R41.md`), `DECISIONS.md` and `adr/`.
 
 ## Where we are (1 Nov 2026, week 6)
-- Every IR FR (FR1-FR19) is built and tested. Sprint 6 (Stabilise) closed 29 Oct with 14 issues
+- Every IR FR (FR1-FR18) is built and tested. FR19 (lecturer approval) is the first addition beyond the IR (ADR 0092). Sprint 6 (Stabilise) closed 29 Oct with 14 issues
   (`sprints/sprint6_review_retrospective.md`): NFR3 holds on the labelled seed (ADR 0089), 10x latency measured
   (ADR 0090), R5 admin Modules page done.
 - Next: Sprint 7 R28 AI assistant (spec approved, D83; overdelivery, ADR 0085), then R41 if time remains (R35 and R36
@@ -38,7 +38,7 @@ gantt
 |---|---|---|
 | Meeting #2 | week of 2 Nov | R14 Plan A (B as fallback), the AI additions (ADR 0085) and FR20+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
 | Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed and evidence pipeline ready (#82, #83) |
-| UAT | 30 Nov (proposed; was 6 Dec) | three or more participants (#86), results and NFR5 weight review in `testing/uat/` (#84) |
+| UAT | 30 Nov (proposed); must finish before 6 Dec | at least three participants (#86; 5 students, 1 lecturer, 1 admin as a stretch), results and NFR5 weight review in `testing/uat/` (#84) |
 | Report complete | 12 Dec (proposed; was 20 Dec) | Chapters 1-6 in the .docx, cuts applied, meeting #1 feedback folded in, 25 screenshots, 3 code snippets, poster, 3-min video |
 | Submission | 16 Dec, 11:59 pm | deliverables named per the `fyp-standards` skill; cover page fields checked; 6 meeting log sheets |
 | Presentation | week of 4 Jan | demo runs locally (D82) |

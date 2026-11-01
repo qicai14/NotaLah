@@ -26,15 +26,14 @@ Read with `PLAN.md` (milestones, official dates), `sprints/sprint6_review_retros
    UAT redesign (#84), all before 20 Nov; limitations write-up (#85) before UAT.
 3. R41 only if time remains after R28; R35 and R36 are future work (ADR 0085).
 
-## Issue proposals for the orchestrator (not yet filed; show the user the titles)
-- chore: check in `vp run check` that `docs/chapter4/CHAPTER4.md` matches its sources (retro action 8; parallel PRs
-  both rebuilt it).
-- docs (report lane): fold the meeting #1 feedback into Chapters 2-3 (appraisal, survey analysis, APA, indentation,
-  diagram paragraphs) — a writer session in `../FYP_Submissions`.
-- docs (report lane): FR20+ numbers and justifications in `drafts/3.3.3.4_requirement_changes.md` (ADR 0092).
+## Issues filed 1 Nov (from the retro proposals)
+- #105 chore: check in `vp run check` that `docs/chapter4/CHAPTER4.md` matches its sources (ready-for-agent).
+- #106 docs (report lane): fold the meeting #1 feedback into Chapters 2-3 (ready-for-human).
+- #107 docs (report lane): FR19 and FR20+ numbers and justifications in `drafts/3.3.3.4_requirement_changes.md` (ADR 0092; ready-for-human).
 
-## Open for the user
-- Floor FR1-FR18 or FR1-FR19: the IR .md stops at FR18; FR19 (lecturer approval) may be an addition. Check the .docx.
+## Answered 1 Nov
+- The IR floor is FR1-FR18. FR19 (lecturer approval) was not in the IR .docx; it is the first addition (ADR 0092).
+- UAT must finish before 6 Dec, with at least three participants.
 - `SafeHtml` branded type (#75 open item): needs a deck schema change; not done.
 - Remote branch deletes stay manual: auto mode blocks `git push origin --delete` (user, 1 Nov).
 
