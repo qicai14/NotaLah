@@ -4,7 +4,8 @@ Status: **approved 25 Oct 2026 (D83).** Answers to the open questions are record
 R28), D74 (free tier only). R35 (photo import) and R36 (dictation) reuse the outline pipeline below (now future work, ADR 0085).
 
 ## Goal
-Help a student turn rough material into a clean slide note faster (Objective 3, FR8), without touching the feed:
+Help a student turn rough material into a clean slide note faster, without touching the feed. Traceability: R28 ·
+addition, FR number to be assigned in #107 (ADR 0085, ADR 0092) · supports FR8 and Objective 3. The feed's
 ranking stays the deterministic heuristic (NFR3). AI output is always an editable draft, never published by itself.
 
 ## Features (slice 1)

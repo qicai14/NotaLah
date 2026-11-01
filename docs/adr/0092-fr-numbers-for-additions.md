@@ -9,3 +9,4 @@
 - **Alternatives:** list the additions as unnumbered enhancements (harder to trace to tests and UAT tasks).
 - **Reversibility:** High; numbering only. Supervisor confirmation at meeting #2 (week of 2 Nov).
 - **Tests:** none; traceability rows follow the numbers.
+- 1 Nov (owner): FR19 lecturer approval is also an addition; additions run FR19, then FR20 onward.
