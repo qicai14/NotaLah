@@ -9,11 +9,12 @@ import { useEditor } from './store';
 
 export const AI_TIMEOUT_MS = 30_000;
 const MAX_CHARS = 20_000;
-const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
+export const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
 
 let probe: Promise<boolean> | undefined;
+export const forgetAiProbe = () => void (probe = undefined);
 /** Asks the server once whether the AI routes exist: an empty body is refused with 400 before any call is spent, a 404 means off. */
-const aiAvailable = () =>
+export const aiAvailable = () =>
   (probe ??= api('/ai/outline', { method: 'POST', body: {} }).then(
     () => true,
     (e) => !(e instanceof ApiError && e.status === 404),

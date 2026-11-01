@@ -57,6 +57,7 @@ import { arrange, selectedElements } from './arrange';
 import { type BoxList, type BoxMark, styleWholeBox, wholeBoxHas } from './wholeBox';
 import { CODE_LANG_NAMES, resizeTable } from './elements';
 import { offsetCopy, patchElement, useEditor } from './store';
+import { TextActions } from './TextActions';
 
 const field =
   'h-9 rounded-md border border-input bg-background px-2 text-body-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25';
@@ -550,6 +551,8 @@ export function ElementBar() {
             )}
             {whole ? 'Whole box' : 'Selected text'}
           </span>
+          <TextActions key={el.id} el={el} />
+          <Sep />
           <FontSelect value={el.font} onChange={(font) => update({ font })} className="w-44" />
           <Num
             label="Size"
@@ -580,7 +583,6 @@ export function ElementBar() {
               <Icon />
             </Tool>
           ))}
-          <Sep />
         </>
       )}
       {el.type === 'shape' && (

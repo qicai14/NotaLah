@@ -6,7 +6,7 @@ import { me, requireActive, requireAuth } from '../auth/middleware';
 import { AI, aiEnabled } from './config';
 import { AiError } from './provider';
 import { aiDailyLimiter, aiMinuteLimiter } from './rateLimit';
-import { draftOutline } from './service';
+import { draftOutline, transformText } from './service';
 
 export const aiRouter = Router();
 
@@ -45,6 +45,39 @@ aiRouter.post(
     const { text, currentSlides } = res.locals.body as z.infer<typeof outlineBody>;
     try {
       res.json({ outline: await draftOutline(text, currentSlides, me(req).id) });
+    } catch (err) {
+      if (err instanceof AiError) return void res.status(err.status).json({ error: err.message });
+      throw err;
+    }
+  },
+);
+
+const textBody = z.object({
+  text: z
+    .string({ error: 'Text is required' })
+    .trim()
+    .min(1, 'Text is required')
+    .max(AI.textChars, `Text must be at most ${AI.textChars.toLocaleString('en')} characters`),
+  action: z.enum(['rewrite', 'shorten', 'quiz'], { error: 'Unknown action' }),
+});
+
+aiRouter.post(
+  '/rewrite',
+  requireAuth,
+  requireActive,
+  (req, res, next) => {
+    const parsed = textBody.safeParse(bodyOrEmpty(req));
+    if (!parsed.success)
+      return void res.status(400).json({ error: 'Validation failed', errors: issueMap(parsed.error.issues) });
+    res.locals.body = parsed.data;
+    next();
+  },
+  aiMinuteLimiter,
+  aiDailyLimiter,
+  async (req, res) => {
+    const { text, action } = res.locals.body as z.infer<typeof textBody>;
+    try {
+      res.json(await transformText(action, text, me(req).id));
     } catch (err) {
       if (err instanceof AiError) return void res.status(err.status).json({ error: err.message });
       throw err;
