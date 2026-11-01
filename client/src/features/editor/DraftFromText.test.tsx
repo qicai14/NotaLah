@@ -53,7 +53,7 @@ describe('DraftFromText (R28)', () => {
     expect(screen.queryByRole('button', { name: /Draft slides from text/ })).toBeNull();
   });
 
-  it('AI-TC30: cancel, resend, timeout and a late reply behave', async () => {
+  it('AI-TC29: cancel, resend, timeout and a late reply behave', async () => {
     const { calls, useEditor } = await mount(400);
     await open();
 
