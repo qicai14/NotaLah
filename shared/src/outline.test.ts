@@ -27,11 +27,18 @@ describe('outline schema', () => {
     ['bullet over limit', { slides: [{ ...slide(), bullets: ['x'.repeat(L.bullet + 1)] }] }],
     ['too many bullets', { slides: [{ ...slide(), bullets: Array(L.bullets + 1).fill('a') }] }],
     ['code over limit', { slides: [{ layout: 'code', title: 'c', code: 'x'.repeat(L.code + 1) }] }],
-    ['too many code lines', { slides: [{ layout: 'code', title: 'c', code: 'a\n'.repeat(L.codeLines) }] }],
+    ['too many code lines', { slides: [{ layout: 'code', title: 'c', code: 'a\n'.repeat(L.codeLines + 1) }] }],
+    ['cover title over limit', { slides: [{ layout: 'title', title: 'x'.repeat(L.coverTitle + 1) }] }],
+    ['code line over limit', { slides: [{ layout: 'code', title: 'c', code: 'x'.repeat(L.codeLineLength + 1) }] }],
     ['extra field', { slides: [{ ...slide(), html: '<b>x</b>' }] }],
     ['no slides', { slides: [] }],
   ])('AI-TC2 rejects %s', (_, bad) => {
     expect(outlineSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('AI-TC1 accepts 12 code lines with a trailing newline', () => {
+    const code = 'a\n'.repeat(L.codeLines);
+    expect(outlineSchema.safeParse({ slides: [{ layout: 'code', title: 'c', code }] }).success).toBe(true);
   });
 
   it('AI-TC3 cuts an outline of 20 Slides to 15', () => {

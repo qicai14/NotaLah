@@ -68,21 +68,21 @@ export const MESSAGING_LIMITS = Object.freeze({
 });
 
 /**
- * AI outline limits (R28, #111). Sized to the layoutSlide boxes at the tightest aspect (16:9: 904-unit width, 22 px body,
- * 44 px heading), so generated text is not clipped. Shorter boards are the binding case; 4:5 and 9:16 have more room
- * for body text but a 64 px heading that holds about 23 characters per line.
+ * AI outline limits (R28, #111), sized to the layoutSlide boxes so generated text is not clipped. Heading and title
+ * boxes are one line high, so the limits are what one line holds at the narrowest case: a 64 px heading in portrait
+ * (about 26 characters), an 88 px cover title in portrait (about 19). Bullets wrap inside their boxes; code lines
+ * must fit the portrait code box (about 53 characters at 26 px).
  */
 export const OUTLINE_LIMITS = {
-  /** Most Slides one outline may add. */
   slides: 15,
-  title: 40,
+  title: 24,
+  coverTitle: 20,
   subtitle: 60,
-  /** Bullets per body or column, and characters per bullet (about 1 to 3 lines in a column). */
   bullets: 6,
   columnBullets: 4,
   bullet: 80,
-  columnHeading: 30,
-  /** Code box fits about 12 lines of 80 characters at 16:9. */
+  columnHeading: 24,
   code: 600,
   codeLines: 12,
+  codeLineLength: 50,
 } as const;

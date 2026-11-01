@@ -16,7 +16,11 @@ const column = z.strictObject({ heading: line(L.columnHeading, 'Column heading')
 export const outlineSlideSchema = z.discriminatedUnion(
   'layout',
   [
-    z.strictObject({ layout: z.literal('title'), title, subtitle: line(L.subtitle, 'Subtitle').optional() }),
+    z.strictObject({
+      layout: z.literal('title'),
+      title: line(L.coverTitle, 'Title'),
+      subtitle: line(L.subtitle, 'Subtitle').optional(),
+    }),
     z.strictObject({ layout: z.literal('title-body'), title, bullets: bullets(L.bullets) }),
     z.strictObject({ layout: z.literal('two-column'), title, left: column, right: column }),
     z.strictObject({
@@ -27,7 +31,11 @@ export const outlineSlideSchema = z.discriminatedUnion(
         .string({ error: 'Code must be text' })
         .min(1, 'Code is required')
         .max(L.code, `Code must be at most ${L.code} characters`)
-        .refine((c) => c.split('\n').length <= L.codeLines, `Code must be at most ${L.codeLines} lines`),
+        .refine((c) => c.trimEnd().split('\n').length <= L.codeLines, `Code must be at most ${L.codeLines} lines`)
+        .refine(
+          (c) => c.split('\n').every((l) => l.length <= L.codeLineLength),
+          `Code lines must be at most ${L.codeLineLength} characters`,
+        ),
     }),
   ],
   { error: 'Unknown layout' },
@@ -43,7 +51,6 @@ export const outlineSchema = z.strictObject({
 export type Outline = z.infer<typeof outlineSchema>;
 export type OutlineSlide = z.infer<typeof outlineSlideSchema>;
 
-/** How many new Slides a Note with `current` Slides may take: at most 15 and never past the 30-Slide limit. */
 export const outlineRoom = (current: number) => Math.max(0, Math.min(L.slides, LIMITS.slides - current));
 
 /** Validate a reply and cut it to the room left on the Note; `slides` is empty when the Note is full. */
