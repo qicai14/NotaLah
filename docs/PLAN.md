@@ -36,7 +36,7 @@ gantt
 ## Milestones
 | Milestone | Target | Done when |
 |---|---|---|
-| Meeting #2 | week of 2 Nov | R14 Plan A (B as fallback), the AI additions (ADR 0085) and FR20+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
+| Meeting #2 | week of 2 Nov | R14 Plan A (B as fallback), the AI additions (ADR 0085) and FR19+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
 | Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed and evidence pipeline ready (#82, #83) |
 | UAT | 30 Nov (proposed); must finish before 6 Dec | at least three participants (#86; 5 students, 1 lecturer, 1 admin as a stretch), results and NFR5 weight review in `testing/uat/` (#84) |
 | Report complete | 12 Dec (proposed; was 20 Dec) | Chapters 1-6 in the .docx, cuts applied, meeting #1 feedback folded in, 25 screenshots, 3 code snippets, poster, 3-min video |
@@ -52,5 +52,5 @@ gantt
 - More detailed analysis of survey results, not just interpretation (Ch 3).
 - Indent every paragraph; make referencing consistent (APA).
 - Every diagram and feature gets an explanatory paragraph beneath it.
-- FR changes are fine if justified (L36): each FR20+ addition carries its justification (ADR 0092).
+- FR changes are fine if justified (L36): each FR19+ addition carries its justification (ADR 0092).
 - None of these five report points has a follow-up yet: a report-lane task for the writer.
