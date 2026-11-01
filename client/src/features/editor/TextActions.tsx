@@ -28,18 +28,18 @@ export function TextActions({ el }: { el: TextElement }) {
 
   useEffect(() => {
     void aiAvailable().then(setAvailable);
-    return () => ctrl.current?.abort(); // the bar is keyed by the box: another selection ends the request
+    return () => ctrl.current?.abort();
   }, []);
 
   function stop() {
     ctrl.current?.abort();
-    ctrl.current = null; // the stopped request must not touch state when it settles
+    ctrl.current = null;
     setBusy(null);
   }
 
   async function run(action: Action) {
     const st = useEditor.getState();
-    st.setEditing(null); // typing and the reply must not collide
+    st.setEditing(null);
     const { session } = st;
     const box = boxOf(useEditor.getState(), el.id);
     if (st.readOnly || box?.type !== 'text') return;
@@ -59,9 +59,10 @@ export function TextActions({ el }: { el: TextElement }) {
       });
       if (ctrl.current !== c) return;
       const now = useEditor.getState();
-      if (now.session !== session || now.readOnly) return; // another Note or a lock: dropped quietly
+      if (now.session !== session || now.readOnly) return;
       const cur = boxOf(now, el.id);
-      if (cur?.type !== 'text' || cur.html !== box.html) return setError('The box changed while waiting. Try again.');
+      if (!cur) return setError('You moved to another slide. Try again.');
+      if (cur.type !== 'text' || cur.html !== box.html) return setError('The box changed while waiting. Try again.');
       if (action === 'quiz') {
         const qs = reply.questions;
         if (
@@ -74,9 +75,11 @@ export function TextActions({ el }: { el: TextElement }) {
         const slide = quizSlide(qs, THEMES[now.deck.theme], now.deck.aspect);
         if (!now.insertSlides([slide], session))
           return setError(`This note already has ${LIMITS.slides} slides. Delete one to make room.`);
-      } else if (typeof reply.text === 'string' && textToHtml(reply.text)) {
-        now.updateElement(el.id, { html: textToHtml(reply.text) });
-      } else return setError("Couldn't do that, try shorter text");
+      } else {
+        const html = typeof reply.text === 'string' ? textToHtml(reply.text) : '';
+        if (!html) return setError("Couldn't do that, try shorter text");
+        now.updateElement(el.id, { html });
+      }
     } catch (e) {
       if (c.signal.aborted || ctrl.current !== c) return;
       setError(
@@ -100,8 +103,8 @@ export function TextActions({ el }: { el: TextElement }) {
       </PopoverTrigger>
       <PopoverContent className="flex w-72 flex-col gap-2">
         <p className="text-caption text-muted-foreground">
-          The text of this box is sent to an external AI service. Do not use anything private. One undo reverses the
-          result.
+          The text of this box is sent to an external AI service. Do not use anything private. Rewrite and Shorten reset
+          formatting and bullets to plain paragraphs. One undo reverses the result.
         </p>
         {ACTIONS.map(([action, label]) => (
           <Button
