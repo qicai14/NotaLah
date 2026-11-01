@@ -13,7 +13,7 @@ const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make 
 
 let probe: Promise<boolean> | undefined;
 /** Asks the server once whether the AI routes exist: an empty body is refused with 400 before any call is spent, a 404 means off. */
-const aiAvailable = () =>
+export const aiAvailable = () =>
   (probe ??= api('/ai/outline', { method: 'POST', body: {} }).then(
     () => true,
     (e) => !(e instanceof ApiError && e.status === 404),
