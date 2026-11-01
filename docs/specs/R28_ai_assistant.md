@@ -50,6 +50,9 @@ Schema rejects bad outlines; retry-then-fail path; caps and kill switch; guests 
 hidden without a key; label set only with a valid issued id; client builds a valid deck from every layout; sanitiser
 on rewrite output. Provider mocked through an injectable `fetch` (as R2 does).
 
+## Acceptance (B3)
+R28 is judged by time saved. UAT-S2 is timed with and without the AI; the target is at most half the manual time. Automated tests use a stubbed provider (no key or network). This also feeds the UAT redesign (#84).
+
 ## Report impact
 Chapter 1.6 scope and Chapter 2 AI paragraph (already flagged in D33 and supervisor question 6); Chapter 4 adds a
 use case (UC24 Use AI Assistant) and a Mermaid sequence diagram; Chapter 6 notes the free-tier limits.
