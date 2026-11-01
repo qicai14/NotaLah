@@ -10,7 +10,7 @@ physical, week of 4 Jan 2027 onwards. Current state and next issues: `HANDOVER.m
   (`sprints/sprint6_review_retrospective.md`): NFR3 holds on the labelled seed (ADR 0089), 10x latency measured
   (ADR 0090), R5 admin Modules page done.
 - Next: Sprint 7 R28 AI assistant (spec approved, D83; overdelivery, ADR 0085), then R41 if time remains (R35 and R36
-  are future work). R28 outline schema and limits in `shared/` done (#111, AI-TC1-5). R28 outline draft route `POST /api/ai/outline` done (#112, AI-TC6-20, ADR 0093). R28 paste text to draft Slides in the editor done (#113, AI-TC21-29). R28 Rewrite, Shorten and Quiz me on a text box done (#114, AI-TC30-40). Video is a frozen addition (ADR 0091). Sprint 8 UI: Apple-neutral theme tokens done (#123, UI-TC1-2, ADR 0095). Later: R26 E2E (#81), UAT prep (#82-#84), limitations (#85).
+  are future work). R28 outline schema and limits in `shared/` done (#111, AI-TC1-5). R28 outline draft route `POST /api/ai/outline` done (#112, AI-TC6-20, ADR 0093). R28 paste text to draft Slides in the editor done (#113, AI-TC21-29). R28 Rewrite, Shorten and Quiz me on a text box done (#114, AI-TC30-40). Video is a frozen addition (ADR 0091). Sprint 8 UI: Apple-neutral theme tokens done (#123, UI-TC1-3, ADR 0095). Later: R26 E2E (#81), UAT prep (#82-#84), limitations (#85).
 
 ```mermaid
 gantt

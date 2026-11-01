@@ -35,9 +35,9 @@ Apple-neutral: one blue accent for actions and focus, grey text, soft surfaces. 
 | `card` / `card-foreground` | #ffffff | #232325 | Feed and note cards |
 | `popover` / `popover-foreground` | #ffffff | #242426 | Dialogs, sheets, menus, popovers |
 | `muted-foreground` | #68686d | #a1a1a6 | Secondary text (5.5:1 on white) |
-| `border`, `input` | #d2d2d7, #86868b | #38383a, #7c7c80 | Hairline dividers only; outlined control borders (3:1) |
+| `border`, `input` | #d2d2d7, #86868b | #48484a, #7c7c80 | Hairline dividers only; outlined control borders (3:1) |
 | `primary` / `primary-foreground` | #0066cc / #ffffff | #2997ff / #001a33 | Main action, focus ring, links, active tab icon, Super Like state |
-| `secondary`, `accent` | #f5f5f7, #eeeef1 | #2c2c2e, #2c2c2e | Secondary buttons; hover fills |
+| `secondary`, `accent` | #f5f5f7, #eeeef1 | #2c2c2e, #323234 | Secondary buttons; hover fills |
 | `destructive` / `destructive-foreground` | #d70015 / #ffffff | #ff5b52 / #1f0301 | Errors, Delete, Report submit |
 | `success` | #1f7a38 | #30d158 | Confirmations |
 | `like` | #e5163f | #ff4d6a | Filled heart only |
@@ -51,7 +51,7 @@ Write them as Tailwind classes: `bg-surface`, `text-muted-foreground`, `border-b
 `bg-primary/90`. Opacity modifiers are fine; they still follow the token.
 
 Contrast: body text and `muted-foreground` pass AA (4.5:1) on `background`, `surface` and `card` in both themes;
-`primary-foreground` on `primary` passes 4.5:1 (dark text in dark mode: white on #2997ff is under 3:1). `muted-foreground` also passes on `surface-strong`. `input`, `ring` and icons in `primary` pass 3:1 on those grounds. `node scripts/check-contrast.mjs` checks every pair; add new pairs there.
+`primary-foreground` on `primary` passes 4.5:1 (dark text in dark mode: white on #2997ff is under 3:1). `muted-foreground` also passes on `surface-strong`. `input`, `ring` and icons in `primary` pass 3:1 on those grounds. In dark mode `primary` on `accent` or `surface-strong` is icons only, not text (under 4.5:1). `src/theme-contrast.test.ts` checks every pair; add new pairs there.
 
 ## 3. Type
 
