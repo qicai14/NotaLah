@@ -2,6 +2,7 @@ import {
   type Aspect,
   bullets,
   escapeHtml,
+  LIMITS,
   layoutSlide,
   type Outline,
   type OutlineSlide,
@@ -44,4 +45,28 @@ export function outlineToSlides(outline: Outline, theme: Theme, aspect: Aspect):
       }),
     };
   });
+}
+
+export function htmlToText(html: string): string {
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+  doc.body.querySelectorAll('p,li,br').forEach((n) => n.after('\n'));
+  return (doc.body.textContent ?? '').replace(/\n+/g, '\n').trim();
+}
+
+export const textToHtml = (text: string): string =>
+  text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map(para)
+    .join('');
+
+export function quizSlide(questions: { q: string; a: string }[], theme: Theme, aspect: Aspect): Slide {
+  const [slide] = outlineToSlides(
+    { slides: [{ layout: 'title-body', title: 'Quiz me', bullets: questions.map((x) => x.q) }] },
+    theme,
+    aspect,
+  );
+  const notes = questions.map((x, i) => `${i + 1}. ${x.a}`).join('\n');
+  return { ...slide, notes: notes.slice(0, LIMITS.pageNotes) };
 }

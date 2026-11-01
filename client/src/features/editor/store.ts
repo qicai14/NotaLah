@@ -250,6 +250,8 @@ interface Actions {
   /** Adds several elements as one step (paste, duplicate of a selection) and selects them; stops at the slide limit. */
   addElements: (els: SlideElement[]) => void;
   updateElement: (id: string, patch: Partial<SlideElement>) => void;
+  /** Like updateElement, on the slide at `slide` rather than the active one. */
+  updateElementOn: (slide: number, id: string, patch: Partial<SlideElement>) => void;
   deleteElement: (id: string) => void;
   /** Deletes every unlocked element in the selection as one step. */
   deleteSelected: () => void;
@@ -443,6 +445,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
       });
     },
     updateElement: (id, patch) => apply((d) => patchElement(d, active(), id, patch)),
+    updateElementOn: (slide, id, patch) => apply((d) => patchElement(d, slide, id, patch)),
     deleteElement: (id) =>
       apply((d) => mapSlide(d, active(), (s) => ({ ...s, elements: s.elements.filter((e) => e.id !== id) })), {
         selection: get().selection.filter((x) => x !== id),
