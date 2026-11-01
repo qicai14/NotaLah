@@ -21,6 +21,7 @@ Read with `PLAN.md` (milestones, official dates), `sprints/sprint6_review_retros
 
 ## Next work, in order
 1. Sprint 7: R28 AI writing assistant (spec approved, D83), 4-6 tracer-bullet tickets from `/to-tickets`.
+   Fold in ambition pick B3 (28 Oct) first: UAT-S2 timed with and without AI, target at most half the manual time.
 2. Sprint 8: UI refresh (mid-Nov, after R28 slice 1), then R26 E2E (#81), UAT seed (#82), evidence pipeline (#83),
    UAT redesign (#84), all before 20 Nov; limitations write-up (#85) before UAT.
 3. R41 only if time remains after R28; R35 and R36 are future work (ADR 0085).
@@ -33,6 +34,7 @@ Read with `PLAN.md` (milestones, official dates), `sprints/sprint6_review_retros
 - docs (report lane): FR20+ numbers and justifications in `drafts/3.3.3.4_requirement_changes.md` (ADR 0092).
 
 ## Open for the user
+- Floor FR1-FR18 or FR1-FR19: the IR .md stops at FR18; FR19 (lecturer approval) may be an addition. Check the .docx.
 - `SafeHtml` branded type (#75 open item): needs a deck schema change; not done.
 - Remote branch deletes stay manual: auto mode blocks `git push origin --delete` (user, 1 Nov).
 
