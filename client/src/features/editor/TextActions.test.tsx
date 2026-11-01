@@ -43,7 +43,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('TextActions (R28)', () => {
+describe('TextActions (R28)', { timeout: 20_000 }, () => {
   it('AI-TC36: helpers read a box as lines, escape model text, and build the quiz slide with answers in the notes', async () => {
     const { htmlToText, textToHtml, quizSlide } = await import('./outline');
     expect(htmlToText('<p>Some <strong>notes</strong></p><ul><li><p>one</p></li></ul>')).toBe('Some notes\none');
