@@ -264,7 +264,7 @@ export function NoteActions({
               onClick={removeSuperLike}
               caption="Verified"
               icon={
-                <span className="grid size-full place-items-center rounded-full bg-highlight text-highlight-foreground">
+                <span className="grid size-full place-items-center rounded-full bg-primary text-primary-foreground">
                   <Highlighter aria-hidden="true" className="size-6" />
                 </span>
               }

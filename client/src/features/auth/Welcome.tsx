@@ -1,4 +1,4 @@
-import { Bookmark, Heart, Highlighter, MessageCircle } from 'lucide-react';
+import { Bookmark, Check, Heart, MessageCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -19,8 +19,8 @@ function PhonePreview() {
         <div className="flex gap-2 px-1">
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
             <div className="px-2.5 pt-2.5">
-              <span className="highlighter inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[0.625rem] font-bold">
-                <Highlighter className="size-2.5" /> Verified by Dr Lee
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface px-1.5 py-0.5 text-[0.625rem] font-semibold">
+                <Check className="size-2.5" /> Verified by Dr Lee
               </span>
             </div>
             <div className="px-3 pt-4 pb-3">
