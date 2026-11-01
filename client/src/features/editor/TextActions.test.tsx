@@ -2,7 +2,9 @@
 import { THEMES } from '@notalah/shared';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
-import { forgetAiProbe } from './DraftFromText';
+import type { ReactNode } from 'react';
+import { ElementBar } from './ElementBar';
+import { forgetAiProbe, FULL } from './DraftFromText';
 import { makeText } from './elements';
 import { htmlToText, quizSlide, textToHtml } from './outline';
 import { emptyDeck, useEditor } from './store';
@@ -18,7 +20,7 @@ const el = { ...makeText('body', 1080), html };
 let calls: { body: { text: string; action: string }; answer: (r: Response) => void }[] = [];
 
 /** The probe answers `probe`; action calls wait in `calls` until a test answers them. */
-function mount(probe = 400) {
+function mount(probe = 400, ui: ReactNode = <TextActions el={el} />) {
   forgetAiProbe();
   calls = [];
   vi.stubGlobal(
@@ -34,7 +36,7 @@ function mount(probe = 400) {
     ),
   );
   useEditor.getState().load({ ...emptyDeck(), slides: [{ ...emptyDeck().slides[0], elements: [el] }] });
-  render(<TextActions el={el} />);
+  render(ui);
 }
 const run = async (name: string) => {
   fireEvent.click(await screen.findByRole('button', { name: /AI help/ }));
@@ -142,6 +144,43 @@ describe('TextActions (R28)', () => {
     useEditor.getState().deleteElement(el.id);
     calls[2].answer(reply(200, { text: 'x' }));
     await vi.waitFor(() => expect(screen.getByRole('alert').textContent).toContain('gone'));
+  });
+
+  it('AI-TC39: Quiz me is disabled with the full-Note message at 30 slides', async () => {
+    mount();
+    const st = useEditor.getState();
+    const slide = st.deck.slides[0];
+    st.load({ ...st.deck, slides: Array.from({ length: 30 }, () => slide) });
+    fireEvent.click(await screen.findByRole('button', { name: /AI help/ }));
+    expect((await screen.findByRole('button', { name: 'Quiz me' })).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('dialog').textContent).toContain(FULL);
+    expect(screen.getByRole('button', { name: 'Shorten' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('AI-TC39: a reply for a box opened for typing meanwhile is dropped with a message', async () => {
+    mount();
+    await run('Shorten');
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    useEditor.getState().setEditing(el.id);
+    calls[0].answer(reply(200, { text: 'x' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('changed while waiting');
+    expect(useEditor.getState().past).toHaveLength(0);
+  });
+
+  it('AI-TC39: the reply still lands on the recorded box after the bar unmounts (slide switch or deselect)', async () => {
+    mount(400, <ElementBar />);
+    const st = useEditor.getState();
+    st.load({ ...st.deck, slides: [...st.deck.slides, structuredClone(st.deck.slides[0])] });
+    useEditor.setState({ selection: [el.id] });
+    await run('Rewrite clearer');
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    useEditor.setState({ activeSlide: 1, selection: [] });
+    await vi.waitFor(() => expect(screen.queryByRole('button', { name: /AI help/ })).toBeNull());
+    calls[0].answer(reply(200, { text: 'Landed' }));
+    await vi.waitFor(() => expect(useEditor.getState().past).toHaveLength(1));
+    const box = (i: number) => (useEditor.getState().deck.slides[i].elements[0] as typeof el).html;
+    expect(box(0)).toBe('<p>Landed</p>');
+    expect(box(1)).toBe(el.html);
   });
 
   it('AI-TC40: the controls are hidden when the server answers 404', async () => {

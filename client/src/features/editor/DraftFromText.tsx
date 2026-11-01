@@ -9,7 +9,7 @@ import { useEditor } from './store';
 
 export const AI_TIMEOUT_MS = 30_000;
 const MAX_CHARS = 20_000;
-const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
+export const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
 
 let probe: Promise<boolean> | undefined;
 export const forgetAiProbe = () => void (probe = undefined);

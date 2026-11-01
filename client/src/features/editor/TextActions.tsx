@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { api, errorText } from '@/lib/api';
-import { AI_TIMEOUT_MS, aiAvailable } from './DraftFromText';
+import { AI_TIMEOUT_MS, aiAvailable, FULL } from './DraftFromText';
 import { htmlToText, quizSlide, textToHtml } from './outline';
 import { type EditorState, useEditor } from './store';
 
@@ -26,10 +26,16 @@ export function TextActions({ el }: { el: TextElement }) {
   const readOnly = useEditor((s) => s.readOnly);
   const ctrl = useRef<AbortController | null>(null);
 
+  const full = useEditor((s) => s.deck.slides.length >= LIMITS.slides);
+  const alive = useRef(true);
+
   useEffect(() => {
-    void aiAvailable().then(setAvailable);
-    return () => ctrl.current?.abort();
+    alive.current = true;
+    void aiAvailable().then((ok) => alive.current && setAvailable(ok));
+    return () => void (alive.current = false); // a request outlives the bar: the server already counted it
   }, []);
+
+  const fail = (message: string) => void (alive.current && setError(message));
 
   function stop() {
     ctrl.current?.abort();
@@ -45,9 +51,8 @@ export function TextActions({ el }: { el: TextElement }) {
     const box = boxAt(useEditor.getState(), slide, el.id);
     if (st.readOnly || box?.type !== 'text') return;
     const text = htmlToText(box.html);
-    if (!text) return setError('This box has no text.');
-    if (text.length > MAX_CHARS)
-      return setError(`Use a box with at most ${MAX_CHARS.toLocaleString('en')} characters.`);
+    if (!text) return fail('This box has no text.');
+    if (text.length > MAX_CHARS) return fail(`Use a box with at most ${MAX_CHARS.toLocaleString('en')} characters.`);
     ctrl.current?.abort();
     const c = (ctrl.current = new AbortController());
     setBusy(action);
@@ -62,10 +67,11 @@ export function TextActions({ el }: { el: TextElement }) {
       const now = useEditor.getState();
       if (now.session !== session || now.readOnly) return;
       const cur = boxAt(now, slide, el.id);
-      if (!cur) return setError('That box is gone. Try again.');
-      if (cur.locked) return setError('That box is locked.');
-      if (cur.type !== 'text' || cur.html !== box.html) return setError('The box changed while waiting. Try again.');
-      if (action === 'quiz' && now.activeSlide !== slide) return setError('You moved to another slide. Try again.');
+      if (!cur) return fail('That box is gone. Try again.');
+      if (cur.locked) return fail('That box is locked.');
+      if (now.editingId === el.id || cur.type !== 'text' || cur.html !== box.html)
+        return fail('The box changed while waiting. Try again.');
+      if (action === 'quiz' && now.activeSlide !== slide) return fail('You moved to another slide. Try again.');
       if (action === 'quiz') {
         const qs = reply.questions;
         if (
@@ -74,24 +80,23 @@ export function TextActions({ el }: { el: TextElement }) {
           qs.length > 5 ||
           qs.some((x) => typeof x?.q !== 'string' || typeof x?.a !== 'string')
         )
-          return setError("Couldn't do that, try shorter text");
+          return fail("Couldn't do that, try shorter text");
         const slide = quizSlide(qs, THEMES[now.deck.theme], now.deck.aspect);
-        if (!now.insertSlides([slide], session))
-          return setError(`This note already has ${LIMITS.slides} slides. Delete one to make room.`);
+        if (!now.insertSlides([slide], session)) return fail(FULL);
       } else {
         const html = typeof reply.text === 'string' ? textToHtml(reply.text) : '';
-        if (!html) return setError("Couldn't do that, try shorter text");
+        if (!html) return fail("Couldn't do that, try shorter text");
         now.updateElementOn(slide, el.id, { html });
       }
     } catch (e) {
       if (c.signal.aborted || ctrl.current !== c) return;
-      setError(
+      fail(
         e instanceof DOMException && e.name === 'TimeoutError'
           ? 'This took too long and was stopped. Try shorter text.'
           : errorText(e),
       );
     } finally {
-      if (ctrl.current === c) setBusy(null);
+      if (ctrl.current === c && alive.current) setBusy(null);
     }
   }
 
@@ -114,12 +119,13 @@ export function TextActions({ el }: { el: TextElement }) {
             key={action}
             type="button"
             variant="secondary"
-            disabled={busy !== null}
+            disabled={busy !== null || (action === 'quiz' && full)}
             onClick={() => void run(action)}
           >
             {busy === action ? 'Working…' : label}
           </Button>
         ))}
+        {full && <p className="text-caption text-muted-foreground">{FULL}</p>}
         {busy && (
           <Button type="button" variant="ghost" onClick={stop}>
             Cancel
