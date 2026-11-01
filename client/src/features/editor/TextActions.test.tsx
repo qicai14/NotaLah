@@ -114,6 +114,34 @@ describe('TextActions (R28)', () => {
     expect(calls).toHaveLength(3);
   });
 
+  it('AI-TC39: a reply after switching slide leaves the other slide alone; a locked or deleted box drops it with a message', async () => {
+    const { calls, useEditor, el, run } = await mount();
+    const st = useEditor.getState();
+    st.load({ ...st.deck, slides: [...st.deck.slides, structuredClone(st.deck.slides[0])] });
+    await run('Rewrite clearer');
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    useEditor.setState({ activeSlide: 1 });
+    calls[0].answer(reply(200, { text: 'New words' }));
+    await vi.waitFor(() => expect(useEditor.getState().past).toHaveLength(1));
+    const html = (i: number) => (useEditor.getState().deck.slides[i].elements[0] as typeof el).html;
+    expect(html(0)).toBe('<p>New words</p>');
+    expect(html(1)).toBe(el.html);
+
+    useEditor.setState({ activeSlide: 0 });
+    fireEvent.click(screen.getByRole('button', { name: 'Shorten' }));
+    await vi.waitFor(() => expect(calls).toHaveLength(2));
+    useEditor.getState().updateElementOn(0, el.id, { locked: true });
+    calls[1].answer(reply(200, { text: 'x' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('locked');
+
+    useEditor.getState().updateElementOn(0, el.id, { locked: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Shorten' }));
+    await vi.waitFor(() => expect(calls).toHaveLength(3));
+    useEditor.getState().deleteElement(el.id);
+    calls[2].answer(reply(200, { text: 'x' }));
+    await vi.waitFor(() => expect(screen.getByRole('alert').textContent).toContain('gone'));
+  });
+
   it('AI-TC40: the controls are hidden when the server answers 404', async () => {
     const { calls } = await mount(404);
     await vi.waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalled());

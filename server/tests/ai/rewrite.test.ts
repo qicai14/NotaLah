@@ -111,6 +111,25 @@ describe('AI text-box actions (R28)', () => {
     expect(seen[1]).toBeGreaterThan(2_000);
   });
 
+  it('AI-TC33: outline and rewrite calls share one per-user budget', async () => {
+    vi.stubEnv('RATE_LIMIT_UNDER_TEST', 'ai');
+    const fetchMock = stub();
+    fetchMock.mockImplementation(async (url, init) =>
+      completion(
+        (init.body as string).includes('slide outline')
+          ? { slides: [{ layout: 'title', title: 'T' }] }
+          : { text: 'ok' },
+      ),
+    );
+    const uid = await insertUser();
+    const outline = () => request(app).post('/api/ai/outline').set(asUser(uid)).send({ text: SECRET });
+    for (let i = 0; i < 3; i++) expect((await outline()).status).toBe(200);
+    for (let i = 0; i < 2; i++) expect((await rewrite(uid)).status).toBe(200);
+    expect((await rewrite(uid)).status).toBe(429);
+    expect((await outline()).status).toBe(429);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+  });
+
   it('AI-TC34: a provider 429 is a friendly 503 without a retry; a timeout is 502', async () => {
     const uid = await insertUser();
     const fetchMock = stub(() => new Response(`rate limited: ${SECRET}`, { status: 429 }));

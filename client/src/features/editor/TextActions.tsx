@@ -16,7 +16,7 @@ const ACTIONS = [
 ] as const;
 type Action = (typeof ACTIONS)[number][0];
 
-const boxOf = (s: EditorState, id: string) => s.deck.slides[s.activeSlide]?.elements.find((e) => e.id === id);
+const boxAt = (s: EditorState, slide: number, id: string) => s.deck.slides[slide]?.elements.find((e) => e.id === id);
 
 /** "Rewrite clearer", "Shorten" and "Quiz me" (R28) on the selected text box. */
 export function TextActions({ el }: { el: TextElement }) {
@@ -41,7 +41,8 @@ export function TextActions({ el }: { el: TextElement }) {
     const st = useEditor.getState();
     st.setEditing(null);
     const { session } = st;
-    const box = boxOf(useEditor.getState(), el.id);
+    const slide = st.activeSlide;
+    const box = boxAt(useEditor.getState(), slide, el.id);
     if (st.readOnly || box?.type !== 'text') return;
     const text = htmlToText(box.html);
     if (!text) return setError('This box has no text.');
@@ -60,9 +61,11 @@ export function TextActions({ el }: { el: TextElement }) {
       if (ctrl.current !== c) return;
       const now = useEditor.getState();
       if (now.session !== session || now.readOnly) return;
-      const cur = boxOf(now, el.id);
-      if (!cur) return setError('You moved to another slide. Try again.');
+      const cur = boxAt(now, slide, el.id);
+      if (!cur) return setError('That box is gone. Try again.');
+      if (cur.locked) return setError('That box is locked.');
       if (cur.type !== 'text' || cur.html !== box.html) return setError('The box changed while waiting. Try again.');
+      if (action === 'quiz' && now.activeSlide !== slide) return setError('You moved to another slide. Try again.');
       if (action === 'quiz') {
         const qs = reply.questions;
         if (
@@ -78,7 +81,7 @@ export function TextActions({ el }: { el: TextElement }) {
       } else {
         const html = typeof reply.text === 'string' ? textToHtml(reply.text) : '';
         if (!html) return setError("Couldn't do that, try shorter text");
-        now.updateElement(el.id, { html });
+        now.updateElementOn(slide, el.id, { html });
       }
     } catch (e) {
       if (c.signal.aborted || ctrl.current !== c) return;
