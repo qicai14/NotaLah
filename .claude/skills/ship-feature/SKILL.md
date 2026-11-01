@@ -13,7 +13,8 @@ user); if not, grill the user first (`mattpocock-skills:grilling`). This skill e
 - Branch `<type>/<issue#>-<slug>` (`feat`, `fix`, `chore`, `docs`), from an up-to-date `main`:
   `git fetch origin && git worktree add ../worktrees/<short> -b <branch> origin/main`.
 - Copy `.env` into the worktree and point both `DATABASE_URL` and `TEST_DATABASE_URL` at `notalah_test_<short>`
-  with `sed -i`; create it: `docker exec fyp_project-db-1 createdb -U notalah notalah_test_<short>`; run `vp install`.
+  with `sed -i`; create it: `docker exec fyp_project-db-1 createdb -U notalah notalah_test_<short>`; run `vp install`, then migrate it:
+  `vp run server#db:migrate:test` (an unmigrated DB shows up as 500s in the browser pass).
   Never read or print `.env`; the dev DB `notalah` is never touched.
 - Tests need no ports. The browser pass uses 4000/5173, one worktree at a time. At most 3 worktrees, never two
   builders on the same files.
@@ -42,15 +43,16 @@ and 375 px, light and dark.
 - The `docs/PLAN.md` milestone line, ADR, TC rows and any other record `docs/conventions/delivery.md` lists go in this
   PR, never after the merge.
 - Merge `origin/main` into the branch right before opening the PR; resolve conflicts there, never on `main`.
+- Follow-up work goes in the PR body as a list; the orchestrator takes it to the user. File no issues yourself.
 - Body from `mattpocock-skills:pr` (Summary / Evidence / Merge Danger), ADR number and `Closes #<issue>`. No AI
   attribution lines. Open the PR and stop.
 
 ## 6. Close out (after the orchestrator says it merged)
-From the repo root, not the worktree:
+`cd` to the repo root first (removing a worktree from inside it leaves a locked folder on Windows):
 ```bash
 git worktree remove "../worktrees/<short>"
 docker exec fyp_project-db-1 dropdb -U notalah notalah_test_<short>
 git branch -D <branch>
-git push origin --delete <branch>   # only if the remote branch still exists
+git push origin --delete <branch>   # once; auto mode may block it
 ```
-Tell the user any step they must do, with the exact command.
+If the remote delete is blocked, don't retry: report it to the orchestrator as a command for the user.

@@ -14,4 +14,7 @@ handling and leakage (logs, Sentry), rate-limit gaps, upload handling, secrets i
 tiers. For each finding give a concrete attack scenario, severity (blocker / should-fix / nit), file:line and the fix.
 Say plainly what you checked and found fine.
 
+When the diff adds a timer, poll, socket or token renewal, list every path in the app that keeps a session
+alive and check each one against the idle limit, not only the path in the diff.
+
 Never read or print `.env` files (a hook blocks it): check a key with `grep -c '^KEY=' .env`.
