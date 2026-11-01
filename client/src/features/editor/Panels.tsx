@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils';
 import type { ModuleRef } from '@/types';
 import { HashtagInput } from '../notes/HashtagInput';
 import { elementLabel, makeCode, makeLine, makeShape, makeTable, makeText, SHAPES, TEXT_PRESETS } from './elements';
+import { DraftFromText } from './DraftFromText';
 import { PhotosPanel, UploadsPanel, VideoPicker } from './MediaPanels';
 import { MusicPanel } from './MusicPanel';
 import { mapSlide, newId, useEditor } from './store';
@@ -105,25 +106,28 @@ function TextPanel({ onAdd }: { onAdd?: () => void }) {
     onAdd?.();
   };
   return (
-    <Section title="Default text styles">
-      <button
-        type="button"
-        className={cn(tile, 'h-16 justify-start px-4 text-title font-bold')}
-        onClick={() => add('heading')}
-      >
-        Add a heading
-      </button>
-      <button
-        type="button"
-        className={cn(tile, 'h-12 justify-start px-4 text-title-sm font-semibold')}
-        onClick={() => add('subheading')}
-      >
-        Add a subheading
-      </button>
-      <button type="button" className={cn(tile, 'h-10 justify-start px-4 text-body-sm')} onClick={() => add('body')}>
-        Add body text
-      </button>
-    </Section>
+    <>
+      <Section title="Default text styles">
+        <button
+          type="button"
+          className={cn(tile, 'h-16 justify-start px-4 text-title font-bold')}
+          onClick={() => add('heading')}
+        >
+          Add a heading
+        </button>
+        <button
+          type="button"
+          className={cn(tile, 'h-12 justify-start px-4 text-title-sm font-semibold')}
+          onClick={() => add('subheading')}
+        >
+          Add a subheading
+        </button>
+        <button type="button" className={cn(tile, 'h-10 justify-start px-4 text-body-sm')} onClick={() => add('body')}>
+          Add body text
+        </button>
+      </Section>
+      <DraftFromText onAdd={onAdd} />
+    </>
   );
 }
 

@@ -99,3 +99,40 @@ describe('editor store', () => {
     expect(s().saveState).toBe('saved');
   });
 });
+
+describe('insertSlides (R28)', () => {
+  const draft = (n: number) => Array.from({ length: n }, () => emptyDeck().slides[0]);
+  const fill = (n: number) => s().apply((d) => ({ ...d, slides: [...d.slides, ...draft(n - d.slides.length)] }));
+
+  it('AI-TC24: a draft goes after the active Slide, cut to 15 and to the 30-Slide limit', () => {
+    expect(s().insertSlides(draft(20), s().session)).toBe(true);
+    expect(s().deck.slides).toHaveLength(16);
+    expect(s().activeSlide).toBe(1);
+    fill(25);
+    expect(s().insertSlides(draft(15), s().session)).toBe(true);
+    expect(s().deck.slides).toHaveLength(30);
+    expect(s().insertSlides(draft(1), s().session)).toBe(false);
+    expect(s().deck.slides).toHaveLength(30);
+  });
+
+  it('AI-TC25: one undo removes the whole draft', () => {
+    const before = s().deck;
+    s().insertSlides(draft(5), s().session);
+    s().undo();
+    expect(s().deck).toBe(before);
+  });
+
+  it('AI-TC26: a reply for another Note is dropped', () => {
+    const old = s().session;
+    s().load(emptyDeck());
+    expect(s().insertSlides(draft(3), old)).toBe(false);
+    expect(s().deck.slides).toHaveLength(1);
+  });
+
+  it('AI-TC27: a reply while the editor is read-only is dropped', () => {
+    useEditor.setState({ readOnly: true });
+    expect(s().insertSlides(draft(3), s().session)).toBe(false);
+    expect(s().deck.slides).toHaveLength(1);
+    useEditor.setState({ readOnly: false });
+  });
+});
