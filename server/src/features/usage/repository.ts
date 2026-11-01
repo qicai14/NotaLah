@@ -12,6 +12,15 @@ export async function addIfUnder(metric: string, period: string, n: number, cap:
   return rowCount === 1;
 }
 
+/** Lowers a counter by `n`, never below zero; for handing back the unused part of a reservation. */
+export async function subtract(metric: string, period: string, n: number): Promise<void> {
+  await pool.query(
+    `UPDATE "USAGE_COUNTER_T" SET ucn_count = GREATEST(ucn_count - $3::BIGINT, 0)
+     WHERE ucn_metric = $1 AND ucn_period = $2`,
+    [metric, period, n],
+  );
+}
+
 /** Bytes held by every asset that still has a file, across all users. */
 export async function storedBytes(): Promise<number> {
   const { rows } = await pool.query<{ used: string }>(

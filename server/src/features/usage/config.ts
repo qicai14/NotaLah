@@ -10,6 +10,9 @@ export const FREE = Object.freeze({
   jamendo: 35_000,
   /** Render's free web service: 100 GB of outbound traffic a month (R38). */
   servedBytes: 100_000_000_000,
+  /** Groq's openai/gpt-oss-120b: 1,000 requests and 200,000 tokens a day (console.groq.com/docs/rate-limits, checked 1 Nov 2026, ADR 0093). */
+  aiRequests: 1_000,
+  aiTokens: 200_000,
 });
 
 /**
@@ -23,6 +26,7 @@ export const SHARE = Object.freeze({
   unsplash: 0.5,
   jamendo: 0.8,
   servedBytes: 0.5,
+  ai: 0.8,
 });
 
 /** A cap from the environment. It can lower the default, never raise it: a higher or unusable value falls back to the default. */
@@ -48,7 +52,7 @@ export function capFromEnv(
 
 export type Period = 'month' | 'hour' | 'day';
 
-/** Counted metrics. A daily AI metric is a new entry with `period: 'day'`. */
+/** Counted metrics. */
 export const METRICS = Object.freeze({
   class_a: {
     period: 'month' as Period,
@@ -71,6 +75,16 @@ export const METRICS = Object.freeze({
   jamendo: {
     period: 'month' as Period,
     cap: capFromEnv('USAGE_CAP_JAMENDO', FREE.jamendo, SHARE.jamendo),
+  },
+  /** AI provider calls, retries included, counted before each call (R28). */
+  ai_requests: {
+    period: 'day' as Period,
+    cap: capFromEnv('USAGE_CAP_AI_REQUESTS', FREE.aiRequests, SHARE.ai),
+  },
+  /** AI tokens: an estimate is reserved before each call and settled to the provider's count after it (R28). */
+  ai_tokens: {
+    period: 'day' as Period,
+    cap: capFromEnv('USAGE_CAP_AI_TOKENS', FREE.aiTokens, SHARE.ai),
   },
 });
 export type Metric = keyof typeof METRICS;
