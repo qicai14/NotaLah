@@ -66,3 +66,23 @@ export const MESSAGING_LIMITS = Object.freeze({
   /** A socket's typing events for one conversation are relayed at most once per this window; the rest are dropped. */
   typingThrottleMs: 2000,
 });
+
+/**
+ * AI outline limits (R28, #111), sized to the layoutSlide boxes so generated text is not clipped. Heading and title
+ * boxes are one line high, so the limits are what one line holds at the narrowest case: a 64 px heading in portrait
+ * (about 26 characters), an 88 px cover title in portrait (about 19). Bullets wrap inside their boxes; code lines
+ * must fit the portrait code box (about 53 characters at 26 px).
+ */
+export const OUTLINE_LIMITS = {
+  slides: 15,
+  title: 24,
+  coverTitle: 20,
+  subtitle: 60,
+  bullets: 6,
+  columnBullets: 4,
+  bullet: 80,
+  columnHeading: 24,
+  code: 600,
+  codeLines: 12,
+  codeLineLength: 50,
+} as const;
