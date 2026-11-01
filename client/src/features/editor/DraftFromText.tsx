@@ -1,4 +1,4 @@
-import { OUTLINE_LIMITS, parseOutline, THEMES } from '@notalah/shared';
+import { LIMITS, OUTLINE_LIMITS, parseOutline, THEMES } from '@notalah/shared';
 import { Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,9 @@ import { api, ApiError, errorText } from '@/lib/api';
 import { outlineToSlides } from './outline';
 import { useEditor } from './store';
 
-/** A request that runs longer than this is stopped (R28). */
 export const AI_TIMEOUT_MS = 30_000;
-/** The server's limit on pasted text. */
 const MAX_CHARS = 20_000;
+const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
 
 let probe: Promise<boolean> | undefined;
 /** Asks the server once whether the AI routes exist: an empty body is refused with 400 before any call is spent, a 404 means off. */
@@ -27,6 +26,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const full = useEditor((s) => s.deck.slides.length >= LIMITS.slides);
   const ctrl = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
 
   function close() {
     ctrl.current?.abort();
+    ctrl.current = null; // the stopped request must not touch state when it settles
     setOpen(false);
     setPending(false);
   }
@@ -44,7 +45,9 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
     const st = useEditor.getState();
     st.setEditing(null); // typing and the reply must not collide
     const { session } = st;
+    ctrl.current?.abort();
     const c = (ctrl.current = new AbortController());
+    const stale = () => ctrl.current !== c;
     setPending(true);
     setError(null);
     try {
@@ -53,23 +56,28 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
         body: { text, currentSlides: st.deck.slides.length },
         signal: AbortSignal.any([c.signal, AbortSignal.timeout(AI_TIMEOUT_MS)]),
       });
+      if (stale()) return;
       const now = useEditor.getState();
       const parsed = parseOutline(outline, now.deck.slides.length);
       if (!parsed.success) return setError("Couldn't tidy this, try shorter text");
       const added = now.insertSlides(outlineToSlides(parsed.data, THEMES[now.deck.theme], now.deck.aspect), session);
-      if (!added) return setError('No slides were added: the note changed, is read-only or is full.');
+      if (!added) {
+        // A reply for another note, or while read-only, is dropped quietly; a full note says so.
+        if (now.session !== session || useEditor.getState().readOnly) return close();
+        return setError(FULL);
+      }
       setOpen(false);
       setText('');
       onAdd?.();
     } catch (e) {
-      if (c.signal.aborted) return; // stopped by the student
+      if (c.signal.aborted || stale()) return;
       setError(
         e instanceof DOMException && e.name === 'TimeoutError'
           ? 'This took too long and was stopped. Try shorter text.'
           : errorText(e),
       );
     } finally {
-      setPending(false);
+      if (ctrl.current === c) setPending(false);
     }
   }
 
@@ -78,10 +86,11 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
     <>
       <section className="flex flex-col gap-2">
         <h3 className="text-body-sm font-semibold text-muted-foreground">Draft with AI</h3>
-        <Button variant="secondary" onClick={() => setOpen(true)}>
+        <Button variant="secondary" disabled={full} onClick={() => setOpen(true)}>
           <Sparkles aria-hidden="true" />
           Draft slides from text
         </Button>
+        {full && <p className="text-caption text-muted-foreground">{FULL}</p>}
       </section>
       <Dialog open={open} onOpenChange={(o) => !o && close()}>
         <DialogContent className="sm:max-w-lg">
@@ -121,7 +130,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
               <Button type="button" variant="ghost" onClick={close}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending || !text.trim()}>
+              <Button type="submit" disabled={pending || full || !text.trim()}>
                 {pending ? 'Drafting…' : 'Send'}
               </Button>
             </DialogFooter>
