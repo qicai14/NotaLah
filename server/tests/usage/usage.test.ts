@@ -170,6 +170,8 @@ describe('free-tier cost guard (R34, D57)', () => {
     expect(res.status).toBe(200);
     const byMetric = Object.fromEntries(res.body.usage.map((r: { metric: string }) => [r.metric, r]));
     expect(Object.keys(byMetric).sort()).toEqual([
+      'ai_requests',
+      'ai_tokens',
       'class_a',
       'class_b',
       'jamendo',

@@ -1,5 +1,5 @@
 import { METRICS, STORAGE_CAP_BYTES, type Metric, type Period } from './config';
-import { addIfUnder, counts, storedBytes } from './repository';
+import { addIfUnder, counts, storedBytes, subtract } from './repository';
 
 export class UsageLimitError extends Error {}
 
@@ -12,6 +12,12 @@ export function periodKey(period: Period, now = new Date()): string {
 export function consume(metric: Metric, n = 1, cap: number = METRICS[metric].cap, now = new Date()): Promise<boolean> {
   return addIfUnder(metric, periodKey(METRICS[metric].period, now), n, cap);
 }
+
+/** Moves a reservation made with `consume(metric, reserved, cap, now)` to the actual amount. Never refuses. */
+export const settle = (metric: Metric, reserved: number, actual: number, now: Date) =>
+  actual >= reserved
+    ? consume(metric, actual - reserved, Number.MAX_SAFE_INTEGER, now)
+    : subtract(metric, periodKey(METRICS[metric].period, now), reserved - actual);
 
 /** Adds the bytes just sent from storage to this month's total. Never refuses: the cap only stops later video requests. */
 export const recordServed = (bytes: number) => consume('served_bytes', bytes, Number.MAX_SAFE_INTEGER);

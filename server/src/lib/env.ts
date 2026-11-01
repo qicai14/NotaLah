@@ -45,6 +45,14 @@ const schema = z
     UNSPLASH_ACCESS_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
     // Jamendo music search and track lookup (R9); empty means the routes answer 503.
     JAMENDO_CLIENT_ID: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+    // AI assistant (R28, D33): any OpenAI-compatible chat API. Without all three, or with AI_DISABLED=true, /api/ai answers 404.
+    AI_BASE_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
+    AI_API_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+    AI_MODEL: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+    AI_DISABLED: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((v) => v === 'true'),
     // Kill switch (R34): true refuses every upload with 503.
     UPLOADS_DISABLED: z
       .enum(['true', 'false'])
