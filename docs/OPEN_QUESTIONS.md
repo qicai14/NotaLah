@@ -43,7 +43,7 @@ Reviewed with the user on 14 Oct 2026. Answers are recorded under each question;
 2. Wireframes (4.4): the UI is being redesigned (TikTok-style layout). Must Chapter 4.4 wireframes match the final
    product, or may the 25 wireframes stay as the pre-coding design with differences explained in Chapter 5?
 3. Is a clickable prototype expected, or are the 25 wireframes sufficient?
-4. FR changes: confirm the requirement additions (FR19 lecturer approval, follows/friends, notifications, live deployment).
+4. FR changes: confirm the requirement additions (follows/friends, notifications, live deployment). **FR19 lecturer approval closed (user, 1 Nov):** not in the IR .docx; it is the first addition, and the IR floor is FR1-FR18 (ADR 0092).
 5. Restored FR15/FR17/FR18 and the additions beyond the IR (collaboration, guest browsing, blocking, Canva-style editor,
    video, cost guard): **user decision 29 Oct (ADR 0092):** FR20 onward (NFR numbers where non-functional), each with
    its justification (meeting #1, L36). Confirm with the supervisor.
