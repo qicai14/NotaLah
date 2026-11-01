@@ -26,6 +26,12 @@ afterEach(() => {
 });
 
 describe('api wrapper', () => {
+  it('AI-TC28: passes an abort signal to fetch', async () => {
+    const signal = new AbortController().signal;
+    await api('/x', { signal });
+    expect(fetchMock.mock.calls[0][1].signal).toBe(signal);
+  });
+
   it('CLI-TC1: every method sends the cookie and the CSRF header', async () => {
     for (const method of ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
       await api('/x', { method, body: method === 'GET' ? undefined : { a: 1 } });

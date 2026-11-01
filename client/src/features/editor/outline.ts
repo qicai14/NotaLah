@@ -1,0 +1,47 @@
+import {
+  type Aspect,
+  bullets,
+  escapeHtml,
+  layoutSlide,
+  type Outline,
+  type OutlineSlide,
+  para,
+  type Slide,
+  type SlideElement,
+  type Theme,
+} from '@notalah/shared';
+import { newId } from './store';
+
+const column = (c: { heading: string; bullets: string[] }) =>
+  `<p><strong>${escapeHtml(c.heading)}</strong></p>${bullets(...c.bullets)}`;
+
+/** The html of each text box of the layout, in the order layoutSlide makes them. Every model string is escaped here. */
+function texts(o: OutlineSlide): string[] {
+  switch (o.layout) {
+    case 'title':
+      return o.subtitle ? [para(o.title), para(o.subtitle)] : [para(o.title)];
+    case 'title-body':
+      return [para(o.title), bullets(...o.bullets)];
+    case 'two-column':
+      return [para(o.title), column(o.left), column(o.right)];
+    case 'code':
+      return [para(o.title)];
+  }
+}
+
+/** Turns a validated outline into Slides in the Note's theme and aspect: the layout's boxes with the outline's text. */
+export function outlineToSlides(outline: Outline, theme: Theme, aspect: Aspect): Slide[] {
+  return outline.slides.map((o) => {
+    const html = texts(o);
+    let i = 0;
+    const base = layoutSlide(o.layout, theme, aspect, newId);
+    return {
+      ...base,
+      elements: base.elements.flatMap((e): SlideElement[] => {
+        if (e.type === 'text') return i < html.length ? [{ ...e, html: html[i++] }] : []; // a cover without a subtitle
+        if (e.type === 'code' && o.layout === 'code') return [{ ...e, code: o.code, language: o.language }];
+        return [e];
+      }),
+    };
+  });
+}

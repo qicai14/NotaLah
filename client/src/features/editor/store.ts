@@ -7,6 +7,7 @@ import {
   boardHeight,
   type Deck,
   LIMITS,
+  outlineRoom,
   round1,
   type Slide,
   type SlideElement,
@@ -46,6 +47,8 @@ export interface EditorState {
   tracks: Record<string, MusicTrack>;
   /** The text box, code block or table open for typing (at most one, and only while it is the sole selection). */
   editingId: string | null;
+  /** Another collaborator holds the edit lock (set by the editor page); nothing may be added until it frees. */
+  readOnly: boolean;
 }
 
 export interface NoteMeta {
@@ -89,6 +92,7 @@ const initial = (): EditorState => ({
   videoStatus: {},
   tracks: {},
   editingId: null,
+  readOnly: false,
 });
 
 export const newId = (): string => crypto.randomUUID();
@@ -233,6 +237,11 @@ interface Actions {
   addSlide: () => void;
   /** Puts a ready-made slide (a layout) on the active slide when that is empty, otherwise after it; selects nothing. */
   insertSlide: (slide: Slide) => void;
+  /**
+   * Adds a draft (AI outline) as one step after the active slide, cut to the room left (15 a draft, 30 a note).
+   * False, and nothing added, when `session` is no longer the open note, the editor is read-only, or the note is full.
+   */
+  insertSlides: (slides: Slide[], session: number) => boolean;
   duplicateSlide: (index: number) => void;
   deleteSlide: (index: number) => void;
   moveSlide: (from: number, to: number) => void;
@@ -279,7 +288,16 @@ export const useEditor = create<EditorStore>()((set, get) => {
   return {
     ...initial(),
     load: (deck, meta = emptyMeta(), assets = {}, videoStatus = {}, tracks = {}) =>
-      set({ ...initial(), deck, meta, assets, videoStatus, tracks, session: get().session + 1 }),
+      set({
+        ...initial(),
+        deck,
+        meta,
+        assets,
+        videoStatus,
+        tracks,
+        readOnly: get().readOnly, // the lock outlives a reload
+        session: get().session + 1,
+      }),
     setEditing: (editingId) => set({ editingId }),
     addAsset: (id, url) => set({ assets: { ...get().assets, [String(id)]: url } }),
     addTrack: (track) => set({ tracks: { ...get().tracks, [String(track.id)]: track } }),
@@ -367,6 +385,18 @@ export const useEditor = create<EditorStore>()((set, get) => {
         activeSlide: at,
         selection: [],
       });
+    },
+    insertSlides: (slides, session) => {
+      if (session !== get().session || get().readOnly) return false;
+      const add = slides.slice(0, outlineRoom(slideCount()));
+      if (!add.length) return false;
+      const at = active() + 1;
+      apply((d) => ({ ...d, slides: spliced(d.slides, at, 0, ...add) }), {
+        activeSlide: at,
+        selection: [],
+        editingId: null,
+      });
+      return true;
     },
     duplicateSlide: (index) => {
       if (slideCount() >= LIMITS.slides) return;

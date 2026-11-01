@@ -23,7 +23,10 @@ export class ApiError extends Error {
  * Calls the server under /api. The httpOnly auth cookie travels with every call; the custom header is the CSRF
  * guard the server requires on state-changing requests (D35). A 401 on an authenticated call ends the session (UC03 1a).
  */
-export async function api<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
+): Promise<T> {
   const headers: Record<string, string> = { 'X-Requested-With': 'notalah' };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
 
@@ -31,6 +34,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
     method: options.method ?? 'GET',
     headers,
     credentials: 'include',
+    signal: options.signal,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
   const data = await res.json().catch(() => ({}));

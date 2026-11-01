@@ -156,6 +156,7 @@ export default function EditorPage() {
   const readOnly = lock.state.kind === 'locked';
   const readOnlyRef = useRef(readOnly);
   readOnlyRef.current = readOnly;
+  useEffect(() => useEditor.setState({ readOnly }), [readOnly]);
 
   async function fetchAndLoad(noteId: number) {
     const { note } = await api<{ note: Note }>(`/notes/${noteId}`);
