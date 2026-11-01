@@ -551,6 +551,8 @@ export function ElementBar() {
             )}
             {whole ? 'Whole box' : 'Selected text'}
           </span>
+          <TextActions key={el.id} el={el} />
+          <Sep />
           <FontSelect value={el.font} onChange={(font) => update({ font })} className="w-44" />
           <Num
             label="Size"
@@ -581,9 +583,6 @@ export function ElementBar() {
               <Icon />
             </Tool>
           ))}
-          <Sep />
-          <TextActions key={el.id} el={el} />
-          <Sep />
         </>
       )}
       {el.type === 'shape' && (
