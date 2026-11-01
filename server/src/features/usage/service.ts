@@ -14,6 +14,7 @@ export function consume(metric: Metric, n = 1, cap: number = METRICS[metric].cap
 }
 
 /** One user's share of a metric, counted in the same table as `<metric>:<userId>`; it is not in the usage report. */
+// shortcut: per-user rows (one per active user per day) are never purged; add a purge of past periods if the table grows.
 const userCounter = (metric: Metric, userId?: number) => (userId === undefined ? metric : `${metric}:${userId}`);
 
 /** Like `consume`, against one user's share of the metric for the current period. */

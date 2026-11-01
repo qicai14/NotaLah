@@ -164,9 +164,11 @@ describe('AI outline draft (R28)', () => {
     const capped = await outline(uid);
     expect(capped.status).toBe(503);
     expect(capped.body.error).toBe('AI help is resting until tomorrow');
+    expect(await count(`ai_tokens:${uid}`)).toBe(0);
     await pool.query(`DELETE FROM "USAGE_COUNTER_T"`);
     await consume('ai_tokens', METRICS.ai_tokens.cap - 100);
     expect((await outline(uid)).body.error).toBe('AI help is resting until tomorrow');
+    expect(await count(`ai_tokens:${uid}`)).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

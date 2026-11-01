@@ -40,10 +40,14 @@ export async function complete(
     Promise.all([settle('ai_tokens', estimate, actual, now), settle('ai_tokens', estimate, actual, now, userId)]);
   if (!(await consumeForUser('ai_tokens', userId, estimate, AI.userTokensPerDay, now)))
     throw new AiError(USER_SPENT, 429);
-  if (!(await consume('ai_requests')) || !(await consume('ai_tokens', estimate, METRICS.ai_tokens.cap, now))) {
-    await settle('ai_tokens', estimate, 0, now, userId);
-    throw new AiError(RESTING, 503);
+  let appReserved = false;
+  try {
+    appReserved = (await consume('ai_requests')) && (await consume('ai_tokens', estimate, METRICS.ai_tokens.cap, now));
+  } finally {
+    // Refused or failed: nothing will be sent, so the user's share goes back.
+    if (!appReserved) await settle('ai_tokens', estimate, 0, now, userId);
   }
+  if (!appReserved) throw new AiError(RESTING, 503);
   let body: { choices?: { message?: { content?: unknown } }[]; usage?: { total_tokens?: unknown } } = {};
   let refused = 0;
   try {
