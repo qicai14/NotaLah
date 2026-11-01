@@ -13,7 +13,7 @@ async function mount(probe: number) {
   const fetchMock = vi.fn(
     (_url: string, init: RequestInit) =>
       new Promise<Response>((resolve, reject) => {
-        if (!JSON.parse(String(init.body)).text) return resolve(reply(probe, { error: 'x' }));
+        if (!(JSON.parse(init.body as string) as { text?: string }).text) return resolve(reply(probe, { error: 'x' }));
         if (init.signal!.aborted) return reject(init.signal!.reason);
         init.signal!.addEventListener('abort', () => reject(init.signal!.reason));
         calls.push(resolve);
