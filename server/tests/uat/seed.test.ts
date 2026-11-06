@@ -27,7 +27,8 @@ describe('UAT seed', () => {
     );
 
     const first = await seedUat(pool);
-    expect(first.inserted).toMatchObject({ users: 5, modules: 3, notes: NOTES.length });
+    expect(first.inserted).toMatchObject({ users: 5, notes: NOTES.length });
+    expect(first.inserted.modules + first.skipped.modules).toBe(3); // MODULE_T is not truncated between tests
     const afterFirst = await counts();
     expect(afterFirst.users).toBe('6');
     expect(afterFirst.posts).toBe(String(NOTES.length + 1));
