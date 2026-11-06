@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   test: {
-    // TEST_JUNIT=1 also writes JUnit XML for the 4.5 evidence script (#83); plain runs are unchanged.
+    // TEST_JUNIT=1 also writes JUnit XML for the 4.5 evidence script (#83).
     reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
   },
   run: {

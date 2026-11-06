@@ -11,7 +11,6 @@ const decode = (s) =>
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, '&');
 
-// TC ID -> { passed, failed, skipped } counts; a test counts for the ID that leads its name.
 export function collect(xmls) {
   const tcs = {};
   for (const xml of xmls)
@@ -29,7 +28,6 @@ export function collect(xmls) {
   return tcs;
 }
 
-// Returns { md, filled, blank }: blank lists TC rows left empty (no test, not retired).
 export function fill(md, tcs) {
   const blank = [];
   let filled = 0;

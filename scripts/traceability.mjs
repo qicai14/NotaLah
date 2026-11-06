@@ -20,7 +20,9 @@ export function matrix(map, md) {
   for (const [req, [finding, keys, tasks]] of Object.entries(map)) {
     const mine = tcs.filter(([id]) => keys.some((k) => id === k || id.startsWith(`${k}-`)));
     const pass = mine.filter((r) => r[5] === 'Pass').length;
+    const failing = mine.filter((r) => r[5] === 'Fail').map((r) => r[0]);
     if (!pass) gaps.push(`${req}: no passing TC (${keys.join(', ')}; ${mine.length} matched)`);
+    if (failing.length) gaps.push(`${req}: failing TC ${failing.join(', ')}`);
     const result = tasks.map((t) => `${t}: ${uat[t] ?? 'unknown'}`).join('; ') || 'none';
     lines.push(`| ${req} | ${finding} | ${pass} of ${mine.length} (${keys.join(', ')}) | ${result} |`);
   }

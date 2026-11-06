@@ -12,13 +12,18 @@ const md = [
 
 describe('traceability', () => {
   it('counts passing TCs by prefix or exact ID and joins the UAT result', () => {
-    const r = matrix({ FR1: ['f', ['AUTH', 'SRCH-TC10'], ['UAT-S4', 'UAT-S5']] }, md);
+    const r = matrix({ FR1: ['f', ['AUTH-TC1', 'SRCH-TC10'], ['UAT-S4', 'UAT-S5']] }, md);
     expect(r.gaps).toEqual([]);
-    expect(r.md).toContain('| FR1 | f | 2 of 3 (AUTH, SRCH-TC10) | UAT-S4: Y; UAT-S5: pending |');
+    expect(r.md).toContain('| FR1 | f | 2 of 2 (AUTH-TC1, SRCH-TC10) | UAT-S4: Y; UAT-S5: pending |');
   });
 
   it('reports a requirement with no passing TC', () => {
     const r = matrix({ NFR2: ['f', ['UI'], []], FR9: ['f', ['AUTH-TC2'], []] }, md);
-    expect(r.gaps).toEqual(['NFR2: no passing TC (UI; 0 matched)', 'FR9: no passing TC (AUTH-TC2; 1 matched)']);
+    expect(r.gaps).toEqual([
+      'NFR2: no passing TC (UI; 0 matched)',
+      'FR9: no passing TC (AUTH-TC2; 1 matched)',
+      'FR9: failing TC AUTH-TC2',
+    ]);
+    expect(matrix({ FR2: ['f', ['AUTH'], []] }, md).gaps).toEqual(['FR2: failing TC AUTH-TC2']);
   });
 });

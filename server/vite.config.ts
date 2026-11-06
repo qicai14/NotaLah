@@ -17,7 +17,6 @@ export default defineConfig({
     fixedExtension: false,
   },
   test: {
-    // TEST_JUNIT=1 also writes JUnit XML for the 4.5 evidence script (#83); plain runs are unchanged.
     reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
     // Guards truncateAll against ever pointing at the dev DB when the shell sets NODE_ENV.
     env: {
