@@ -1,14 +1,20 @@
 import { deckSchema } from '@notalah/shared';
 import { readFileSync } from 'node:fs';
 import request from 'supertest';
-import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
 import { NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
 import { seedUat } from '../../src/scripts/uat/seed';
 import { CSRF, insertUser, truncateAll } from '../helpers';
 
-beforeEach(truncateAll);
+// truncateAll keeps MODULE_T, so the UAT modules are removed here (after the notes that use them) to leave the shared test DB as found.
+const clean = async () => {
+  await truncateAll();
+  await pool.query(`DELETE FROM "MODULE_T" WHERE mod_code LIKE 'UAT%'`);
+};
+beforeEach(clean);
+afterEach(clean);
 afterAll(() => pool.end());
 
 const counts = async () => {
@@ -30,7 +36,7 @@ describe('UAT seed', () => {
 
     const first = await seedUat(pool);
     expect(first.inserted).toMatchObject({ users: 5, notes: NOTES.length, reports: 3 });
-    expect(first.inserted.modules + first.skipped.modules).toBe(3);
+    expect(first.inserted.modules).toBe(3);
     const afterFirst = await counts();
     expect(afterFirst.users).toBe('6');
     expect(afterFirst.posts).toBe(String(NOTES.length + 1));
