@@ -7,7 +7,7 @@ Read with `PLAN.md` (milestones), `OPEN_QUESTIONS.md` and `adr/` (0091 on).
   draft), #126 (#114 Rewrite, Shorten, Quiz me), #124 (FR19+ numbering, R28 traced as an addition), #125 (Inter and
   Doto fonts), #120 (hosting note), #108, #109.
 - Merged 6 Nov: #127 (Apple-neutral theme, ADR 0095, UI-TC1-3), closing #123.
-- TC IDs: AI-TC1-40 used; AI-TC41-45 for #115, AI-TC46-55 for #116, AI-TC56-60 for #121. UI-TC1-3 used; UI-TC4-9 for #128.
+- TC IDs: AI-TC1-40 used; AI-TC41-45 for #115, AI-TC46-55 for #116, AI-TC56-57 for #121 (#130; 58-60 unused). UI-TC1-3 used; UI-TC4-9 for #128.
 - ADRs: 0094 reserved for #116, 0096 for #121, 0097 for #128. 0098-0099 in this PR. Next free: 0100.
 
 ## Stopping points 6 Nov
@@ -15,9 +15,10 @@ Read with `PLAN.md` (milestones), `OPEN_QUESTIONS.md` and `adr/` (0091 on).
 - #128: draft PR #131 (fix/128-axe-landmarks, b93b06e), not merged. Its body has a "To do on resume" list; the
   blocker is that the editor's panel `<aside>` sits inside the new `<main>` (EditorPage.tsx:622). axe counts wait for
   the owner's choice: inject axe-core 4.10.3 from jsDelivr, or add it as a dev dependency.
+- Overnight run 6-7 Nov: ticket sessions for #128, #116, #115, #82, #105, #81, #83; log in ../run-logs/autopilot_2026-11-06/decisions.md.
 
 ## Next work, in order
-1. #116 AI-assisted label as a signed token (opus; after #121 merges, as both touch `server/src/features/ai`; must
+1. #116 AI-assisted label as a signed token (opus; as both touch `server/src/features/ai`; must
    include the audience/separate-key fix so an AI token can't be used as the login cookie).
 2. #115 import .txt, .md, .docx, .pdf (after #121; never upload the file), then #122 B3 time-saved protocol (after #115).
 3. #81 R26 E2E after #128. #82 UAT seed due 20 Nov. Also #83, #84, #85 (before UAT), #105.
