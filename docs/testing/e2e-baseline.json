@@ -1,15 +1,15 @@
 {
   "method": "Wall-clock time of the task steps only (login and page set-up excluded), measured with performance.now() inside the Playwright specs: headless Chromium, 1 worker, Vite dev server, local Postgres 17 in Docker, database reseeded before the run. Each task keeps the value from its most recent run; scripted steps, so this is a floor for a human.",
   "machine": "Windows_NT 10.0.26300, AMD Ryzen 3 3300X 4-Core Processor x8, 16 GB RAM, Node v24.22.0",
-  "measured": "2026-11-06T23:03:37.752Z",
+  "measured": "2026-11-06T23:30:01.792Z",
   "seconds": {
-    "L2": 0.786,
-    "S2-assisted": 0.842,
-    "S2": 3.714,
-    "S3": 0.991,
-    "S4-module": 1.487,
-    "S4-hashtag": 0.959,
-    "S5": 2.974,
-    "A2": 2.262
+    "L2": 0.79,
+    "S2-assisted": 1.246,
+    "S2": 3.635,
+    "S3": 1.027,
+    "S4-module": 1.295,
+    "S4-hashtag": 0.994,
+    "S5": 3.404,
+    "A2": 2.305
   }
 }
