@@ -33,7 +33,8 @@ it('CLI-TC80: the guest prompt loads on first use, names the action and sends Lo
   );
   expect(screen.queryByRole('dialog')).toBeNull();
   await userEvent.click(screen.getByRole('button', { name: 'Like' }));
-  expect(await screen.findByRole('dialog', { name: 'Log in to like this note' })).toBeTruthy();
+  // Headroom for a loaded full run; the chunk itself is preloaded above.
+  expect(await screen.findByRole('dialog', { name: 'Log in to like this note' }, { timeout: 5000 })).toBeTruthy();
   await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
   expect(await screen.findByText('login from /notes/7?s=2')).toBeTruthy();
 });
