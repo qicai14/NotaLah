@@ -2,10 +2,13 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
-import { afterEach, expect, it } from 'vite-plus/test';
+import { afterEach, beforeAll, expect, it } from 'vite-plus/test';
 import { GuestPromptProvider, useGuestPrompt } from './GuestPrompt';
 
 afterEach(cleanup);
+
+// Transform the lazy chunk up front so the first render does not pay for it under a loaded full run.
+beforeAll(() => import('./GuestPromptSheet'), 30_000);
 
 function LikeButton() {
   const ask = useGuestPrompt();
@@ -30,7 +33,7 @@ it('CLI-TC80: the guest prompt loads on first use, names the action and sends Lo
   );
   expect(screen.queryByRole('dialog')).toBeNull();
   await userEvent.click(screen.getByRole('button', { name: 'Like' }));
-  // The lazy chunk is transformed on first import under test, which can take over a second.
+  // Headroom for a loaded full run; the chunk itself is preloaded above.
   expect(await screen.findByRole('dialog', { name: 'Log in to like this note' }, { timeout: 5000 })).toBeTruthy();
   await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
   expect(await screen.findByText('login from /notes/7?s=2')).toBeTruthy();

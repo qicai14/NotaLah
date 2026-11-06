@@ -509,7 +509,7 @@ export default function EditorPage() {
 
   if (!desktop) {
     return (
-      <div className="flex h-dvh flex-col bg-editor-canvas text-foreground">
+      <main id="main" tabIndex={-1} className="flex h-dvh flex-col bg-editor-canvas text-foreground">
         <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
         <header className="flex h-topbar shrink-0 items-center gap-1 border-b bg-background px-2">
           <Button asChild variant="ghost" size="icon-sm" aria-label="Back to drafts">
@@ -578,13 +578,13 @@ export default function EditorPage() {
           </SheetContent>
         </Sheet>
         {dialogEl}
-      </div>
+      </main>
     );
   }
 
   const active = readOnly ? undefined : PANELS.find((p) => p.id === panel);
   return (
-    <div className="flex h-dvh flex-col bg-editor-canvas text-foreground">
+    <main id="main" tabIndex={-1} className="flex h-dvh flex-col bg-editor-canvas text-foreground">
       <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
       <header className="flex h-topbar shrink-0 items-center gap-2 border-b bg-background px-3">
         <Button asChild variant="ghost" size="sm">
@@ -619,7 +619,7 @@ export default function EditorPage() {
           ))}
         </nav>
         {active && (
-          <aside aria-label={active.label} className="flex w-80 shrink-0 flex-col border-r bg-background">
+          <section aria-label={active.label} className="flex w-80 shrink-0 flex-col border-r bg-background">
             <div className="flex h-12 items-center justify-between px-4">
               <h2 className="text-title-sm font-semibold">{active.label}</h2>
               <Button variant="ghost" size="icon-sm" aria-label="Close panel" onClick={() => setPanel(null)}>
@@ -629,7 +629,7 @@ export default function EditorPage() {
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
               <PanelBody id={active.id} details={details} />
             </div>
-          </aside>
+          </section>
         )}
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex h-12 shrink-0 items-center overflow-x-auto border-b bg-background [scrollbar-width:thin]">
@@ -660,7 +660,7 @@ export default function EditorPage() {
         </div>
       </div>
       {dialogEl}
-    </div>
+    </main>
   );
 }
 

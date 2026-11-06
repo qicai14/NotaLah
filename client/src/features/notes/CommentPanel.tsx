@@ -160,7 +160,6 @@ function Composer({
           id={`${idp}-body`}
           ref={field}
           value={body}
-          aria-expanded={open}
           aria-controls={open ? `${idp}-people` : undefined}
           aria-activedescendant={open && options[active] ? `${idp}-person-${options[active].id}` : undefined}
           aria-autocomplete="list"
