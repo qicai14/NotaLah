@@ -1,10 +1,12 @@
 import { deckSchema } from '@notalah/shared';
 import { readFileSync } from 'node:fs';
+import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vite-plus/test';
+import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { NOTES, toDeck } from '../../src/scripts/uat/data';
+import { NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
 import { seedUat } from '../../src/scripts/uat/seed';
-import { insertUser, truncateAll } from '../helpers';
+import { CSRF, insertUser, truncateAll } from '../helpers';
 
 beforeEach(truncateAll);
 afterAll(() => pool.end());
@@ -73,5 +75,28 @@ describe('UAT seed', () => {
     expect(rows[0]).toEqual({ usr_role: 'lecturer', usr_lecturer_status: 'approved' });
     const { rows: stored } = await pool.query<{ sld_doc: unknown }>(`SELECT sld_doc FROM "SLIDE_T"`);
     expect(stored.length).toBeGreaterThan(NOTES.length);
+  });
+
+  it('OPS-TC24: each seeded role can log in and the lecturer and a student see their UAT notes', async () => {
+    await seedUat(pool);
+    const login = (email: string) =>
+      request(app).post('/api/auth/login').set(CSRF).send({ email, password: uatPassword() });
+
+    for (const u of USERS) {
+      const res = await login(u.email);
+      expect(res.status, u.email).toBe(200);
+      expect(res.body.user.role).toBe(u.role);
+      if (u.role === 'admin') continue; // the admin owns no notes
+
+      const cookie = ([] as string[]).concat(res.headers['set-cookie'] ?? []).join('; ');
+      const mine = NOTES.filter((n) => n.author === u.email).map((n) => n.title);
+      const profile = await request(app).get(`/api/users/${res.body.user.id}/notes`).set('Cookie', cookie);
+      expect(profile.status).toBe(200);
+      expect(profile.body.notes.map((n: { title: string }) => n.title).sort()).toEqual([...mine].sort());
+
+      const found = await request(app).get('/api/search').query({ q: 'UAT:', tab: 'notes' }).set('Cookie', cookie);
+      expect(found.status).toBe(200);
+      expect(found.body.items.length).toBeGreaterThan(0);
+    }
   });
 });

@@ -8,7 +8,7 @@ export const uatPassword = (): string => {
   return p;
 };
 
-export const USER_PROGRAMME = 'Software Engineering';
+export const USER_PROGRAMME = 'BSc (Hons) Software Engineering';
 
 export const USERS = [
   { email: 'uat.admin@mail.apu.edu.my', name: 'UAT Admin', role: 'admin', staffId: null },
@@ -19,9 +19,9 @@ export const USERS = [
 ] as const;
 
 export const MODULES = [
-  { code: 'UAT101-3-2', name: 'Database Systems', programme: 'BSc (Hons) Software Engineering' },
-  { code: 'UAT102-3-2', name: 'Operating Systems and Networks', programme: 'BSc (Hons) Software Engineering' },
-  { code: 'UAT103-3-2', name: 'Agile Software Development', programme: 'BSc (Hons) Software Engineering' },
+  { code: 'UAT101-3-2', name: 'Database Systems', programme: USER_PROGRAMME },
+  { code: 'UAT102-3-2', name: 'Operating Systems and Networks', programme: USER_PROGRAMME },
+  { code: 'UAT103-3-2', name: 'Agile Software Development', programme: USER_PROGRAMME },
 ] as const;
 
 interface Page {
