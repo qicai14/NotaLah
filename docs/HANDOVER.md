@@ -1,43 +1,38 @@
-# Handover — 1 Nov 2026 (Sprint 6 Stabilise closed; next: Sprint 7 R28)
+# Handover: 6 Nov 2026 (Sprint 7 R28 and Sprint 8 UI in progress)
 
-Read with `PLAN.md` (milestones, official dates), `sprints/sprint6_review_retrospective.md` and `adr/` (0085 on).
+Read with `PLAN.md` (milestones), `OPEN_QUESTIONS.md` and `adr/` (0091 on).
 
-## State of `main`
-- Sprint 6 merged 28-29 Oct (14 issues, milestone closed): #70 CLI-TC40 · #71 mattpocock setup and `GLOSSARY.md` ·
-  #87 orchestrator workflow (ADR 0086) · #88 AI scope (ADR 0085) · #89 non-blocking audit job · #90 layout HTML escaping
-  · #91 schema docs and drift check · #92 socket expiry (ADR 0088) · #94 R5 admin Modules · #95, #97, #99 idle limits
-  (messaging, editor lock, video polling) · #100, #102 NFR3 check and re-weight (ADR 0089) · #103 10x latency (ADR 0090).
-- Tests: shared 8, client 188, server 445 + 2 skipped; check and build green; 5/5 no-cache runs.
-- This handover's PR (`docs/handover-1030`): records, ADRs 0091-0092, retro changes in `ship-feature`, `security-reviewer`
-  and `conventions/agent-workflow.md`. The next orchestrator merges it first.
+## State of `main` (056453a)
+- Merged 1 Nov: #117 (#111 outline schema in `shared/`), #118 (#112 outline route, ADR 0093), #119 (#113 paste to
+  draft), #126 (#114 Rewrite, Shorten, Quiz me), #124 (FR19+ numbering, R28 traced as an addition), #125 (Inter and
+  Doto fonts), #120 (hosting note), #108, #109.
+- Merged 6 Nov: #127 (Apple-neutral theme, ADR 0095, UI-TC1-3), closing #123.
+- TC IDs: AI-TC1-40 used; AI-TC41-45 for #115, AI-TC46-55 for #116, AI-TC56-60 for #121. UI-TC1-3 used; UI-TC4-9 for #128.
+- ADRs: 0094 reserved for #116, 0096 for #121, 0097 for #128. 0098-0099 in this PR. Next free: 0100.
 
-## User steps (exact)
-1. Start the next orchestrator from `../run-logs/KICKOFF_next_session.md` (migration steps on the kickoff Artifact page).
-2. Type `/to-spec docs/specs/R28_ai_assistant.md`, then `/to-tickets`, when the orchestrator asks (user-invoked).
-3. Meeting #2 (week of 2 Nov): `OPEN_QUESTIONS.md` supervisor list; confirm the proposed UAT (30 Nov) and report
-   (12 Dec) dates in `PLAN.md`.
-4. Recruit UAT participants and label the relevance seed (#86).
-5. Optional: delete the ~50 stale remote branches from before Sprint 6 (`git branch -r`; all merged or abandoned).
+## In progress 6 Nov (see the session or PR)
+- #121 paste limit about 8,000 characters and one 30 s deadline (`fix/121-ai-deadline`, opus).
+- #128 four axe violations (`fix/128-axe-landmarks`); it first retakes #127's dark screenshots and axe run.
 
 ## Next work, in order
-1. Sprint 7: R28 AI writing assistant (spec approved, D83), 4-6 tracer-bullet tickets from `/to-tickets`.
-   Fold in ambition pick B3 (28 Oct) first: UAT-S2 timed with and without AI, target at most half the manual time.
-2. Sprint 8: UI refresh (mid-Nov, after R28 slice 1), then R26 E2E (#81), UAT seed (#82), evidence pipeline (#83),
-   UAT redesign (#84), all before 20 Nov; limitations write-up (#85) before UAT.
-3. R41 only if time remains after R28; R35 and R36 are future work (ADR 0085).
+1. #116 AI-assisted label as a signed token (opus; after #121 merges, as both touch `server/src/features/ai`; must
+   include the audience/separate-key fix so an AI token can't be used as the login cookie).
+2. #115 import .txt, .md, .docx, .pdf (after #121; never upload the file), then #122 B3 time-saved protocol (after #115).
+3. #81 R26 E2E after #128. #82 UAT seed due 20 Nov. Also #83, #84, #85 (before UAT), #105.
+4. Report lane (writer sessions in `../FYP_Submissions`): #107 FR19+ numbers, #106 meeting #1 feedback (before meeting #3).
+5. After feature complete: `/improve-codebase-architecture`. R41 only if time remains.
 
-## Issues filed 1 Nov (from the retro proposals)
-- #105 chore: check in `vp run check` that `docs/chapter4/CHAPTER4.md` matches its sources (ready-for-agent).
-- #106 docs (report lane): fold the meeting #1 feedback into Chapters 2-3 (ready-for-human).
-- #107 docs (report lane): FR19 and FR20+ numbers and justifications in `drafts/3.3.3.4_requirement_changes.md` (ADR 0092; ready-for-human).
+## Owner decisions pending
+- Meeting #2 (5 or 6 Nov): outcome not yet recorded. Log it on PG Bank and in `OPEN_QUESTIONS.md`.
+- impeccable skill (restored in `FYP/.claude/skills`, helper agents in `FYP/.claude/agents`): keep or archive?
+- Delete the 18 no-PR remote branches; all are merged into main. Command in
+  `../run-logs/autopilot_2026-11-06/decisions.md`.
+- Mascot: after #127, back to the "UI refresh advisor" session for the Gemini prompt (ADR 0099).
+- #86: at least 3 UAT participants confirmed by 20 Nov (ADR 0098).
 
-## Answered 1 Nov
-- The IR floor is FR1-FR18. FR19 (lecturer approval) was not in the IR .docx; it is the first addition (ADR 0092).
-- UAT must finish before 6 Dec, with at least three participants.
-- `SafeHtml` branded type (#75 open item): needs a deck schema change; not done.
-- Remote branch deletes stay manual: auto mode blocks `git push origin --delete` (user, 1 Nov).
-
-## Known limits
-- Keyword and Top search p95 ~740 ms at 10x (SRCH-TC23, ADR 0090; within NFR1's 3,000 ms).
-- The D75 annotation cap race, view-collaborator annotations 404, marked race shortcuts (#85).
-- Live deploy is optional and off (D82). Video is frozen (ADR 0091).
+## Known limits and follow-ups
+- Search p95 about 740 ms at 10x (ADR 0090). D75 cap race and view-collaborator 404 (#85). Video frozen (ADR 0091).
+- Messaging socket and some client tests time out under machine load; run one heavy job at a time.
+- EditorPage chunk about 517 kB; rewrite drops formatting; `ai_tokens:<userId>` rows never purged; reply lookup by
+  Slide index can say "box is gone" after reordering; Login/Composer inputs have no visible border.
+- Live deploy is unmarked and optional (D82): local-first demo, free hosting only.

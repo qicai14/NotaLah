@@ -7,7 +7,7 @@
   pill with a check icon, with only the word "Verified" in Doto (OFL), never under 13 px. Slide and deck colours and
   fonts stay. Inter and Doto are self-hosted from `@fontsource-variable` (#125).
   - Made while building, under the user's "keep every pair at or above the limit": dark `primary-foreground` is dark
-    text (white on #2997ff is under 3:1); muted is #68686d, the light input border #86868b and dark destructive #ff5b52,
+    text (white on #2997ff is under 4.5:1 (about 3.0:1)); muted is #68686d, the light input border #86868b and dark destructive #ff5b52,
     because the proposed values missed a limit; "Verified" is 15 px at weight 900, because 13 px washed out on a 1x
     screen. The Super Like state moved from `highlight` to `primary`. Dark `accent` is #323234 so hover shows on `surface`; that puts `primary` on it at 4.24:1, so `primary` on `accent` is icons only.
 - **Alternatives:** #0071e3 for the accent (4.7:1 on white, less margin than #0066cc). Pure black for the dark
