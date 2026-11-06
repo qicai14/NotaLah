@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="5" failures="1">
+  <testsuite name="a.test.ts" tests="5">
+    <testcase classname="a.test.ts" name="suite &gt; AUTH-TC1: blank &amp; invalid" time="0.1"></testcase>
+    <testcase classname="a.test.ts" name="AUTH-TC2: part one" time="0.1"></testcase>
+    <testcase classname="a.test.ts" name="AUTH-TC2: part two" time="0.1"></testcase>
+    <testcase classname="a.test.ts" name="MSG-TC1: fails" time="0.1">
+      <failure message="boom" type="AssertionError">stack</failure>
+    </testcase>
+    <testcase classname="a.test.ts" name="no id here" time="0.1"/>
+  </testsuite>
+</testsuites>
