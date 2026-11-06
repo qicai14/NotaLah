@@ -1,0 +1,25 @@
+import { createHmac } from 'node:crypto';
+import jwt from 'jsonwebtoken';
+import { env } from '../../lib/env';
+
+const AUDIENCE = 'ai-output';
+const TTL = '24h';
+
+// Its own key, derived from JWT_SECRET, so an AI token never passes as a session cookie and a session token never
+// passes as an AI token (ADR 0094). Derived per call so tests that change the secret see it.
+const key = () => createHmac('sha256', env.JWT_SECRET).update(AUDIENCE).digest();
+
+/** Returned with every AI reply; a save that carries it marks the note AI-assisted (R28, ADR 0094). */
+export const signAiToken = (userId: number): string =>
+  jwt.sign({}, key(), { algorithm: 'HS256', audience: AUDIENCE, subject: String(userId), expiresIn: TTL });
+
+/** True only for an unexpired AI token issued to `userId`; anything else (missing, forged, another user's) is false. */
+export function isAiTokenFor(token: unknown, userId: number): boolean {
+  if (typeof token !== 'string' || !token) return false;
+  try {
+    jwt.verify(token, key(), { algorithms: ['HS256'], audience: AUDIENCE, subject: String(userId) });
+    return true;
+  } catch {
+    return false;
+  }
+}
