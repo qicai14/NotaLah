@@ -2,6 +2,9 @@ import type { Deck } from '@notalah/shared';
 
 export const DEFAULT_UAT_PASSWORD = 'UatNotaLah#2026';
 export const uatPassword = (): string => {
+  if (process.env.NODE_ENV === 'production' && !process.env.UAT_PASSWORD) {
+    throw new Error('UAT_PASSWORD is required in production: the default password is public');
+  }
   const p = process.env.UAT_PASSWORD || DEFAULT_UAT_PASSWORD;
   if (p.length < 8) throw new Error('UAT_PASSWORD must be at least 8 characters');
   if (Buffer.byteLength(p, 'utf8') > 72) throw new Error('UAT_PASSWORD must be at most 72 bytes');

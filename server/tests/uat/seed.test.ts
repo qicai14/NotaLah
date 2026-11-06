@@ -4,7 +4,7 @@ import request from 'supertest';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
+import { DEFAULT_UAT_PASSWORD, NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
 import { seedUat } from '../../src/scripts/uat/seed';
 import { CSRF, insertUser, truncateAll } from '../helpers';
 
@@ -81,6 +81,24 @@ describe('UAT seed', () => {
     expect(rows[0]).toEqual({ usr_role: 'lecturer', usr_lecturer_status: 'approved' });
     const { rows: stored } = await pool.query<{ sld_doc: unknown }>(`SELECT sld_doc FROM "SLIDE_T"`);
     expect(stored.length).toBeGreaterThan(NOTES.length);
+  });
+
+  it('OPS-TC26: the default UAT password is refused in production', () => {
+    const saved = { node: process.env.NODE_ENV, pw: process.env.UAT_PASSWORD };
+    try {
+      delete process.env.UAT_PASSWORD;
+      process.env.NODE_ENV = 'production';
+      expect(() => uatPassword()).toThrow(/UAT_PASSWORD is required in production/);
+      process.env.UAT_PASSWORD = 'Another#Pass1';
+      expect(uatPassword()).toBe('Another#Pass1');
+      process.env.NODE_ENV = 'test';
+      delete process.env.UAT_PASSWORD;
+      expect(uatPassword()).toBe(DEFAULT_UAT_PASSWORD);
+    } finally {
+      process.env.NODE_ENV = saved.node;
+      if (saved.pw === undefined) delete process.env.UAT_PASSWORD;
+      else process.env.UAT_PASSWORD = saved.pw;
+    }
   });
 
   it('OPS-TC24: each seeded role can log in and the lecturer and a student see their UAT notes', async () => {
