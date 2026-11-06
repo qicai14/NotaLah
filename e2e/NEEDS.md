@@ -9,3 +9,11 @@
 - S5 assumes the receiver's /messages list shows the pending request text before Accept.
 - Mutating specs (S2 creates notes, A2 changes reports and users): re-seed a fresh database between runs.
 - Run order and the shared `docs/testing/e2e-baseline.json` assume `workers: 1`.
+
+## E2E-TC8 and the AI stub
+- No product change needed: the API reads `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, so `playwright.config.ts` starts
+  `e2e/stub-ai/server.mjs` (port 4010) and passes those to the dev server it starts. If you already run `vp run dev`
+  yourself, restart it with the same three variables or the "Draft slides from text" button will not show.
+- The stub answers outline requests only (Rewrite, Shorten and Quiz me are not covered).
+- Guessed, never run: the Text rail button opens the panel (it toggles, so it fails if Text is already the default panel),
+  and a new note starts with one slide.
