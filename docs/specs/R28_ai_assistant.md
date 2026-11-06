@@ -29,7 +29,8 @@ ranking stays the deterministic heuristic (NFR3). AI output is always an editabl
 - **Text-box actions** return plain text only; the client puts it through the same sanitiser as typed text.
 - **Server:** `server/src/features/ai/` (`routes.ts`, `service.ts`, `prompts.ts`, `config.ts`), endpoints
   `POST /api/ai/outline {text}` and `POST /api/ai/rewrite {text, action}`; signed-in users with an active account
-  only (not guests). Input ≤ 20,000 characters (outline) and ≤ 2,000 (rewrite). Request timeout 30 s.
+  only (not guests). Input ≤ 8,000 characters (outline, #121) and ≤ 2,000 (rewrite). Request timeout 30 s; for the outline one deadline
+  covers the first call and its retry, so no retry is sent after 30 s (#121).
 - **File text extraction** in the browser (`.docx` via `mammoth`, `.pdf` via `pdfjs-dist`, `.txt/.md` native),
   lazy-loaded only when the import dialog opens, so the main bundle and the 0.1 CPU server are untouched. Files
   ≤ 5 MB; only the extracted text is sent.

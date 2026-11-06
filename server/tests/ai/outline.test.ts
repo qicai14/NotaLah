@@ -2,6 +2,7 @@ import request from 'supertest';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { AI } from '../../src/features/ai/config';
+import { OUTLINE_PROMPT } from '../../src/features/ai/prompts';
 import { METRICS } from '../../src/features/usage/config';
 import { consume, periodKey } from '../../src/features/usage/service';
 import { env, parseEnv } from '../../src/lib/env';
@@ -111,16 +112,16 @@ describe('AI outline draft (R28)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('AI-TC9: text over 20,000 characters, blank text and a full Note are refused before any call', async () => {
+  it('AI-TC9: text over 8,000 characters, blank text and a full Note are refused before any call', async () => {
     const fetchMock = stub();
     const uid = await insertUser();
-    const long = await outline(uid, { text: 'a'.repeat(20_001) });
+    const long = await outline(uid, { text: 'a'.repeat(8_001) });
     expect(long.status).toBe(400);
-    expect(long.body.errors.text).toBe('Text must be at most 20,000 characters');
+    expect(long.body.errors.text).toBe('Text must be at most 8,000 characters');
     expect((await outline(uid, { text: '   ' })).status).toBe(400);
     expect((await outline(uid, { text: SECRET, currentSlides: 30 })).status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
-    expect((await outline(uid, { text: 'a'.repeat(20_000) })).status).toBe(200);
+    expect((await outline(uid, { text: 'a'.repeat(8_000) })).status).toBe(200);
   });
 
   it('AI-TC10: the outline is cut to the room left on the Note', async () => {
@@ -224,16 +225,13 @@ describe('AI outline draft (R28)', () => {
   });
 
   it('AI-TC17: the provider call is stopped after 30 seconds and errors never echo provider text', async () => {
-    const timeout = vi
-      .spyOn(AbortSignal, 'timeout')
-      .mockImplementation(() => AbortSignal.abort(new DOMException('timed out', 'TimeoutError')));
-    stub().mockImplementationOnce(async (_url, init) => {
-      init.signal?.throwIfAborted();
-      return completion(good);
-    });
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    // The deadline fires while the call is in flight, so its reservation is kept.
+    const fetchMock = stub(() => Promise.reject(new DOMException('timed out', 'TimeoutError')));
     const uid = await insertUser();
     const res = await outline(uid);
     expect(timeout).toHaveBeenCalledWith(30_000);
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
     expect(res.status).toBe(502);
     expect(res.body.error).toBe('AI help is unavailable right now. Try again later');
     timeout.mockRestore();
@@ -284,6 +282,8 @@ describe('AI outline draft (R28)', () => {
 
   it('AI-TC19: logs hold counts and latency only, never the student text or the reply', async () => {
     const info = vi.spyOn(logger, 'info');
+    const warn = vi.spyOn(logger, 'warn');
+    const error = vi.spyOn(logger, 'error');
     stub(
       () => completion(bad),
       () => completion(good, 50),
@@ -299,8 +299,47 @@ describe('AI outline draft (R28)', () => {
       slides: 2,
     });
     // The request log line (pino-http) serialises only id, method and path; its raw req is not what is written.
-    const own = JSON.stringify(info.mock.calls.filter(([obj]) => !(obj && typeof obj === 'object' && 'res' in obj)));
+    const own = JSON.stringify([
+      ...info.mock.calls.filter(([obj]) => !(obj && typeof obj === 'object' && 'res' in obj)),
+      ...warn.mock.calls,
+      ...error.mock.calls,
+    ]);
     expect(own).not.toContain('Photosynthesis');
     expect(own).not.toContain('Calvin');
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  it('AI-TC56: a maximum-length outline reserves its real size, and two such calls fit in one daily share', async () => {
+    const uid = await insertUser();
+    const reserved: number[] = [];
+    stub(async () => {
+      reserved.push(await count(`ai_tokens:${uid}`));
+      return completion(good);
+    });
+    expect((await outline(uid, { text: 'a'.repeat(AI.outlineChars) })).status).toBe(200);
+    const estimate = Math.ceil((OUTLINE_PROMPT.length + AI.outlineChars) / 4) + AI.outlineMaxTokens;
+    expect(reserved).toEqual([estimate]);
+    expect(2 * estimate).toBeLessThanOrEqual(AI.userTokensPerDay);
+    expect(estimate).toBeLessThan(8_000); // Groq's free tokens a minute
+  });
+
+  it('AI-TC57: one 30-second deadline covers the retry, so no second call is sent after it', async () => {
+    const deadline = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(deadline.signal);
+    const fetchMock = stub(() => {
+      // An invalid reply that arrives just as the 30 seconds run out.
+      deadline.abort(new DOMException('timed out', 'TimeoutError'));
+      return completion('not json at all', 100);
+    });
+    const uid = await insertUser();
+    const res = await outline(uid);
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('AI help is unavailable right now. Try again later');
+    expect(timeout).toHaveBeenCalledTimes(1);
+    expect(timeout).toHaveBeenCalledWith(30_000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][1].signal).toBe(deadline.signal);
+    expect(await count('ai_requests')).toBe(1);
+    expect(await count(`ai_tokens:${uid}`)).toBe(100);
   });
 });
