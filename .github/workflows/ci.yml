@@ -126,8 +126,6 @@ jobs:
           path: |
             playwright-report
             test-results
-            docs/screenshots/81
-            docs/testing/e2e-baseline.json
 
   audit:
     if: github.event_name != 'push'

@@ -54,4 +54,5 @@ test('E2E-TC4 S4: find notes by module code and by hashtag', async ({ page }) =>
     await expect(page.getByRole('link', { name: /^UAT:/ })).toHaveCount(14);
   });
   await shoot(page, 'S4', 'search-hashtag');
+  await checkAxe(page, 'S4-search-hashtag');
 });

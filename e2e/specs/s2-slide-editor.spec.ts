@@ -41,6 +41,10 @@ test('E2E-TC1 S2: create a three-slide note, save a draft, publish with a module
     await expect(page).toHaveURL(/\/notes\/\d+$/);
   });
 
+  await expect(page.getByText('Slide 1 of 3')).toBeAttached(); // the carousel's screen-reader live region
+  await expect(page.getByText(`${MODULE_CODE} Agile Software Development`)).toBeVisible();
+  for (const tag of ['e2e', 'slides']) await expect(page.getByText(`#${tag}`, { exact: true })).toBeVisible();
+
   await shoot(page, 'S2', 'published-note');
   await checkAxe(page, 'S2-published-note');
 });

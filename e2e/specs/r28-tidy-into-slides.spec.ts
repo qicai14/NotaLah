@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { checkAxe } from '../helpers/axe';
 import { login } from '../helpers/login';
 import { shoot } from '../helpers/screenshot';
 import { timed } from '../helpers/timing';
@@ -21,4 +22,5 @@ test('E2E-TC8 S2 assisted: paste text and tidy it into slides', async ({ page })
   });
 
   await shoot(page, 'S2-assisted', 'slides');
+  await checkAxe(page, 'S2-assisted-slides');
 });

@@ -1,40 +1,35 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 
-// Every entry needs a reason; an unlogged serious or critical violation fails the test.
-export const ALLOWLIST: { rule: string; page: string; reason: string }[] = [
-  // Product bug, reported in the #81 handback: the author avatar link has aria-label "<Name>'s profile" but its visible text
-  // is the initials (WCAG 2.5.3 Label in Name). Remove when fixed; tracked in the PR #81 follow-ups.
-  {
+// An entry skips a violation only when every node it reports matches `html`; any other node still fails the test.
+// All are one product bug (#144): an aria-label that omits the visible text (WCAG 2.5.3 Label in Name).
+const AVATAR = String.raw`[^"]+'s profile`; // author avatar link: visible text is the initials
+const NOTIFICATIONS = String.raw`Notifications, \d+ unread`; // sidebar link, shown on any page once a notification is unread
+const SUPER_LIKE = 'Remove Super Like'; // toggle on a verified note
+const labels = (...alts: string[]) => new RegExp(`aria-label="(?:${alts.join('|')})"`);
+const pages: Record<string, RegExp> = {
+  'S3-feed': labels(AVATAR, NOTIFICATIONS),
+  'S2-published-note': labels(AVATAR, NOTIFICATIONS),
+  'L2-verified-note': labels(AVATAR, NOTIFICATIONS, SUPER_LIKE),
+  'S5-chat': labels(NOTIFICATIONS),
+};
+export const ALLOWLIST: { rule: string; page: string; html: RegExp; reason: string }[] = Object.entries(pages).map(
+  ([page, html]) => ({
     rule: 'label-content-name-mismatch',
-    page: 'S3-feed',
-    reason: 'avatar link label omits visible initials (product bug)',
-  },
-  {
-    rule: 'label-content-name-mismatch',
-    page: 'S2-published-note',
-    reason: 'avatar link label omits visible initials (product bug)',
-  },
-  {
-    rule: 'label-content-name-mismatch',
-    page: 'L2-verified-note',
-    reason: 'avatar link label omits visible initials (product bug)',
-  },
-  // Product bug, same rule: the sidebar link is labelled "Notifications, 1 unread" while its visible text differs.
-  // Remove when fixed; tracked in the PR #81 follow-ups.
-  {
-    rule: 'label-content-name-mismatch',
-    page: 'S5-chat',
-    reason: 'sidebar Notifications link label differs from visible text (product bug)',
-  },
-];
+    page,
+    html,
+    reason: 'aria-label omits the visible text (product bug, #144)',
+  }),
+);
 
 export async function checkAxe(page: Page, name: string) {
   const { violations } = await new AxeBuilder({ page }).analyze();
   const blocking = violations.filter(
     (v) =>
       (v.impact === 'serious' || v.impact === 'critical') &&
-      !ALLOWLIST.some((a) => a.rule === v.id && a.page === name && a.reason.trim()),
+      !ALLOWLIST.some(
+        (a) => a.rule === v.id && a.page === name && a.reason.trim() && v.nodes.every((n) => a.html.test(n.html)),
+      ),
   );
   expect(
     blocking.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} node(s), first: ${v.nodes[0].html.slice(0, 120)}`),

@@ -27,7 +27,8 @@ export default defineConfig({
     {
       command: 'vp run dev',
       cwd: '..',
-      url: 'http://localhost:5173',
+      // Through the Vite proxy: answers 200 only when Vite and the API on 4000 are both up.
+      url: 'http://localhost:5173/api/health',
       reuseExistingServer: false,
       env: {
         ...E2E_ENV,
