@@ -2,6 +2,7 @@ import type { SlideElement } from '@notalah/shared';
 import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Redo2, Undo2, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { AiAssistedBadge } from '@/components/AiAssistedBadge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
@@ -67,10 +68,13 @@ function SaveStatus() {
     text = 'Saved';
   }
   return (
-    <span role="status" className="flex items-center gap-1 text-caption whitespace-nowrap text-muted-foreground">
-      {icon}
-      {text}
-    </span>
+    <>
+      {meta.aiAssisted && <AiAssistedBadge className="shrink-0" />}
+      <span role="status" className="flex items-center gap-1 text-caption whitespace-nowrap text-muted-foreground">
+        {icon}
+        {text}
+      </span>
+    </>
   );
 }
 

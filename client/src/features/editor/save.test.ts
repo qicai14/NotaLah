@@ -22,6 +22,18 @@ describe('editor save', () => {
     expect(autosaveDelay(0, 12_000)).toBe(0);
   });
 
+  it('AI-TC55: a save sends the AI token and keeps the label the server returns', async () => {
+    const saved = {
+      note: { id: 9, updatedAt: '2026-11-06T06:00:00.000Z', status: 'draft', visibility: null, aiAssisted: true },
+    };
+    const fetch = reply(201, saved);
+    vi.stubGlobal('fetch', fetch);
+    s().setMeta({ aiToken: 'tok-1' });
+    await saveNote();
+    expect(JSON.parse(fetch.mock.calls[0][1]!.body as string).aiToken).toBe('tok-1');
+    expect(s().meta.aiAssisted).toBe(true);
+  });
+
   it('NOTE-TC61: the first save creates the note, later saves PUT with baseUpdatedAt', async () => {
     const created = { note: { id: 9, updatedAt: '2026-10-17T06:00:00.000Z', status: 'draft', visibility: null } };
     const fetch = reply(201, created);

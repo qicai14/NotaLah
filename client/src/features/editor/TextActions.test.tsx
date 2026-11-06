@@ -76,6 +76,23 @@ describe('TextActions (R28)', () => {
     expect(useEditor.getState().deck.slides[0].elements[0]).toEqual(el);
   });
 
+  it('AI-TC55: the token in an applied reply is kept for the next save; a dropped reply keeps none', async () => {
+    mount();
+    await run('Rewrite clearer');
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    calls[0].answer(reply(200, { text: 'Clear', aiToken: 'tok-1' }));
+    await vi.waitFor(() => expect(useEditor.getState().meta.aiToken).toBe('tok-1'));
+
+    cleanup();
+    mount();
+    await run('Rewrite clearer');
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    useEditor.getState().load(emptyDeck()); // another note opened while waiting
+    calls[0].answer(reply(200, { text: 'Clear', aiToken: 'tok-2' }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useEditor.getState().meta.aiToken).toBeNull();
+  });
+
   it('AI-TC38: Quiz me adds one slide in one undo step', async () => {
     mount();
     await run('Quiz me');
