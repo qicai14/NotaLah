@@ -7,5 +7,11 @@
 - Client: `*.test.ts(x)` beside the code; render tests start with `// @vitest-environment jsdom`; run `vp run client#test`.
 - Browser checks: `agent-browser` for exploration; Playwright Test for the E2E smoke suite (skill
   `playwright-best-practices`).
+- E2E: `vp run test:e2e` needs `vp run db:up` and a `notalah_test_81` database (`docker compose exec db psql -U notalah -c
+  'create database notalah_test_81'`, once; set `E2E_DATABASE_URL` to use another). Its globalSetup migrates that
+  database and runs `server#uat:reset` (empties every table, reseeds the UAT data; refuses a database not named `*test*`),
+  and the dev server and AI stub are started against it, so every run starts fresh. Ports 5173 and 4000 must be free.
+  Specs run in file order with one worker; the A2 spec is named `zz-` because it suspends student1. Axe fails on serious
+  and critical violations; an entry in `e2e/helpers/axe.ts` needs a reason. Timings land in `docs/testing/e2e-baseline.json`.
 - Measurements that feed the report (load runs, audits, UAT) go in [`../testing/`](../testing/) with the method and
   machine, never invented numbers.

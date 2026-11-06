@@ -1862,13 +1862,26 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UI-TC8 | Verified pill legible (#128) | The Doto "Verified" pill on a verified note at 1440 and 375 px, light and dark | Text readable in all four; `foreground` on `surface` at least 4.5:1 | Legible in all four; Doto 15px weight 900, foreground on surface 15.46:1 light and 12.80:1 dark (token table, not measured in the browser); thin letters are the weakest | Pass |
 | UI-TC9 | Note page and editor axe-clean (#128) | axe-core 4.14.0, all rules, note page and editor at 1440 and 375 px, light and dark | Zero violations | 0 violations in all four combinations on both pages, with a panel open in the editor; `label-content-name-mismatch` on the logo (1) and slide thumbnails (7), found by 4.14.0 at 1440, fixed in the same PR | Pass |
 
+*Table 4.49: End-to-end UAT task test cases (E2E, R26, NFR2)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| E2E-TC1 | S2: create a three-slide note, save a draft, publish with a module and two hashtags | `e2e/specs/s2-slide-editor.spec.ts`; student1 (Daniel Tan), three slides each given a heading, module UAT103-3-2, hashtags `e2e` and `slides` | The draft saves (status reads Saved); Publish with Public visibility opens the note page at `/notes/<id>` showing Slide 1 of 3; axe-core reports no serious or critical violation on the note page | Passed in 5 of 5 consecutive runs on a freshly reseeded database. Axe found `label-content-name-mismatch` on the author avatar link (aria-label omits the visible initials), logged in the axe allowlist as a product bug | Pass |
+| E2E-TC2 | S2: the editor page has no serious axe violations | `e2e/specs/s2-slide-editor.spec.ts`; student1 on `/notes/new` | axe-core reports no serious or critical violation on the editor page | Passed in 5 of 5 consecutive runs; no violation found | Pass |
+| E2E-TC3 | S3: like, comment on and save a note from the feed | `e2e/specs/s3-s4-feed-search.spec.ts`; student2 (Priya Nair) on the feed | Like and Save buttons become pressed on the first note; the posted comment text 'Useful summary, thanks' appears; axe-core reports no serious or critical violation on the feed | Passed in 5 of 5 consecutive runs. Axe found `label-content-name-mismatch` on 10 avatar links in the feed, logged in the allowlist as a product bug | Pass |
+| E2E-TC4 | S4: find notes by module code and by hashtag | `e2e/specs/s3-s4-feed-search.spec.ts`; student2 searching `UAT101-3-2` and `#uat` | The module search shows '4 results shown' and four UAT notes; the hashtag search shows '14 results shown' and fourteen; axe-core reports no serious or critical violation on the module results | Passed in 5 of 5 consecutive runs | Pass |
+| E2E-TC5 | L2: a lecturer Super Likes a student note with a remark | `e2e/specs/l2-super-like.spec.ts`; the lecturer opens 'UAT: TCP versus UDP' (Daniel Tan) from the `#uat` search, remark 'Clear and accurate.' | The Super Like dialog accepts the remark and the note page shows the verified-by mark; axe-core reports no serious or critical violation | Passed in 5 of 5 consecutive runs. Axe found the same avatar-link `label-content-name-mismatch` (1 node), allowlisted as a product bug | Pass |
+| E2E-TC6 | A2: resolve the two reported notes (dismiss one, hide one) and suspend the author | `e2e/specs/zz-a2-resolve-reports.spec.ts`; admin, seed with three reports on two notes (the queue lists one row per note), runs last because it suspends Daniel Tan | Dismiss on 'UAT: Subnetting made simple' and Hide note on 'UAT: Copied exam answers (hidden)' each need a remark and empty the queue ('No open reports'); Daniel Tan's account is then suspended with a reason; axe-core reports no serious or critical violation on the queue and the user list | Passed in 5 of 5 consecutive runs; no axe violation | Pass |
+| E2E-TC7 | S5: message a non-friend, then accept the request | `e2e/specs/s5-messaging.spec.ts`; student2 (Priya Nair) messages student3 (Wei Jie Lim) in two browser contexts | The request text appears in the receiver's Requests tab over Socket.io without a reload; Accept opens the chat listing the message; axe-core reports no serious or critical violation on the chat | Passed in 5 of 5 consecutive runs. Axe found `label-content-name-mismatch` on the sidebar Notifications link ('Notifications, 1 unread'), allowlisted as a product bug | Pass |
+| E2E-TC8 | S2 assisted: paste text and tidy it into slides | `e2e/specs/r28-tidy-into-slides.spec.ts`; student1 on `/notes/new` with the AI stub (`e2e/stub-ai`), pasted text on normalisation | Draft slides from text sends the text and the stub's three slides land after the blank one, giving four slides | Passed in 5 of 5 consecutive runs | Pass |
+
 ## 4.5.2 User Acceptance Testing
 
 	User acceptance testing runs from 23 November and finishes before 6 December 2026 (ADR 0098). At least three participants take part, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. The stretch goal is five students, one lecturer and one administrator. Each participant completes the scenario tasks for their role in a moderated session. The moderator times every task with a stopwatch, from the end of the task instruction to the moment the participant reaches the stated end state, and records whether the participant finished without help. After the tasks, the participant rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent, and completes the System Usability Scale (SUS). Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
 	Each task has a baseline and a target. Every task has a reference time: the time the scripted end-to-end test of the same task takes (R26, #81), recorded before UAT. The reference time is for comparison only and is not a pass/fail criterion. Two tasks have a stronger baseline. For UAT-S4, only 4 of 32 survey respondents (12.5%, item D1) found a study resource in under 2 minutes. For UAT-S2, the baseline is the same participant's manual time, against which the time with the R28 assistant is compared (B3, protocol in #122). The overall targets are a task success rate of at least 90% across all task attempts and a mean SUS score of at least 80.
 
-*Table 4.49: UAT tester details*
+*Table 4.50: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1880,7 +1893,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-6 (stretch) | | | Student | | | |
 | UAT-7 (stretch) | | | Student | | | |
 
-*Table 4.50: UAT scenario tasks*
+*Table 4.51: UAT scenario tasks*
 
 | Task ID | Role | Task | Baseline | Target | Time (s) | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1901,7 +1914,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	UAT-S2 follows the B3 protocol in #122: half the participants do the manual run first and half do the assisted run first. The assisted run uses the live AI provider; the automated tests of the same feature use a stubbed provider with no key or network. Where a task is not scripted in #81, the developer takes the reference time by running the task by hand.
 
-*Table 4.51: UAT targets*
+*Table 4.52: UAT targets*
 
 | Measure | Baseline | Target | Result |
 | --- | --- | --- | --- |
@@ -1911,7 +1924,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Mean SUS score | none | At least 80 | |
 | Apps per study session (NFR4) | Survey E1: 24 of 32 (75%) use three or more | Fewer than three | |
 
-*Table 4.52: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.53: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1921,7 +1934,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.53: System Usability Scale (1 = strongly disagree, 5 = strongly agree)*
+*Table 4.54: System Usability Scale (1 = strongly disagree, 5 = strongly agree)*
 
 | No. | Statement | UAT-1 | UAT-2 | UAT-3 |
 | --- | --- | --- | --- | --- |
@@ -1939,7 +1952,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	The SUS is scored in the standard way. Each odd-numbered item contributes its rating minus 1, and each even-numbered item contributes 5 minus its rating. The sum is multiplied by 2.5 to give a score from 0 to 100. The target is a mean of at least 80. Each stretch participant adds a column.
 
-*Table 4.54: Apps used per study session (NFR4)*
+*Table 4.55: Apps used per study session (NFR4)*
 
 | Tester | Apps used in a typical study session before NotaLah | Apps still needed with NotaLah | Count before | Count with NotaLah |
 | --- | --- | --- | --- | --- |
@@ -1949,7 +1962,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	NFR4 asks the system to reduce the number of separate applications needed during a study session. Survey item E1 is the baseline: 24 of 32 respondents (75%) used three or more. Each participant lists the apps they use in a typical study session, then marks which ones they would still need alongside NotaLah's notes, search, comments and messaging. The target is fewer than three apps per participant with NotaLah.
 
-*Table 4.55: UAT feedback and developer response*
+*Table 4.56: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1960,7 +1973,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.56: Ranking weight re-evaluation (NFR5)*
+*Table 4.57: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |
