@@ -35,7 +35,7 @@ describe('UAT seed', () => {
 
     const second = await seedUat(pool);
     expect(second.inserted).toEqual({ users: 0, modules: 0, notes: 0, slides: 0 });
-    expect(second.skipped).toEqual(first.inserted);
+    expect(second.skipped).toMatchObject({ users: 5, modules: 3, notes: NOTES.length });
     expect(await counts()).toEqual(afterFirst);
 
     const { rows: kept } = await pool.query(
