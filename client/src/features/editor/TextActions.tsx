@@ -58,7 +58,7 @@ export function TextActions({ el }: { el: TextElement }) {
     setBusy(action);
     setError(null);
     try {
-      const reply = await api<{ text?: unknown; questions?: unknown }>('/ai/rewrite', {
+      const reply = await api<{ text?: unknown; questions?: unknown; aiToken?: string }>('/ai/rewrite', {
         method: 'POST',
         body: { text, action },
         signal: AbortSignal.any([c.signal, AbortSignal.timeout(AI_TIMEOUT_MS)]),
@@ -88,6 +88,7 @@ export function TextActions({ el }: { el: TextElement }) {
         if (!html) return fail("Couldn't do that, try shorter text");
         now.updateElementOn(slide, el.id, { html });
       }
+      if (reply.aiToken) now.setMeta({ aiToken: reply.aiToken });
     } catch (e) {
       if (c.signal.aborted || ctrl.current !== c) return;
       fail(

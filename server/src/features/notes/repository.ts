@@ -80,6 +80,7 @@ export interface Note {
   slides: { position: number; background: Fill; elements: SlideElement[]; notes?: string }[];
   author: { id: number; displayName: string; role: string; isVerifiedLecturer: boolean };
   coauthors: { id: number; displayName: string }[];
+  aiAssisted: boolean;
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;
@@ -112,6 +113,7 @@ export const noteCols = (
                    FROM "COLLABORATOR_T" c JOIN "USER_T" cu ON cu.usr_id = c.clb_usr_id
                    WHERE c.clb_pst_id = p.pst_id AND ${CREDITED_EDITOR} AND cu.usr_status IN ('active', 'restricted')),
                   '[]'::JSON) AS "coauthors",
+         p.pst_ai_assisted_at IS NOT NULL AS "aiAssisted",
          p.pst_created_at AS "createdAt", p.pst_updated_at AS "updatedAt", p.pst_published_at AS "publishedAt"`;
 
 export const NOTE_COLS = noteCols();
@@ -354,10 +356,21 @@ export function createNote(authorId: number, n: NoteInput): Promise<number> {
     const { rows } = await c.query<{ pst_id: number }>(
       `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_aspect, pst_status, pst_visibility,
                              pst_music_provider, pst_music_track_id, pst_music_volume, pst_music_title,
-                             pst_music_artist, pst_music_cover, pst_music_license, pst_published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CASE WHEN $6::VARCHAR = 'published' THEN NOW() END)
+                             pst_music_artist, pst_music_cover, pst_music_license, pst_published_at, pst_ai_assisted_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CASE WHEN $6::VARCHAR = 'published' THEN NOW() END,
+               CASE WHEN $15 THEN NOW() END)
        RETURNING pst_id`,
-      [authorId, n.moduleId, n.title, n.theme, n.aspect, n.status, n.visibility, ...musicParams(n)],
+      [
+        authorId,
+        n.moduleId,
+        n.title,
+        n.theme,
+        n.aspect,
+        n.status,
+        n.visibility,
+        ...musicParams(n),
+        n.aiAssisted === true,
+      ],
     );
     await writeChildren(c, rows[0].pst_id, n);
     return rows[0].pst_id;
@@ -413,7 +426,8 @@ export function replaceNote(
            pst_music_cover = CASE WHEN $9::BIGINT IS NULL THEN NULL WHEN $15 THEN $13 ELSE pst_music_cover END,
            pst_music_license = CASE WHEN $9::BIGINT IS NULL THEN NULL WHEN $15 THEN $14 ELSE pst_music_license END,
            pst_published_at = CASE WHEN $6::VARCHAR = 'published' THEN COALESCE(pst_published_at, NOW()) ELSE pst_published_at END,
-           pst_content_edited_at = CASE WHEN $16 THEN NOW() ELSE pst_content_edited_at END
+           pst_content_edited_at = CASE WHEN $16 THEN NOW() ELSE pst_content_edited_at END,
+           pst_ai_assisted_at = CASE WHEN $17 THEN COALESCE(pst_ai_assisted_at, NOW()) ELSE pst_ai_assisted_at END
        WHERE pst_id = $1`,
       [
         id,
@@ -426,6 +440,7 @@ export function replaceNote(
         ...musicParams(n),
         n.musicMeta !== undefined,
         contentEdited,
+        n.aiAssisted === true,
       ],
     );
     await writeChildren(c, id, n);

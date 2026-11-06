@@ -49,6 +49,26 @@ export async function api<T>(
   return data as T;
 }
 
+/** Sends one file as multipart (the JSON `api` helper cannot), with the CSRF header every write needs (D35). */
+export async function postFile<T>(path: string, file: File): Promise<T> {
+  const body = new FormData();
+  body.append('file', file);
+  let res: Response;
+  try {
+    res = await fetch(`${apiOrigin()}/api${path}`, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'notalah' },
+      credentials: 'include',
+      body,
+    });
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Please try again.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, data.error ?? 'Upload failed. Please try again.');
+  return data.asset as T;
+}
+
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return Object.values(e.errors ?? {})[0] || e.message;
   return 'Could not reach the server. Please try again.';
