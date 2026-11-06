@@ -25,26 +25,25 @@ To swap the palette (for example from Google Stitch), edit only the two variable
 
 ## 2. Colour tokens
 
-Ink blue is the brand (a ballpoint pen); highlighter yellow means lecturer validation and is used for nothing else.
+Apple-neutral: one blue accent for actions and focus, grey text, soft surfaces. Validation has no colour of its own; it is the neutral `VerifiedPill`.
 
 | Class suffix | Light | Dark | Use |
 |---|---|---|---|
-| `background` / `foreground` | #ffffff / #15171c | #0f1015 / #f2f3f6 | Page and body text |
-| `surface` | #f3f4f6 | #1a1c23 | Inputs, chips, rail buttons, card footers |
-| `surface-strong` | #e7e9ee | #262934 | Active nav row, hover on surface, avatar fallback |
-| `card` / `card-foreground` | #ffffff | #16181f | Feed and note cards |
-| `popover` / `popover-foreground` | #ffffff | #1c1e26 | Dialogs, sheets, menus, popovers |
-| `muted-foreground` | #5a606e | #a3a8b6 | Secondary text (6.3:1 on white) |
-| `border`, `input` | #e2e4e9, #d5d8df | #2a2d37, #3a3e4b | Hairlines; outlined control borders |
-| `primary` / `primary-foreground` | #2b37e3 / #ffffff | #8a93ff / #0b0e2e | Main action, focus ring, links, active tab icon |
-| `secondary`, `accent` | #f3f4f6, #eceef2 | #1f222b, #23262f | Secondary buttons; hover fills |
-| `destructive` / `destructive-foreground` | #c8242b / #ffffff | #ff6b6b / #1d0606 | Errors, Delete, Report submit |
-| `success` | #0b7a4b | #4ad295 | Confirmations |
+| `background` / `foreground` | #ffffff / #1d1d1f | #1c1c1e / #f5f5f7 | Page and body text |
+| `surface` | #f5f5f7 | #2c2c2e | Inputs, chips, rail buttons, card footers, `VerifiedPill` |
+| `surface-strong` | #e8e8ed | #38383a | Active nav row, hover on surface, avatar fallback |
+| `card` / `card-foreground` | #ffffff | #232325 | Feed and note cards |
+| `popover` / `popover-foreground` | #ffffff | #242426 | Dialogs, sheets, menus, popovers |
+| `muted-foreground` | #68686d | #a1a1a6 | Secondary text (5.5:1 on white) |
+| `border`, `input` | #d2d2d7, #86868b | #48484a, #7c7c80 | Hairline dividers only; outlined control borders (3:1) |
+| `primary` / `primary-foreground` | #0066cc / #ffffff | #2997ff / #001a33 | Main action, focus ring, links, active tab icon, Super Like state |
+| `secondary`, `accent` | #f5f5f7, #eeeef1 | #2c2c2e, #323234 | Secondary buttons; hover fills |
+| `destructive` / `destructive-foreground` | #d70015 / #ffffff | #ff5b52 / #1f0301 | Errors, Delete, Report submit |
+| `success` | #1f7a38 | #30d158 | Confirmations |
 | `like` | #e5163f | #ff4d6a | Filled heart only |
-| `highlight` / `highlight-foreground` | #ffe14d / #2a2300 | same | "Verified by", Super Like state |
-| `annotation` | ink 18 % | periwinkle 30 % | Annotated text on a slide (`::highlight(annotation)`, with a `primary` underline) and the quote chip in the panel; `--annotation-flash` is the stronger tint when a quote is clicked |
-| `overlay` | 55 % ink | 65 % black | Scrim behind dialogs and sheets |
-| `rail` | #fafafb | #121319 | Desktop left rail |
+| `annotation` | accent 18 % | accent 30 % | Annotated text on a slide (`::highlight(annotation)`, with a `primary` underline) and the quote chip in the panel; `--annotation-flash` is the stronger tint when a quote is clicked |
+| `overlay` | 55 % #1d1d1f | 65 % black | Scrim behind dialogs and sheets |
+| `rail` | #fbfbfd | #18181a | Desktop left rail |
 | `media` / `media-dim` | #ffffff / 50 % white (both themes) | same | Icons, dots and text drawn straight over a slide: the phone action rail, carousel arrows and dots. `media` is the current dot; `media-dim` the others. Always paired with `media-shadow` (below) |
 | `slide` / `slide-foreground` | #ffffff | #1a1c23 | Slide content box (also `--slide-muted`, `--slide-quote`, `--slide-rule`, `--code-block*`) |
 
@@ -52,11 +51,11 @@ Write them as Tailwind classes: `bg-surface`, `text-muted-foreground`, `border-b
 `bg-primary/90`. Opacity modifiers are fine; they still follow the token.
 
 Contrast: body text and `muted-foreground` pass AA (4.5:1) on `background`, `surface` and `card` in both themes;
-`primary-foreground` on `primary` passes 4.5:1. Never put `muted-foreground` text on `surface-strong` at caption size.
+`primary-foreground` on `primary` passes 4.5:1 (dark text in dark mode: white on #2997ff is under 3:1). `muted-foreground` also passes on `surface-strong`. `input`, `ring` and icons in `primary` pass 3:1 on those grounds. In dark mode `primary` on `accent` or `surface-strong` is icons only, not text (under 4.5:1). `src/theme-contrast.test.ts` checks every pair; add new pairs there.
 
 ## 3. Type
 
-One family: **Plus Jakarta Sans Variable** (self-hosted via `@fontsource-variable`), system sans as fallback.
+One family: **Inter Variable** (self-hosted via `@fontsource-variable`), system sans as fallback. One exception: **Doto Variable** (`font-dot`, OFL) sets the word "Verified" in `VerifiedPill` and nothing else, never under 13 px; it uses 15 px at weight 900 because lighter or smaller dots wash out on a 1x screen.
 Tracking tightens as size grows; these are built into the classes, so do not add `tracking-*` to them.
 
 | Class | Size / line | Use |
@@ -112,7 +111,7 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
 | Tooltip | shadcn `Tooltip` | Only for icon-only controls (the collapsed rail). `TooltipProvider` is in `AppShell`. |
 | Avatar | `UserAvatar name src` | Initials fallback; decorative, so always show the name next to it. |
 | Lecturer mark | `LecturerBadge` after a name | Blue check with sr-only text. |
-| Verified note | `VerifiedPill by` | The highlighter stroke; only for lecturer validation. |
+| Verified note | `VerifiedPill by` | Neutral `surface` pill with a check, semibold text and "Verified" in `font-dot`; only for lecturer validation. |
 | Delete with confirm | `ConfirmButton` | Inline "Are you sure?" instead of `confirm()`. |
 | Note actions | `NoteActions` | `layout="rail"` (vertical, feed and note detail desktop) or `"bar"` (phone note detail). Handles guests. Below 768 px a `rail` drops the grey circles: only the avatar keeps its circle, the rest are bare 44 px icons in `media` with `media-shadow` and the count underneath (see Feed card). |
 | Comments | `CommentPanel` | Fills its parent's height; `heading={false}` inside a sheet that has its own title. |

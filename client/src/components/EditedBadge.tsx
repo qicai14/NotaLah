@@ -1,7 +1,7 @@
 import { PencilLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** A published note changed after a lecturer verified it, so the verification no longer counts (R30, wireframe 18). Neutral on purpose: highlighter yellow is only for validation. */
+/** A published note changed after a lecturer verified it, so the verification no longer counts (R30, wireframe 18). */
 export function EditedBadge({ className }: { className?: string }) {
   return (
     <span

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
-@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/doto';
 /* Slide fonts (R21d, D69): self-hosted woff2. @font-face files download only when a slide uses them. */
 @import '@fontsource-variable/source-sans-3/wght.css';
 @import '@fontsource-variable/source-sans-3/wght-italic.css';
@@ -22,38 +23,36 @@
 /*
  * NotaLah design tokens. Every colour in the app is one of these variables: swap a palette by editing these two
  * blocks only (see client/DESIGN.md). Components use the Tailwind names in @theme inline below, never raw colours.
- * Ink blue is the brand (ballpoint pen); highlighter yellow marks lecturer validation and nothing else.
+ * Apple-neutral: one blue accent for actions and focus, grey text, soft surfaces. --slide* and --board-* are deck-owned.
  */
 :root {
   --background: #ffffff;
-  --foreground: #15171c;
-  --surface: #f3f4f6;
-  --surface-strong: #e7e9ee;
+  --foreground: #1d1d1f;
+  --surface: #f5f5f7;
+  --surface-strong: #e8e8ed;
   --card: #ffffff;
-  --card-foreground: #15171c;
+  --card-foreground: #1d1d1f;
   --popover: #ffffff;
-  --popover-foreground: #15171c;
-  --muted: #f3f4f6;
-  --muted-foreground: #5a606e;
-  --border: #e2e4e9;
-  --input: #d5d8df;
-  --primary: #2b37e3;
+  --popover-foreground: #1d1d1f;
+  --muted: #f5f5f7;
+  --muted-foreground: #68686d;
+  --border: #d2d2d7;
+  --input: #86868b;
+  --primary: #0066cc;
   --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #15171c;
-  --accent: #eceef2;
-  --accent-foreground: #15171c;
-  --ring: #2b37e3;
-  --destructive: #c8242b;
+  --secondary: #f5f5f7;
+  --secondary-foreground: #1d1d1f;
+  --accent: #eeeef1;
+  --accent-foreground: #1d1d1f;
+  --ring: #0066cc;
+  --destructive: #d70015;
   --destructive-foreground: #ffffff;
-  --success: #0b7a4b;
+  --success: #1f7a38;
   --like: #e5163f;
-  --highlight: #ffe14d;
-  --highlight-foreground: #2a2300;
-  --annotation: rgb(43 55 227 / 0.18);
-  --annotation-flash: rgb(43 55 227 / 0.42);
-  --overlay: rgb(10 12 18 / 0.55);
-  --rail: #fafafb;
+  --annotation: rgb(0 102 204 / 0.18);
+  --annotation-flash: rgb(0 102 204 / 0.42);
+  --overlay: rgb(29 29 31 / 0.55);
+  --rail: #fbfbfd;
   --slide: #ffffff;
   --slide-foreground: #15171c;
   --slide-muted: #f1f2f5;
@@ -72,41 +71,39 @@
   --media-shadow: rgb(0 0 0 / 0.7);
   --media-backdrop: #0b0c10;
   --editor-guide: #e5167a;
-  --editor-canvas: #eceef2;
-  --shadow-color: 220 20% 10%;
+  --editor-canvas: #e8e8ed;
+  --shadow-color: 240 3% 11%;
   color-scheme: light;
 }
 
 .dark {
-  --background: #0f1015;
-  --foreground: #f2f3f6;
-  --surface: #1a1c23;
-  --surface-strong: #262934;
-  --card: #16181f;
-  --card-foreground: #f2f3f6;
-  --popover: #1c1e26;
-  --popover-foreground: #f2f3f6;
-  --muted: #1a1c23;
-  --muted-foreground: #a3a8b6;
-  --border: #2a2d37;
-  --input: #3a3e4b;
-  --primary: #8a93ff;
-  --primary-foreground: #0b0e2e;
-  --secondary: #1f222b;
-  --secondary-foreground: #f2f3f6;
-  --accent: #23262f;
-  --accent-foreground: #f2f3f6;
-  --ring: #8a93ff;
-  --destructive: #ff6b6b;
-  --destructive-foreground: #1d0606;
-  --success: #4ad295;
+  --background: #1c1c1e;
+  --foreground: #f5f5f7;
+  --surface: #2c2c2e;
+  --surface-strong: #38383a;
+  --card: #232325;
+  --card-foreground: #f5f5f7;
+  --popover: #242426;
+  --popover-foreground: #f5f5f7;
+  --muted: #2c2c2e;
+  --muted-foreground: #a1a1a6;
+  --border: #48484a;
+  --input: #7c7c80;
+  --primary: #2997ff;
+  --primary-foreground: #001a33;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #f5f5f7;
+  --accent: #323234;
+  --accent-foreground: #f5f5f7;
+  --ring: #2997ff;
+  --destructive: #ff5b52;
+  --destructive-foreground: #1f0301;
+  --success: #30d158;
   --like: #ff4d6a;
-  --highlight: #ffe14d;
-  --highlight-foreground: #2a2300;
-  --annotation: rgb(138 147 255 / 0.3);
-  --annotation-flash: rgb(138 147 255 / 0.6);
+  --annotation: rgb(41 151 255 / 0.3);
+  --annotation-flash: rgb(41 151 255 / 0.6);
   --overlay: rgb(0 0 0 / 0.65);
-  --rail: #121319;
+  --rail: #18181a;
   --slide: #1a1c23;
   --slide-foreground: #f2f3f6;
   --slide-muted: #262934;
@@ -125,7 +122,7 @@
   --media-shadow: rgb(0 0 0 / 0.7);
   --media-backdrop: #0b0c10;
   --editor-guide: #ff5fae;
-  --editor-canvas: #0a0b0f;
+  --editor-canvas: #141416;
   --shadow-color: 0 0% 0%;
   color-scheme: dark;
 }
@@ -154,8 +151,6 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-like: var(--like);
-  --color-highlight: var(--highlight);
-  --color-highlight-foreground: var(--highlight-foreground);
   --color-annotation: var(--annotation);
   --color-overlay: var(--overlay);
   --color-rail: var(--rail);
@@ -171,8 +166,9 @@
 }
 
 @theme {
-  /* Type: one family, Plus Jakarta Sans (variable), system fallback. */
-  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Type: one family, Inter (variable), system fallback. Doto is only for the word "Verified" (13px or larger). */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-dot: 'Doto Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
 
   /* Type scale (size / line-height / tracking). Tighter tracking as size grows. */
@@ -272,19 +268,6 @@
   &::-webkit-scrollbar {
     display: none;
   }
-}
-
-/* Highlighter stroke behind lecturer-verified labels: the one decorative device in the system. */
-@utility highlighter {
-  background-image: linear-gradient(
-    100deg,
-    transparent 0.2em,
-    var(--highlight) 0.35em,
-    var(--highlight) calc(100% - 0.35em),
-    transparent calc(100% - 0.2em)
-  );
-  color: var(--highlight-foreground);
-  box-decoration-break: clone;
 }
 
 /* Annotated text on a slide (R10), painted with the CSS Custom Highlight API so the slide DOM is never changed. The
