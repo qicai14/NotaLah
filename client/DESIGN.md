@@ -51,7 +51,7 @@ Write them as Tailwind classes: `bg-surface`, `text-muted-foreground`, `border-b
 `bg-primary/90`. Opacity modifiers are fine; they still follow the token.
 
 Contrast: body text and `muted-foreground` pass AA (4.5:1) on `background`, `surface` and `card` in both themes;
-`primary-foreground` on `primary` passes 4.5:1 (dark text in dark mode: white on #2997ff is under 3:1). `muted-foreground` also passes on `surface-strong`. `input`, `ring` and icons in `primary` pass 3:1 on those grounds. In dark mode `primary` on `accent` or `surface-strong` is icons only, not text (under 4.5:1). `src/theme-contrast.test.ts` checks every pair; add new pairs there.
+`primary-foreground` on `primary` passes 4.5:1 (dark text in dark mode: white on #2997ff is about 3.0:1, under 4.5:1). `muted-foreground` also passes on `surface-strong`. `input`, `ring` and icons in `primary` pass 3:1 on those grounds. In dark mode `primary` on `accent` or `surface-strong` is icons only, not text (under 4.5:1). `src/theme-contrast.test.ts` checks every pair; add new pairs there.
 
 ## 3. Type
 
