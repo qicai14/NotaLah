@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { importFile } from './importFile';
 
 /** Reads a chosen file in the browser and hands its text to the paste box; nothing is sent from here. */
@@ -13,21 +13,30 @@ export function FileImport({
 }) {
   const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null);
 
+  const [busy, setBusy] = useState(false);
+  const latest = useRef(0);
+
   async function pick(file: File | undefined) {
     if (!file) return;
+    const id = ++latest.current;
+    setBusy(true);
     try {
-      const { text, truncated } = await importFile(file, limit);
+      const { text, truncated, note } = await importFile(file, limit);
+      if (id !== latest.current) return;
       onText(text);
       setMsg(
         truncated
           ? {
-              text: `The file was longer than ${limit.toLocaleString()} characters, so the text was cut to fit.`,
+              text:
+                note ?? `The file was longer than ${limit.toLocaleString()} characters, so the text was cut to fit.`,
               error: false,
             }
           : null,
       );
     } catch (e) {
-      setMsg({ text: (e as Error).message, error: true });
+      if (id === latest.current) setMsg({ text: (e as Error).message, error: true });
+    } finally {
+      if (id === latest.current) setBusy(false);
     }
   }
 
@@ -40,7 +49,7 @@ export function FileImport({
         id="draft-file"
         type="file"
         accept=".txt,.md,.docx,.pdf"
-        disabled={disabled}
+        disabled={disabled || busy}
         onChange={(e) => {
           void pick(e.target.files?.[0]);
           e.target.value = '';

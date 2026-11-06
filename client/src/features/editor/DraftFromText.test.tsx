@@ -105,6 +105,11 @@ describe('DraftFromText (R28)', () => {
     );
     expect(screen.getByRole('status').textContent).toContain('cut to fit');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const init = fetchMock.mock.calls[1][1];
+    expect(init.body).not.toBeInstanceOf(FormData);
+    expect(JSON.parse(init.body as string).text).toHaveLength(MAX_CHARS);
     fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [new File(['x'], 'n.pptx')] } });
     expect((await screen.findByRole('alert')).textContent).toContain('PowerPoint');
   });
