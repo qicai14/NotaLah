@@ -20,7 +20,7 @@ async function readPdf(file: File, limit: number): Promise<{ text: string; cappe
     disableFontFace: true,
     useSystemFonts: false,
   });
-  try {
+  const read = async () => {
     const doc = await task.promise;
     const pages: string[] = [];
     let length = 0;
@@ -32,8 +32,11 @@ async function readPdf(file: File, limit: number): Promise<{ text: string; cappe
       length += page.length + 2;
     }
     return { text: pages.join('\n\n'), capped: doc.numPages > MAX_PDF_PAGES && length <= limit };
+  };
+  try {
+    return await withTimeout(read());
   } finally {
-    await task.destroy();
+    void task.destroy(); // on timeout this stops the worker; the abandoned read then rejects, unobserved
   }
 }
 
@@ -54,7 +57,7 @@ export async function importFile(file: File, limit: number): Promise<Imported> {
   let text: string;
   let capped = false;
   try {
-    if (type === '.pdf') ({ text, capped } = await withTimeout(readPdf(file, limit)));
+    if (type === '.pdf') ({ text, capped } = await readPdf(file, limit));
     else text = await withTimeout(type === '.docx' ? readDocx(file) : file.text());
   } catch {
     throw new Error("Couldn't read this file. Paste the text instead.");

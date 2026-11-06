@@ -95,7 +95,7 @@ describe('DraftFromText (R28)', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('took too long');
   });
 
-  it('AI-TC45: an imported file fills the box with a notice and sends nothing until Send', async () => {
+  it('AI-TC41: an imported file fills the box with a notice and sends nothing until Send', async () => {
     const { fetchMock } = await mount(400);
     await open();
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
@@ -111,6 +111,42 @@ describe('DraftFromText (R28)', () => {
     const init = fetchMock.mock.calls[1][1];
     expect(init.body).not.toBeInstanceOf(FormData);
     expect(JSON.parse(init.body as string).text).toHaveLength(MAX_CHARS);
+  });
+
+  it('AI-TC45: Send waits for a running import, and a result arriving after the dialog closed is dropped', async () => {
+    const { calls } = await mount(400);
+    await open();
+    const box = () => screen.getByLabelText('Text to turn into slides') as HTMLTextAreaElement;
+    const sendBtn = () => screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    const pick = (f: File) => fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [f] } });
+    let release!: () => void;
+    const slow = (body: string) => {
+      const f = new File([body], 'n.txt');
+      vi.spyOn(f, 'text').mockReturnValue(new Promise<string>((r) => (release = () => r(body))));
+      return f;
+    };
+
+    fireEvent.change(box(), { target: { value: 'mine' } });
+    pick(slow('imported'));
+    expect(sendBtn().disabled).toBe(true);
+    fireEvent.submit(box().closest('form')!); // Enter is blocked too
+    expect(calls).toHaveLength(0);
+    release();
+    await vi.waitFor(() => expect(box().value).toBe('imported'));
+    expect(sendBtn().disabled).toBe(false);
+
+    pick(slow('late'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    release();
+    await new Promise((r) => setTimeout(r, 0));
+    await open();
+    expect(box().value).toBe('imported');
+    expect(sendBtn().disabled).toBe(false);
+  });
+
+  it('AI-TC43: a .pptx import in the dialog shows the PowerPoint message', async () => {
+    await mount(400);
+    await open();
     fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [new File(['x'], 'n.pptx')] } });
     expect((await screen.findByRole('alert')).textContent).toContain('PowerPoint');
   });

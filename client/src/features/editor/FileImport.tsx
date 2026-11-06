@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { importFile } from './importFile';
 
 /** Reads a chosen file in the browser and hands its text to the paste box; nothing is sent from here. */
@@ -6,20 +6,24 @@ export function FileImport({
   limit,
   disabled,
   onText,
+  onBusy,
 }: {
   limit: number;
   disabled: boolean;
   onText: (text: string) => void;
+  onBusy?: (busy: boolean) => void;
 }) {
   const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null);
 
   const [busy, setBusy] = useState(false);
   const latest = useRef(0);
+  useEffect(() => () => void latest.current++, []); // closing the dialog drops a read still in flight
 
   async function pick(file: File | undefined) {
     if (!file) return;
     const id = ++latest.current;
     setBusy(true);
+    onBusy?.(true);
     try {
       const { text, truncated, note } = await importFile(file, limit);
       if (id !== latest.current) return;
@@ -36,7 +40,10 @@ export function FileImport({
     } catch (e) {
       if (id === latest.current) setMsg({ text: (e as Error).message, error: true });
     } finally {
-      if (id === latest.current) setBusy(false);
+      if (id === latest.current) {
+        setBusy(false);
+        onBusy?.(false);
+      }
     }
   }
 

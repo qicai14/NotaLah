@@ -27,6 +27,9 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const pendingRef = useRef(false);
+  pendingRef.current = pending;
   const [error, setError] = useState<string | null>(null);
   const full = useEditor((s) => s.deck.slides.length >= LIMITS.slides);
   const ctrl = useRef<AbortController | null>(null);
@@ -41,6 +44,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
     ctrl.current = null; // the stopped request must not touch state when it settles
     setOpen(false);
     setPending(false);
+    setImporting(false);
   }
 
   async function send() {
@@ -105,11 +109,16 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (text.trim() && !pending) void send();
+              if (text.trim() && !pending && !importing) void send();
             }}
             className="flex flex-col gap-3"
           >
-            <FileImport limit={MAX_CHARS} disabled={pending} onText={setText} />
+            <FileImport
+              limit={MAX_CHARS}
+              disabled={pending}
+              onBusy={setImporting}
+              onText={(t) => pendingRef.current || setText(t)}
+            />
             <label htmlFor="draft-text" className="text-body-sm font-semibold">
               Text to turn into slides
             </label>
@@ -134,7 +143,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
               <Button type="button" variant="ghost" onClick={close}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending || full || !text.trim()}>
+              <Button type="submit" disabled={pending || importing || full || !text.trim()}>
                 {pending ? 'Drafting…' : 'Send'}
               </Button>
             </DialogFooter>

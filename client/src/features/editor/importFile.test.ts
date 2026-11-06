@@ -95,11 +95,13 @@ describe('importFile (R28)', () => {
     expect(m.destroy).toHaveBeenCalled();
 
     m.hang = true;
+    vi.mocked(m.destroy).mockClear();
     vi.useFakeTimers();
     const stuck = importFile(file('a.pdf'), 100);
     const assertion = expect(stuck).rejects.toThrow("Couldn't read this file");
     await vi.advanceTimersByTimeAsync(IMPORT_TIMEOUT_MS);
     await assertion;
+    expect(m.destroy).toHaveBeenCalledTimes(1);
   });
 
   it('AI-TC45: text over the limit is cut and flagged', async () => {
