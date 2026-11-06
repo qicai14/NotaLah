@@ -117,7 +117,6 @@ jobs:
       - name: Migrate
         run: vp run server#db:migrate
       - name: Seed UAT data
-        # TODO(#82): the seed script is not on main yet; once it is, confirm this command and delete this line.
         run: vp run server#uat:seed
       - name: E2E (the AI stub is started by playwright.config; no real key)
         run: vp run test:e2e

@@ -4,6 +4,7 @@ Captions are written as "*Figure 4.x: ...*" / "*Table 4.x: ...*". Inside the par
 caption, "Figure 4.x" / "Table 4.x" mean that caption. "Figure [[png_stem]]" refers to any figure by
 its image file name, and "Table [[next]]" / "Figure [[next]]" to the next caption of that kind. Explicit numbers already in the text (Figure 4.1, Tables 4.1-4.22) are kept, and
 counting continues after them.
+Mirrored by scripts/check-chapter4.mjs; change both.
 Usage: python build_chapter.py
 """
 import re
