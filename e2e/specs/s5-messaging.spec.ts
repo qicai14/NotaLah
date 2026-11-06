@@ -9,6 +9,10 @@ test('E2E-TC7 S5: message a non-friend, then accept the request', async ({ brows
   const sender = await loginAs(browser, 'student2');
   const receiver = await loginAs(browser, 'student3');
   await receiver.page.goto('/messages');
+  await receiver.page
+    .getByRole('navigation', { name: 'Inbox' })
+    .getByRole('link', { name: /^Requests/ })
+    .click();
   const text = `Hi from E2E ${Date.now()}`;
 
   await timed('S5', async () => {
@@ -21,10 +25,7 @@ test('E2E-TC7 S5: message a non-friend, then accept the request', async ({ brows
       .getByRole('link', { name: /Wei Jie Lim/ })
       .first()
       .click();
-    await sender.page
-      .getByRole('link', { name: /^message/i })
-      .or(sender.page.getByRole('button', { name: /^message/i }))
-      .click();
+    await sender.page.getByRole('main').getByRole('link', { name: 'Message', exact: true }).click();
     await sender.page.getByPlaceholder('Write your request').fill(text);
     await sender.page.getByRole('button', { name: 'Send message' }).click();
     await expect(sender.page.getByText('Request sent')).toBeVisible();

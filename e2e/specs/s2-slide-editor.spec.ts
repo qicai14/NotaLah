@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { checkAxe } from '../helpers/axe';
-import { MODULE_CODE } from '../helpers/accounts';
 import { login } from '../helpers/login';
 import { shoot } from '../helpers/screenshot';
 import { timed } from '../helpers/timing';
+
+// Not UAT101-3-2, so the module search count in E2E-TC4 does not depend on spec order.
+const MODULE_CODE = 'UAT103-3-2';
 
 test('E2E-TC1 S2: create a three-slide note, save a draft, publish with a module and two hashtags', async ({
   page,
@@ -18,18 +20,24 @@ test('E2E-TC1 S2: create a three-slide note, save a draft, publish with a module
       await page.getByRole('button', { name: 'Add slide' }).click();
       await expect(page.getByRole('list', { name: 'Slides' }).getByRole('listitem')).toHaveCount(i + 2);
     }
-    await page.getByRole('button', { name: 'Save draft' }).click();
-    await expect(page.getByText(/saved/i).first()).toBeVisible();
-    await page.getByRole('button', { name: 'Publish' }).click();
-    const dialog = page.getByRole('dialog');
-    await dialog.getByRole('radio', { name: /public/i }).check();
-    await dialog.getByRole('combobox', { name: /module/i }).fill(MODULE_CODE);
-    await dialog.getByRole('option', { name: new RegExp(MODULE_CODE) }).click();
-    for (const tag of ['e2e', 'slides']) {
-      await dialog.getByLabel(/hashtag/i).fill(tag);
-      await dialog.getByLabel(/hashtag/i).press('Enter');
+    // Publishing drops blank slides, so each of the three gets a heading from the Text panel (the default panel).
+    for (const n of [1, 2, 3]) {
+      await page.getByRole('button', { name: `Slide ${n}`, exact: true }).click();
+      await page.getByRole('button', { name: 'Add a heading' }).click();
     }
-    await dialog.getByRole('button', { name: /^publish/i }).click();
+    await page.getByRole('button', { name: 'Save draft' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Editor panels' }).getByRole('button', { name: 'Details' }).click();
+    const moduleOption = await page.locator('#module option').filter({ hasText: MODULE_CODE }).textContent();
+    await page.getByLabel('Module', { exact: true }).selectOption({ label: moduleOption ?? '' });
+    for (const tag of ['e2e', 'slides']) {
+      await page.getByLabel(/^Hashtags/).fill(tag);
+      await page.getByLabel(/^Hashtags/).press('Enter');
+    }
+    await page.getByRole('button', { name: 'Publish' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Who can see this note?' });
+    await dialog.getByText('Public', { exact: true }).click(); // the radio itself is visually hidden
+    await dialog.getByRole('button', { name: 'Confirm' }).click();
     await expect(page).toHaveURL(/\/notes\/\d+$/);
   });
 

@@ -13,8 +13,12 @@ test('E2E-TC3 S3: like, comment on and save a note from the feed', async ({ page
   await checkAxe(page, 'S3-feed');
 
   await timed('S3', async () => {
-    await page.getByRole('button', { name: /^like/i }).first().click();
-    await page.getByRole('button', { name: /^save/i }).first().click();
+    const like = page.getByRole('button', { name: /^like/i }).first();
+    const save = page.getByRole('button', { name: /^save/i }).first();
+    await like.click();
+    await expect(like).toHaveAttribute('aria-pressed', 'true');
+    await save.click();
+    await expect(save).toHaveAttribute('aria-pressed', 'true');
     await page
       .getByRole('button', { name: /comment/i })
       .first()
@@ -34,7 +38,9 @@ test('E2E-TC4 S4: find notes by module code and by hashtag', async ({ page }) =>
       .getByLabel(/search/i)
       .first()
       .fill(MODULE_CODE);
-    await expect(page.getByRole('link', { name: /^UAT:/ }).first()).toBeVisible();
+    // The seed has four UAT101 notes; waiting on the count stops the previous results satisfying the check.
+    await expect(page.getByRole('status').filter({ hasText: '4 results shown' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^UAT:/ })).toHaveCount(4);
   });
   await shoot(page, 'S4', 'search-module');
   await checkAxe(page, 'S4-search-module');
@@ -44,7 +50,8 @@ test('E2E-TC4 S4: find notes by module code and by hashtag', async ({ page }) =>
       .getByLabel(/search/i)
       .first()
       .fill(`#${SEED_HASHTAG}`);
-    await expect(page.getByRole('link', { name: /^UAT:/ }).first()).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: '14 results shown' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^UAT:/ })).toHaveCount(14);
   });
   await shoot(page, 'S4', 'search-hashtag');
 });

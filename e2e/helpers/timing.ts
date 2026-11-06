@@ -1,20 +1,31 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import { join } from 'node:path';
 
-const FILE = join(import.meta.dirname, '../../docs/testing/e2e-baseline.json');
+const FILE = join(__dirname, '../../docs/testing/e2e-baseline.json');
 
 /** Runs the steps of one UAT task and records the elapsed seconds (the expert baseline, #81). */
 export async function timed(task: string, steps: () => Promise<void>) {
-  const start = Date.now();
+  const start = performance.now();
   await steps();
-  const seconds = (Date.now() - start) / 1000;
-  let all: Record<string, number> = {};
+  const seconds = Math.round(performance.now() - start) / 1000;
+  let seconds_by_task: Record<string, number> = {};
   try {
-    all = JSON.parse(readFileSync(FILE, 'utf8'));
+    seconds_by_task = JSON.parse(readFileSync(FILE, 'utf8')).seconds;
   } catch {
     // first run: no file yet
   }
-  all[task] = seconds;
+  seconds_by_task[task] = seconds;
+  const cpu = os.cpus();
+  const file = {
+    method:
+      'Wall-clock time of the task steps only (login and page set-up excluded), measured with performance.now() inside ' +
+      'the Playwright specs: headless Chromium, 1 worker, Vite dev server, local Postgres 17 in Docker, database reseeded ' +
+      'before the run. Each task keeps the value from its most recent run; scripted steps, so this is a floor for a human.',
+    machine: `${os.type()} ${os.release()}, ${cpu[0]?.model.trim()} x${cpu.length}, ${Math.round(os.totalmem() / 2 ** 30)} GB RAM, Node ${process.version}`,
+    measured: new Date().toISOString(),
+    seconds: seconds_by_task,
+  };
   mkdirSync(join(FILE, '..'), { recursive: true });
-  writeFileSync(FILE, JSON.stringify(all, null, 2) + '\n');
+  writeFileSync(FILE, JSON.stringify(file, null, 2) + '\n');
 }

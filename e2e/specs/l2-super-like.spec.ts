@@ -10,9 +10,12 @@ test('E2E-TC5 L2: a lecturer Super Likes a student note with a remark', async ({
   await page
     .getByLabel(/search/i)
     .first()
-    .fill('UAT:');
-  // Seeded notes are by several authors; the first hit must be a student's (not the lecturer's own) to show the button.
-  await page.getByRole('link', { name: /^UAT:/ }).first().click();
+    .fill('#uat');
+  // A student's note (Daniel Tan), so the lecturer sees the Super Like button.
+  await page
+    .getByRole('link', { name: /^UAT: TCP versus UDP/ })
+    .first()
+    .click();
   await expect(page).toHaveURL(/\/notes\/\d+/);
 
   await timed('L2', async () => {

@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 
-const DIR = join(import.meta.dirname, '../../docs/screenshots/81');
+const DIR = join(__dirname, '../../docs/screenshots/81');
 const VIEWPORTS = [
   { width: 1440, height: 900 },
   { width: 375, height: 812 },

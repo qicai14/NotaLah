@@ -4,7 +4,7 @@ import { ACCOUNTS, PASSWORD } from './accounts';
 export async function login(page: Page, who: keyof typeof ACCOUNTS) {
   await page.goto('/login');
   await page.getByLabel('APU email').fill(ACCOUNTS[who]);
-  await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).not.toHaveURL(/\/(login|welcome)/);
 }

@@ -1,9 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Start the stack first with `vp run db:up && vp run server#uat:seed && vp run dev` (client 5173, server 4000);
-// the webServer entry only reuses it locally and starts it in CI.
+// `vp run db:up` first (and create the notalah_test_81 database once). globalSetup migrates and reseeds that database,
+// and the dev server is started against it, so a dev server already running on 5173/4000 is an error, not reused.
+const E2E_DB =
+  process.env.E2E_DATABASE_URL ?? 'postgres://notalah:notalah@127.0.0.1:5433/notalah_test_81?sslmode=disable';
+export const E2E_ENV = { DATABASE_URL: E2E_DB, TEST_DATABASE_URL: E2E_DB };
+
 export default defineConfig({
   testDir: './specs',
+  globalSetup: './global-setup.ts',
   outputDir: '../test-results',
   reporter: [['list'], ['html', { outputFolder: '../playwright-report', open: 'never' }]],
   workers: 1,
@@ -13,13 +18,23 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     // AI stub (R28): outline replies only, so rewrite, shorten and quiz are not covered by it.
-    { command: 'node e2e/stub-ai/server.mjs', cwd: '..', url: 'http://127.0.0.1:4010/health', reuseExistingServer: true },
+    {
+      command: 'node e2e/stub-ai/server.mjs',
+      cwd: '..',
+      url: 'http://127.0.0.1:4010/health',
+      reuseExistingServer: true,
+    },
     {
       command: 'vp run dev',
       cwd: '..',
       url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
-      env: { AI_BASE_URL: 'http://127.0.0.1:4010', AI_API_KEY: 'stub', AI_MODEL: 'stub' },
+      reuseExistingServer: false,
+      env: {
+        ...E2E_ENV,
+        AI_BASE_URL: 'http://127.0.0.1:4010',
+        AI_API_KEY: 'stub',
+        AI_MODEL: 'stub',
+      },
     },
   ],
 });
