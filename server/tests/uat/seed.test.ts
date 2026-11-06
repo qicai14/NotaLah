@@ -22,7 +22,7 @@ describe('UAT seed', () => {
     const otherUser = await insertUser({ email: 'other@mail.apu.edu.my' });
     const { rows } = await pool.query<{ pst_id: number }>(
       `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_status, pst_visibility, pst_published_at)
-       VALUES ($1, (SELECT mod_id FROM "MODULE_T" LIMIT 1), 'Unrelated note', 'published', 'public', NOW()) RETURNING pst_id`,
+       VALUES ($1, (SELECT mod_id FROM "MODULE_T" WHERE mod_code = 'CT076-3-2'), 'Unrelated note', 'published', 'public', NOW()) RETURNING pst_id`,
       [otherUser],
     );
 
@@ -45,11 +45,20 @@ describe('UAT seed', () => {
     expect(kept[0]).toEqual({ u: '1', p: '1' });
   });
 
-  it('OPS-TC22: the UAT seed sources contain no TRUNCATE or DELETE and do not reset existing passwords', () => {
+  it('OPS-TC22: the UAT seed never wipes data or resets an existing password', async () => {
     for (const f of ['seed.ts', 'data.ts']) {
       const src = readFileSync(new URL(`../../src/scripts/uat/${f}`, import.meta.url), 'utf8');
-      expect(src).not.toMatch(/TRUNCATE|DELETE/i);
+      expect(src, f).not.toMatch(/TRUNCATE|DELETE|DROP\s/i);
+      expect(src, f).not.toMatch(/UPDATE\s+"(USER_T|MODULE_T)"|SET\s+usr_password_hash/i);
     }
+
+    await seedUat(pool);
+    const email = 'uat.student1@mail.apu.edu.my';
+    const changed = '$2b$04$' + 'x'.repeat(53);
+    await pool.query(`UPDATE "USER_T" SET usr_password_hash = $1 WHERE usr_email = $2`, [changed, email]);
+    await seedUat(pool);
+    const { rows } = await pool.query(`SELECT usr_password_hash FROM "USER_T" WHERE usr_email = $1`, [email]);
+    expect(rows[0].usr_password_hash).toBe(changed);
   });
 
   it('OPS-TC23: every seeded deck passes deckSchema and the lecturer is an approved lecturer', async () => {

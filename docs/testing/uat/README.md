@@ -14,7 +14,7 @@ vp run server#uat:seed
 ```
 
 It prints the database name and how many rows were inserted and how many were skipped because they already existed.
-`UAT_PASSWORD` sets the password of newly created accounts (at least 8 characters, at most 72 bytes); without it the
+`UAT_PASSWORD` sets the password of newly created accounts (at least 8 characters, at most 72 bytes; the seed stops with an error otherwise); without it the
 default in `server/src/scripts/uat/data.ts` is used. Use it only for UAT, never as a real credential.
 
 Never use `load:seed` for UAT: it wipes the database and refuses anything not named `notalah_test_*`.

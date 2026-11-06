@@ -23,6 +23,8 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    // Two seed runs at once would both pass the NOT EXISTS check and double the notes.
+    await client.query(`SELECT pg_advisory_xact_lock(hashtext('notalah_uat_seed'))`);
     const { rows: dbRows } = await client.query<{ db: string }>('SELECT current_database() AS db');
     const inserted: UatCounts = { users: 0, modules: 0, notes: 0, slides: 0 };
 
