@@ -19,16 +19,26 @@
   - Per-user token share: 16,000 tokens a day (`AI.userTokensPerDay`, a tenth of the app cap), counted in the same
     `USAGE_COUNTER_T` as metric `ai_tokens:<userId>` (no migration; not in the admin report). The 20 calls a day limit
     alone would let one account spend up to 20 x 9,000 = 180,000 tokens, more than the app cap, and stop AI help for
-    everyone. At 16,000 a student gets about two full 20,000-character outlines or many short ones a day; one reply may
-    overshoot by its actual-minus-estimate.
+    everyone. At 16,000 a student gets two full outlines at the 8,000-character limit or many short ones a day; one reply
+    may overshoot by its actual-minus-estimate.
+  - *Corrected 6 Nov 2026 (#121):* the first version said "about two full 20,000-character outlines". That was wrong:
+    the estimate includes a system prompt of about 860 characters (857 today; the issue quoted 1,100), so one full
+    outline reserved ceil((857 + 20,000) / 4) + 4,000 = 9,215 tokens and only one fit in 16,000 (a retry or a second draft was
+    refused). `AI.outlineChars` (and the client paste box) is now 8,000: one reservation is
+    ceil((857 + 8,000) / 4) + 4,000 = 6,215, so two first-try drafts are 12,430 ≤ 16,000. The retry also carries the
+    first reply and the validation error, so its reservation is larger; the first call is settled to its real count
+    before the retry, so a usual draft plus retry fits, but a maximum-length reply plus retry may not. The outline also has one 30-second deadline
+    across its retry, so no retry is sent after it (AI-TC56, AI-TC57).
   - Production refuses a non-https `AI_BASE_URL` (the key and student text travel to it), and the call uses
     `redirect: 'error'` so the key is never forwarded elsewhere.
-- **Known risk (verify before adding the real key):** Groq's free limit is 8,000 tokens a minute. A full 20,000-character
-  input is about 5,000 tokens plus the 4,000-token reply budget, so one maximum-size outline may be refused by the
-  provider (shown as the busy 503). Try a long input once the key is set; the levers are lowering `AI.outlineMaxTokens`
+- **Known risk (verify before adding the real key):** Groq's free limit is 8,000 tokens a minute. A full 8,000-character
+  input with the prompt is about 2,215 tokens plus the 4,000-token reply budget (6,215, under the minute limit), but two
+  outlines in the same minute may be refused by the provider (shown as the busy 503). Before 6 Nov 2026 the
+  20,000-character input alone could pass the minute limit. Try a long input once the key is set; the levers are lowering `AI.outlineMaxTokens`
   or `AI.outlineChars` in `features/ai/config.ts`.
 - **Alternatives:** refuse only once the token cap is reached and record actual tokens after the call (the served-bytes
   pattern; the token counter would not go up before the call, and a burst could overshoot by many calls); reserve the
-  worst case and never settle (about 35 outlines a day app-wide before the token cap).
+  worst case and never settle (about 17 full outlines a day app-wide before the token cap at the old 20,000 limit,
+  160,000 / 9,215; about 25 at 8,000, 160,000 / 6,215; corrected 6 Nov 2026 from "about 35").
 - **Reversibility:** High; config values and one helper.
-- **Tests:** AI-TC6, AI-TC7, AI-TC13, AI-TC14, AI-TC15, AI-TC16, AI-TC17, AI-TC20.
+- **Tests:** AI-TC6, AI-TC7, AI-TC13, AI-TC14, AI-TC15, AI-TC16, AI-TC17, AI-TC20, AI-TC56, AI-TC57.
