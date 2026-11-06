@@ -53,8 +53,8 @@ ranking stays the deterministic heuristic (NFR3). AI output is always an editabl
 
 ## Tests (TC prefix AI-TC)
 Schema rejects bad outlines; retry-then-fail path; caps and kill switch; guests and inactive accounts refused;
-hidden without a key; label set only with a valid AI token for the saving user; client builds a valid deck from every layout; sanitiser
-on rewrite output. Provider mocked through an injectable `fetch` (as R2 does).
+hidden without a key; label set only with a valid AI token for the saving user; client builds a valid deck from
+every layout; sanitiser on rewrite output. Provider mocked through an injectable `fetch` (as R2 does).
 
 ## Acceptance (B3)
 R28 is judged by time saved. UAT-S2 is timed with and without the AI; the target is at most half the manual time. Automated tests use a stubbed provider (no key or network). This also feeds the UAT redesign (#84).

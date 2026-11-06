@@ -85,6 +85,13 @@ describe('DraftFromText (R28)', () => {
     await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(useEditor.getState().deck.slides).toHaveLength(1);
 
+    // AI-TC55: an applied outline keeps its reply's token for the next save.
+    await open();
+    send();
+    await vi.waitFor(() => expect(calls).toHaveLength(4));
+    calls[3](reply(200, { ...outline, aiToken: 'tok-outline' }));
+    await vi.waitFor(() => expect(useEditor.getState().meta.aiToken).toBe('tok-outline'));
+
     // The 30 s stop shows its own message.
     const timedOut = new AbortController();
     timedOut.abort(new DOMException('timeout', 'TimeoutError'));

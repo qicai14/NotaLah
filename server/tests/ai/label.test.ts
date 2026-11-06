@@ -95,6 +95,16 @@ describe('AI-assisted label (R28, ADR 0094)', () => {
     expect(res.status).toBe(201);
     expect(res.body.note.aiAssisted).toBe(false);
     expect(await labelled(res.body.note.id)).toBeNull();
+    // Signed with the raw session secret but shaped like an AI token: refused because the key differs.
+    const rawKey = jwt.sign({}, env.JWT_SECRET, {
+      algorithm: 'HS256',
+      audience: 'ai-output',
+      subject: String(uid),
+      expiresIn: '24h',
+    });
+    const raw = await create(uid, { aiToken: rawKey });
+    expect(raw.status).toBe(201);
+    expect(raw.body.note.aiAssisted).toBe(false);
   });
 
   it('AI-TC49: the owner saving with a valid token sets the label on create and on update', async () => {
