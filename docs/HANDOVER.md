@@ -2,13 +2,13 @@
 
 Read with `PLAN.md` (milestones), `OPEN_QUESTIONS.md` and `adr/` (0091 on).
 
-## State of `main` (056453a)
+## State of `main` (a347713)
 - Merged 1 Nov: #117 (#111 outline schema in `shared/`), #118 (#112 outline route, ADR 0093), #119 (#113 paste to
   draft), #126 (#114 Rewrite, Shorten, Quiz me), #124 (FR19+ numbering, R28 traced as an addition), #125 (Inter and
   Doto fonts), #120 (hosting note), #108, #109.
-- Merged 6 Nov: #127 (Apple-neutral theme, ADR 0095, UI-TC1-3), closing #123.
+- Merged 6 Nov: #127 (Apple-neutral theme, ADR 0095, UI-TC1-3), closing #123; #130 (closes #121).
 - TC IDs: AI-TC1-40 used; AI-TC41-45 for #115, AI-TC46-55 for #116, AI-TC56-57 for #121 (#130; 58-60 unused). UI-TC1-3 used; UI-TC4-9 for #128.
-- ADRs: 0094 reserved for #116, 0096 for #121, 0097 for #128. 0098-0099 in this PR. Next free: 0100.
+- ADRs: 0094 reserved for #116, 0096 reserved, unused, 0097 for #128. 0098-0099 in this PR. Next free: 0100.
 
 ## Stopping points 6 Nov
 - #121 merged 6 Nov as #130 (a347713): 8,000-char outline limit, one 30 s deadline, AI-TC56-57; #110 updated.

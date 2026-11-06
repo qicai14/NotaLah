@@ -22,7 +22,7 @@ gantt
   axisFormat %d %b
   todayMarker on
   section Supervisor
-  Meeting 2                      :milestone, 2026-11-02, 0d
+  Meeting 2 (booked 5-6 Nov)    :milestone, 2026-11-05, 0d
   Session 4 wrap-up              :milestone, 2026-11-23, 0d
   Meeting 3                      :milestone, 2026-12-07, 0d
   section Build
@@ -39,7 +39,7 @@ gantt
 ## Milestones
 | Milestone | Target | Done when |
 |---|---|---|
-| Meeting #2 | 5 or 6 Nov (held; outcome not yet recorded) | R14 Plan A or B, the AI additions (ADR 0085) and FR19+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
+| Meeting #2 | booked 5 or 6 Nov; outcome not yet recorded | R14 Plan A or B, the AI additions (ADR 0085) and FR19+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
 | Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed and evidence pipeline ready (#82, #83) |
 | UAT | opens 23 Nov; must finish before 6 Dec (ADR 0098) | at least three participants confirmed by 20 Nov (#86: 2 peers, one as student and one as admin, plus 1 lecturer), results and NFR5 weight review in `testing/uat/` (#84) |
 | Report complete | 12 Dec (proposed; was 20 Dec) | Chapters 1-6 in the .docx, cuts applied, meeting #1 feedback folded in, 25 screenshots, 3 code snippets, poster, 3-min video |
@@ -47,7 +47,7 @@ gantt
 | Presentation | week of 4 Jan | demo runs locally (D82) |
 
 ## Admin (user)
-- Meeting #1 is logged on PG Bank. Meeting #2 (5 or 6 Nov) is held: record its outcome and log it on PG Bank.
+- Meeting #1 is logged on PG Bank. Meeting #2 (booked 5 or 6 Nov; outcome not yet recorded): record its outcome and log it on PG Bank.
 - Book meeting #3 (week of 7 Dec).
 
 ## Supervisor feedback to fold in (meeting #1, 9 Oct; `FYP_SV_Meet-1_09_Oct_2026.txt`)
