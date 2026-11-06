@@ -181,7 +181,7 @@ export default function NoteDetail() {
         </div>
       </div>
 
-      <aside className="flex min-h-0 flex-col border-t bg-background lg:border-t-0 lg:border-l">
+      <div className="flex min-h-0 flex-col border-t bg-background lg:border-t-0 lg:border-l">
         <div className="flex flex-col gap-3 px-5 pt-6 pb-4">
           <h1 id="note-title" className="text-title font-bold text-balance">
             {n.title}
@@ -218,7 +218,7 @@ export default function NoteDetail() {
             className="flex-1 border-t lg:min-h-0"
           />
         )}
-      </aside>
+      </div>
       <SelectionAnnotate root={deck} enabled={annotationsOn} onAnnotate={annotate} />
       {annotationsOn && (
         <AnnotationSheet
