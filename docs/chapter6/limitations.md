@@ -1,7 +1,7 @@
 # Known limitations
 
 Source notes for the Chapter 6 limitations section. Each item is a known shortcut that is fine at UAT scale. Line
-numbers are as of 6 Nov (main at `fab9b1a`). Source: `run-logs/audit_2026-10-29/server.md` §7 and §10, and issue #85.
+numbers are as of 6 Nov (main at `fab9b1a`). Source: issue #85, which quotes the audit `run-logs/audit_2026-10-29/server.md` §7 and §10 (outside this repo).
 
 ## View collaborator cannot see annotations on a contacts-only note
 
@@ -11,8 +11,9 @@ numbers are as of 6 Nov (main at `fab9b1a`). Source: `run-logs/audit_2026-10-29/
 - Code: `server/src/features/notes/repository.ts:37` (`READABLE` includes the collaborator role),
   `server/src/features/engagement/repository.ts:40` (`getTarget` uses `VISIBLE`),
   `server/src/features/annotations/routes.ts:17` (the annotations route, via `getTarget`).
-- Impact at UAT scale: small. It only hits a view collaborator on a contacts-only note who does not follow the author
-  back. They can still read every slide.
+  `server/src/features/engagement/routes.ts:17-22` (`target()`, used by like at :33 and comment at :80).
+- Impact at UAT scale: small. It only hits a view collaborator on a contacts-only note who is not a mutual follower (friend) of the author (D38).
+  They can still read every slide.
 - Upgrade path: decide whether collaborators should engage. If yes, let `getTarget` accept a collaborator role. If no,
   keep it and add a test that pins it.
 
