@@ -509,7 +509,7 @@ export default function EditorPage() {
 
   if (!desktop) {
     return (
-      <div className="flex h-dvh flex-col bg-editor-canvas text-foreground">
+      <main id="main" tabIndex={-1} className="flex h-dvh flex-col bg-editor-canvas text-foreground">
         <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
         <header className="flex h-topbar shrink-0 items-center gap-1 border-b bg-background px-2">
           <Button asChild variant="ghost" size="icon-sm" aria-label="Back to drafts">
@@ -578,13 +578,13 @@ export default function EditorPage() {
           </SheetContent>
         </Sheet>
         {dialogEl}
-      </div>
+      </main>
     );
   }
 
   const active = readOnly ? undefined : PANELS.find((p) => p.id === panel);
   return (
-    <div className="flex h-dvh flex-col bg-editor-canvas text-foreground">
+    <main id="main" tabIndex={-1} className="flex h-dvh flex-col bg-editor-canvas text-foreground">
       <h1 className="sr-only">{id ? 'Edit note' : 'Create note'}</h1>
       <header className="flex h-topbar shrink-0 items-center gap-2 border-b bg-background px-3">
         <Button asChild variant="ghost" size="sm">
@@ -660,7 +660,7 @@ export default function EditorPage() {
         </div>
       </div>
       {dialogEl}
-    </div>
+    </main>
   );
 }
 
