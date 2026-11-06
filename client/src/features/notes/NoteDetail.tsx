@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { VerifiedPill } from '@/components/VerifiedPill';
+import { AiAssistedBadge } from '@/components/AiAssistedBadge';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { Coauthors } from '../../components/Coauthors';
 import { EditedBadge } from '../../components/EditedBadge';
@@ -199,6 +200,7 @@ export default function NoteDetail() {
             ))}
           </div>
           {n.verified && <VerifiedPill by={n.verifiedBy} className="self-start" />}
+          {n.aiAssisted && <AiAssistedBadge className="self-start" />}
           {!n.verified && n.editedSinceVerification && (
             <div className="flex flex-col gap-1.5 self-start">
               <EditedBadge />
