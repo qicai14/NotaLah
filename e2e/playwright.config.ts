@@ -22,7 +22,7 @@ export default defineConfig({
       command: 'node e2e/stub-ai/server.mjs',
       cwd: '..',
       url: 'http://127.0.0.1:4010/health',
-      reuseExistingServer: true,
+      reuseExistingServer: false,
     },
     {
       command: 'vp run dev',

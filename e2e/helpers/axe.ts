@@ -4,7 +4,7 @@ import { expect, type Page } from '@playwright/test';
 // Every entry needs a reason; an unlogged serious or critical violation fails the test.
 export const ALLOWLIST: { rule: string; page: string; reason: string }[] = [
   // Product bug, reported in the #81 handback: the author avatar link has aria-label "<Name>'s profile" but its visible text
-  // is the initials (WCAG 2.5.3 Label in Name). Remove these entries once the avatar link is fixed.
+  // is the initials (WCAG 2.5.3 Label in Name). Remove when fixed; tracked in the PR #81 follow-ups.
   {
     rule: 'label-content-name-mismatch',
     page: 'S3-feed',
@@ -21,6 +21,7 @@ export const ALLOWLIST: { rule: string; page: string; reason: string }[] = [
     reason: 'avatar link label omits visible initials (product bug)',
   },
   // Product bug, same rule: the sidebar link is labelled "Notifications, 1 unread" while its visible text differs.
+  // Remove when fixed; tracked in the PR #81 follow-ups.
   {
     rule: 'label-content-name-mismatch',
     page: 'S5-chat',
