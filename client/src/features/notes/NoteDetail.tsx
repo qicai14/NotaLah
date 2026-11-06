@@ -200,7 +200,6 @@ export default function NoteDetail() {
             ))}
           </div>
           {n.verified && <VerifiedPill by={n.verifiedBy} className="self-start" />}
-          {n.aiAssisted && <AiAssistedBadge className="self-start" />}
           {!n.verified && n.editedSinceVerification && (
             <div className="flex flex-col gap-1.5 self-start">
               <EditedBadge />
@@ -210,6 +209,7 @@ export default function NoteDetail() {
               </p>
             </div>
           )}
+          {n.aiAssisted && <AiAssistedBadge className="self-start" />}
         </div>
         {published && (
           <CommentPanel

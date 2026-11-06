@@ -49,7 +49,7 @@ const ownsKeys = (t: EventTarget | null) =>
 const needsBackup = (s: { dirty: boolean; meta: { status: string }; saveState: string }) =>
   s.dirty && (s.meta.status === 'published' || s.saveState === 'locked');
 
-function SaveStatus() {
+export function SaveStatus() {
   const saveState = useEditor((s) => s.saveState);
   const dirty = useEditor((s) => s.dirty);
   const meta = useEditor((s) => s.meta);
@@ -523,7 +523,7 @@ export default function EditorPage() {
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
             {titleInput}
-            <span className="px-2">{readOnly ? <ViewOnly /> : <SaveStatus />}</span>
+            <span className="flex items-center gap-1 px-2">{readOnly ? <ViewOnly /> : <SaveStatus />}</span>
           </div>
           <UndoRedo size="icon-sm" disabled={readOnly} />
           {actions}

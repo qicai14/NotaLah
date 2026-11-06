@@ -26,6 +26,9 @@
   - Accepted: an edit Collaborator's token (from AI use on any Note within 24 hours) can set the permanent label on
     the owner's Note; they can already rewrite its content.
   - The token sits in page memory, so an XSS could steal it, but only to label Notes the victim can already save.
+  - The label is a voluntary disclosure: a client can skip it by pasting AI text by hand or saving without the token.
+  - A restored local backup does not carry the token, so a backup restored after AI use saves without the label.
+  - Any future token type must derive its own key in the same way, never sign with the raw `JWT_SECRET`.
 - **Alternatives:** add audience `session` to the session sign and verify options (logged-in cookies issued before
   the change would stop working, and every session test helper changes); a server table of issued response ids per
   user (the spec's first idea; new state and cleanup for a label); trusting a client flag (anyone could set or skip
