@@ -53,7 +53,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
     setPending(true);
     setError(null);
     try {
-      const { outline } = await api<{ outline: unknown }>('/ai/outline', {
+      const { outline, aiToken } = await api<{ outline: unknown; aiToken?: string }>('/ai/outline', {
         method: 'POST',
         body: { text, currentSlides: st.deck.slides.length },
         signal: AbortSignal.any([c.signal, AbortSignal.timeout(AI_TIMEOUT_MS)]),
@@ -68,6 +68,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
         if (now.session !== session || useEditor.getState().readOnly) return close();
         return setError(FULL);
       }
+      if (aiToken) now.setMeta({ aiToken });
       setOpen(false);
       setText('');
       onAdd?.();

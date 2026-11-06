@@ -50,6 +50,8 @@ export const noteToMeta = (note: Note): NoteMeta => ({
   status: note.status === 'published' ? 'published' : 'draft',
   visibility: note.visibility,
   baseUpdatedAt: note.updatedAt,
+  aiAssisted: note.aiAssisted ?? false,
+  aiToken: null,
 });
 
 /** What one save sends: taken when the save is asked for, so it never picks up a later note's state. */
@@ -103,6 +105,7 @@ async function send(choice: SaveChoice, { deck, meta, rev, session }: Snapshot):
     status: publishing ? 'published' : 'draft',
     visibility: publishing ? choice : null,
     baseUpdatedAt: meta.baseUpdatedAt ?? undefined,
+    aiToken: meta.aiToken ?? undefined,
   };
   const id = meta.noteId;
   try {
@@ -113,6 +116,7 @@ async function send(choice: SaveChoice, { deck, meta, rev, session }: Snapshot):
       baseUpdatedAt: note.updatedAt,
       status: note.status === 'published' ? 'published' : 'draft',
       visibility: note.visibility,
+      aiAssisted: note.aiAssisted ?? false,
     });
     return { ok: true, note };
   } catch (e) {

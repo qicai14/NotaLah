@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { DraftFromText, forgetAiProbe, MAX_CHARS } from './DraftFromText';
-import { useEditor } from './store';
+import { SaveStatus } from './EditorPage';
+import { emptyDeck, useEditor } from './store';
 
 const reply = (status: number, body: unknown = {}) =>
   ({ status, ok: status < 400, headers: new Headers(), json: () => Promise.resolve(body) }) as Response;
@@ -112,5 +113,21 @@ describe('DraftFromText (R28)', () => {
     expect(JSON.parse(init.body as string).text).toHaveLength(MAX_CHARS);
     fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [new File(['x'], 'n.pptx')] } });
     expect((await screen.findByRole('alert')).textContent).toContain('PowerPoint');
+  });
+
+  it('AI-TC55: an applied outline keeps its token for the next save, and the editor shows the saved label', async () => {
+    useEditor.getState().load(emptyDeck());
+    const { calls } = await mount(400);
+    await open();
+    send();
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    calls[0](reply(200, { ...outline, aiToken: 'tok-outline' }));
+    await vi.waitFor(() => expect(useEditor.getState().meta.aiToken).toBe('tok-outline'));
+    cleanup();
+
+    render(<SaveStatus />);
+    expect(screen.queryByText('AI-assisted')).toBeNull();
+    act(() => useEditor.getState().setMeta({ aiAssisted: true }));
+    expect(screen.getByText('AI-assisted')).toBeTruthy();
   });
 });

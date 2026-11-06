@@ -7,6 +7,7 @@ import { AI, aiEnabled } from './config';
 import { AiError } from './provider';
 import { aiDailyLimiter, aiMinuteLimiter } from './rateLimit';
 import { draftOutline, transformText } from './service';
+import { signAiToken } from './token';
 
 export const aiRouter = Router();
 
@@ -44,7 +45,7 @@ aiRouter.post(
   async (req, res) => {
     const { text, currentSlides } = res.locals.body as z.infer<typeof outlineBody>;
     try {
-      res.json({ outline: await draftOutline(text, currentSlides, me(req).id) });
+      res.json({ outline: await draftOutline(text, currentSlides, me(req).id), aiToken: signAiToken(me(req).id) });
     } catch (err) {
       if (err instanceof AiError) return void res.status(err.status).json({ error: err.message });
       throw err;
@@ -77,7 +78,7 @@ aiRouter.post(
   async (req, res) => {
     const { text, action } = res.locals.body as z.infer<typeof textBody>;
     try {
-      res.json(await transformText(action, text, me(req).id));
+      res.json({ ...(await transformText(action, text, me(req).id)), aiToken: signAiToken(me(req).id) });
     } catch (err) {
       if (err instanceof AiError) return void res.status(err.status).json({ error: err.message });
       throw err;

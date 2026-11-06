@@ -6,7 +6,7 @@ export function Logo({ compact = false, to = '/', className }: { compact?: boole
   return (
     <Link
       to={to}
-      aria-label="NotaLah home"
+      aria-label={compact ? 'NotaLah home' : undefined}
       className={cn('inline-flex items-center gap-2.5 rounded-md text-foreground', className)}
     >
       <span

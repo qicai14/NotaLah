@@ -505,6 +505,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | pst_music_license | VARCHAR | 200 | | Creative Commons licence page shown as the credit |
 | | pst_music_volume | SMALLINT | | CHECK (0 to 100) | Playback volume chosen by the author |
 | | pst_annotations_on | BOOLEAN | | NOT NULL, DEFAULT TRUE | Whether readers may annotate the note (R10); the author turns it off |
+| | pst_ai_assisted_at | TIMESTAMPTZ | | | First save that carried accepted AI output (R28); shows the AI-assisted label, never cleared, not a ranking input |
 | SLIDE_T | sld_id | INTEGER (identity) | | PK, NOT NULL | Unique slide identifier |
 | | sld_pst_id | INTEGER | | FK → POST_T, NOT NULL | Owning note |
 | | sld_position | SMALLINT | | NOT NULL, UNIQUE with sld_pst_id | Order of the slide within the note |
@@ -1521,6 +1522,12 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC18 | Schema-drift check fails when a column's data type in 4.3 differs from the migration | One data type in 4.3 changed from the type in the migration | Non-zero exit; the column with the differing type is reported | | |
 | OPS-TC19 | Feed p95 at 10x (#78) | 10x load seed; sequential probe, 100 requests each for For You (fresh ranking, no asOf) and Following as a student who follows about ten users; three runs | p95 under 300 ms, no errors | Median p95 101 ms For You, 28 ms Following; 0 errors | Pass |
 | OPS-TC20 | Feed cost with video notes (R29, R40, #78) | 10x seed with every 5th note carrying a ready 4.1 MB video; the probe as OPS-TC19; one cold load of the built client at 375 px | Feed p95 still under 300 ms; transferred bytes and LCP recorded | Median p95 105 ms For You, 27 ms Following (101 and 28 without video); client: LCP 964 ms, 331 KB transferred, 19 KB of it a poster, no video bytes (preload none) | Pass |
+| OPS-TC21 | UAT seed is idempotent and additive (#82) | Test DB with one unrelated user and note; the UAT seed run twice | First run adds 5 users, 3 modules, 15 notes, their slides and 3 reports; second run adds nothing (user, note, slide and report counts unchanged); the unrelated user and note remain | | |
+| OPS-TC22 | UAT seed never wipes data or resets a password | Source of `uat/seed.ts` and `uat/data.ts`; a seeded user's password hash changed, then the seed rerun | Sources contain no TRUNCATE, DELETE, DROP, UPDATE of USER_T or MODULE_T, or password-hash reset; the changed hash is unchanged after the rerun | | |
+| OPS-TC23 | UAT seed content is valid | Every seeded deck checked with `deckSchema`; the seeded lecturer read back | Every deck passes; 12 to 16 notes; the lecturer has role lecturer and lecturer status approved | | |
+| OPS-TC24 | UAT accounts log in and their notes show | UAT seed; login as the admin, lecturer and each student with the UAT password; each author's profile notes and a search for "UAT:" | Every login returns 200 with the seeded role; the lecturer and each student see exactly their seeded notes on their profile, and a search for "UAT:" returns results; the admin owns no notes and is checked for login and role only | | |
+| OPS-TC25 | UAT seed gives the admin a moderation target | UAT seed on a clean test DB | The most recently hidden note is by Daniel Tan; exactly 3 reports exist, all open, none by the note's own author, 2 of them on the hidden note | | |
+| OPS-TC26 | UAT seed refuses the public default password in production | `NODE_ENV=production` with `UAT_PASSWORD` unset, then set; then `NODE_ENV=test` unset | Error naming `UAT_PASSWORD` when unset in production; the given password is used when set; the default is allowed outside production | | |
 
 *Table 4.38: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
@@ -1606,7 +1613,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | USE-TC4 | Class A and Class B exhausted | Upload and serve once; Class B set to its cap, then the file request and a modules request; Class A set to its cap, then an upload | Counts are 1 and 1; file request 503 "Media is temporarily unavailable" while modules stays 200; upload 503 "Monthly upload limit reached" | | |
 | USE-TC5 | Unsplash app-wide hourly cap | Counter at cap minus 1; two different searches; the first search repeated | First 200, second 503 with no outbound request; the repeated cached search 200 | | |
 | USE-TC6 | Upload kill switch | `UPLOADS_DISABLED=true`, then an upload | 503 "Uploads are turned off"; nothing stored or counted | | |
-| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, served_bytes (cap 50000000000), unsplash (cap 25), jamendo (cap 28000) and storage_bytes (cap 8000000000) | | |
+| USE-TC7 | Admin usage endpoint | No cookie, a student, an admin after 3 Class A operations | 401; 403; 200 listing class_a (3 of 500000), class_b, served_bytes (cap 50000000000), unsplash (cap 25), jamendo (cap 28000), ai_requests (cap 800), ai_tokens (cap 160000) and storage_bytes (cap 8000000000) | | |
 | USE-TC8 | Env cap lowers but never raises | Caps of unset, `5000`, `600000`, `999999999`, `-1` and `lots` for Class A (default 500,000); `9000000000` for storage | 500,000; 5000; 500,000; 500,000; default; default; 8,000,000,000 | | |
 | USE-TC9 | Counter failure | Usage table unreachable; an upload, a file request, a storage delete | Upload 500 and no file written; file request 500; delete still removes the file | | |
 
@@ -1779,38 +1786,132 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | ANN-TC20 | Count on the feed rail (client) | a note with 1200 annotations, then 0 | A link "Annotations, 1200" to `/notes/9` captioned 1.2K; no link at 0 | | |
 | ANN-TC21 | Keyboard creation (client) | open the picker and Cancel; Annotate selection with nothing selected; two text boxes both holding a selection with Text box 1 touched last; a guest's pick refused | Focus returns to "Select text with the keyboard" on Cancel; an alert "Select some text first"; the areas are read-only and hold the elements' plain text; the pick is `{elementId, quote:'big', offset:6, slideId:1}` from the last-touched box and the live region says "Selected “big”"; a refused pick announces nothing | | |
 
+*Table 4.47: AI assistant test cases (AI, R28)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| AI-TC1 | Accept a valid outline (shared) | an outline with a title, a title-and-body, a two-column and a code Slide; the code Slide without a language | Accepted; the language defaults to `plaintext`; 12 code lines with a trailing newline are accepted | | |
+| AI-TC2 | Reject an invalid outline (shared) | an unknown layout; a missing, blank or 25-character title; a 21-character cover title; an 81-character bullet; 7 bullets; code of 601 characters, 13 lines or a 51-character line; an extra field; no Slides | Rejected each time | | |
+| AI-TC3 | Cap at 15 Slides (shared) | an outline of 20 Slides | Parsed with 15 Slides | | |
+| AI-TC4 | Cap by the 30-Slide limit (shared) | an outline of 15 Slides on a Note with 20 Slides, then with 30 | 10 Slides kept; 0 Slides kept | | |
+| AI-TC5 | Room on an empty Note and bad input (shared) | 20 Slides on a Note with 0 Slides; an invalid outline passed to `parseOutline` | 15 Slides kept; the parse fails | | |
+| AI-TC6 | Draft an outline | a signed-in active user posts notes text; the stubbed provider returns a valid outline using 1,234 tokens | 200 with the outline; one call to `<AI_BASE_URL>/chat/completions` with the bearer key, the model and a system and a user message, with redirects refused; ai_requests 1, ai_tokens 1234 and the user's own token count 1234 for the day | | |
+| AI-TC7 | AI routes off; https base URL | no key; no base URL; `AI_DISABLED=true` (also as a guest); an http `AI_BASE_URL` in production and on a local run | 404 each time and no provider call; production refuses to start with "AI_BASE_URL must be an https:// URL in production"; the local run accepts it | | |
+| AI-TC8 | Who may call it | a guest; a restricted account; a suspended account | 401; 403; refused; no provider call | | |
+| AI-TC9 | Text and room checks | 8,001 characters; blank text; `currentSlides` 30; then exactly 8,000 characters | 400 "Text must be at most 8,000 characters"; 400; 400; no provider call; the 8,000-character text gives 200 | | |
+| AI-TC10 | Outline cut to the room left | a 15-Slide outline for a Note with 27 Slides | 200 with 3 Slides | | |
+| AI-TC11 | Daily limit per user | one call, the day count set to 19, then two more calls; another user | 200, 200, then 429 "You have used today's 20 AI requests. Try again tomorrow." with no third provider call; the other user gets 200 | | |
+| AI-TC12 | Per-minute limit per user | six calls in a minute | Five 200s, then 429 "Too many AI requests. Try again in a minute." | | |
+| AI-TC13 | App-wide daily cap | caps read from config; ai_requests at its cap; then ai_tokens 100 below its cap | Caps are 800 requests and 160,000 tokens a day (80% of the free tier); 503 "AI help is resting until tomorrow" both times with no provider call | | |
+| AI-TC14 | Provider rate limit and refusals | the provider answers 429 with text in its body; then 400 | 503 "AI help is busy right now. Try again in a minute" after one provider call (no retry); the 400 gives 502; ai_requests counts both calls; the app and user token reservations are handed back to 0 | | |
+| AI-TC15 | Retry with the validation error | the first reply has a 40-character title, the second is valid | 200 with the valid outline; ai_requests is 1 and then 2 when each call is sent; the retry carries the first reply and an error naming "Title must be at most 24 characters" | | |
+| AI-TC16 | Retry then fail | the first reply is not JSON, the second is invalid; each reports 100 tokens | 422 "Couldn't tidy this, try shorter text"; two provider calls; ai_requests 2, ai_tokens 200 | | |
+| AI-TC17 | Timeout and provider errors | the 30-second timeout fires during the call; then the provider answers 500 with the student text in its body | `AbortSignal.timeout(30000)` used and the call stopped: 502 "AI help is unavailable right now. Try again later"; the 500 gives 502 and the reply holds none of the text; both token reservations are kept for the app and the user | | |
+| AI-TC18 | No transaction during the call | pool clients and `pg_stat_activity` read inside both stubbed provider calls (invalid, then valid) | No pool client checked out and no session idle in a transaction, both times | | |
+| AI-TC19 | Logs hold no text | a call that needs the retry, 100 and 50 tokens | One "ai outline" log entry of exactly input characters, attempts 2, tokens 150, latency and 2 Slides; no info, warn or error entry holds the student text or the reply, and nothing is logged at error | | |
+| AI-TC20 | Per-user daily token share | one user's calls each reporting 9,000 tokens; then another user | 200, 200, then 429 "You have used today's AI allowance. Try again tomorrow." with no third provider call; the share is 16,000 (a tenth of the 160,000 app cap) and the app-wide count stops at 18,000; the other user gets 200 | | |
+| AI-TC21 | Outline text is escaped (client) | an outline whose every title, subtitle, heading, bullet and code line is `<img src=x onerror=alert(1)>`, converted with `outlineToSlides` | No text box holds an `<img` tag; each holds `&lt;img src=x onerror=alert(1)&gt;` | | |
+| AI-TC22 | Every layout is filled (client) | one outline Slide each of title, title-body, two-column and code; then a cover with no subtitle | Title has 2 text boxes, title-body lists the bullets (`&` as `&amp;`), two-column has 3 text boxes, code holds the code and language; the bare cover has 1 text box | | |
+| AI-TC23 | Note theme and aspect (client) | the outline converted for every theme and aspect | Each Slide takes the theme background and the result passes the deck schema | | |
+| AI-TC24 | Draft placement and caps (client) | `insertSlides` with 20 Slides on a 1-Slide Note; then 15 Slides on a 25-Slide Note; then 1 on a full Note | 15 added after the active Slide and it becomes active; 30 Slides; the last call adds nothing and returns false | | |
+| AI-TC25 | One undo removes the draft (client) | `insertSlides` with 5 Slides, then one undo | The deck is the one from before the draft | | |
+| AI-TC26 | Reply for another Note is dropped (client) | a draft inserted with the session number from before another Note was loaded | Returns false; no Slides added | | |
+| AI-TC27 | Reply while read-only is dropped (client) | a draft inserted while the editor is read-only | Returns false; no Slides added | | |
+| AI-TC28 | Abort signal (client) | `api` called with an abort signal | The signal is passed to `fetch` unchanged | | |
+| AI-TC29 | Dialog behaviour (client) | the editor panel with the server answering 400, 403 or 429 to the empty probe, then 404; the dialog opened; Cancel while waiting, then a late reply; Cancel then resend; a reply after another Note was loaded; the 30-second stop | The dialog says the text is sent to an external AI service before Send; the button shows on 400, 403 and 429 and is absent on 404; Cancel closes the dialog and the late reply adds nothing; the first request settling leaves the second still pending; the late reply is dropped and the dialog closes with no message; "This took too long and was stopped. Try shorter text." | | |
+| AI-TC30 | Text-box actions return their shapes | rewrite, shorten and quiz on the same text, the provider stubbed; 321 tokens each | 200 with `{text}`, `{text}` and `{questions:[{q,a}]}` (3 to 5 items); one provider call each with its own system prompt and the text as the user message; ai_requests 3, the user's tokens 963 | | |
+| AI-TC31 | Off, guest and inactive | no key, then the kill switch, then a guest, then a restricted account | 404, 404, 401, 403; no provider call | | |
+| AI-TC32 | Text limits | 2,001 characters, blank text, an unknown action; then exactly 2,000 | 400 ("Text must be at most 2,000 characters") for the first three with no provider call; 200 for 2,000 | | |
+| AI-TC33 | Counters before the call; one budget | ai_requests and the user's token count read inside the stubbed provider call; then 3 outline and 2 rewrite calls and a 6th of each | ai_requests is already 1 and the user's reservation is above 2,000; the 6th call on either route is 429, so both routes share one per-user limit | | |
+| AI-TC34 | Provider 429 and timeout | the provider answers 429 with the text in its body; then the 30-second timeout fires | 503 "AI help is busy right now. Try again in a minute", one call, tokens handed back; then 502; `AbortSignal.timeout(30000)` used | | |
+| AI-TC35 | Invalid reply and logs | a quiz reply of two questions; then a valid rewrite | 422 "Couldn't do that, try shorter text" after one call (no retry); logs hold action, input characters, tokens and latency only, never the text or the reply | | |
+| AI-TC36 | Text helpers (client) | a box of paragraphs and a list; model text containing an img tag; a quiz of three questions | One line per paragraph or item; the model text escaped into paragraphs; the quiz Slide holds the questions and the notes hold "1. A1" to "3. A3", no answer on the Slide | | |
+| AI-TC37 | Rewrite one undo (client) | a box open for typing; Rewrite clearer; the reply holds an img tag | Editing closes before the call; the notice is shown; the box holds the escaped reply; one undo restores the old box | | |
+| AI-TC38 | Quiz me one undo (client) | Quiz me with a three-question reply | One new Slide after the current one with the answers in its notes; one undo removes it | | |
+| AI-TC39 | Dropped replies, cancel, long box (client) | a reply after another Note loads; a reply while read-only; a switch of slide, a lock and a delete while waiting; Cancel while waiting; a box of 2,001 characters | Nothing applied for the first two and the control is hidden while read-only (saves stay refused for Viewers); a rewrite replying after a slide switch changes only the recorded slide's box; a locked or deleted box, or one opened for typing meanwhile, gives a message; the reply still lands on the recorded box after the bar unmounts; Quiz me is disabled with the full-Note message at 30 Slides; Cancel re-enables the buttons; the long box is refused with no call | | |
+| AI-TC40 | Hidden when off (client) | the probe answers 404 | No AI help button | | |
+| AI-TC41 | Formats fill the box (client) | a .txt, .md, .docx and .pdf file imported | Each gives its text, trimmed; the box is filled and nothing is sent | | |
+| AI-TC42 | Over 5 MB refused (client) | a file of 5 MB plus 1 byte | Refused with "This file is over 5 MB"; the file is never read (text and arrayBuffer not called) | | |
+| AI-TC43 | PowerPoint refused (client) | a .pptx file, then a .exe file | Refused with a PowerPoint message, then with the list of supported types | | |
+| AI-TC44 | Readers load lazily (client) | import a .txt, then a .docx, then a .pdf with mocked readers | mammoth and pdfjs-dist load only when a .docx or .pdf is imported; the editor sources have no static import of them | | |
+| AI-TC45 | Only extracted text sent; truncation notice; PDF page cap and timeout (client) | a .txt of 8,005 characters imported, then Send; a 500-page PDF; a PDF read that never finishes | The box holds 8,000 characters with a "cut to fit" notice; Send posts JSON with only that text, no FormData; the PDF stops at 200 pages with a notice; the stuck read ends after 15 s with "Couldn't read this file" | | |
+| AI-TC46 | AI token in every reply (#116) | an outline, then Rewrite, Shorten and Quiz me replies for one user | Each reply carries `aiToken`, a JWT with audience `ai-output`, `sub` = the user and 24 hours from issue to expiry | | |
+| AI-TC47 | AI token is not a login (#116) | an AI token sent as the `notalah_token` cookie to `GET /api/auth/me` and `POST /api/notes` | 401 both times | | |
+| AI-TC48 | Login token is not an AI token (#116) | the user's own session token sent as `aiToken` on `POST /api/notes`; a token signed with the raw `JWT_SECRET` with audience `ai-output` and the user as `sub` | 201 and `aiAssisted` false; `pst_ai_assisted_at` stays NULL | | |
+| AI-TC49 | Owner save sets the label (#116) | the owner's valid token on `POST /api/notes`; on `PUT /api/notes/:id` of a Note made without one | 201 and 200 with `aiAssisted` true; `GET /api/notes/:id` also says true | | |
+| AI-TC50 | Collaborator save sets the label (#116) | an edit Collaborator's own valid token on `PUT /api/notes/:id` with `baseUpdatedAt` | 200 and `aiAssisted` true | | |
+| AI-TC51 | Missing, forged and expired tokens (#116) | no token, an empty string, `garbage`, a token signed with another key, a number; a valid token used 24 hours and 1 second after issue | Every save succeeds (201) with `aiAssisted` false | | |
+| AI-TC52 | Another user's token (#116) | the owner saves with a token issued to a different user | 201 and `aiAssisted` false | | |
+| AI-TC53 | Label stays (#116) | a labelled Note saved again with `aiAssisted: false` and no token, then with a new token; a new Note sent `aiAssisted: true` with no token | The label stays true and `pst_ai_assisted_at` keeps its first time; the new Note is false | | |
+| AI-TC54 | Label is not a ranking input (#116) | four published Notes in the Feed; two of them then labelled | The Feed order is the same before and after; only the two cards carry `aiAssisted` true | | |
+| AI-TC55 | Editor sends the token (client) (#116) | a Rewrite reply with `aiToken`; an applied outline reply with `aiToken`; a reply that lands after another Note loaded; a save with a token whose reply says `aiAssisted` true | The applied Rewrite and outline tokens are kept in the editor; the dropped reply leaves none; the save body carries the token; the editor's save status shows "AI-assisted" once the label is set, and not before | | |
+| AI-TC56 | Max-length reservation (#121) | an outline of exactly 8,000 characters; the user's token count read inside the stubbed provider call | The reservation is ceil((system prompt + 8,000) / 4) + 4,000 (6,215 with today's 857-character prompt); two of them fit in the 16,000-token daily share and one is under Groq's 8,000 tokens a minute | | |
+| AI-TC57 | One deadline across the retry (#121) | the first provider call returns invalid JSON just as the 30-second deadline fires | One `AbortSignal.timeout(30000)` for both attempts, passed to the call; no second call is sent or counted (ai_requests 1, the user's tokens are the first reply's 100); 502 "AI help is unavailable right now. Try again later" | | |
+
+*Table 4.48: Theme test cases (UI, #123)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| UI-TC1 | Token contrast, both themes | 53 text/background, input-border, focus-ring and icon pairs read from `index.css`; a token removed from it | Text pairs at least 4.5:1; input borders, focus ring and icons at least 3:1; a missing token fails naming the token | | |
+| UI-TC2 | No colour-contrast violations in the browser | axe-core 4.10.3 on Feed, note, editor, Inbox, Login and Welcome at 1440 and 375 px, light and dark | axe reports no `color-contrast` violation on any screen | | |
+| UI-TC3 | Hover fills and hairlines stay visible | `accent`, `surface`, `secondary`, `background`, `border` and `surface-strong` in both themes | `accent` differs from `surface`, `secondary` and `background`; `border` differs from `surface-strong` and `surface` | | |
+| UI-TC4 | Comment box has no unsupported ARIA (#128) | axe-core 4.14.0 on the note page at 1440 and 375 px, light and dark; `#c-new-body` | No `aria-allowed-attr` violation | axe-core 4.14.0: 0 `aria-allowed-attr` nodes on the note page in all four combinations (main had 1 at `#c-new-body`) | Pass |
+| UI-TC5 | Note page side column is not a nested landmark (#128) | axe-core 4.14.0 on the note page at 1440 and 375 px, light and dark | No `landmark-complementary-is-top-level` violation | 0 `landmark-complementary-is-top-level` nodes on the note page in all four combinations (main had 1 in #127's record) | Pass |
+| UI-TC6 | Editor has one main landmark (#128) | axe-core 4.14.0 on the editor at 1440 and 375 px, light and dark | No `landmark-one-main` violation; one `main` element | 0 `landmark-one-main` nodes on the editor in all four combinations (main had 1) | Pass |
+| UI-TC7 | Editor content sits inside landmarks (#128) | axe-core 4.14.0 on the editor at 1440 and 375 px, light and dark | No `region` violation | 0 `region` nodes on the editor with a panel open in all four combinations (main had 5 at 1440) | Pass |
+| UI-TC8 | Verified pill legible (#128) | The Doto "Verified" pill on a verified note at 1440 and 375 px, light and dark | Text readable in all four; `foreground` on `surface` at least 4.5:1 | Legible in all four; Doto 15px weight 900, foreground on surface 15.46:1 light and 12.80:1 dark (token table, not measured in the browser); thin letters are the weakest | Pass |
+| UI-TC9 | Note page and editor axe-clean (#128) | axe-core 4.14.0, all rules, note page and editor at 1440 and 375 px, light and dark | Zero violations | 0 violations in all four combinations on both pages, with a panel open in the editor; `label-content-name-mismatch` on the logo (1) and slide thumbnails (7), found by 4.14.0 at 1440, fixed in the same PR | Pass |
+
 ## 4.5.2 User Acceptance Testing
 
-	User acceptance testing will be conducted with at least three participants, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. Each participant completes the scenario tasks for their role in a moderated session and then rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent. Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
+	User acceptance testing runs from 23 November and finishes before 6 December 2026 (ADR 0098). At least three participants take part, one matching each persona of Section 1.6.3: a student, a lecturer and an administrator. The stretch goal is five students, one lecturer and one administrator. Each participant completes the scenario tasks for their role in a moderated session. The moderator times every task with a stopwatch, from the end of the task instruction to the moment the participant reaches the stated end state, and records whether the participant finished without help. After the tasks, the participant rates the system on four categories using a five-point scale, where 1 is very poor and 5 is excellent, and completes the System Usability Scale (SUS). Tester feedback and the developer's response are recorded for every participant. Where feedback is negative, the issue is fixed and the same participant re-tests the affected task, and both iterations are documented. The ranking weights are re-evaluated using the student and lecturer feedback, with particular attention to w₁ and w₄, as required by NFR5.
 
-*Table 4.47: UAT tester details*
+	Each task has a baseline and a target. Every task has a reference time: the time the scripted end-to-end test of the same task takes (R26, #81), recorded before UAT. The reference time is for comparison only and is not a pass/fail criterion. Two tasks have a stronger baseline. For UAT-S4, only 4 of 32 survey respondents (12.5%, item D1) found a study resource in under 2 minutes. For UAT-S2, the baseline is the same participant's manual time, against which the time with the R28 assistant is compared (B3, protocol in #122). The overall targets are a task success rate of at least 90% across all task attempts and a mean SUS score of at least 80.
+
+*Table 4.49: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
 | UAT-1 | | | Student | | | |
 | UAT-2 | | | Lecturer | | | |
 | UAT-3 | | | Administrator | | | |
+| UAT-4 (stretch) | | | Student | | | |
+| UAT-5 (stretch) | | | Student | | | |
+| UAT-6 (stretch) | | | Student | | | |
+| UAT-7 (stretch) | | | Student | | | |
 
-*Table 4.48: UAT scenario tasks*
+*Table 4.50: UAT scenario tasks*
 
-| Task ID | Role | Task | Completed (Y/N) | Comment |
-| --- | --- | --- | --- | --- |
-| UAT-S1 | Student | Register, log in and complete your profile | | |
-| UAT-S2 | Student | Create a three-slide note, save it as a draft, then publish it publicly with a module and two hashtags | | |
-| UAT-S3 | Student | Browse the feed for five minutes; like, comment on and save at least one note | | |
-| UAT-S4 | Student | Find notes for a given module code and for a given hashtag | | |
-| UAT-S5 | Student | Message the author of a note you are not connected to; then accept a request sent to you | | |
-| UAT-S6 | Student | Create a group chat with two friends and share a note in it | | |
-| UAT-L1 | Lecturer | Register as a lecturer and log in after approval | | |
-| UAT-L2 | Lecturer | Review a student note and Super Like it with a remark | | |
-| UAT-L3 | Lecturer | Comment on a student note and confirm your comment is pinned | | |
-| UAT-L4 | Lecturer | Filter search results to lecturer content for one module | | |
-| UAT-L5 | Lecturer | Report a note for plagiarism | | |
-| UAT-A1 | Administrator | Approve one lecturer application and reject another | | |
-| UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | | |
-| UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | | |
+| Task ID | Role | Task | Baseline | Target | Time (s) | Completed (Y/N) | Comment |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| UAT-S1 | Student | Register, log in and complete your profile | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-S2 | Student | Create a three-slide note, save it as a draft, then publish it publicly with a module and two hashtags. Done twice: once by hand and once with the R28 assistant (paste text to draft slides; file import only if #115 is merged by UAT) | The same participant's manual time | Median assisted/manual time ratio at most 0.5 (B3, #122) | | | |
+| UAT-S3 | Student | Browse the feed for five minutes; like, comment on and save at least one note | Reference time (expert, #81), excluding the five-minute browse | Completed unaided | | | |
+| UAT-S4 | Student | Find notes for a given module code and for a given hashtag | Survey D1: 12.5% find a resource in under 2 minutes | Median under 30 seconds for each search (module code and hashtag timed separately) | | | |
+| UAT-S5 | Student | Message the author of a note you are not connected to; then accept a request sent to you | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-S6 | Student | Create a group chat with two friends and share a note in it | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-L1 | Lecturer | Register as a lecturer and log in after approval | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-L2 | Lecturer | Review a student note and Super Like it with a remark | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-L3 | Lecturer | Comment on a student note and confirm your comment is pinned | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-L4 | Lecturer | Filter search results to lecturer content for one module | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-L5 | Lecturer | Report a note for plagiarism | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-A1 | Administrator | Approve one lecturer application and reject another | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-A2 | Administrator | Resolve three reports: dismiss one, hide one, hide and suspend one | Reference time (expert, #81) | Completed unaided | | | |
+| UAT-A3 | Administrator | Find a user by name, restrict the account, then reinstate it | Reference time (expert, #81) | Completed unaided | | | |
 
-*Table 4.49: UAT evaluation scores (1 = very poor, 5 = excellent)*
+	UAT-S2 follows the B3 protocol in #122: half the participants do the manual run first and half do the assisted run first. The assisted run uses the live AI provider; the automated tests of the same feature use a stubbed provider with no key or network. Where a task is not scripted in #81, the developer takes the reference time by running the task by hand.
+
+*Table 4.51: UAT targets*
+
+| Measure | Baseline | Target | Result |
+| --- | --- | --- | --- |
+| Task success rate (tasks completed unaided / all task attempts) | none | At least 90% | |
+| UAT-S4 median time, for each search separately | Survey D1: 4 of 32 (12.5%) find a resource in under 2 minutes | Under 30 seconds | |
+| UAT-S2 median assisted/manual time ratio (B3) | The same participant's manual time | At most 0.5 | |
+| Mean SUS score | none | At least 80 | |
+| Apps per study session (NFR4) | Survey E1: 24 of 32 (75%) use three or more | Fewer than three | |
+
+*Table 4.52: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1820,7 +1921,35 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.50: UAT feedback and developer response*
+*Table 4.53: System Usability Scale (1 = strongly disagree, 5 = strongly agree)*
+
+| No. | Statement | UAT-1 | UAT-2 | UAT-3 |
+| --- | --- | --- | --- | --- |
+| 1 | I think that I would like to use this system frequently | | | |
+| 2 | I found the system unnecessarily complex | | | |
+| 3 | I thought the system was easy to use | | | |
+| 4 | I think that I would need the support of a technical person to be able to use this system | | | |
+| 5 | I found the various functions in this system were well integrated | | | |
+| 6 | I thought there was too much inconsistency in this system | | | |
+| 7 | I would imagine that most people would learn to use this system very quickly | | | |
+| 8 | I found the system very cumbersome to use | | | |
+| 9 | I felt very confident using the system | | | |
+| 10 | I needed to learn a lot of things before I could get going with this system | | | |
+| **SUS score** | | | | |
+
+	The SUS is scored in the standard way. Each odd-numbered item contributes its rating minus 1, and each even-numbered item contributes 5 minus its rating. The sum is multiplied by 2.5 to give a score from 0 to 100. The target is a mean of at least 80. Each stretch participant adds a column.
+
+*Table 4.54: Apps used per study session (NFR4)*
+
+| Tester | Apps used in a typical study session before NotaLah | Apps still needed with NotaLah | Count before | Count with NotaLah |
+| --- | --- | --- | --- | --- |
+| UAT-1 | | | | |
+| UAT-2 | | | | |
+| UAT-3 | | | | |
+
+	NFR4 asks the system to reduce the number of separate applications needed during a study session. Survey item E1 is the baseline: 24 of 32 respondents (75%) used three or more. Each participant lists the apps they use in a typical study session, then marks which ones they would still need alongside NotaLah's notes, search, comments and messaging. The target is fewer than three apps per participant with NotaLah.
+
+*Table 4.55: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1831,11 +1960,13 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.51: Ranking weight re-evaluation (NFR5)*
+*Table 4.56: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |
-| w₁ Engagement | 0.24 | | | |
-| w₂ Recency | 0.25 | | | |
-| w₃ Lecturer validation | 0.30 | | | |
-| w₄ Relevance match | 0.21 | | | |
+| w₁ Engagement | 0.24 (0.30 before ADR 0089) | | | Survey C5: mean 2.16; placed first by 14 and last by 8 of 32. |
+| w₂ Recency | 0.25 | | | Survey C5: mean 2.16; placed last by 1 of 32. |
+| w₃ Lecturer validation | 0.30 | | | Survey C5: rated most important, mean 1.50. |
+| w₄ Relevance match | 0.21 (0.15 before ADR 0089) | | | Survey C5: mean 1.69; placed last by none of 32. |
+
+	The initial values are the weights set in ADR 0089 after the NFR3 measurement. During UAT, the student and lecturer participants say whether the top five notes of their feed match their modules and whether popular off-topic notes rank too high. Where the answers show a weight is too high or too low, the revised value and the reason are recorded here. The weights must still sum to 1 and the score stays deterministic. If no change is needed, the revised value repeats the initial value and the justification says so.

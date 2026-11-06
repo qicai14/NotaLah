@@ -1,0 +1,144 @@
+import { deckSchema } from '@notalah/shared';
+import { readFileSync } from 'node:fs';
+import request from 'supertest';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
+import { app } from '../../src/app';
+import { pool } from '../../src/lib/pool';
+import { DEFAULT_UAT_PASSWORD, NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
+import { seedUat } from '../../src/scripts/uat/seed';
+import { CSRF, insertUser, truncateAll } from '../helpers';
+
+// truncateAll keeps MODULE_T, so the UAT modules are removed here (after the notes that use them) to leave the shared test DB as found.
+const clean = async () => {
+  await truncateAll();
+  await pool.query(`DELETE FROM "MODULE_T" WHERE mod_code LIKE 'UAT%'`);
+};
+beforeEach(clean);
+afterEach(clean);
+afterAll(() => pool.end());
+
+const counts = async () => {
+  const { rows } = await pool.query<Record<string, string>>(
+    `SELECT (SELECT COUNT(*) FROM "USER_T") AS users, (SELECT COUNT(*) FROM "POST_T") AS posts,
+            (SELECT COUNT(*) FROM "SLIDE_T") AS slides, (SELECT COUNT(*) FROM "HASHTAG_T") AS tags, (SELECT COUNT(*) FROM "REPORT_T") AS reports`,
+  );
+  return rows[0];
+};
+
+describe('UAT seed', () => {
+  it('OPS-TC21: running the UAT seed twice adds nothing the second time and keeps unrelated rows', async () => {
+    const otherUser = await insertUser({ email: 'other@mail.apu.edu.my' });
+    const { rows } = await pool.query<{ pst_id: number }>(
+      `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_status, pst_visibility, pst_published_at)
+       VALUES ($1, (SELECT mod_id FROM "MODULE_T" WHERE mod_code = 'CT076-3-2'), 'Unrelated note', 'published', 'public', NOW()) RETURNING pst_id`,
+      [otherUser],
+    );
+
+    const first = await seedUat(pool);
+    expect(first.inserted).toMatchObject({ users: 5, notes: NOTES.length, reports: 3 });
+    expect(first.inserted.modules).toBe(3);
+    const afterFirst = await counts();
+    expect(afterFirst.users).toBe('6');
+    expect(afterFirst.posts).toBe(String(NOTES.length + 1));
+
+    const second = await seedUat(pool);
+    expect(second.inserted).toEqual({ users: 0, modules: 0, notes: 0, slides: 0, reports: 0 });
+    expect(second.skipped).toMatchObject({ users: 5, modules: 3, notes: NOTES.length, reports: 3 });
+    expect(await counts()).toEqual(afterFirst);
+
+    const { rows: kept } = await pool.query(
+      `SELECT (SELECT COUNT(*) FROM "USER_T" WHERE usr_id = $1) AS u, (SELECT COUNT(*) FROM "POST_T" WHERE pst_id = $2) AS p`,
+      [otherUser, rows[0].pst_id],
+    );
+    expect(kept[0]).toEqual({ u: '1', p: '1' });
+  });
+
+  it('OPS-TC22: the UAT seed never wipes data or resets an existing password', async () => {
+    for (const f of ['seed.ts', 'data.ts']) {
+      const src = readFileSync(new URL(`../../src/scripts/uat/${f}`, import.meta.url), 'utf8');
+      expect(src, f).not.toMatch(/TRUNCATE|DELETE|DROP\s/i);
+      expect(src, f).not.toMatch(/UPDATE\s+"(USER_T|MODULE_T)"|SET\s+usr_password_hash/i);
+    }
+
+    await seedUat(pool);
+    const email = 'uat.student1@mail.apu.edu.my';
+    const changed = '$2b$04$' + 'x'.repeat(53);
+    await pool.query(`UPDATE "USER_T" SET usr_password_hash = $1 WHERE usr_email = $2`, [changed, email]);
+    await seedUat(pool);
+    const { rows } = await pool.query(`SELECT usr_password_hash FROM "USER_T" WHERE usr_email = $1`, [email]);
+    expect(rows[0].usr_password_hash).toBe(changed);
+  });
+
+  it('OPS-TC23: every seeded deck passes deckSchema and the lecturer is an approved lecturer', async () => {
+    expect(NOTES.length).toBeGreaterThanOrEqual(12);
+    expect(NOTES.length).toBeLessThanOrEqual(16);
+    for (const n of NOTES) expect(deckSchema.safeParse(toDeck(n)).success, n.title).toBe(true);
+
+    await seedUat(pool);
+    const { rows } = await pool.query(
+      `SELECT usr_role, usr_lecturer_status FROM "USER_T" WHERE usr_email = 'uat.lecturer@mail.apu.edu.my'`,
+    );
+    expect(rows[0]).toEqual({ usr_role: 'lecturer', usr_lecturer_status: 'approved' });
+    const { rows: stored } = await pool.query<{ sld_doc: unknown }>(`SELECT sld_doc FROM "SLIDE_T"`);
+    expect(stored.length).toBeGreaterThan(NOTES.length);
+  });
+
+  it('OPS-TC26: the default UAT password is refused in production', () => {
+    const saved = { node: process.env.NODE_ENV, pw: process.env.UAT_PASSWORD };
+    try {
+      delete process.env.UAT_PASSWORD;
+      process.env.NODE_ENV = 'production';
+      expect(() => uatPassword()).toThrow(/UAT_PASSWORD is required in production/);
+      process.env.UAT_PASSWORD = 'Another#Pass1';
+      expect(uatPassword()).toBe('Another#Pass1');
+      process.env.NODE_ENV = 'test';
+      delete process.env.UAT_PASSWORD;
+      expect(uatPassword()).toBe(DEFAULT_UAT_PASSWORD);
+    } finally {
+      process.env.NODE_ENV = saved.node;
+      if (saved.pw === undefined) delete process.env.UAT_PASSWORD;
+      else process.env.UAT_PASSWORD = saved.pw;
+    }
+  });
+
+  it('OPS-TC24: each seeded role can log in and the lecturer and a student see their UAT notes', async () => {
+    await seedUat(pool);
+    const login = (email: string) =>
+      request(app).post('/api/auth/login').set(CSRF).send({ email, password: uatPassword() });
+
+    for (const u of USERS) {
+      const res = await login(u.email);
+      expect(res.status, u.email).toBe(200);
+      expect(res.body.user.role).toBe(u.role);
+      if (u.role === 'admin') continue; // the admin owns no notes
+
+      const cookie = ([] as string[]).concat(res.headers['set-cookie'] ?? []).join('; ');
+      const mine = NOTES.filter((n) => n.author === u.email && !n.hidden).map((n) => n.title);
+      const profile = await request(app).get(`/api/users/${res.body.user.id}/notes`).set('Cookie', cookie);
+      expect(profile.status).toBe(200);
+      expect(profile.body.notes.map((n: { title: string }) => n.title).sort()).toEqual([...mine].sort());
+
+      const found = await request(app).get('/api/search').query({ q: 'UAT:', tab: 'notes' }).set('Cookie', cookie);
+      expect(found.status).toBe(200);
+      expect(found.body.items.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('OPS-TC25: a hidden note by Daniel Tan is the latest hidden and three reports stay open', async () => {
+    await seedUat(pool);
+    const { rows: hidden } = await pool.query(
+      `SELECT u.usr_display_name AS author FROM "POST_T" p JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
+       WHERE p.pst_status = 'hidden' ORDER BY p.pst_updated_at DESC, p.pst_id DESC LIMIT 1`,
+    );
+    expect(hidden[0].author).toBe('Daniel Tan');
+    const { rows: reports } = await pool.query(
+      `SELECT rpt_status, rpt_reporter_id = p.pst_usr_id AS own FROM "REPORT_T" r JOIN "POST_T" p ON p.pst_id = r.rpt_pst_id`,
+    );
+    expect(reports).toHaveLength(3);
+    expect(reports.every((r) => r.rpt_status === 'open' && !r.own)).toBe(true);
+    const { rows: onHidden } = await pool.query(
+      `SELECT COUNT(*) AS n FROM "REPORT_T" r JOIN "POST_T" p ON p.pst_id = r.rpt_pst_id WHERE p.pst_status = 'hidden'`,
+    );
+    expect(onHidden[0].n).toBe('2');
+  });
+});
