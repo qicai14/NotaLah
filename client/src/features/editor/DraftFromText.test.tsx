@@ -1,14 +1,16 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { DraftFromText, forgetAiProbe } from './DraftFromText';
+import { useEditor } from './store';
 
 const reply = (status: number, body: unknown = {}) =>
   ({ status, ok: status < 400, headers: new Headers(), json: () => Promise.resolve(body) }) as Response;
 const outline = { outline: { slides: [{ layout: 'title', title: 'Hi' }] } };
 
-/** Fresh modules (the availability answer is cached per page load); the probe answers `probe`, outline calls wait in `calls`. */
+/** A fresh availability answer (cached per page load); the probe answers `probe`, outline calls wait in `calls`. */
 async function mount(probe: number) {
-  vi.resetModules();
+  forgetAiProbe();
   const calls: ((r: Response) => void)[] = [];
   const fetchMock = vi.fn(
     (_url: string, init: RequestInit) =>
@@ -20,8 +22,6 @@ async function mount(probe: number) {
       }),
   );
   vi.stubGlobal('fetch', fetchMock);
-  const { DraftFromText } = await import('./DraftFromText');
-  const { useEditor } = await import('./store');
   render(<DraftFromText />);
   return { calls, useEditor, fetchMock };
 }
