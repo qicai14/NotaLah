@@ -10,9 +10,11 @@ Read with `PLAN.md` (milestones), `OPEN_QUESTIONS.md` and `adr/` (0091 on).
 - TC IDs: AI-TC1-40 used; AI-TC41-45 for #115, AI-TC46-55 for #116, AI-TC56-60 for #121. UI-TC1-3 used; UI-TC4-9 for #128.
 - ADRs: 0094 reserved for #116, 0096 for #121, 0097 for #128. 0098-0099 in this PR. Next free: 0100.
 
-## In progress 6 Nov (see the session or PR)
-- #121 paste limit about 8,000 characters and one 30 s deadline (`fix/121-ai-deadline`, opus).
-- #128 four axe violations (`fix/128-axe-landmarks`); it first retakes #127's dark screenshots and axe run.
+## Stopping points 6 Nov
+- #121 merged 6 Nov as #130 (a347713): 8,000-char outline limit, one 30 s deadline, AI-TC56-57; #110 updated.
+- #128: draft PR #131 (fix/128-axe-landmarks, b93b06e), not merged. Its body has a "To do on resume" list; the
+  blocker is that the editor's panel `<aside>` sits inside the new `<main>` (EditorPage.tsx:622). axe counts wait for
+  the owner's choice: inject axe-core 4.10.3 from jsDelivr, or add it as a dev dependency.
 
 ## Next work, in order
 1. #116 AI-assisted label as a signed token (opus; after #121 merges, as both touch `server/src/features/ai`; must
