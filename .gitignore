@@ -3,6 +3,7 @@ uploads/
 dist/
 build/
 coverage/
+test-results/
 .vite/
 *.log
 .env
