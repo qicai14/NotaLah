@@ -2,13 +2,14 @@ import { deckSchema } from '@notalah/shared';
 import { pathToFileURL } from 'node:url';
 import type { Pool } from 'pg';
 import { hashPassword } from '../../features/auth/passport';
-import { MODULES, NOTES, USERS, USER_PROGRAMME, toDeck, uatPassword } from './data';
+import { MODULES, NOTES, REPORTS, USERS, USER_PROGRAMME, toDeck, uatPassword } from './data';
 
 export interface UatCounts {
   users: number;
   modules: number;
   notes: number;
   slides: number;
+  reports: number;
 }
 export interface UatResult {
   db: string;
@@ -25,7 +26,7 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
     await client.query('BEGIN');
     await client.query(`SELECT pg_advisory_xact_lock(hashtext('notalah_uat_seed'))`);
     const { rows: dbRows } = await client.query<{ db: string }>('SELECT current_database() AS db');
-    const inserted: UatCounts = { users: 0, modules: 0, notes: 0, slides: 0 };
+    const inserted: UatCounts = { users: 0, modules: 0, notes: 0, slides: 0, reports: 0 };
 
     for (const u of USERS) {
       const r = await client.query(
@@ -47,14 +48,16 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
     for (const [i, n] of NOTES.entries()) {
       const { rows } = await client.query<{ pst_id: number }>(
         `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_aspect, pst_status, pst_visibility,
-                               pst_published_at, pst_created_at)
-         SELECT u.usr_id, m.mod_id, $3::VARCHAR, $4::VARCHAR, '4:5', 'published', 'public',
-                NOW() - ($5::INT * INTERVAL '6 hours'), NOW() - ($5::INT * INTERVAL '6 hours')
+                               pst_published_at, pst_created_at, pst_updated_at)
+         SELECT u.usr_id, m.mod_id, $3::VARCHAR, $4::VARCHAR, '4:5', $6::VARCHAR, 'public',
+                NOW() - ($5::INT * INTERVAL '6 hours'), NOW() - ($5::INT * INTERVAL '6 hours'),
+                -- A hidden note is the most recently changed one, so it is the latest hidden.
+                CASE WHEN $6::VARCHAR = 'hidden' THEN NOW() ELSE NOW() - ($5::INT * INTERVAL '6 hours') END
          FROM "USER_T" u, "MODULE_T" m
          WHERE u.usr_email = $1 AND m.mod_code = $2
            AND NOT EXISTS (SELECT 1 FROM "POST_T" p WHERE p.pst_usr_id = u.usr_id AND p.pst_title = $3::VARCHAR)
          RETURNING pst_id`,
-        [n.author, n.module, n.title, n.theme, NOTES.length - i],
+        [n.author, n.module, n.title, n.theme, NOTES.length - i, n.hidden ? 'hidden' : 'published'],
       );
       if (rows.length === 0) continue;
       const id = rows[0].pst_id;
@@ -88,6 +91,18 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
         [id],
       );
     }
+    for (const r of REPORTS) {
+      const author = NOTES.find((n) => n.title === r.title)?.author;
+      const res = await client.query(
+        `INSERT INTO "REPORT_T" (rpt_pst_id, rpt_reporter_id, rpt_reason, rpt_details)
+         SELECT p.pst_id, rep.usr_id, $4::VARCHAR, $5::VARCHAR
+         FROM "POST_T" p JOIN "USER_T" a ON a.usr_id = p.pst_usr_id AND a.usr_email = $2, "USER_T" rep
+         WHERE p.pst_title = $1::VARCHAR AND rep.usr_email = $3
+           AND NOT EXISTS (SELECT 1 FROM "REPORT_T" x WHERE x.rpt_pst_id = p.pst_id AND x.rpt_reporter_id = rep.usr_id)`,
+        [r.title, author, r.reporter, r.reason, r.details],
+      );
+      inserted.reports += res.rowCount ?? 0;
+    }
     await client.query('COMMIT');
 
     const total: UatCounts = {
@@ -95,6 +110,7 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
       modules: MODULES.length,
       notes: NOTES.length,
       slides: decks.reduce((sum, d) => sum + d.slides.length, 0),
+      reports: REPORTS.length,
     };
     return {
       db: dbRows[0].db,
@@ -104,6 +120,7 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
         modules: total.modules - inserted.modules,
         notes: total.notes - inserted.notes,
         slides: total.slides - inserted.slides,
+        reports: total.reports - inserted.reports,
       },
     };
   } catch (err) {

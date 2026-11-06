@@ -36,6 +36,15 @@ export interface UatNote {
   theme: Deck['theme'];
   tags: string[];
   pages: Page[];
+  /** Hidden by moderation: the admin's suspend step targets its author. */
+  hidden?: true;
+}
+
+export interface UatReport {
+  reporter: (typeof USERS)[number]['email'];
+  title: string;
+  reason: 'inaccurate' | 'inappropriate' | 'spam' | 'plagiarism' | 'copyright' | 'other';
+  details: string;
 }
 
 const box = { x: 60, rotation: 0, opacity: 1, locked: false };
@@ -434,5 +443,45 @@ export const NOTES: UatNote[] = [
         points: ['Avoid, reduce, transfer or accept', 'Assign an owner to each risk', 'Review every sprint'],
       },
     ],
+  },
+  {
+    title: 'UAT: Copied exam answers (hidden)',
+    author: S1,
+    module: DB,
+    theme: 'plain',
+    hidden: true,
+    tags: ['uat', 'moderation'],
+    pages: [
+      {
+        title: 'Past exam answers',
+        points: [
+          'Answers copied from a past paper',
+          'Reported by two students',
+          'Hidden by moderation, reports still open',
+        ],
+      },
+    ],
+  },
+];
+
+/** Three open reports: two on the hidden note, one on a published note. Reporters are never the author. */
+export const REPORTS: UatReport[] = [
+  {
+    reporter: S2,
+    title: 'UAT: Copied exam answers (hidden)',
+    reason: 'plagiarism',
+    details: 'These are answers from the 2025 final exam paper.',
+  },
+  {
+    reporter: S3,
+    title: 'UAT: Copied exam answers (hidden)',
+    reason: 'copyright',
+    details: 'Copied from the marking scheme of the lecturer.',
+  },
+  {
+    reporter: S1,
+    title: 'UAT: Subnetting made simple',
+    reason: 'inaccurate',
+    details: 'The /26 host count looks wrong to me.',
   },
 ];

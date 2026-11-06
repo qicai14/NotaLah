@@ -14,7 +14,7 @@ afterAll(() => pool.end());
 const counts = async () => {
   const { rows } = await pool.query<Record<string, string>>(
     `SELECT (SELECT COUNT(*) FROM "USER_T") AS users, (SELECT COUNT(*) FROM "POST_T") AS posts,
-            (SELECT COUNT(*) FROM "SLIDE_T") AS slides, (SELECT COUNT(*) FROM "HASHTAG_T") AS tags`,
+            (SELECT COUNT(*) FROM "SLIDE_T") AS slides, (SELECT COUNT(*) FROM "HASHTAG_T") AS tags, (SELECT COUNT(*) FROM "REPORT_T") AS reports`,
   );
   return rows[0];
 };
@@ -29,15 +29,15 @@ describe('UAT seed', () => {
     );
 
     const first = await seedUat(pool);
-    expect(first.inserted).toMatchObject({ users: 5, notes: NOTES.length });
+    expect(first.inserted).toMatchObject({ users: 5, notes: NOTES.length, reports: 3 });
     expect(first.inserted.modules + first.skipped.modules).toBe(3);
     const afterFirst = await counts();
     expect(afterFirst.users).toBe('6');
     expect(afterFirst.posts).toBe(String(NOTES.length + 1));
 
     const second = await seedUat(pool);
-    expect(second.inserted).toEqual({ users: 0, modules: 0, notes: 0, slides: 0 });
-    expect(second.skipped).toMatchObject({ users: 5, modules: 3, notes: NOTES.length });
+    expect(second.inserted).toEqual({ users: 0, modules: 0, notes: 0, slides: 0, reports: 0 });
+    expect(second.skipped).toMatchObject({ users: 5, modules: 3, notes: NOTES.length, reports: 3 });
     expect(await counts()).toEqual(afterFirst);
 
     const { rows: kept } = await pool.query(
@@ -89,7 +89,7 @@ describe('UAT seed', () => {
       if (u.role === 'admin') continue; // the admin owns no notes
 
       const cookie = ([] as string[]).concat(res.headers['set-cookie'] ?? []).join('; ');
-      const mine = NOTES.filter((n) => n.author === u.email).map((n) => n.title);
+      const mine = NOTES.filter((n) => n.author === u.email && !n.hidden).map((n) => n.title);
       const profile = await request(app).get(`/api/users/${res.body.user.id}/notes`).set('Cookie', cookie);
       expect(profile.status).toBe(200);
       expect(profile.body.notes.map((n: { title: string }) => n.title).sort()).toEqual([...mine].sort());
@@ -98,5 +98,23 @@ describe('UAT seed', () => {
       expect(found.status).toBe(200);
       expect(found.body.items.length).toBeGreaterThan(0);
     }
+  });
+
+  it('OPS-TC25: a hidden note by Daniel Tan is the latest hidden and three reports stay open', async () => {
+    await seedUat(pool);
+    const { rows: hidden } = await pool.query(
+      `SELECT u.usr_display_name AS author FROM "POST_T" p JOIN "USER_T" u ON u.usr_id = p.pst_usr_id
+       WHERE p.pst_status = 'hidden' ORDER BY p.pst_updated_at DESC, p.pst_id DESC LIMIT 1`,
+    );
+    expect(hidden[0].author).toBe('Daniel Tan');
+    const { rows: reports } = await pool.query(
+      `SELECT rpt_status, rpt_reporter_id = p.pst_usr_id AS own FROM "REPORT_T" r JOIN "POST_T" p ON p.pst_id = r.rpt_pst_id`,
+    );
+    expect(reports).toHaveLength(3);
+    expect(reports.every((r) => r.rpt_status === 'open' && !r.own)).toBe(true);
+    const { rows: onHidden } = await pool.query(
+      `SELECT COUNT(*) AS n FROM "REPORT_T" r JOIN "POST_T" p ON p.pst_id = r.rpt_pst_id WHERE p.pst_status = 'hidden'`,
+    );
+    expect(onHidden[0].n).toBe('2');
   });
 });
