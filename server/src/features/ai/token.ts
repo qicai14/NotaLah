@@ -5,8 +5,6 @@ import { env } from '../../lib/env';
 const AUDIENCE = 'ai-output';
 const TTL = '24h';
 
-// Its own key, derived from JWT_SECRET, so an AI token never passes as a session cookie and a session token never
-// passes as an AI token (ADR 0094). Derived per call so tests that change the secret see it.
 const key = () => createHmac('sha256', env.JWT_SECRET).update(AUDIENCE).digest();
 
 /** Returned with every AI reply; a save that carries it marks the note AI-assisted (R28, ADR 0094). */

@@ -108,7 +108,6 @@ export interface NoteInput {
   hashtags: string[];
   status: 'draft' | 'published';
   visibility: 'public' | 'contacts' | null;
-  /** Set by the route when the save carries the saver's AI token (ADR 0094); the label is never cleared. */
   aiAssisted?: boolean;
 }
 

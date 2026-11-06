@@ -31,7 +31,6 @@ const reply = (content: unknown) =>
     vi.fn(async () => completion(content)),
   );
 
-/** An AI token for `uid`, from a real /api/ai/rewrite reply. */
 async function aiToken(uid: number): Promise<string> {
   reply({ text: 'Clearer words' });
   const res = await request(app)
@@ -80,7 +79,6 @@ describe('AI-assisted label (R28, ADR 0094)', () => {
       .get('/api/auth/me')
       .set({ Cookie: `notalah_token=${token}`, ...CSRF });
     expect(res.status).toBe(401);
-    // and a write with it is refused, so it cannot save a note either
     const write = await request(app)
       .post('/api/notes')
       .set({ Cookie: `notalah_token=${token}`, ...CSRF })
@@ -95,7 +93,6 @@ describe('AI-assisted label (R28, ADR 0094)', () => {
     expect(res.status).toBe(201);
     expect(res.body.note.aiAssisted).toBe(false);
     expect(await labelled(res.body.note.id)).toBeNull();
-    // Signed with the raw session secret but shaped like an AI token: refused because the key differs.
     const rawKey = jwt.sign({}, env.JWT_SECRET, {
       algorithm: 'HS256',
       audience: 'ai-output',
@@ -180,7 +177,7 @@ describe('AI-assisted label (R28, ADR 0094)', () => {
     const again = await update(uid, id, { aiAssisted: false, pst_ai_assisted_at: null });
     expect(again.body.note.aiAssisted).toBe(true);
     expect(await update(uid, id, { aiToken: await aiToken(uid) })).toMatchObject({ status: 200 });
-    expect(await labelled(id)).toEqual(first); // the first time is kept
+    expect(await labelled(id)).toEqual(first);
     const spoof = await create(uid, { aiAssisted: true });
     expect(spoof.body.note.aiAssisted).toBe(false);
   });

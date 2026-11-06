@@ -60,9 +60,7 @@ export interface NoteMeta {
   visibility: 'public' | 'contacts' | null;
   /** The server's `updatedAt` this editor started from, for the 409 check. */
   baseUpdatedAt: string | null;
-  /** The saved note carries the AI-assisted label (R28). */
   aiAssisted: boolean;
-  /** From the last AI reply this session; sent with each save so the server can set the label (ADR 0094). */
   aiToken: string | null;
 }
 

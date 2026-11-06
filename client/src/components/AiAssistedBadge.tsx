@@ -1,7 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** The note was saved with accepted AI output (R28, ADR 0094); set by the server, never removed. */
 export function AiAssistedBadge({ className }: { className?: string }) {
   return (
     <span

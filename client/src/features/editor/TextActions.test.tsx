@@ -87,7 +87,7 @@ describe('TextActions (R28)', () => {
     mount();
     await run('Rewrite clearer');
     await vi.waitFor(() => expect(calls).toHaveLength(1));
-    useEditor.getState().load(emptyDeck()); // another note opened while waiting
+    useEditor.getState().load(emptyDeck());
     calls[0].answer(reply(200, { text: 'Clear', aiToken: 'tok-2' }));
     await new Promise((r) => setTimeout(r, 0));
     expect(useEditor.getState().meta.aiToken).toBeNull();

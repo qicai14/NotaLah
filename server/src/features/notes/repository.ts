@@ -80,7 +80,6 @@ export interface Note {
   slides: { position: number; background: Fill; elements: SlideElement[]; notes?: string }[];
   author: { id: number; displayName: string; role: string; isVerifiedLecturer: boolean };
   coauthors: { id: number; displayName: string }[];
-  /** Saved with a valid AI token at least once (R28, ADR 0094); not a ranking input. */
   aiAssisted: boolean;
   createdAt: Date;
   updatedAt: Date;
