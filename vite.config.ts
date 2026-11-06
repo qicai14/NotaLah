@@ -12,7 +12,8 @@ export default defineConfig({
     tasks: {
       // Type checks read @notalah/shared's built .d.ts files.
       check: {
-        command: 'vp check && node scripts/check-agents.mjs && node scripts/check-schema-docs.mjs',
+        command:
+          'vp check && node scripts/check-agents.mjs && node scripts/check-schema-docs.mjs && node scripts/check-chapter4.mjs',
         dependsOn: ['@notalah/shared#build'],
       },
       test: { command: 'vp test run scripts', cache: false },
