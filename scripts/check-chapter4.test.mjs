@@ -24,7 +24,10 @@ describe('check-chapter4', () => {
 
   it('fails for a hand-edited copy and names the line', () => {
     const copy = path.join(tempDir(), 'CHAPTER4.md');
-    writeFileSync(copy, readFileSync(path.join(dir, 'CHAPTER4.md'), 'utf8').replace('\n\n', '\n\nhand edit\n'));
+    writeFileSync(
+      copy,
+      readFileSync(path.join(dir, 'CHAPTER4.md'), 'utf8').replace(/\r\n/g, '\n').replace('\n\n', '\n\nhand edit\n'),
+    );
     expect(problems(dir, copy).join('\n')).toMatch(/line 3.*build_chapter\.py/);
   });
 
