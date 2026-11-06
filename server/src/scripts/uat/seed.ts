@@ -23,7 +23,6 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // Two seed runs at once would both pass the NOT EXISTS check and double the notes.
     await client.query(`SELECT pg_advisory_xact_lock(hashtext('notalah_uat_seed'))`);
     const { rows: dbRows } = await client.query<{ db: string }>('SELECT current_database() AS db');
     const inserted: UatCounts = { users: 0, modules: 0, notes: 0, slides: 0 };
@@ -46,7 +45,6 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
     }
 
     for (const [i, n] of NOTES.entries()) {
-      // The first note is the oldest, 6 hours apart, so the feed has an order.
       const { rows } = await client.query<{ pst_id: number }>(
         `INSERT INTO "POST_T" (pst_usr_id, pst_mod_id, pst_title, pst_template, pst_aspect, pst_status, pst_visibility,
                                pst_published_at, pst_created_at)
@@ -77,7 +75,6 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
          SELECT $1, hsh_id FROM "HASHTAG_T" WHERE hsh_name = ANY($2::TEXT[]) ON CONFLICT DO NOTHING`,
         [id, n.tags],
       );
-      // Same search document as notes/repository.ts builds on save, restricted to the text and code elements the seed writes.
       await client.query(
         `UPDATE "POST_T" p SET pst_search_doc = to_tsvector('english',
            p.pst_title || ' '
@@ -117,7 +114,6 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
   }
 }
 
-// Run as `vp run server#uat:seed`; importing the module (the test) does not touch the database.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { pool } = await import('../../lib/pool');
   try {

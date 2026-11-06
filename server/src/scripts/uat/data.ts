@@ -1,6 +1,5 @@
 import type { Deck } from '@notalah/shared';
 
-/** UAT-only default (8+ characters, passes the register rules); not a real credential. Override with UAT_PASSWORD. */
 export const DEFAULT_UAT_PASSWORD = 'UatNotaLah#2026';
 export const uatPassword = (): string => {
   const p = process.env.UAT_PASSWORD || DEFAULT_UAT_PASSWORD;
@@ -72,7 +71,6 @@ const codeBlock = (id: string, y: number, code: string) => ({
   size: 28,
 });
 
-/** The slides of one note: a heading and a bullet list per page, plus an optional code block. */
 export const toDeck = (n: UatNote): Deck => ({
   aspect: '4:5',
   theme: n.theme,
