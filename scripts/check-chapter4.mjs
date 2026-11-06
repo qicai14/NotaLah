@@ -68,7 +68,11 @@ export function problems(dir, file = path.join(dir, 'CHAPTER4.md')) {
     return [`cannot build CHAPTER4.md: ${e.message}`];
   }
   const diff = firstDiff(built, read(file));
-  return diff ? [`CHAPTER4.md is stale (${diff}); run python docs/chapter4/build_chapter.py`] : [];
+  return diff
+    ? [
+        `CHAPTER4.md is stale (${diff}); run python docs/chapter4/build_chapter.py (mirrored by scripts/check-chapter4.mjs; change both)`,
+      ]
+    : [];
 }
 
 if (import.meta.main) {
