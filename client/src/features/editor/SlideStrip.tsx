@@ -83,7 +83,6 @@ export function SlideStrip({ compact, readOnly = false }: { compact: boolean; re
           >
             <button
               type="button"
-              aria-label={`Slide ${i + 1}`}
               aria-current={i === active ? 'true' : undefined}
               onClick={() => !dragged.current && setActiveSlide(i)}
               onPointerDown={(e) => startDrag(e, i)}
@@ -95,6 +94,7 @@ export function SlideStrip({ compact, readOnly = false }: { compact: boolean; re
                 drag?.from === i && 'opacity-50',
               )}
             >
+              <span className="sr-only">Slide {i + 1}</span>
               <Thumb slide={s} aspect={deck.aspect} assets={assets} />
             </button>
             <span className="pointer-events-none absolute bottom-1 left-1 rounded-sm bg-board-credit px-1 text-caption tabular-nums text-board-credit-foreground">
