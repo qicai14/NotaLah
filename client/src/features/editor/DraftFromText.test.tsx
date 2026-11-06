@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { DraftFromText, forgetAiProbe } from './DraftFromText';
+import { DraftFromText, forgetAiProbe, MAX_CHARS } from './DraftFromText';
 import { useEditor } from './store';
 
 const reply = (status: number, body: unknown = {}) =>
@@ -92,5 +92,20 @@ describe('DraftFromText (R28)', () => {
     await open();
     send();
     expect((await screen.findByRole('alert')).textContent).toContain('took too long');
+  });
+
+  it('AI-TC45: an imported file fills the box with a notice and sends nothing until Send', async () => {
+    const { fetchMock } = await mount(400);
+    await open();
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const long = new File(['a'.repeat(MAX_CHARS + 5)], 'n.txt');
+    fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [long] } });
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText('Text to turn into slides') as HTMLTextAreaElement).value).toHaveLength(MAX_CHARS),
+    );
+    expect(screen.getByRole('status').textContent).toContain('cut to fit');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [new File(['x'], 'n.pptx')] } });
+    expect((await screen.findByRole('alert')).textContent).toContain('PowerPoint');
   });
 });

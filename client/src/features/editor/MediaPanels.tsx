@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { Button } from '@/components/ui/button';
 import { isIdle, onActivity } from '@/lib/activity';
-import { api, apiOrigin, ApiError, errorText } from '@/lib/api';
+import { api, apiOrigin, ApiError, errorText, postFile } from '@/lib/api';
 import { usePaged } from '@/lib/usePaged';
 import { cn } from '@/lib/utils';
 import type { VideoStatus } from '@/types';
@@ -33,26 +33,6 @@ interface UnsplashPhoto {
 /** JPEG, PNG, WebP or GIF; the server re-encodes to WebP and checks the real type (D54). */
 const IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/gif';
 const MAX_BYTES = 5 * 1024 * 1024;
-
-/** Sends one file as multipart (the JSON `api` helper cannot), with the CSRF header every write needs (D35). */
-async function postFile<T>(path: string, file: File): Promise<T> {
-  const body = new FormData();
-  body.append('file', file);
-  let res: Response;
-  try {
-    res = await fetch(`${apiOrigin()}/api${path}`, {
-      method: 'POST',
-      headers: { 'X-Requested-With': 'notalah' },
-      credentials: 'include',
-      body,
-    });
-  } catch {
-    throw new ApiError(0, 'Could not reach the server. Please try again.');
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, data.error ?? 'Upload failed. Please try again.');
-  return data.asset as T;
-}
 
 async function uploadImage(file: File): Promise<UploadedImage> {
   if (file.size > MAX_BYTES) throw new ApiError(413, 'Image must be at most 5 MB');

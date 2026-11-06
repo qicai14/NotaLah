@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { api, ApiError, errorText } from '@/lib/api';
+import { FileImport } from './FileImport';
 import { outlineToSlides } from './outline';
 import { useEditor } from './store';
 
 export const AI_TIMEOUT_MS = 30_000;
-const MAX_CHARS = 8_000;
+export const MAX_CHARS = 8_000;
 export const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
 
 let probe: Promise<boolean> | undefined;
@@ -107,6 +108,7 @@ export function DraftFromText({ onAdd }: { onAdd?: () => void }) {
             }}
             className="flex flex-col gap-3"
           >
+            <FileImport limit={MAX_CHARS} disabled={pending} onText={setText} />
             <label htmlFor="draft-text" className="text-body-sm font-semibold">
               Text to turn into slides
             </label>
