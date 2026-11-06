@@ -227,10 +227,11 @@ describe('AI outline draft (R28)', () => {
   it('AI-TC17: the provider call is stopped after 30 seconds and errors never echo provider text', async () => {
     const timeout = vi.spyOn(AbortSignal, 'timeout');
     // The deadline fires while the call is in flight, so its reservation is kept.
-    stub(() => Promise.reject(new DOMException('timed out', 'TimeoutError')));
+    const fetchMock = stub(() => Promise.reject(new DOMException('timed out', 'TimeoutError')));
     const uid = await insertUser();
     const res = await outline(uid);
     expect(timeout).toHaveBeenCalledWith(30_000);
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
     expect(res.status).toBe(502);
     expect(res.body.error).toBe('AI help is unavailable right now. Try again later');
     timeout.mockRestore();
