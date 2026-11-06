@@ -13,8 +13,8 @@ physical, week of 4 Jan 2027 onwards. Current state and next issues: `HANDOVER.m
   Still to do: #116, #115, #122.
 - Sprint 8 UI: done #123 (Apple-neutral theme, UI-TC1-3, ADR 0095, merged 6 Nov). In progress 6 Nov: #128.
 - Done 6 Nov: #105 (`scripts/check-chapter4.mjs` in `vp run check` fails when CHAPTER4.md is stale; CHAPTER4.md regenerated).
-- Before feature complete: R26 E2E (#81, after #128), UAT seed (#82, due 20 Nov), evidence pipeline (#83), UAT
-  redesign (#84). Limitations (#85) before UAT. Video is frozen (ADR 0091).
+- Before feature complete: R26 E2E (#81, after #128), evidence pipeline (#83), UAT
+  redesign (#84). Limitations (#85) before UAT. UAT seed (#82) done 6 Nov. Video is frozen (ADR 0091).
 
 ```mermaid
 gantt
@@ -41,7 +41,7 @@ gantt
 | Milestone | Target | Done when |
 |---|---|---|
 | Meeting #2 | booked 5 or 6 Nov; outcome not yet recorded | R14 Plan A or B, the AI additions (ADR 0085) and FR19+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
-| Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed and evidence pipeline ready (#82, #83) |
+| Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed done (#82), evidence pipeline ready (#83) |
 | UAT | opens 23 Nov; must finish before 6 Dec (ADR 0098) | at least three participants confirmed by 20 Nov (#86: 2 peers, one as student and one as admin, plus 1 lecturer), results and NFR5 weight review in `testing/uat/` (#84) |
 | Report complete | 12 Dec (proposed; was 20 Dec) | Chapters 1-6 in the .docx, cuts applied, meeting #1 feedback folded in, 25 screenshots, 3 code snippets, poster, 3-min video |
 | Submission | 16 Dec, 11:59 pm | deliverables named per the `fyp-standards` skill; cover page fields checked; 6 meeting log sheets |
