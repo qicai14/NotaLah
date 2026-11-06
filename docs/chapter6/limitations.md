@@ -10,7 +10,7 @@ numbers are as of 6 Nov (main at `fab9b1a`). Source: issue #85, which quotes the
   So `GET /notes/:noteId/annotations` answers 404 for that user, and like or comment is refused.
 - Code: `server/src/features/notes/repository.ts:37` (`READABLE` includes the collaborator role),
   `server/src/features/engagement/repository.ts:40` (`getTarget` uses `VISIBLE`),
-  `server/src/features/annotations/routes.ts:17` (the annotations route, via `getTarget`).
+  `server/src/features/annotations/routes.ts:17` (the annotations route, via `getTarget`),
   `server/src/features/engagement/routes.ts:17-22` (`target()`, used by like at :33 and comment at :80).
 - Impact at UAT scale: small. It only hits a view collaborator on a contacts-only note who is not a mutual follower (friend) of the author (D38).
   They can still read every slide.
