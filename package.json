@@ -8,6 +8,8 @@
     "prepare": "vp config && vp run @notalah/shared#build"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },
