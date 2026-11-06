@@ -28,12 +28,15 @@ export interface Message {
  * is sent: the user's own token share, then the app-wide requests and tokens. Tokens reserve an estimate (about 4
  * characters a token, plus the reply budget), settled to the provider's own count afterwards. A 4xx (the provider
  * refused, so nothing was generated) hands the tokens back; a timeout, network error or 5xx keeps them, so counts err high.
+ * The caller owns the deadline `signal`; once it has fired nothing is reserved or sent.
  */
 export async function complete(
   messages: Message[],
   maxTokens: number,
   userId: number,
+  signal: AbortSignal,
 ): Promise<{ content: string; tokens: number }> {
+  if (signal.aborted) throw new AiError(DOWN, 502);
   const estimate = Math.ceil(messages.reduce((n, m) => n + m.content.length, 0) / 4) + maxTokens;
   const now = new Date(); // the settlements below land in the same day as the reservations
   const settleTokens = (actual: number) =>
@@ -62,7 +65,7 @@ export async function complete(
         temperature: 0.2,
         response_format: { type: 'json_object' },
       }),
-      signal: AbortSignal.timeout(AI.timeoutMs),
+      signal,
     });
     if (res.status >= 400 && res.status < 500) refused = res.status;
     else if (!res.ok) throw new AiError(DOWN, 502);

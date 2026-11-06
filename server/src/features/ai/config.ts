@@ -2,7 +2,8 @@ import { env } from '../../lib/env';
 
 /** AI assistant settings (R28). */
 export const AI = Object.freeze({
-  outlineChars: 20_000,
+  /** Two full outlines (each ceil((prompt + 8,000) / 4) + 4,000 = about 6,300 tokens) fit in one user's daily share. */
+  outlineChars: 8_000,
   /** A text-box action (rewrite, shorten, quiz) takes at most this much text. */
   textChars: 2_000,
   callsPerMinute: 5,

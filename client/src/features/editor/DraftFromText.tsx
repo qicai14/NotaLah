@@ -8,7 +8,7 @@ import { outlineToSlides } from './outline';
 import { useEditor } from './store';
 
 export const AI_TIMEOUT_MS = 30_000;
-const MAX_CHARS = 20_000;
+const MAX_CHARS = 8_000;
 export const FULL = `This note already has ${LIMITS.slides} slides. Delete one to make room.`;
 
 let probe: Promise<boolean> | undefined;
