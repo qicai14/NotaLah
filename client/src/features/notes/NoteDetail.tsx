@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { VerifiedPill } from '@/components/VerifiedPill';
+import { AiAssistedBadge } from '@/components/AiAssistedBadge';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { Coauthors } from '../../components/Coauthors';
 import { EditedBadge } from '../../components/EditedBadge';
@@ -208,6 +209,7 @@ export default function NoteDetail() {
               </p>
             </div>
           )}
+          {n.aiAssisted && <AiAssistedBadge className="self-start" />}
         </div>
         {published && (
           <CommentPanel

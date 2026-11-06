@@ -17,7 +17,7 @@ palette class such as `slate-500` or `indigo-600`.
 | `cn()` (clsx + tailwind-merge that knows the type scale) | `src/lib/utils.ts` |
 | shadcn/ui primitives (CLI-added, then tuned) | `src/components/ui/` |
 | App shell: rail, tab bar, More menu, nav lists | `src/components/shell/` |
-| Shared building blocks | `src/components/` (`Field`, `ConfirmButton`, `UserAvatar`, `VerifiedPill`, `LecturerBadge`, `Logo`, `NoteActions`) |
+| Shared building blocks | `src/components/` (`Field`, `ConfirmButton`, `UserAvatar`, `VerifiedPill`, `AiAssistedBadge`, `LecturerBadge`, `Logo`, `NoteActions`) |
 | Write state (pending + error) | `src/lib/useAction.ts` |
 | Breakpoint hook | `src/hooks/useMediaQuery.ts` (`DESKTOP` = `(min-width: 768px)`) |
 
@@ -128,7 +128,7 @@ everywhere; no all-caps labels. Use `tabular-nums` on counts and scores.
   (Saved moved to the phone More menu, D55). Messages is in `RAIL` after Following and Inbox replaced Drafts in `TABS`; Drafts stays reachable from your profile. When Explore and Notifications land, they follow the same placement, and Discover replaces Search in `TABS` (wireframe 13). Badges: a `size-5 rounded-full bg-foreground text-background text-caption`
   count at the row's right edge.
 - **Feed card.** Full height, `snap-start`, card `aspect-[9/16]` on desktop, rail to its right aligned to the bottom. On phones the rail floats over the card instead of taking a column: `NoteCard` mounts `NoteActions` inside the slide area (`absolute right-0.5 bottom-2`, above the footer) and the card and slide padding shrink to `px-2`, so the note gets the width. The rail never covers the dots, which sit centred at the slide's foot. Exactly one `NoteActions` is mounted (`useMediaQuery(DESKTOP)` picks the spot).
-  Top row: `VerifiedPill` left, "Why this note?" right. Bottom: author, time, title, module chip, hashtags on `bg-surface`.
+  Top row: `VerifiedPill` (or `EditedBadge`) and `AiAssistedBadge` left, "Why this note?" right. Bottom: author, time, title, module chip, hashtags on `bg-surface`.
 - **Page header.** Ordinary pages start with `<h1 className="text-title font-bold">` and, if needed, actions on the
   right (`Button size="sm"`). Back navigation: ghost icon button with `ArrowLeft` and `aria-label="Back"`.
 - **Lists and grids** (Saved, Drafts, profile notes): tiles on `bg-card border rounded-xl`, title `text-title-sm

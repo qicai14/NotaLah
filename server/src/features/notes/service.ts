@@ -108,6 +108,7 @@ export interface NoteInput {
   hashtags: string[];
   status: 'draft' | 'published';
   visibility: 'public' | 'contacts' | null;
+  aiAssisted?: boolean;
 }
 
 const baseUpdatedAtSchema = z.iso.datetime({ offset: true, error: 'Invalid baseUpdatedAt' });

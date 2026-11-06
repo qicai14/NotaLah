@@ -19,9 +19,8 @@ ranking stays the deterministic heuristic (NFR3). AI output is always an editabl
 ## Design
 - **Provider:** server-side only, OpenAI-compatible chat completions via `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`
   (Groq today; keys already in `.env`). No key → routes answer 404 and the client hides every AI control.
-- **The model never writes slide JSON.** It returns a small outline that zod validates:
-  `{ slides: [{ layout: 'title' | 'title-body' | 'two-column' | 'code', title: string ≤ 120,
-  body?: string[] ≤ 8 items ≤ 300 chars, code?: { language, text ≤ 2000 } }] ≤ 15 }`.
+- **The model never writes slide JSON.** It returns a small outline that zod validates, with layouts `title`,
+  `title-body`, `two-column` and `code`; the size limits are `OUTLINE_LIMITS` in `shared/src/limits.ts` (ADR 0093).
   The client turns each outline slide into real elements with `layoutSlide(layout, theme, aspect, newId)` from
   `shared/src/design.ts` and fills the text, so positions, fonts and colours come from our own code (D69) and the
   deck still passes `deckSchema`. Invalid output: one retry with the zod error, then a plain "Couldn't tidy this,
@@ -39,18 +38,23 @@ ranking stays the deterministic heuristic (NFR3). AI output is always an editabl
   D-entry), through `consume('ai_requests', …)` and `consume('ai_tokens', …)` with the `day` period; 503 "AI help is
   resting until tomorrow" at the cap; `AI_DISABLED=true` kill switch; admin usage report lists both metrics.
   `createLimiter` adds a burst limit (5 a minute per user).
-- **"AI-assisted" label:** new nullable column `pst_ai_assisted_at TIMESTAMPTZ` (migration), set by the server when
-  a save includes content produced by an AI call for that note (the client sends the outline/rewrite response id; the
-  server keeps a short-lived record of issued ids per user). Shown as a small pill on the note view and feed card.
-  Not a ranking input.
+- **"AI-assisted" label (ADR 0094):** new nullable column `pst_ai_assisted_at TIMESTAMPTZ` (migration). Every
+  outline and rewrite reply carries `aiToken`, a JWT for the requesting user (`sub`) with audience `ai-output`, valid
+  24 hours and signed with its own key derived from `JWT_SECRET`, so it never works as a login cookie and a login
+  token never works as it. The editor sends the token from its last AI reply with each save (`POST /api/notes`,
+  `PUT /api/notes/:id`); a valid token whose `sub` is the saving Owner or Collaborator sets
+  `pst_ai_assisted_at = COALESCE(pst_ai_assisted_at, NOW())` in the same write. No, invalid, expired or another
+  user's token is ignored and the save still succeeds. Once set the label stays; no client action removes it. Notes
+  and feed cards carry `aiAssisted`, shown as a small badge in the editor, on the Note and on the feed card. Not a
+  ranking input.
 - **Safety:** the system prompt treats user text as data; output is schema-checked and sanitised, never executed or
   rendered as HTML; no user identity, email or other notes go to the provider; the dialog tells users their text is
   sent to an external AI service. Logs record counts and latency, never the text.
 
 ## Tests (TC prefix AI-TC)
 Schema rejects bad outlines; retry-then-fail path; caps and kill switch; guests and inactive accounts refused;
-hidden without a key; label set only with a valid issued id; client builds a valid deck from every layout; sanitiser
-on rewrite output. Provider mocked through an injectable `fetch` (as R2 does).
+hidden without a key; label set only with a valid AI token for the saving user; client builds a valid deck from
+every layout; sanitiser on rewrite output. Provider mocked through an injectable `fetch` (as R2 does).
 
 ## Acceptance (B3)
 R28 is judged by time saved. UAT-S2 is timed with and without the AI; the target is at most half the manual time. Automated tests use a stubbed provider (no key or network). This also feeds the UAT redesign (#84).

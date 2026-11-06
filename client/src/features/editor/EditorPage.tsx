@@ -2,6 +2,7 @@ import type { SlideElement } from '@notalah/shared';
 import { ArrowLeft, Check, CloudOff, LoaderCircle, NotebookPen, Redo2, Undo2, X } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { AiAssistedBadge } from '@/components/AiAssistedBadge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
@@ -48,7 +49,7 @@ const ownsKeys = (t: EventTarget | null) =>
 const needsBackup = (s: { dirty: boolean; meta: { status: string }; saveState: string }) =>
   s.dirty && (s.meta.status === 'published' || s.saveState === 'locked');
 
-function SaveStatus() {
+export function SaveStatus() {
   const saveState = useEditor((s) => s.saveState);
   const dirty = useEditor((s) => s.dirty);
   const meta = useEditor((s) => s.meta);
@@ -67,10 +68,13 @@ function SaveStatus() {
     text = 'Saved';
   }
   return (
-    <span role="status" className="flex items-center gap-1 text-caption whitespace-nowrap text-muted-foreground">
-      {icon}
-      {text}
-    </span>
+    <>
+      {meta.aiAssisted && <AiAssistedBadge className="shrink-0" />}
+      <span role="status" className="flex items-center gap-1 text-caption whitespace-nowrap text-muted-foreground">
+        {icon}
+        {text}
+      </span>
+    </>
   );
 }
 
@@ -519,7 +523,7 @@ export default function EditorPage() {
           </Button>
           <div className="flex min-w-0 flex-1 flex-col">
             {titleInput}
-            <span className="px-2">{readOnly ? <ViewOnly /> : <SaveStatus />}</span>
+            <span className="flex items-center gap-1 px-2">{readOnly ? <ViewOnly /> : <SaveStatus />}</span>
           </div>
           <UndoRedo size="icon-sm" disabled={readOnly} />
           {actions}

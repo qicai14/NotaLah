@@ -60,6 +60,8 @@ export interface NoteMeta {
   visibility: 'public' | 'contacts' | null;
   /** The server's `updatedAt` this editor started from, for the 409 check. */
   baseUpdatedAt: string | null;
+  aiAssisted: boolean;
+  aiToken: string | null;
 }
 
 export const emptyMeta = (): NoteMeta => ({
@@ -70,6 +72,8 @@ export const emptyMeta = (): NoteMeta => ({
   status: 'draft',
   visibility: null,
   baseUpdatedAt: null,
+  aiAssisted: false,
+  aiToken: null,
 });
 
 const blankSlide = (): Slide => ({ background: { kind: 'color', color: '#ffffff' }, elements: [], notes: '' });

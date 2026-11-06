@@ -61,7 +61,7 @@ describe('AI text-box actions (R28)', () => {
       const fetchMock = stub(() => completion(reply, 321));
       const res = await rewrite(uid, { text: SECRET, action });
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(reply);
+      expect(res.body).toEqual({ ...reply, aiToken: expect.any(String) });
       expect(fetchMock).toHaveBeenCalledTimes(1);
       const messages = sent(fetchMock).messages;
       expect(messages.map((m: { role: string }) => m.role)).toEqual(['system', 'user']);
