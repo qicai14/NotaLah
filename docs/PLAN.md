@@ -9,9 +9,10 @@ physical, week of 4 Jan 2027 onwards. Current state and next issues: `HANDOVER.m
 - Every IR FR (FR1-FR18) is built and tested. FR19 (lecturer approval) is the first addition beyond the IR (ADR 0092).
   Sprint 6 (Stabilise) closed 29 Oct (`sprints/sprint6_review_retrospective.md`).
 - Sprint 7 R28 (overdelivery, ADR 0085): done #111 (outline schema, AI-TC1-5), #112 (outline route, AI-TC6-20,
-  ADR 0093), #113 (paste to draft, AI-TC21-29), #114 (Rewrite, Shorten, Quiz me, AI-TC30-40). Done 6 Nov: #121 (#130).
-  Still to do: #116, #115, #122.
-- Sprint 8 UI: done #123 (Apple-neutral theme, UI-TC1-3, ADR 0095, merged 6 Nov). In progress 6 Nov: #128.
+  ADR 0093), #113 (paste to draft, AI-TC21-29), #114 (Rewrite, Shorten, Quiz me, AI-TC30-40). Done 6 Nov: #121 (#130),
+  #116 (AI-assisted label as a signed token, AI-TC46-55, ADR 0094). Done #115 (file import, AI-TC41-45, ADR 0100).
+  Still to do: #122.
+- Sprint 8 UI: done #123 (Apple-neutral theme, UI-TC1-3, ADR 0095, merged 6 Nov). Done #128 (axe landmark and ARIA markup fixes, UI-TC4-9, 6 Nov).
 - Done 6 Nov: #105 (`scripts/check-chapter4.mjs` in `vp run check` fails when CHAPTER4.md is stale; CHAPTER4.md regenerated).
 - Before feature complete: R26 E2E (#81, after #128), evidence pipeline (#83), UAT
   redesign (#84). Limitations (#85) before UAT. UAT seed (#82) done 6 Nov. Video is frozen (ADR 0091).
@@ -41,6 +42,7 @@ gantt
 | Milestone | Target | Done when |
 |---|---|---|
 | Meeting #2 | booked 5 or 6 Nov; outcome not yet recorded | R14 Plan A or B, the AI additions (ADR 0085) and FR19+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
+| R26 E2E (#81) | 20 Nov | Playwright specs E2E-TC1 to TC8 written; state: suite green locally (8/8), CI job non-blocking, Lighthouse run still open |
 | Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed done (#82), evidence pipeline ready (#83) |
 | Evidence pipeline (#83) | with feature complete | `TEST_JUNIT=1 vp run --no-cache -r test` writes JUnit; `node scripts/fill-evidence.mjs <junit.xml>...` fills 4.5 Actual and Pass and `node scripts/traceability.mjs` writes `testing/traceability.md`; both run last, after the other PRs add their rows |
 | UAT | opens 23 Nov; must finish before 6 Dec (ADR 0098) | at least three participants confirmed by 20 Nov (#86: 2 peers, one as student and one as admin, plus 1 lecturer), results and NFR5 weight review in `testing/uat/` (#84) |

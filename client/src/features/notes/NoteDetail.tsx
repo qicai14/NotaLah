@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { VerifiedPill } from '@/components/VerifiedPill';
+import { AiAssistedBadge } from '@/components/AiAssistedBadge';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
 import { Coauthors } from '../../components/Coauthors';
 import { EditedBadge } from '../../components/EditedBadge';
@@ -181,7 +182,7 @@ export default function NoteDetail() {
         </div>
       </div>
 
-      <aside className="flex min-h-0 flex-col border-t bg-background lg:border-t-0 lg:border-l">
+      <div className="flex min-h-0 flex-col border-t bg-background lg:border-t-0 lg:border-l">
         <div className="flex flex-col gap-3 px-5 pt-6 pb-4">
           <h1 id="note-title" className="text-title font-bold text-balance">
             {n.title}
@@ -208,6 +209,7 @@ export default function NoteDetail() {
               </p>
             </div>
           )}
+          {n.aiAssisted && <AiAssistedBadge className="self-start" />}
         </div>
         {published && (
           <CommentPanel
@@ -218,7 +220,7 @@ export default function NoteDetail() {
             className="flex-1 border-t lg:min-h-0"
           />
         )}
-      </aside>
+      </div>
       <SelectionAnnotate root={deck} enabled={annotationsOn} onAnnotate={annotate} />
       {annotationsOn && (
         <AnnotationSheet

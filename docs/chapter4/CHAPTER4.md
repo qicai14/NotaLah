@@ -505,6 +505,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | | pst_music_license | VARCHAR | 200 | | Creative Commons licence page shown as the credit |
 | | pst_music_volume | SMALLINT | | CHECK (0 to 100) | Playback volume chosen by the author |
 | | pst_annotations_on | BOOLEAN | | NOT NULL, DEFAULT TRUE | Whether readers may annotate the note (R10); the author turns it off |
+| | pst_ai_assisted_at | TIMESTAMPTZ | | | First save that carried accepted AI output (R28); shows the AI-assisted label, never cleared, not a ranking input |
 | SLIDE_T | sld_id | INTEGER (identity) | | PK, NOT NULL | Unique slide identifier |
 | | sld_pst_id | INTEGER | | FK → POST_T, NOT NULL | Owning note |
 | | sld_position | SMALLINT | | NOT NULL, UNIQUE with sld_pst_id | Order of the slide within the note |
@@ -1527,6 +1528,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | OPS-TC24 | UAT accounts log in and their notes show | UAT seed; login as the admin, lecturer and each student with the UAT password; each author's profile notes and a search for "UAT:" | Every login returns 200 with the seeded role; the lecturer and each student see exactly their seeded notes on their profile, and a search for "UAT:" returns results; the admin owns no notes and is checked for login and role only | | |
 | OPS-TC25 | UAT seed gives the admin a moderation target | UAT seed on a clean test DB | The most recently hidden note is by Daniel Tan; exactly 3 reports exist, all open, none by the note's own author, 2 of them on the hidden note | | |
 | OPS-TC26 | UAT seed refuses the public default password in production | `NODE_ENV=production` with `UAT_PASSWORD` unset, then set; then `NODE_ENV=test` unset | Error naming `UAT_PASSWORD` when unset in production; the given password is used when set; the default is allowed outside production | | |
+| OPS-TC27 | UAT reset refuses a non-test database (#81) | `assertTestDatabase` given `notalah`, `notalah_dev`, `xnotalah_test`, `notalah_test-x`, `notalah_testing`, then `notalah_test` and `notalah_test_81` | The first five throw "Refusing to reset"; the last two do not | Five names refused, two accepted | Pass |
 
 *Table 4.38: Client module test cases (CLI). CLI covers browser-side logic (API wrapper, auth state, route guards, fetch hook); the tests run against mocked fetch, so no server is needed.*
 
@@ -1829,6 +1831,21 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | AI-TC38 | Quiz me one undo (client) | Quiz me with a three-question reply | One new Slide after the current one with the answers in its notes; one undo removes it | | |
 | AI-TC39 | Dropped replies, cancel, long box (client) | a reply after another Note loads; a reply while read-only; a switch of slide, a lock and a delete while waiting; Cancel while waiting; a box of 2,001 characters | Nothing applied for the first two and the control is hidden while read-only (saves stay refused for Viewers); a rewrite replying after a slide switch changes only the recorded slide's box; a locked or deleted box, or one opened for typing meanwhile, gives a message; the reply still lands on the recorded box after the bar unmounts; Quiz me is disabled with the full-Note message at 30 Slides; Cancel re-enables the buttons; the long box is refused with no call | | |
 | AI-TC40 | Hidden when off (client) | the probe answers 404 | No AI help button | | |
+| AI-TC41 | Formats fill the box; only extracted text sent (client) | a .txt, .md, .docx and .pdf file imported; then a .txt of 8,005 characters imported in the dialog, then Send | Each format gives its text, trimmed; the box holds 8,000 characters with a "cut to fit" notice and nothing is sent; Send posts JSON with only that text, no FormData | | |
+| AI-TC42 | Over 5 MB refused (client) | a file of 5 MB plus 1 byte | Refused with "This file is over 5 MB"; the file is never read (text and arrayBuffer not called) | | |
+| AI-TC43 | PowerPoint refused (client) | a .pptx file, then a .exe file; a .pptx chosen in the dialog | Refused with a PowerPoint message, then with the list of supported types; the dialog shows the PowerPoint message | | |
+| AI-TC44 | Readers load lazily (client) | import a .txt, then a .docx, then a .pdf with mocked readers | mammoth and pdfjs-dist load only when a .docx or .pdf is imported; the editor sources have no static import of them | | |
+| AI-TC45 | PDF page cap, text limit, timeout; imports cannot race Send (client) | a 500-page PDF; text over the limit; a PDF read that never finishes; a slow import with Send or Enter, then the dialog closed | The PDF stops at 200 pages with a notice; over-limit text is cut and flagged; the stuck read ends after 15 s with "Couldn't read this file" and the PDF task is destroyed; Send is disabled while an import runs and a result arriving after close is dropped | | |
+| AI-TC46 | AI token in every reply (#116) | an outline, then Rewrite, Shorten and Quiz me replies for one user | Each reply carries `aiToken`, a JWT with audience `ai-output`, `sub` = the user and 24 hours from issue to expiry | | |
+| AI-TC47 | AI token is not a login (#116) | an AI token sent as the `notalah_token` cookie to `GET /api/auth/me` and `POST /api/notes` | 401 both times | | |
+| AI-TC48 | Login token is not an AI token (#116) | the user's own session token sent as `aiToken` on `POST /api/notes`; a token signed with the raw `JWT_SECRET` with audience `ai-output` and the user as `sub` | 201 and `aiAssisted` false; `pst_ai_assisted_at` stays NULL | | |
+| AI-TC49 | Owner save sets the label (#116) | the owner's valid token on `POST /api/notes`; on `PUT /api/notes/:id` of a Note made without one | 201 and 200 with `aiAssisted` true; `GET /api/notes/:id` also says true | | |
+| AI-TC50 | Collaborator save sets the label (#116) | an edit Collaborator's own valid token on `PUT /api/notes/:id` with `baseUpdatedAt` | 200 and `aiAssisted` true | | |
+| AI-TC51 | Missing, forged and expired tokens (#116) | no token, an empty string, `garbage`, a token signed with another key, a number; a valid token used 24 hours and 1 second after issue | Every save succeeds (201) with `aiAssisted` false | | |
+| AI-TC52 | Another user's token (#116) | the owner saves with a token issued to a different user | 201 and `aiAssisted` false | | |
+| AI-TC53 | Label stays (#116) | a labelled Note saved again with `aiAssisted: false` and no token, then with a new token; a new Note sent `aiAssisted: true` with no token | The label stays true and `pst_ai_assisted_at` keeps its first time; the new Note is false | | |
+| AI-TC54 | Label is not a ranking input (#116) | four published Notes in the Feed; two of them then labelled | The Feed order is the same before and after; only the two cards carry `aiAssisted` true | | |
+| AI-TC55 | Editor sends the token (client) (#116) | a Rewrite reply with `aiToken`; an applied outline reply with `aiToken`; a reply that lands after another Note loaded; a save with a token whose reply says `aiAssisted` true | The applied Rewrite and outline tokens are kept in the editor; the dropped reply leaves none; the save body carries the token; the editor's save status shows "AI-assisted" once the label is set, and not before | | |
 | AI-TC56 | Max-length reservation (#121) | an outline of exactly 8,000 characters; the user's token count read inside the stubbed provider call | The reservation is ceil((system prompt + 8,000) / 4) + 4,000 (6,215 with today's 857-character prompt); two of them fit in the 16,000-token daily share and one is under Groq's 8,000 tokens a minute | | |
 | AI-TC57 | One deadline across the retry (#121) | the first provider call returns invalid JSON just as the 30-second deadline fires | One `AbortSignal.timeout(30000)` for both attempts, passed to the call; no second call is sent or counted (ai_requests 1, the user's tokens are the first reply's 100); 502 "AI help is unavailable right now. Try again later" | | |
 
@@ -1839,6 +1856,25 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UI-TC1 | Token contrast, both themes | 53 text/background, input-border, focus-ring and icon pairs read from `index.css`; a token removed from it | Text pairs at least 4.5:1; input borders, focus ring and icons at least 3:1; a missing token fails naming the token | | |
 | UI-TC2 | No colour-contrast violations in the browser | axe-core 4.10.3 on Feed, note, editor, Inbox, Login and Welcome at 1440 and 375 px, light and dark | axe reports no `color-contrast` violation on any screen | | |
 | UI-TC3 | Hover fills and hairlines stay visible | `accent`, `surface`, `secondary`, `background`, `border` and `surface-strong` in both themes | `accent` differs from `surface`, `secondary` and `background`; `border` differs from `surface-strong` and `surface` | | |
+| UI-TC4 | Comment box has no unsupported ARIA (#128) | axe-core 4.14.0 on the note page at 1440 and 375 px, light and dark; `#c-new-body` | No `aria-allowed-attr` violation | axe-core 4.14.0: 0 `aria-allowed-attr` nodes on the note page in all four combinations (main had 1 at `#c-new-body`) | Pass |
+| UI-TC5 | Note page side column is not a nested landmark (#128) | axe-core 4.14.0 on the note page at 1440 and 375 px, light and dark | No `landmark-complementary-is-top-level` violation | 0 `landmark-complementary-is-top-level` nodes on the note page in all four combinations (main had 1 in #127's record) | Pass |
+| UI-TC6 | Editor has one main landmark (#128) | axe-core 4.14.0 on the editor at 1440 and 375 px, light and dark | No `landmark-one-main` violation; one `main` element | 0 `landmark-one-main` nodes on the editor in all four combinations (main had 1) | Pass |
+| UI-TC7 | Editor content sits inside landmarks (#128) | axe-core 4.14.0 on the editor at 1440 and 375 px, light and dark | No `region` violation | 0 `region` nodes on the editor with a panel open in all four combinations (main had 5 at 1440) | Pass |
+| UI-TC8 | Verified pill legible (#128) | The Doto "Verified" pill on a verified note at 1440 and 375 px, light and dark | Text readable in all four; `foreground` on `surface` at least 4.5:1 | Legible in all four; Doto 15px weight 900, foreground on surface 15.46:1 light and 12.80:1 dark (token table, not measured in the browser); thin letters are the weakest | Pass |
+| UI-TC9 | Note page and editor axe-clean (#128) | axe-core 4.14.0, all rules, note page and editor at 1440 and 375 px, light and dark | Zero violations | 0 violations in all four combinations on both pages, with a panel open in the editor; `label-content-name-mismatch` on the logo (1) and slide thumbnails (7), found by 4.14.0 at 1440, fixed in the same PR | Pass |
+
+*Table 4.49: End-to-end UAT task test cases (E2E, R26, NFR2)*
+
+| TC ID | Test description | Test data | Expected outcome | Actual outcome | Pass/Fail |
+| --- | --- | --- | --- | --- | --- |
+| E2E-TC1 | S2: create a three-slide note, save a draft, publish with a module and two hashtags | `e2e/specs/s2-slide-editor.spec.ts`; student1 (Daniel Tan), three slides each given a heading, module UAT103-3-2, hashtags `e2e` and `slides` | The draft saves (status reads Saved); Publish with Public visibility opens the note page at `/notes/<id>` showing Slide 1 of 3, the module UAT103-3-2 and the hashtags #e2e and #slides; axe-core reports no serious or critical violation on the note page | Passed in 5 of 5 consecutive runs on a freshly reseeded database. Axe found `label-content-name-mismatch` on the author avatar link (aria-label omits the visible initials) and the sidebar Notifications link, allowlisted per element as a product bug (#144) | Pass |
+| E2E-TC2 | S2: the editor page has no serious axe violations | `e2e/specs/s2-slide-editor.spec.ts`; student1 on `/notes/new` | axe-core reports no serious or critical violation on the editor page | Passed in 5 of 5 consecutive runs; no violation found | Pass |
+| E2E-TC3 | S3: like, comment on and save a note from the feed | `e2e/specs/s3-s4-feed-search.spec.ts`; student2 (Priya Nair) on the feed | Like and Save buttons become pressed on the first note; the posted comment text 'Useful summary, thanks' appears; axe-core reports no serious or critical violation on the feed | Passed in 5 of 5 consecutive runs. Axe found `label-content-name-mismatch` on 10 avatar links in the feed, allowlisted per element as a product bug (#144) | Pass |
+| E2E-TC4 | S4: find notes by module code and by hashtag | `e2e/specs/s3-s4-feed-search.spec.ts`; student2 searching `UAT101-3-2` and `#uat` | The module search shows '4 results shown' and four UAT notes; the hashtag search shows '14 results shown' and fourteen; axe-core reports no serious or critical violation on the module results and on the hashtag results | Passed in 5 of 5 consecutive runs | Pass |
+| E2E-TC5 | L2: a lecturer Super Likes a student note with a remark | `e2e/specs/l2-super-like.spec.ts`; the lecturer opens 'UAT: TCP versus UDP' (Daniel Tan) from the `#uat` search, remark 'Clear and accurate.' | The Super Like dialog accepts the remark and the note page shows the verified-by mark; axe-core reports no serious or critical violation | Passed in 5 of 5 consecutive runs. Axe found `label-content-name-mismatch` on the avatar link, the Super Like toggle ('Remove Super Like') and the sidebar Notifications link, allowlisted per element as a product bug (#144) | Pass |
+| E2E-TC6 | A2: resolve the two reported notes (dismiss one, hide one) and suspend the author | `e2e/specs/zz-a2-resolve-reports.spec.ts`; admin, seed with three reports on two notes (the queue lists one row per note), runs last because it suspends Daniel Tan | Dismiss on 'UAT: Subnetting made simple' and Hide note on 'UAT: Copied exam answers (hidden)' each need a remark and empty the queue ('No open reports'); Daniel Tan's account is then suspended with a reason; axe-core reports no serious or critical violation on the queue and the user list | Passed in 5 of 5 consecutive runs; no axe violation | Pass |
+| E2E-TC7 | S5: message a non-friend, then accept the request | `e2e/specs/s5-messaging.spec.ts`; student2 (Priya Nair) messages student3 (Wei Jie Lim) in two browser contexts | The request text appears in the receiver's Requests tab over Socket.io without a reload; Accept opens the chat listing the message; axe-core reports no serious or critical violation on the chat | Passed in 5 of 5 consecutive runs. Axe found `label-content-name-mismatch` on the sidebar Notifications link ('Notifications, 1 unread'), allowlisted per element as a product bug (#144) | Pass |
+| E2E-TC8 | S2 assisted: paste text and tidy it into slides | `e2e/specs/r28-tidy-into-slides.spec.ts`; student1 on `/notes/new` with the AI stub (`e2e/stub-ai`), pasted text on normalisation | Draft slides from text sends the text and the stub's three slides land after the blank one, giving four slides; axe-core reports no serious or critical violation on the editor after the slides land | Passed in 5 of 5 consecutive runs | Pass |
 
 ## 4.5.2 User Acceptance Testing
 
@@ -1846,7 +1882,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	Each task has a baseline and a target. Every task has a reference time: the time the scripted end-to-end test of the same task takes (R26, #81), recorded before UAT. The reference time is for comparison only and is not a pass/fail criterion. Two tasks have a stronger baseline. For UAT-S4, only 4 of 32 survey respondents (12.5%, item D1) found a study resource in under 2 minutes. For UAT-S2, the baseline is the same participant's manual time, against which the time with the R28 assistant is compared (B3, protocol in #122). The overall targets are a task success rate of at least 90% across all task attempts and a mean SUS score of at least 80.
 
-*Table 4.49: UAT tester details*
+*Table 4.50: UAT tester details*
 
 | Tester | Name | Position | Role tested | Date | Start time | End time |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1858,7 +1894,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-6 (stretch) | | | Student | | | |
 | UAT-7 (stretch) | | | Student | | | |
 
-*Table 4.50: UAT scenario tasks*
+*Table 4.51: UAT scenario tasks*
 
 | Task ID | Role | Task | Baseline | Target | Time (s) | Completed (Y/N) | Comment |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -1879,7 +1915,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	UAT-S2 follows the B3 protocol in #122: half the participants do the manual run first and half do the assisted run first. The assisted run uses the live AI provider; the automated tests of the same feature use a stubbed provider with no key or network. Where a task is not scripted in #81, the developer takes the reference time by running the task by hand.
 
-*Table 4.51: UAT targets*
+*Table 4.52: UAT targets*
 
 | Measure | Baseline | Target | Result |
 | --- | --- | --- | --- |
@@ -1889,7 +1925,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Mean SUS score | none | At least 80 | |
 | Apps per study session (NFR4) | Survey E1: 24 of 32 (75%) use three or more | Fewer than three | |
 
-*Table 4.52: UAT evaluation scores (1 = very poor, 5 = excellent)*
+*Table 4.53: UAT evaluation scores (1 = very poor, 5 = excellent)*
 
 | Category | Criterion | UAT-1 Student | UAT-2 Lecturer | UAT-3 Administrator | Average |
 | --- | --- | --- | --- | --- | --- |
@@ -1899,7 +1935,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | Error-Free | I did not encounter errors, crashes or incorrect results | | | | |
 | **Total** | | /20 | /20 | /20 | |
 
-*Table 4.53: System Usability Scale (1 = strongly disagree, 5 = strongly agree)*
+*Table 4.54: System Usability Scale (1 = strongly disagree, 5 = strongly agree)*
 
 | No. | Statement | UAT-1 | UAT-2 | UAT-3 |
 | --- | --- | --- | --- | --- |
@@ -1917,7 +1953,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	The SUS is scored in the standard way. Each odd-numbered item contributes its rating minus 1, and each even-numbered item contributes 5 minus its rating. The sum is multiplied by 2.5 to give a score from 0 to 100. The target is a mean of at least 80. Each stretch participant adds a column.
 
-*Table 4.54: Apps used per study session (NFR4)*
+*Table 4.55: Apps used per study session (NFR4)*
 
 | Tester | Apps used in a typical study session before NotaLah | Apps still needed with NotaLah | Count before | Count with NotaLah |
 | --- | --- | --- | --- | --- |
@@ -1927,7 +1963,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 
 	NFR4 asks the system to reduce the number of separate applications needed during a study session. Survey item E1 is the baseline: 24 of 32 respondents (75%) used three or more. Each participant lists the apps they use in a typical study session, then marks which ones they would still need alongside NotaLah's notes, search, comments and messaging. The target is fewer than three apps per participant with NotaLah.
 
-*Table 4.55: UAT feedback and developer response*
+*Table 4.56: UAT feedback and developer response*
 
 | Tester | Iteration | Tester feedback | Developer response | Re-test result |
 | --- | --- | --- | --- | --- |
@@ -1938,7 +1974,7 @@ The schema table is also rendered as high-resolution images for the report: `dia
 | UAT-3 | 1 | | | |
 | UAT-3 | 2 | | | |
 
-*Table 4.56: Ranking weight re-evaluation (NFR5)*
+*Table 4.57: Ranking weight re-evaluation (NFR5)*
 
 | Weight | Initial value | Observation from UAT | Revised value | Justification |
 | --- | --- | --- | --- | --- |

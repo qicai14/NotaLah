@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { DraftFromText, forgetAiProbe } from './DraftFromText';
-import { useEditor } from './store';
+import { DraftFromText, forgetAiProbe, MAX_CHARS } from './DraftFromText';
+import { SaveStatus } from './EditorPage';
+import { emptyDeck, useEditor } from './store';
 
 const reply = (status: number, body: unknown = {}) =>
   ({ status, ok: status < 400, headers: new Headers(), json: () => Promise.resolve(body) }) as Response;
@@ -92,5 +93,77 @@ describe('DraftFromText (R28)', () => {
     await open();
     send();
     expect((await screen.findByRole('alert')).textContent).toContain('took too long');
+  });
+
+  it('AI-TC41: an imported file fills the box with a notice and sends nothing until Send', async () => {
+    const { fetchMock } = await mount(400);
+    await open();
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const long = new File(['a'.repeat(MAX_CHARS + 5)], 'n.txt');
+    fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [long] } });
+    await vi.waitFor(() =>
+      expect((screen.getByLabelText('Text to turn into slides') as HTMLTextAreaElement).value).toHaveLength(MAX_CHARS),
+    );
+    expect(screen.getByRole('status').textContent).toContain('cut to fit');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const init = fetchMock.mock.calls[1][1];
+    expect(init.body).not.toBeInstanceOf(FormData);
+    expect(JSON.parse(init.body as string).text).toHaveLength(MAX_CHARS);
+  });
+
+  it('AI-TC45: Send waits for a running import, and a result arriving after the dialog closed is dropped', async () => {
+    const { calls } = await mount(400);
+    await open();
+    const box = () => screen.getByLabelText('Text to turn into slides') as HTMLTextAreaElement;
+    const sendBtn = () => screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    const pick = (f: File) => fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [f] } });
+    let release!: () => void;
+    const slow = (body: string) => {
+      const f = new File([body], 'n.txt');
+      vi.spyOn(f, 'text').mockReturnValue(new Promise<string>((r) => (release = () => r(body))));
+      return f;
+    };
+
+    fireEvent.change(box(), { target: { value: 'mine' } });
+    pick(slow('imported'));
+    expect(sendBtn().disabled).toBe(true);
+    fireEvent.submit(box().closest('form')!); // Enter is blocked too
+    expect(calls).toHaveLength(0);
+    release();
+    await vi.waitFor(() => expect(box().value).toBe('imported'));
+    expect(sendBtn().disabled).toBe(false);
+
+    pick(slow('late'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    release();
+    await new Promise((r) => setTimeout(r, 0));
+    await open();
+    expect(box().value).toBe('imported');
+    expect(sendBtn().disabled).toBe(false);
+  });
+
+  it('AI-TC43: a .pptx import in the dialog shows the PowerPoint message', async () => {
+    await mount(400);
+    await open();
+    fireEvent.change(screen.getByLabelText(/import a file/i), { target: { files: [new File(['x'], 'n.pptx')] } });
+    expect((await screen.findByRole('alert')).textContent).toContain('PowerPoint');
+  });
+
+  it('AI-TC55: an applied outline keeps its token for the next save, and the editor shows the saved label', async () => {
+    useEditor.getState().load(emptyDeck());
+    const { calls } = await mount(400);
+    await open();
+    send();
+    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    calls[0](reply(200, { ...outline, aiToken: 'tok-outline' }));
+    await vi.waitFor(() => expect(useEditor.getState().meta.aiToken).toBe('tok-outline'));
+    cleanup();
+
+    render(<SaveStatus />);
+    expect(screen.queryByText('AI-assisted')).toBeNull();
+    act(() => useEditor.getState().setMeta({ aiAssisted: true }));
+    expect(screen.getByText('AI-assisted')).toBeTruthy();
   });
 });

@@ -13,3 +13,5 @@ test-results/
 Thumbs.db
 .claude/settings.local.json
 __pycache__/
+playwright-report/
+test-results/

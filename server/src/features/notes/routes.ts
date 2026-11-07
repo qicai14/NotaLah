@@ -15,6 +15,7 @@ import {
 } from './service';
 import { lookupTrack, MusicUnavailable } from '../music/service';
 import { notifyVoidedVerifiers } from '../notifications/service';
+import { isAiTokenFor } from '../ai/token';
 
 export const notesRouter = Router();
 
@@ -62,6 +63,7 @@ notesRouter.post('/', requireAuth, requireActive, async (req, res) => {
   const parsed = parseNoteBody(req.body);
   if (!parsed.ok) return res.status(400).json({ error: 'Validation failed', errors: parsed.errors });
   const n = parsed.data;
+  n.aiAssisted = isAiTokenFor((req.body as { aiToken?: unknown }).aiToken, me(req).id);
   if (n.moduleId !== null && !(await moduleExists(n.moduleId))) {
     return res.status(400).json({ error: 'Validation failed', errors: { moduleId: 'Module not found' } });
   }
@@ -91,6 +93,7 @@ notesRouter.put('/:id', requireAuth, requireActive, async (req, res) => {
     });
   }
   const n = parsed.data;
+  n.aiAssisted = isAiTokenFor((req.body as { aiToken?: unknown }).aiToken, me(req).id);
   // Co-authors edit content only (D44): publishing, visibility and module stay with the owner. A difference means the
   // owner changed them since this editor loaded the note, so it is a 409 the editor recovers from like any other.
   if (

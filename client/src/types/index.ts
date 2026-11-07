@@ -86,6 +86,8 @@ export interface Note {
   verifiedByMe: boolean;
   /** Edit collaborators who have saved a change (R30); the owner is `author`. */
   coauthors?: CollabPerson[];
+  /** Saved with accepted AI output (R28, ADR 0094); shown as a label, never a ranking input. */
+  aiAssisted?: boolean;
   /** A title or slide edit came after the verification, so it no longer counts (R30). Only on notes the viewer can read. */
   editedSinceVerification?: boolean;
   /** The viewer's role on this note; only sent by GET /notes/:id. */
