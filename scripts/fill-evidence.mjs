@@ -15,10 +15,7 @@ export function collect(xmls) {
   const tcs = {};
   for (const xml of xmls)
     for (const m of xml.matchAll(/<testcase\b([^>]*?)(\/>|>([\s\S]*?)<\/testcase>)/g)) {
-      const id = decode(m[1].match(/\bname="([^"]*)"/)?.[1] ?? '')
-        .split(' > ')
-        .at(-1)
-        .match(/^([A-Z]+-TC\d+)\b/)?.[1];
+      const id = decode(m[1].match(/\bname="([^"]*)"/)?.[1] ?? '').match(/(?:^| > )([A-Z]+-TC\d+)\b/)?.[1];
       if (!id) continue;
       const body = m[3] ?? '';
       const kind = /<(failure|error)\b/.test(body) ? 'failed' : /<skipped\b/.test(body) ? 'skipped' : 'passed';
@@ -28,12 +25,17 @@ export function collect(xmls) {
   return tcs;
 }
 
+// An Actual this script wrote itself can be rewritten; anything else is human evidence and is kept.
+const AUTO = /^((All )?\d+ tests? passed|\d+ of \d+ tests? failed|Retired, not run|Skipped \(opt-in live test\))$/;
+
 export function fill(md, tcs) {
   const blank = [];
   let filled = 0;
   const out = md.split('\n').map((line) => {
     const id = line.match(/^\| ([A-Z]+-TC\d+) \|/)?.[1];
     if (!id) return line;
+    const m = line.match(/\|([^|]*)\|([^|]*)\|(\s*)$/);
+    const [actual, pass] = [m[1].trim(), m[2].trim()];
     const t = tcs[id];
     let cells;
     if (t && (t.passed || t.failed)) {
@@ -41,7 +43,15 @@ export function fill(md, tcs) {
       const s = `${n} test${n > 1 ? 's' : ''}`;
       cells = t.failed ? [`${t.failed} of ${s} failed`, 'Fail'] : [`${n > 1 ? 'All ' : ''}${s} passed`, 'Pass'];
     } else if (/retired/i.test(line)) cells = ['Retired, not run', 'N/A'];
+    // Skipped by design: an opt-in live test is neither a failure nor a pass.
+    else if (t?.skipped && /opt-in/i.test(line)) cells = ['Skipped (opt-in live test)', 'N/A'];
+    // Manual or measured rows keep their evidence; a blank Pass is never guessed.
+    else if (actual && pass) return line;
     else return (blank.push(id), line);
+    if (actual && !AUTO.test(actual)) {
+      if (pass) return line;
+      cells[0] = actual;
+    }
     filled++;
     return line.replace(/\|[^|]*\|[^|]*\|(\s*)$/, (_, ws) => `| ${cells[0]} | ${cells[1]} |${ws}`);
   });

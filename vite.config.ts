@@ -8,6 +8,10 @@ export default defineConfig({
   },
   lint: { ignorePatterns: ['docs/**', 'load/k6/**'], options: { typeAware: true, typeCheck: true } },
   fmt: { singleQuote: true, printWidth: 120, ignorePatterns: ['docs/**', 'load/k6/**', '**/*.md', 'pnpm-lock.yaml'] },
+  // TEST_JUNIT=1 also writes JUnit XML for the 4.5 evidence script (#83).
+  test: {
+    reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
+  },
   run: {
     tasks: {
       // Type checks read @notalah/shared's built .d.ts files.
