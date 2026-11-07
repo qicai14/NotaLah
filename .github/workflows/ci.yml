@@ -67,8 +67,19 @@ jobs:
         run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
       - name: Check (format, lint, types)
         run: vp run --no-cache check
-      - name: Test (server and client)
-        run: vp run -r test
+      - name: Test (server and client; uncached, JUnit for the 4.5 evidence)
+        run: vp run --no-cache -r test
+        env:
+          TEST_JUNIT: '1'
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: junit
+          path: |
+            test-results/junit.xml
+            */test-results/junit.xml
+          if-no-files-found: warn
       - name: Build
         run: vp run -r build
       - name: Save Vite Task cache

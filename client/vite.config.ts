@@ -15,6 +15,10 @@ export default defineConfig({
       '/socket.io': { target: 'http://localhost:4000', ws: true, xfwd: true },
     },
   },
+  test: {
+    // TEST_JUNIT=1 also writes JUnit XML for the 4.5 evidence script (#83).
+    reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
+  },
   run: {
     tasks: {
       build: { command: 'vp build', dependsOn: afterShared },

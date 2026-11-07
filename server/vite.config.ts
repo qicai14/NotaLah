@@ -17,6 +17,7 @@ export default defineConfig({
     fixedExtension: false,
   },
   test: {
+    reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
     // Guards truncateAll against ever pointing at the dev DB when the shell sets NODE_ENV.
     env: {
       NODE_ENV: 'test',
