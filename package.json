@@ -5,11 +5,13 @@
   "scripts": {
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
+    "test:e2e": "vp exec playwright test -c e2e/playwright.config.ts",
     "prepare": "vp config && vp run @notalah/shared#build"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
+    "@types/node": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },

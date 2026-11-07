@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "admin:create": "tsx src/scripts/createAdmin.ts",
     "uat:seed": "tsx src/scripts/uat/seed.ts",
+    "uat:reset": "tsx src/scripts/uat/reset.ts",
     "load:seed": "tsx src/scripts/load/seed.ts",
     "load:run": "tsx src/scripts/load/run.ts",
     "load:latency": "tsx src/scripts/load/latency.ts",

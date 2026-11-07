@@ -78,6 +78,55 @@ jobs:
           path: node_modules/.vite/task-cache
           key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
 
+  e2e:
+    # Non-blocking: nothing needs it, and the owner makes it a required check in branch protection after a week green.
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah_test_81
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notalah -d notalah_test_81"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      CI: true
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test_81?sslmode=disable
+      E2E_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test_81?sslmode=disable
+      JWT_SECRET: ci-only-dummy-secret-not-for-production
+      CLIENT_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+      - run: vp install
+      - name: Create empty env file (dbmate scripts require it; values come from job env)
+        run: touch .env
+      - run: vp exec playwright install --with-deps chromium
+      - name: E2E (globalSetup migrates and reseeds notalah_test_81; the AI stub is started by playwright.config; no real key)
+        run: vp run test:e2e
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e
+          if-no-files-found: ignore
+          path: |
+            playwright-report
+            test-results
+
   audit:
     if: github.event_name != 'push'
     runs-on: ubuntu-latest

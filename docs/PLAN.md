@@ -42,6 +42,7 @@ gantt
 | Milestone | Target | Done when |
 |---|---|---|
 | Meeting #2 | booked 5 or 6 Nov; outcome not yet recorded | R14 Plan A or B, the AI additions (ADR 0085) and FR19+ numbering (ADR 0092) put to the supervisor (`OPEN_QUESTIONS.md`) |
+| R26 E2E (#81) | 20 Nov | Playwright specs E2E-TC1 to TC8 written; state: suite green locally (8/8), CI job non-blocking, Lighthouse run still open |
 | Feature complete | 20 Nov | R28 merged (R41 only if time remains); R26 E2E green in CI (#81); UAT seed done (#82), evidence pipeline ready (#83) |
 | UAT | opens 23 Nov; must finish before 6 Dec (ADR 0098) | at least three participants confirmed by 20 Nov (#86: 2 peers, one as student and one as admin, plus 1 lecturer), results and NFR5 weight review in `testing/uat/` (#84) |
 | Report complete | 12 Dec (proposed; was 20 Dec) | Chapters 1-6 in the .docx, cuts applied, meeting #1 feedback folded in, 25 screenshots, 3 code snippets, poster, 3-min video |
