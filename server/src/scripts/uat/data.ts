@@ -1,11 +1,13 @@
 import type { Deck } from '@notalah/shared';
 
-export const DEFAULT_UAT_PASSWORD = 'UatNotaLah#2026';
-export const uatPassword = (): string => {
+export type UatRole = 'admin' | 'lecturer' | 'student';
+/** Public per-role defaults (admin123, lecturer123, student123), for a local demo only. */
+export const defaultUatPassword = (role: UatRole): string => `${role}123`;
+export const uatPassword = (role: UatRole): string => {
   if (process.env.NODE_ENV === 'production' && !process.env.UAT_PASSWORD) {
-    throw new Error('UAT_PASSWORD is required in production: the default password is public');
+    throw new Error('UAT_PASSWORD is required in production: the default passwords are public');
   }
-  const p = process.env.UAT_PASSWORD || DEFAULT_UAT_PASSWORD;
+  const p = process.env.UAT_PASSWORD || defaultUatPassword(role);
   if (p.length < 8) throw new Error('UAT_PASSWORD must be at least 8 characters');
   if (Buffer.byteLength(p, 'utf8') > 72) throw new Error('UAT_PASSWORD must be at most 72 bytes');
   return p;
@@ -14,11 +16,11 @@ export const uatPassword = (): string => {
 export const USER_PROGRAMME = 'BSc (Hons) Software Engineering';
 
 export const USERS = [
-  { email: 'uat.admin@mail.apu.edu.my', name: 'UAT Admin', role: 'admin', staffId: null },
-  { email: 'uat.lecturer@mail.apu.edu.my', name: 'Dr Aisha Rahman', role: 'lecturer', staffId: 'UATL01' },
-  { email: 'uat.student1@mail.apu.edu.my', name: 'Daniel Tan', role: 'student', staffId: null },
-  { email: 'uat.student2@mail.apu.edu.my', name: 'Priya Nair', role: 'student', staffId: null },
-  { email: 'uat.student3@mail.apu.edu.my', name: 'Wei Jie Lim', role: 'student', staffId: null },
+  { email: 'admin@gmail.com', name: 'NotaLah Admin', role: 'admin', staffId: null },
+  { email: 'aisha@gmail.com', name: 'Dr Aisha Rahman', role: 'lecturer', staffId: 'UATL01' },
+  { email: 'daniel@gmail.com', name: 'Daniel Tan', role: 'student', staffId: null },
+  { email: 'priya@gmail.com', name: 'Priya Nair', role: 'student', staffId: null },
+  { email: 'weijie@gmail.com', name: 'Wei Jie Lim', role: 'student', staffId: null },
 ] as const;
 
 export const MODULES = [
@@ -98,15 +100,15 @@ export const toDeck = (n: UatNote): Deck => ({
   })),
 });
 
-const L = 'uat.lecturer@mail.apu.edu.my';
-const S1 = 'uat.student1@mail.apu.edu.my';
-const S2 = 'uat.student2@mail.apu.edu.my';
-const S3 = 'uat.student3@mail.apu.edu.my';
+const L = 'aisha@gmail.com';
+const S1 = 'daniel@gmail.com';
+const S2 = 'priya@gmail.com';
+const S3 = 'weijie@gmail.com';
 const [DB, OS, AG] = ['UAT101-3-2', 'UAT102-3-2', 'UAT103-3-2'] as const;
 
 export const NOTES: UatNote[] = [
   {
-    title: 'UAT: Database normalisation in 3 steps',
+    title: 'Database normalisation in 3 steps',
     author: L,
     module: DB,
     theme: 'lecture',
@@ -135,7 +137,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: SQL joins cheat sheet',
+    title: 'SQL joins cheat sheet',
     author: L,
     module: DB,
     theme: 'howto',
@@ -161,7 +163,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Transactions and ACID',
+    title: 'Transactions and ACID',
     author: S1,
     module: DB,
     theme: 'revision',
@@ -187,7 +189,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Indexes and query speed',
+    title: 'Indexes and query speed',
     author: S2,
     module: DB,
     theme: 'plain',
@@ -213,7 +215,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Process scheduling algorithms',
+    title: 'Process scheduling algorithms',
     author: L,
     module: OS,
     theme: 'lecture',
@@ -238,7 +240,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Virtual memory and paging',
+    title: 'Virtual memory and paging',
     author: S3,
     module: OS,
     theme: 'revision',
@@ -263,7 +265,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: TCP versus UDP',
+    title: 'TCP versus UDP',
     author: S1,
     module: OS,
     theme: 'howto',
@@ -288,7 +290,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Subnetting made simple',
+    title: 'Subnetting made simple',
     author: S2,
     module: OS,
     theme: 'journal',
@@ -313,7 +315,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Threads and race conditions',
+    title: 'Threads and race conditions',
     author: L,
     module: OS,
     theme: 'midnight',
@@ -339,7 +341,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Scrum roles and events',
+    title: 'Scrum roles and events',
     author: L,
     module: AG,
     theme: 'lecture',
@@ -364,7 +366,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Writing good user stories',
+    title: 'Writing good user stories',
     author: S3,
     module: AG,
     theme: 'howto',
@@ -389,7 +391,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Sprint planning checklist',
+    title: 'Sprint planning checklist',
     author: S1,
     module: AG,
     theme: 'plain',
@@ -406,7 +408,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Testing levels at a glance',
+    title: 'Testing levels at a glance',
     author: S2,
     module: AG,
     theme: 'revision',
@@ -431,7 +433,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Risk management basics',
+    title: 'Risk management basics',
     author: L,
     module: AG,
     theme: 'journal',
@@ -448,7 +450,7 @@ export const NOTES: UatNote[] = [
     ],
   },
   {
-    title: 'UAT: Copied exam answers (hidden)',
+    title: 'Copied exam answers (hidden)',
     author: S1,
     module: DB,
     theme: 'plain',
@@ -471,19 +473,19 @@ export const NOTES: UatNote[] = [
 export const REPORTS: UatReport[] = [
   {
     reporter: S2,
-    title: 'UAT: Copied exam answers (hidden)',
+    title: 'Copied exam answers (hidden)',
     reason: 'plagiarism',
     details: 'These are answers from the 2025 final exam paper.',
   },
   {
     reporter: S3,
-    title: 'UAT: Copied exam answers (hidden)',
+    title: 'Copied exam answers (hidden)',
     reason: 'copyright',
     details: 'Copied from the marking scheme of the lecturer.',
   },
   {
     reporter: S1,
-    title: 'UAT: Subnetting made simple',
+    title: 'Subnetting made simple',
     reason: 'inaccurate',
     details: 'The /26 host count looks wrong to me.',
   },
