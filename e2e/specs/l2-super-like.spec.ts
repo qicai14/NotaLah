@@ -13,7 +13,7 @@ test('E2E-TC5 L2: a lecturer Super Likes a student note with a remark', async ({
     .fill('#uat');
   // A student's note (Daniel Tan), so the lecturer sees the Super Like button.
   await page
-    .getByRole('link', { name: /^UAT: TCP versus UDP/ })
+    .getByRole('link', { name: /^TCP versus UDP/ })
     .first()
     .click();
   await expect(page).toHaveURL(/\/notes\/\d+/);

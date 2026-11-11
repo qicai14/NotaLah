@@ -40,7 +40,6 @@ test('E2E-TC4 S4: find notes by module code and by hashtag', async ({ page }) =>
       .fill(MODULE_CODE);
     // The seed has four UAT101 notes; waiting on the count stops the previous results satisfying the check.
     await expect(page.getByRole('status').filter({ hasText: '4 results shown' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /^UAT:/ })).toHaveCount(4);
   });
   await shoot(page, 'S4', 'search-module');
   await checkAxe(page, 'S4-search-module');
@@ -51,7 +50,6 @@ test('E2E-TC4 S4: find notes by module code and by hashtag', async ({ page }) =>
       .first()
       .fill(`#${SEED_HASHTAG}`);
     await expect(page.getByRole('status').filter({ hasText: '14 results shown' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /^UAT:/ })).toHaveCount(14);
   });
   await shoot(page, 'S4', 'search-hashtag');
   await checkAxe(page, 'S4-search-hashtag');

@@ -17,10 +17,16 @@ export interface UatResult {
   skipped: UatCounts;
 }
 
-/** Adds the UAT accounts, modules and notes in one transaction; rows that already exist are left as they are. */
-export async function seedUat(pool: Pool, password = uatPassword()): Promise<UatResult> {
+/** Adds the UAT accounts (password per role: admin123, lecturer123, student123, or UAT_PASSWORD), modules and notes in one transaction; rows that already exist are left as they are. */
+export async function seedUat(pool: Pool, password?: string): Promise<UatResult> {
   const decks = NOTES.map((n) => deckSchema.parse(toDeck(n)));
-  const hash = await hashPassword(password);
+  const hashes = new Map(
+    await Promise.all(
+      [...new Set(USERS.map((u) => u.role))].map(
+        async (r) => [r, await hashPassword(password ?? uatPassword(r))] as const,
+      ),
+    ),
+  );
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -33,7 +39,7 @@ export async function seedUat(pool: Pool, password = uatPassword()): Promise<Uat
         `INSERT INTO "USER_T" (usr_email, usr_password_hash, usr_display_name, usr_role, usr_lecturer_status, usr_staff_id, usr_programme)
          VALUES ($1, $2, $3, $4::VARCHAR, CASE WHEN $4::VARCHAR = 'lecturer' THEN 'approved' END, $5, $6)
          ON CONFLICT (usr_email) DO NOTHING`,
-        [u.email, hash, u.name, u.role, u.staffId, USER_PROGRAMME],
+        [u.email, hashes.get(u.role), u.name, u.role, u.staffId, USER_PROGRAMME],
       );
       inserted.users += r.rowCount ?? 0;
     }
