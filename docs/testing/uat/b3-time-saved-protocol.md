@@ -14,6 +14,7 @@ three-slide note?
 - Account: a UAT student account from `docs/testing/uat/README.md`. Each run starts from `/notes/new` with an empty
   editor and ends when the note is published publicly with the module and two hashtags set.
 - The assisted run uses the live AI provider (the E2E tests use a stub; do not time those).
+- The assisted run uses paste only. File import (#115) is not part of B3.
 
 ## Input text
 Both runs use a different passage of similar length so the second run does not benefit from the first. The moderator
@@ -51,11 +52,11 @@ With an odd number of students the extra participant takes the next slot in this
 
 ## Pass rule
 Per participant: ratio = assisted time / manual time. B3 passes when the median of the participants' ratios is at most
-0.5. Report the count of participants, the median, and the range. With fewer than three students the result is
-descriptive only and is stated as such.
+0.5. Report the count of participants, the median, and the range. With fewer than three students (the minimum UAT plan has one; the stretch goal is five) the result is descriptive
+only and is stated as such. The 120 to 150 word length and this cut-off are design choices, not measured values.
 
 ## Timing table (fill during UAT, #86)
-| Participant | Order (manual first / assisted first) | Manual time (s) | Assisted time (s) | Ratio (assisted / manual) |
+| Participant (add rows as needed) | Order (manual first / assisted first) | Manual time (s) | Assisted time (s) | Ratio (assisted / manual) |
 |---|---|---|---|---|
 | | | | | |
 | | | | | |
