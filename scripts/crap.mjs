@@ -54,7 +54,18 @@ if (import.meta.main) {
   const base = process.env.BASE_REF || 'origin/main';
   const diff = execFileSync(
     'git',
-    ['diff', '--no-color', '--no-renames', '-U0', `${base}...HEAD`, '--', 'server/src', 'shared/src'],
+    [
+      '-c',
+      'core.quotePath=false',
+      'diff',
+      '--no-color',
+      '--no-renames',
+      '-U0',
+      `${base}...HEAD`,
+      '--',
+      'server/src',
+      'shared/src',
+    ],
     {
       encoding: 'utf8',
       maxBuffer: 1 << 28,
