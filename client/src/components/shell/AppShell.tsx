@@ -24,8 +24,9 @@ function MobileTopBar() {
       <Logo />
       {user ? (
         <Button asChild variant="ghost" size="icon" className="relative">
-          <Link to="/notifications" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}>
+          <Link to="/notifications" aria-label="Notifications">
             <Bell aria-hidden="true" className="size-5" />
+            {unread > 0 && <span className="sr-only">{unread} unread</span>}
             {unread > 0 && (
               <span
                 aria-hidden="true"
