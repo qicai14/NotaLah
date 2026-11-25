@@ -13,7 +13,7 @@ export default defineConfig({
       // Type checks read @notalah/shared's built .d.ts files.
       check: {
         command:
-          'vp check && node scripts/check-agents.mjs && node scripts/check-schema-docs.mjs && node scripts/check-chapter4.mjs',
+          'vp check && node scripts/check-agents.mjs && node scripts/check-schema-docs.mjs && node scripts/check-chapter4.mjs && depcruise client/src server/src shared/src --config .dependency-cruiser.cjs --ignore-known .dependency-cruiser-known-violations.json',
         dependsOn: ['@notalah/shared#build'],
       },
       test: { command: 'vp test run scripts', cache: false },
