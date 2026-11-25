@@ -22,3 +22,5 @@
   fails when a function the PR touched scores above 30 (`node scripts/crap.mjs server/coverage/coverage-final.json 30`;
   baseline in [`../testing/cage-baseline.md`](../testing/cage-baseline.md)). Known limits of the guard: it does not catch
   loosened tolerances or a new test offsetting a removed one in the same file.
+- Mutation (#151): `cd server && vp exec stryker run --mutate src/path/file.ts` (Stryker, break below 50); the PR job
+  `mutation` is advisory, a nightly workflow reports the full score. Cost and baseline: [`../testing/cage-baseline.md`](../testing/cage-baseline.md).

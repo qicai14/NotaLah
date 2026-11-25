@@ -153,6 +153,54 @@ jobs:
         name: CRAP gate on changed functions
         run: node scripts/crap.mjs server/coverage/coverage-final.json 30
 
+  mutation:
+    # Test cage (#151): mutation score of the server files a PR changes must stay at or above 50. Advisory until the
+    # first baseline runs are in (continue-on-error); a mutant takes ~40 s because the tests share one database.
+    if: github.event_name == 'pull_request' && github.event.action != 'edited'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notalah -d notalah"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah?sslmode=disable
+      TEST_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test?sslmode=disable
+      JWT_SECRET: ci-only-dummy-secret-not-for-production
+      CLIENT_ORIGIN: http://localhost:5173
+      PGPASSWORD: notalah
+      BASE_REF: origin/${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+      - name: Install ffmpeg (video upload tests)
+        run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
+      - run: vp install && touch .env
+      - run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
+      - name: Mutate the changed server files
+        run: |
+          files=$(git diff --name-only --diff-filter=AMR "$BASE_REF...HEAD" -- 'server/src/*.ts' | grep -vE '\.test\.ts$|^server/src/scripts/' | sed 's#^server/##' | paste -sd, -)
+          if [ -z "$files" ]; then echo "no changed server source files"; exit 0; fi
+          cd server && vp exec stryker run --mutate "$files"
+
   e2e:
     # Non-blocking: nothing needs it, and the owner makes it a required check in branch protection after a week green.
     if: github.event_name != 'schedule'
