@@ -98,6 +98,61 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node scripts/check-test-edits.mjs
 
+  crap:
+    # Test cage (#151): a function touched by the PR may not score CRAP above 30 (CC^2 * (1-coverage)^3 + CC).
+    if: github.event_name == 'pull_request' && github.event.action != 'edited'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notalah -d notalah"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah?sslmode=disable
+      TEST_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test?sslmode=disable
+      JWT_SECRET: ci-only-dummy-secret-not-for-production
+      CLIENT_ORIGIN: http://localhost:5173
+      PGPASSWORD: notalah
+      BASE_REF: origin/${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Does the PR touch server/src or shared/src?
+        id: touched
+        run: |
+          if git diff --name-only "$BASE_REF...HEAD" | grep -qE '^(server|shared)/src/'; then echo "yes=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.touched.outputs.yes
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+      - if: steps.touched.outputs.yes
+        name: Install ffmpeg (video upload tests)
+        run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
+      - if: steps.touched.outputs.yes
+        run: vp install && touch .env
+      - if: steps.touched.outputs.yes
+        run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
+      - if: steps.touched.outputs.yes
+        name: Server tests with coverage
+        run: vp run server#test --coverage
+      - if: steps.touched.outputs.yes
+        name: CRAP gate on changed functions
+        run: node scripts/crap.mjs server/coverage/coverage-final.json 30
+
   e2e:
     # Non-blocking: nothing needs it, and the owner makes it a required check in branch protection after a week green.
     if: github.event_name != 'schedule'

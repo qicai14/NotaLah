@@ -56,15 +56,19 @@ export function analyzeDiff(diffText) {
 }
 
 export function hasJustification(body) {
-  return /^Test-change:.*\b[A-Z]+-TC\d+\b[ \t]+\S.{2,}/m.test(body ?? '');
+  return /^Test-change:.*\b[A-Z][A-Z0-9]*-TC\d+\b[ \t]+\S.{2,}/m.test(body ?? '');
 }
 
 if (import.meta.main) {
   const base = process.env.BASE_REF || 'origin/main';
-  const diffText = execFileSync('git', ['diff', '--no-color', '-U0', `${base}...HEAD`], {
-    encoding: 'utf8',
-    maxBuffer: 1 << 28,
-  });
+  const diffText = execFileSync(
+    'git',
+    ['-c', 'core.quotePath=false', 'diff', '--no-color', '--no-renames', '-U0', `${base}...HEAD`],
+    {
+      encoding: 'utf8',
+      maxBuffer: 1 << 28,
+    },
+  );
   const found = analyzeDiff(diffText);
   if (found.length && !hasJustification(process.env.PR_BODY)) {
     for (const v of found) console.error(`${v.rule}: ${v.file} (${v.detail})`);
