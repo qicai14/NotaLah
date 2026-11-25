@@ -1,4 +1,4 @@
-/** Architecture rules (ADR 0102, #153). Run: vp run deps. */
+/** Architecture rules (ADR 0110, #153). Run by `vp run check`. */
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [

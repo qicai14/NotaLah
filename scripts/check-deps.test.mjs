@@ -33,6 +33,25 @@ afterEach(() => {
 });
 
 describe('dependency rules (ADR 0102, #153)', () => {
+  it('resolves the client @/ alias, so violations behind it are seen', () => {
+    const dir = project({
+      'server/src/c.ts': 'export const c = 1;',
+      'client/src/x.ts': "import { c } from '../../server/src/c';\nexport const x = c;",
+      'client/src/b.ts': "import { x } from '@/x';\nexport const b = x;",
+    });
+    expect(cruise(dir).out).toContain('client/src/x.ts');
+  });
+
+  it('fails when the server imports the client', () => {
+    const dir = project({
+      'client/src/b.ts': 'export const b = 1;',
+      'server/src/c.ts': "import { b } from '../../client/src/b';\nexport const c = b;",
+    });
+    const r = cruise(dir);
+    expect(r.status).not.toBe(0);
+    expect(r.out).toContain('server-not-client');
+  });
+
   it('passes a clean layout', () => {
     const dir = project({
       'shared/src/a.ts': 'export const a = 1;',
@@ -57,7 +76,9 @@ describe('dependency rules (ADR 0102, #153)', () => {
       'client/src/b.ts': 'export const b = 1;',
       'shared/src/a.ts': "import { b } from '../../client/src/b';\nexport const a = b;",
     });
-    expect(cruise(dir).out).toContain('shared-is-a-leaf');
+    const r = cruise(dir);
+    expect(r.status).not.toBe(0);
+    expect(r.out).toContain('shared-is-a-leaf');
   });
 
   it('fails on a circular import', () => {
@@ -65,7 +86,9 @@ describe('dependency rules (ADR 0102, #153)', () => {
       'server/src/x.ts': "import { y } from './y';\nexport const x = () => y;",
       'server/src/y.ts': "import { x } from './x';\nexport const y = () => x;",
     });
-    expect(cruise(dir).out).toContain('no-circular');
+    const r = cruise(dir);
+    expect(r.status).not.toBe(0);
+    expect(r.out).toContain('no-circular');
   });
 
   it('fails when production code imports test code', () => {
@@ -73,6 +96,8 @@ describe('dependency rules (ADR 0102, #153)', () => {
       'server/tests/helper.ts': 'export const h = 1;',
       'server/src/x.ts': "import { h } from '../tests/helper';\nexport const x = h;",
     });
-    expect(cruise(dir).out).toContain('no-test-code-in-production');
+    const r = cruise(dir);
+    expect(r.status).not.toBe(0);
+    expect(r.out).toContain('no-test-code-in-production');
   });
 });
