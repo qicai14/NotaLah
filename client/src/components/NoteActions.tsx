@@ -196,10 +196,10 @@ export function NoteActions({
         {showAuthor && !bar && (
           <Link
             to={`/users/${note.author.id}`}
-            aria-label={`${note.author.displayName}'s profile`}
             className="mb-1 rounded-full ring-2 ring-background max-md:ring-media max-md:shadow-(--shadow-float) max-md:[@media(max-height:720px)]:hidden"
           >
             <UserAvatar name={note.author.displayName} className="size-action" />
+            <span className="sr-only">{note.author.displayName}'s profile</span>
           </Link>
         )}
         <RailButton
@@ -258,7 +258,7 @@ export function NoteActions({
           (note.verifiedByMe ? (
             <RailButton
               bar={bar}
-              label="Remove Super Like"
+              label="Verified, remove Super Like"
               pressed
               disabled={pending}
               onClick={removeSuperLike}

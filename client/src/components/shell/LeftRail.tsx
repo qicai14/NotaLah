@@ -32,7 +32,7 @@ function RailLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
     <Link
       to={item.to}
       aria-current={active ? 'page' : undefined}
-      aria-label={collapsed || count ? `${item.label}${count ? `, ${count} unread` : ''}` : undefined}
+      aria-label={collapsed ? `${item.label}${count ? `, ${count} unread` : ''}` : undefined}
       className={cn(
         'flex h-12 items-center gap-4 rounded-md px-3 text-body font-medium transition-colors duration-(--duration-fast)',
         active ? 'bg-surface-strong font-bold text-foreground' : 'text-foreground/85 hover:bg-accent',
@@ -55,6 +55,7 @@ function RailLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
         </span>
       )}
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && count > 0 && <span className="sr-only">{`, ${count} unread`}</span>}
       {!collapsed && count > 0 && (
         <span
           aria-hidden="true"
