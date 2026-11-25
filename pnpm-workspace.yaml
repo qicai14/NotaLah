@@ -24,6 +24,7 @@ peerDependencyRules:
     vitest: '*'
 allowBuilds:
   esbuild: true
+  '@swc/core': false
 # Supply-chain guard: npm releases must be 3 days old (minutes); the Vite+ toolchain stays on its newest release.
 minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
