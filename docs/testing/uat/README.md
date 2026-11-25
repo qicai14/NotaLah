@@ -37,3 +37,7 @@ The notes belong to the lecturer and the students, so they appear on those profi
 Moderation data: one note ("UAT: Copied exam answers (hidden)") is hidden and is the most recently hidden note; its
 author is Daniel Tan. Three open reports are seeded (two on the hidden note, one on "UAT: Subnetting made simple"),
 all by other seeded students, so the admin queue is not empty. A rerun adds no second report.
+
+## B3 time saved with the assistant
+
+Protocol, task script and the empty timing table: [b3-time-saved-protocol.md](b3-time-saved-protocol.md) (#122).
