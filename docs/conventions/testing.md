@@ -15,3 +15,6 @@
   and critical violations; an entry in `e2e/helpers/axe.ts` needs a reason. Screenshots and timings land in `test-results/` (ignored); set `E2E_WRITE_DOCS=1` to write the tracked copies to `docs/screenshots/81` and `docs/testing/e2e-baseline.json` instead.
 - Measurements that feed the report (load runs, audits, UAT) go in [`../testing/`](../testing/) with the method and
   machine, never invented numbers.
+- Test cage (#151): CI job `cage` fails a PR that removes assertions or tests, adds `.skip`/`.only`/`.todo` or deletes a
+  test file, unless the PR body has a line `Test-change: <TC id> <reason>`. Run it locally with
+  `BASE_REF=origin/main node scripts/check-test-edits.mjs`.

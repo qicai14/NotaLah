@@ -78,6 +78,25 @@ jobs:
           path: node_modules/.vite/task-cache
           key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
 
+  cage:
+    # Test cage (#151): a PR may not weaken its own tests without a "Test-change: <TC id> <reason>" line in its body.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test-edit guard
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-test-edits.mjs
+
   e2e:
     # Non-blocking: nothing needs it, and the owner makes it a required check in branch protection after a week green.
     if: github.event_name != 'schedule'
