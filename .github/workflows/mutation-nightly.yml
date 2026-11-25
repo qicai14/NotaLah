@@ -14,9 +14,35 @@ concurrency:
 
 jobs:
   mutation:
-    # Report only (#151): the full Stryker run over server/src. The score is in the job log and the uploaded report.
+    # Report only (#151, #158): the full Stryker run over server/src, one job per feature directory (and lib) so each
+    # finishes inside the job limit. The scores are in the job logs and the uploaded reports.
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        area:
+          - features/ai
+          - features/annotations
+          - features/assets
+          - features/auth
+          - features/collaboration
+          - features/engagement
+          - features/feed
+          - features/messaging
+          - features/moderation
+          - features/modules
+          - features/music
+          - features/notes
+          - features/notifications
+          - features/ranking
+          - features/search
+          - features/unsplash
+          - features/usage
+          - features/users
+          - features/verification
+          - lib
     services:
       postgres:
         image: postgres:17-alpine
@@ -55,21 +81,21 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: server/reports/stryker-incremental.json
-          key: stryker-incremental-${{ github.run_id }}
-          restore-keys: stryker-incremental-
+          key: stryker-incremental-${{ strategy.job-index }}-${{ github.run_id }}
+          restore-keys: stryker-incremental-${{ strategy.job-index }}-
       - name: Full mutation run (report only)
         env:
           STRYKER_BREAK: '0'
-        run: cd server && vp exec stryker run
+        run: cd server && vp exec stryker run --mutate "src/${{ matrix.area }}/**/*.ts,!src/${{ matrix.area }}/**/*.test.ts"
       - name: Save the incremental file
         if: always()
         uses: actions/cache/save@v6
         with:
           path: server/reports/stryker-incremental.json
-          key: stryker-incremental-${{ github.run_id }}
+          key: stryker-incremental-${{ strategy.job-index }}-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mutation-report
+          name: mutation-report-${{ strategy.job-index }}
           if-no-files-found: ignore
           path: server/reports/mutation
