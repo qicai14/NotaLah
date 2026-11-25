@@ -13,9 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { DESKTOP, useMediaQuery } from '@/hooks/useMediaQuery';
-import type { Ask } from './GuestPrompt';
+import type { Ask, GuestAction } from './guestPromptTypes';
 
-export type GuestAction = 'like' | 'save' | 'comment' | 'report' | 'follow' | 'message' | 'collaborate' | 'annotate';
+export type { GuestAction };
 
 const COPY: Record<GuestAction, { title: string; icon: LucideIcon }> = {
   like: { title: 'Log in to like this note', icon: Heart },
