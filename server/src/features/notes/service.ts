@@ -6,7 +6,6 @@ import {
   musicSchema,
   slidesSchema,
   themeSchema,
-  type Aspect,
   type Slide,
 } from '@notalah/shared';
 import sanitizeHtml from 'sanitize-html';
