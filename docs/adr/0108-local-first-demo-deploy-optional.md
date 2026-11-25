@@ -7,7 +7,7 @@
   Render for the API image, a Cloudflare Pages Function proxying `/api` and `/socket.io` so the browser sees one origin
   (D74), and GitHub Actions running migrate, then the Render hook, then the Pages deploy (D77). Deploy work must never
   change local behaviour, add a required local env value or block marked work.
-- **Alternatives:** deploy-first (adds risk to the demo); separate `app.` and `api.` domains (needs one registrable
+- **Alternatives:** separate `app.` and `api.` domains (needs one registrable
   domain for the SameSite cookie, D66).
 - **Reversibility:** High.
 - **Tests:** E2E suite (`vp run test:e2e`); load evidence in `docs/testing/`.

@@ -20,4 +20,5 @@ Architecture overview (summaries that link the D-entries and the code): [0101](0
 [0102](0102-three-tier-rest-api-with-socket-io.md) tiers, [0103](0103-plain-sql-migrations-with-dbmate.md) database,
 [0104](0104-jwt-cookie-with-csrf-header.md) auth, [0105](0105-deterministic-feed-ranking-heuristic.md) ranking,
 [0106](0106-slide-note-deck-schema-in-shared.md) deck schema, [0107](0107-ai-assistant-optional-and-bounded.md) AI,
-[0108](0108-local-first-demo-deploy-optional.md) local-first deployment.
+[0108](0108-local-first-demo-deploy-optional.md) local-first deployment,
+[0109](0109-note-anchored-messaging.md) messaging.

@@ -1,7 +1,7 @@
 # 0107 - The AI assistant is optional, server-side and capped (D33, 0085, 0093, 0094, #152, 26 Nov 2026)
 
-- **Context:** the IR excluded AI; the owner added a writing assistant (D33), and the project is judged on a
-  deterministic core, on academic integrity and on staying inside free tiers.
+- **Context:** the IR excluded AI; the owner added a writing assistant (D33), and the report must record it as
+  an extension with academic-integrity safeguards; free-tier limits bound its use.
 - **Decision:** AI exists only as an editor assistant (draft slides from text or an imported file, rewrite, shorten,
   quiz questions). Calls go from the server to an OpenAI-compatible provider set by `AI_BASE_URL`, `AI_API_KEY`,
   `AI_MODEL`; without a key the assistant is hidden. Output is validated against the deck schema

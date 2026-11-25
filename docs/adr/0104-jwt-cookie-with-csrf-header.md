@@ -4,7 +4,7 @@
   (student, lecturer, admin) and a socket handshake that shares the session.
 - **Decision:** login sets an HttpOnly, SameSite=Lax JWT cookie (HS256, one hour, `Secure` in production); the token is
   never in a response body and the Bearer extractor is removed. Every non-safe `/api` request must carry
-  `X-Requested-With`, and CORS allows only `CLIENT_ORIGIN`, so a cross-site page cannot add the header. Role and status
+  `X-Requested-With: notalah`, and CORS allows only `CLIENT_ORIGIN`, so a cross-site page cannot add the header. Role and status
   are read from the database on every request, so suspension takes effect at once. The Socket.io handshake checks
   `Origin` and authenticates the same cookie with passport-jwt. Passwords are bcrypt hashes. Lecturer accounts need
   admin approval (D6 in [DECISIONS.md](../DECISIONS.md)).
