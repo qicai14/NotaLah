@@ -67,8 +67,14 @@ Dockerfile, render.yaml            API image and Render blueprint; .github/workf
 ```
 
 ## Conventions
-- A feature owns its routes, repository, tests and (client side) pages. A feature imports another feature only
-  through that feature's exported functions, never its SQL; shared code goes to `lib/`, `types/` or `components/`.
+- A feature owns its routes, repository, tests and (client side) pages; shared code goes to `lib/`, `types/` or
+  `components/`. In practice (checked 26 Nov 2026, #161) features do import each other's `repository.ts`: 50 imports,
+  almost all of them read helpers and SQL fragments from `users/repository` (`userRef`, `friends`, `blockedWith`,
+  `isBlocked`, `approvedLecturer`, `countingLecturer`, `viewerIsAdmin`, `AuthUser`), `notes/repository` (`VISIBLE`,
+  `READABLE`, `getVisibleNote`, listing helpers), `modules/repository` (existence checks) and `engagement`, `assets`,
+  `annotations`, `ranking` repositories (one or two functions each). Treat those exports as the feature's public
+  interface: import a named function or fragment, never reach into a feature's tables with your own query.
+  `.dependency-cruiser.cjs` enforces only the layering that holds (no cycles, client/server/shared boundaries).
 - Exception to the no-SQL rule: `notes/repository.ts` exports SQL fragments other features reuse so the rules exist once:
   `VISIBLE` and `READABLE` (VISIBLE or a collaborator; alias `p` = `"POST_T"`, `$1` = viewer id), `VERIFIED`/`VERIFIED_BY` (alias `p`), `MODULE_COL` (alias `m`), `NOTE_COLS` + `NOTE_FROM` (columns and the FROM clause defining
   aliases `p`, `u`, `m`) and `SUMMARY_COLS` (aliases `p`, `m`). Callers keep those aliases and bind `$1` to the viewer.

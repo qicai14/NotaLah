@@ -9,8 +9,8 @@
   while the old ones are fixed (issue #160). `scripts/check-deps.test.mjs` proves each rule fails on a fixture project.
 - **Notes:** TypeScript 7 has no JS API, so dependency-cruiser parses with `@swc/core` (`parser: 'swc'`), and the client's
   `@/` alias is resolved through `tsconfig.depcruise.json`. A rule "a feature may not import another feature's
-  repository" (ARCHITECTURE.md convention) was tried and dropped: it flags 50 existing imports (issue #161), so the convention is not
-  how the code is written today.
+  repository" (ARCHITECTURE.md convention) was tried and dropped: it flags 50 existing imports (issue #161), so the convention was rewritten to
+  match the code (ARCHITECTURE.md, #161).
 - **Not done:** an orphan-module rule; entry points (routes, scripts, tests) make it noisy, so it was left out.
 - **Alternatives:** ESLint import rules (no graph-wide cycle detection); `madge` (cycles only).
 - **Reversibility:** High; one config, one check step.
