@@ -18,3 +18,7 @@
 - Test cage (#151): CI job `cage` fails a PR that removes assertions or tests, adds `.skip`/`.only`/`.todo` or deletes a
   test file, unless the PR body has a line `Test-change: <PREFIX-TCn> <reason>` (same line). Run it locally with
   `BASE_REF=origin/main node scripts/check-test-edits.mjs`.
+- CRAP gate (#151): CI job `crap` runs the server tests with coverage on PRs touching `server/src` or `shared/src` and
+  fails when a function the PR touched scores above 30 (`node scripts/crap.mjs server/coverage/coverage-final.json 30`;
+  baseline in [`../testing/cage-baseline.md`](../testing/cage-baseline.md)). Known limits of the guard: it does not catch
+  loosened tolerances or a new test offsetting a removed one in the same file.

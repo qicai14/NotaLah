@@ -28,6 +28,8 @@ export default defineConfig({
     globalSetup: ['tests/globalSetup.ts'],
     // Tests share one database, so files must not run in parallel.
     fileParallelism: false,
+    // `vp test run --coverage` feeds scripts/crap.mjs (the CRAP gate, #151).
+    coverage: { provider: 'v8', include: ['src/**/*.ts'], reporter: ['json'] },
   },
   run: {
     tasks: {
