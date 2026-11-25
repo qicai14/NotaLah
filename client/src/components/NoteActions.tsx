@@ -247,7 +247,7 @@ export function NoteActions({
         )}
         <RailButton
           bar={bar}
-          label="Save"
+          label={saved ? 'Saved' : 'Save'}
           pressed={user ? saved : undefined}
           disabled={pending}
           onClick={() => toggle('bookmark')}
@@ -272,7 +272,7 @@ export function NoteActions({
           ) : user.status === 'active' ? ( // a restricted lecturer may only withdraw (D26)
             <RailButton
               bar={bar}
-              label="Super Like"
+              label="Verify, Super Like"
               onClick={() => setSuperLiking(true)}
               caption="Verify"
               icon={<Highlighter aria-hidden="true" className="size-6" />}

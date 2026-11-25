@@ -19,6 +19,7 @@ test('E2E-TC3 S3: like, comment on and save a note from the feed', async ({ page
     await expect(like).toHaveAttribute('aria-pressed', 'true');
     await save.click();
     await expect(save).toHaveAttribute('aria-pressed', 'true');
+    await checkAxe(page, 'S3-feed-saved'); // the Saved state's name must contain its caption (#164)
     await page
       .getByRole('button', { name: /comment/i })
       .first()
