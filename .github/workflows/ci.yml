@@ -197,7 +197,7 @@ jobs:
       - run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
       - name: Mutate the changed server files
         run: |
-          files=$(git diff --name-only --diff-filter=AM "$BASE_REF...HEAD" -- 'server/src/*.ts' | grep -vE '\.test\.ts$|^server/src/scripts/' | sed 's#^server/##' | paste -sd, -)
+          files=$(git diff --name-only --diff-filter=AMR "$BASE_REF...HEAD" -- 'server/src/*.ts' | grep -vE '\.test\.ts$|^server/src/scripts/' | sed 's#^server/##' | paste -sd, -)
           if [ -z "$files" ]; then echo "no changed server source files"; exit 0; fi
           cd server && vp exec stryker run --mutate "$files"
 

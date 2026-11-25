@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: mutation-nightly
+  cancel-in-progress: false
+
 jobs:
   mutation:
     # Report only (#151): the full Stryker run over server/src. The score is in the job log and the uploaded report.
@@ -47,8 +51,22 @@ jobs:
         run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
       - run: vp install && touch .env
       - run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
+      - name: Restore the incremental file (later nights only re-run changed code)
+        uses: actions/cache/restore@v6
+        with:
+          path: server/reports/stryker-incremental.json
+          key: stryker-incremental-${{ github.run_id }}
+          restore-keys: stryker-incremental-
       - name: Full mutation run (report only)
-        run: cd server && vp exec stryker run --thresholds.break 0
+        env:
+          STRYKER_BREAK: '0'
+        run: cd server && vp exec stryker run
+      - name: Save the incremental file
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: server/reports/stryker-incremental.json
+          key: stryker-incremental-${{ github.run_id }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:

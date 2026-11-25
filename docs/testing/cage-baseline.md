@@ -20,4 +20,6 @@ string-literal mutants excluded, one runner because the tests share one database
   `mutation` is advisory (`continue-on-error`, 60 min cap) and the full run is a nightly report
   (`.github/workflows/mutation-nightly.yml`). Make `mutation` required only after a few runs show its real duration.
 - TypeScript 7 has no JS API, which Stryker's tsconfig rewrite needs, so the config runs `inPlace: true`.
+- Scope: `server/src` only (`shared/src` has no database-free mutation run yet). The nightly run restores and saves
+  `reports/stryker-incremental.json` through the Actions cache, so after one complete run later nights only re-run changed code. Stryker writes that file only at the end, so a run that hits the 350 min cap saves nothing; if that happens, split the nightly run per directory.
 - The first nightly run on main is the full baseline; add its score here when it exists.

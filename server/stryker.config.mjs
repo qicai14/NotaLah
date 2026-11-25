@@ -15,6 +15,6 @@ export default {
   incrementalFile: 'reports/stryker-incremental.json',
   reporters: ['clear-text', 'json'],
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
-  thresholds: { high: 80, low: 60, break: 50 },
+  thresholds: { high: 80, low: 60, break: process.env.STRYKER_BREAK ? Number(process.env.STRYKER_BREAK) : 50 },
   ignorePatterns: ['reports', 'coverage', 'dist'],
 };

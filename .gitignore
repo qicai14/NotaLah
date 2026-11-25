@@ -14,5 +14,5 @@ Thumbs.db
 __pycache__/
 playwright-report/
 test-results/
-reports/
-.stryker-tmp/
+server/reports/
+server/.stryker-tmp/
