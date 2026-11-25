@@ -27,6 +27,7 @@ test('E2E-TC3 S3: like, comment on and save a note from the feed', async ({ page
     await page.getByRole('button', { name: /^(post|send)/i }).click();
     await expect(page.getByText('Useful summary, thanks')).toBeVisible();
   });
+  await checkAxe(page, 'S3-feed-saved'); // the Saved state's name must contain its caption (#164)
 });
 
 test('E2E-TC4 S4: find notes by module code and by hashtag', async ({ page }) => {
