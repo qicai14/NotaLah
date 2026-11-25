@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { analyzeDiff, hasJustification } from './check-test-edits.mjs';
 
+// Built from parts so this file itself never contains a literal skip or only call.
+const SKIP = ['sk', 'ip'].join('');
+const ONLY = ['on', 'ly'].join('');
+
 const diff = (file, lines) =>
   `diff --git a/${file} b/${file}\n--- a/${file}\n+++ b/${file}\n@@ -1,3 +1,3 @@\n${lines.join('\n')}\n`;
 
@@ -24,9 +28,9 @@ describe('analyzeDiff (cage guard, test-edit rules)', () => {
 
   it('flags added skip and only', () => {
     const d = diff('client/src/a.test.tsx', [
-      "+it.skip('x', () => {});",
-      "+describe.only('y', () => {});",
-      "+xit('z', () => {});",
+      `+it.${SKIP}('x', () => {});`,
+      `+describe.${ONLY}('y', () => {});`,
+      `+x${'it'}('z', () => {});`,
     ]);
     expect(analyzeDiff(d).map((v) => v.rule)).toEqual(['skip-or-only', 'skip-or-only', 'skip-or-only']);
   });
@@ -43,7 +47,7 @@ describe('analyzeDiff (cage guard, test-edit rules)', () => {
   });
 
   it('ignores non-test files', () => {
-    const d = diff('server/src/a.ts', ['-  expect(x).toBe(1);', "+it.skip('x')"]);
+    const d = diff('server/src/a.ts', ['-  expect(x).toBe(1);', `+it.${SKIP}('x')`]);
     expect(analyzeDiff(d)).toEqual([]);
   });
 });

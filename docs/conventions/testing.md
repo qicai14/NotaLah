@@ -16,5 +16,5 @@
 - Measurements that feed the report (load runs, audits, UAT) go in [`../testing/`](../testing/) with the method and
   machine, never invented numbers.
 - Test cage (#151): CI job `cage` fails a PR that removes assertions or tests, adds `.skip`/`.only`/`.todo` or deletes a
-  test file, unless the PR body has a line `Test-change: <TC id> <reason>`. Run it locally with
+  test file, unless the PR body has a line `Test-change: <PREFIX-TCn> <reason>` (same line). Run it locally with
   `BASE_REF=origin/main node scripts/check-test-edits.mjs`.

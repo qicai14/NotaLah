@@ -5,7 +5,8 @@ import { execFileSync } from 'node:child_process';
 const TEST_FILE = /(^|\/)(tests?\/|[^/]+\.(test|spec)\.[cm]?[jt]sx?$)/;
 const ASSERT = /\b(expect|assert)\s*[.(]/;
 const TEST_DECL = /^\s*(it|test)(\.\w+)?\s*\(/;
-const SKIP_ONLY = /\b(it|test|describe)\.(skip|only|todo)\b|\bx(it|describe|test)\s*\(/;
+const SKIP_ONLY =
+  /\b(it|test|describe)\.(skip|only|todo|fixme|fail|skipIf|runIf)\b|\b(x(it|describe|test)|f(it|describe))\s*\(/;
 
 export function analyzeDiff(diffText) {
   const out = [];
@@ -28,7 +29,7 @@ export function analyzeDiff(diffText) {
   for (const line of diffText.split('\n')) {
     if (line.startsWith('diff --git ')) {
       flush();
-      file = line.match(/ b\/(.+)$/)?.[1] ?? null;
+      file = line.match(/ b\/(.+)$/)?.[1]?.replace(/"$/, '') ?? null;
       isTest = !!file && TEST_FILE.test(file);
       deleted = false;
       stat = { removedAsserts: 0, addedAsserts: 0, removedTests: 0, addedTests: 0 };
@@ -55,7 +56,7 @@ export function analyzeDiff(diffText) {
 }
 
 export function hasJustification(body) {
-  return /^Test-change:.*\b[A-Z]+-TC\d+\b\s+\S.{2,}/im.test(body ?? '');
+  return /^Test-change:.*\b[A-Z]+-TC\d+\b[ \t]+\S.{2,}/m.test(body ?? '');
 }
 
 if (import.meta.main) {
