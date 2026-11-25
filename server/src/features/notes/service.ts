@@ -7,14 +7,14 @@ import {
   slidesSchema,
   themeSchema,
   type Aspect,
-  type MusicRef,
   type Slide,
 } from '@notalah/shared';
 import sanitizeHtml from 'sanitize-html';
 import { z } from 'zod';
 import { issueMap } from '../../lib/validation';
 import { usableAssetKinds } from '../assets/repository';
-import type { TrackMeta } from '../music/service';
+import { assetRefs } from './assetRefs';
+import type { NoteInput } from './types';
 
 // Mirrors the TipTap nodes the editor can produce (D20) plus underline and a text colour span. Box-level font, size and
 // alignment are typed element props, so colour is the only CSS allowed inside the HTML (R21 spec 2.5).
@@ -96,20 +96,7 @@ const baseSchema = z
     if (hasMusicVideoConflict(d)) ctx.addIssue({ code: 'custom', path: ['music'], message: MUSIC_VIDEO_CONFLICT });
   });
 
-export interface NoteInput {
-  title: string;
-  theme: string;
-  aspect: Aspect;
-  slides: Slide[];
-  music: MusicRef | null;
-  /** Set by the route when the track is new or has no details yet: a Jamendo lookup, or null when Jamendo could not answer. Absent means keep what is stored. */
-  musicMeta?: TrackMeta | null;
-  moduleId: number | null;
-  hashtags: string[];
-  status: 'draft' | 'published';
-  visibility: 'public' | 'contacts' | null;
-  aiAssisted?: boolean;
-}
+export type { NoteInput };
 
 const baseUpdatedAtSchema = z.iso.datetime({ offset: true, error: 'Invalid baseUpdatedAt' });
 
@@ -194,30 +181,6 @@ export function parseNoteBody(body: unknown): Parsed {
       visibility: d.visibility ?? null,
     },
   };
-}
-
-interface AssetRef {
-  id: number;
-  kind: 'image' | 'video';
-  /** "Slide 2, element 1" or "Slide 2" for a background, for error messages. */
-  where: string;
-}
-
-/** Every uploaded asset a deck points at: image elements, video elements and image backgrounds. */
-export function assetRefs(slides: Pick<Slide, 'background' | 'elements'>[]): AssetRef[] {
-  const refs: AssetRef[] = [];
-  slides.forEach((slide, i) => {
-    const bg = slide.background;
-    if (bg.kind === 'image' && bg.image.kind === 'upload') {
-      refs.push({ id: bg.image.assetId, kind: 'image', where: `Slide ${i + 1}` });
-    }
-    slide.elements.forEach((e, j) => {
-      const where = `Slide ${i + 1}, element ${j + 1}`;
-      if (e.type === 'image' && e.source.kind === 'upload') refs.push({ id: e.source.assetId, kind: 'image', where });
-      if (e.type === 'video') refs.push({ id: e.assetId, kind: 'video', where });
-    });
-  });
-  return refs;
 }
 
 /**

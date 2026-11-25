@@ -5,7 +5,8 @@ import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { inTransaction, pool } from '../../lib/pool';
 import { LINKABLE_STATUSES } from '../assets/config';
 import { approvedLecturer, blockedWith, countingLecturer, friends, userRef, viewerIsAdmin } from '../users/repository';
-import { assetRefs, type NoteInput } from './service';
+import { assetRefs } from './assetRefs';
+import type { NoteInput } from './types';
 
 /** The note's module as `{id, code, name}` or NULL (aliases m = MODULE_T, LEFT JOINed). */
 export const MODULE_COL = `CASE WHEN m.mod_id IS NULL THEN NULL

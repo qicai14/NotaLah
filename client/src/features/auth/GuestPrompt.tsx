@@ -1,11 +1,7 @@
 import { createContext, lazy, type ReactNode, Suspense, useCallback, useContext, useState } from 'react';
-import type { GuestAction } from './GuestPromptSheet';
+import type { Ask } from './guestPromptTypes';
 
-export interface Ask {
-  action: GuestAction;
-  /** Where to land after logging in; defaults to the current page. */
-  returnTo?: string;
-}
+export type { Ask };
 
 // Off the entry chunk (D81): most visits never open it, and it is the only eager user of the dialog and sheet.
 const GuestPromptSheet = lazy(() => import('./GuestPromptSheet'));
