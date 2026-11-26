@@ -1,4 +1,19 @@
-import type { NotificationType } from './repository';
+export const NOTIFICATION_TYPES = [
+  'mention',
+  'super_like',
+  'follow',
+  'lecturer_approved',
+  'lecturer_rejected',
+  'note_hidden',
+  'message_request',
+  'collab_request',
+  'collab_approved',
+  'collab_declined',
+  'edited_since_verification',
+  'annotation',
+  'annotation_hidden',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 /** Notification settings (R8, D51). Not ranking constants, so they live with the feature. */
 export const NOTIFICATIONS = Object.freeze({

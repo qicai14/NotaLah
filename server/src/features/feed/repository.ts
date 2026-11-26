@@ -8,7 +8,7 @@ import {
   VISIBLE,
   type NoteWithEngagement,
 } from '../notes/repository';
-import { assetRefs } from '../notes/service';
+import { assetRefs } from '../notes/assetRefs';
 import { follows } from '../users/repository';
 import { RANKING } from '../ranking/config';
 import type { Components } from '../ranking/service';

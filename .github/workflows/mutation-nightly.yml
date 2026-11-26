@@ -1,0 +1,101 @@
+name: Mutation (nightly)
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-nightly
+  cancel-in-progress: false
+
+jobs:
+  mutation:
+    # Report only (#151, #158): the full Stryker run over server/src, one job per feature directory (and lib) so each
+    # finishes inside the job limit. The scores are in the job logs and the uploaded reports.
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        area:
+          - features/ai
+          - features/annotations
+          - features/assets
+          - features/auth
+          - features/collaboration
+          - features/engagement
+          - features/feed
+          - features/messaging
+          - features/moderation
+          - features/modules
+          - features/music
+          - features/notes
+          - features/notifications
+          - features/ranking
+          - features/search
+          - features/unsplash
+          - features/usage
+          - features/users
+          - features/verification
+          - lib
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notalah -d notalah"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah?sslmode=disable
+      TEST_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test?sslmode=disable
+      JWT_SECRET: ci-only-dummy-secret-not-for-production
+      CLIENT_ORIGIN: http://localhost:5173
+      PGPASSWORD: notalah
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+      - name: Install ffmpeg (video upload tests)
+        run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
+      - run: vp install && touch .env
+      - run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
+      - name: Restore the incremental file (later nights only re-run changed code)
+        uses: actions/cache/restore@v6
+        with:
+          path: server/reports/stryker-incremental.json
+          key: stryker-incremental-${{ strategy.job-index }}-${{ github.run_id }}
+          restore-keys: stryker-incremental-${{ strategy.job-index }}-
+      - name: Full mutation run (report only)
+        env:
+          STRYKER_BREAK: '0'
+        run: cd server && vp exec stryker run --mutate "src/${{ matrix.area }}/**/*.ts,!src/${{ matrix.area }}/**/*.test.ts"
+      - name: Save the incremental file
+        if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: server/reports/stryker-incremental.json
+          key: stryker-incremental-${{ strategy.job-index }}-${{ github.run_id }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-report-${{ strategy.job-index }}
+          if-no-files-found: ignore
+          path: server/reports/mutation

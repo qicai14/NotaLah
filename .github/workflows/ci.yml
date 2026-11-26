@@ -4,6 +4,7 @@ on:
   push:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, edited]
   schedule:
     - cron: '0 6 * * 1'
 
@@ -88,6 +89,128 @@ jobs:
         with:
           path: node_modules/.vite/task-cache
           key: ${{ steps.vite-task-cache.outputs.cache-primary-key }}
+
+  cage:
+    # Test cage (#151): a PR may not weaken its own tests without a "Test-change: <TC id> <reason>" line in its body.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+      - name: Test-edit guard
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node scripts/check-test-edits.mjs
+
+  crap:
+    # Test cage (#151): a function touched by the PR may not score CRAP above 30 (CC^2 * (1-coverage)^3 + CC).
+    if: github.event_name == 'pull_request' && github.event.action != 'edited'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notalah -d notalah"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah?sslmode=disable
+      TEST_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test?sslmode=disable
+      JWT_SECRET: ci-only-dummy-secret-not-for-production
+      CLIENT_ORIGIN: http://localhost:5173
+      PGPASSWORD: notalah
+      BASE_REF: origin/${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Does the PR touch server/src or shared/src?
+        id: touched
+        run: |
+          if git diff --name-only "$BASE_REF...HEAD" | grep -qE '^(server|shared)/src/'; then echo "yes=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.touched.outputs.yes
+        uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+      - if: steps.touched.outputs.yes
+        name: Install ffmpeg (video upload tests)
+        run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
+      - if: steps.touched.outputs.yes
+        run: vp install && touch .env
+      - if: steps.touched.outputs.yes
+        run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
+      - if: steps.touched.outputs.yes
+        name: Server tests with coverage
+        run: vp run server#test --coverage
+      - if: steps.touched.outputs.yes
+        name: CRAP gate on changed functions
+        run: node scripts/crap.mjs server/coverage/coverage-final.json 30
+
+  mutation:
+    # Test cage (#151): mutation score of the server files a PR changes must stay at or above 50. Advisory until the
+    # first baseline runs are in (continue-on-error); a mutant takes ~40 s because the tests share one database.
+    if: github.event_name == 'pull_request' && github.event.action != 'edited'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: notalah
+          POSTGRES_PASSWORD: notalah
+          POSTGRES_DB: notalah
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U notalah -d notalah"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah?sslmode=disable
+      TEST_DATABASE_URL: postgres://notalah:notalah@localhost:5432/notalah_test?sslmode=disable
+      JWT_SECRET: ci-only-dummy-secret-not-for-production
+      CLIENT_ORIGIN: http://localhost:5173
+      PGPASSWORD: notalah
+      BASE_REF: origin/${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@68f39c78aaf39be468cabd2afb09c162574c84af # v1.21.2
+        with:
+          node-version: '24'
+          cache: true
+      - name: Install ffmpeg (video upload tests)
+        run: for i in 1 2 3; do timeout 100 sh -c 'sudo apt-get update && sudo apt-get install -y ffmpeg' && exit 0; sleep 5; done; exit 1
+      - run: vp install && touch .env
+      - run: psql -h localhost -U notalah -d postgres -c "CREATE DATABASE notalah_test"
+      - name: Mutate the changed server files
+        run: |
+          files=$(git diff --name-only --diff-filter=AMR "$BASE_REF...HEAD" -- 'server/src/*.ts' | grep -vE '\.test\.ts$|^server/src/scripts/' | sed 's#^server/##' | paste -sd, -)
+          if [ -z "$files" ]; then echo "no changed server source files"; exit 0; fi
+          cd server && vp exec stryker run --mutate "$files"
 
   e2e:
     # Non-blocking: nothing needs it, and the owner makes it a required check in branch protection after a week green.

@@ -1,9 +1,7 @@
 # E2E notes (specs run green against the real UI, #81)
 
-## Product bugs found by axe (allowlisted with a reason in `helpers/axe.ts`; fix, then delete the entries)
-- `label-content-name-mismatch` (serious): the author avatar link has `aria-label="<Name>'s profile"` but its visible
-  text is the initials (feed 10 nodes, note page 1). WCAG 2.5.3 Label in Name.
-- Same rule on the sidebar Notifications link when unread: `aria-label="Notifications, 1 unread"` differs from its visible text.
+## Product bugs found by axe
+None open. #144 (`label-content-name-mismatch` on the avatar link, Notifications link and Super Like toggle) is fixed and the allowlist in `helpers/axe.ts` is empty.
 
 ## Running
 - See `docs/conventions/testing.md` (E2E): `vp run test:e2e` migrates and reseeds `notalah_test_81` and starts its own
