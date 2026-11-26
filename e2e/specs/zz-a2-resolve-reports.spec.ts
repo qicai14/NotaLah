@@ -21,9 +21,9 @@ test('E2E-TC6 A2: resolve the two reported notes (dismiss one, hide one) and sus
   };
 
   await timed('A2', async () => {
-    await resolve('UAT: Subnetting made simple', 'Dismiss', 'No breach found.');
+    await resolve('Subnetting made simple', 'Dismiss', 'No breach found.');
     await expect(reviews).toHaveCount(1);
-    await resolve('UAT: Copied exam answers (hidden)', 'Hide note', 'Copied content.');
+    await resolve('Copied exam answers (hidden)', 'Hide note', 'Copied content.');
     await expect(page.getByText('No open reports').first()).toBeVisible();
 
     // Suspend the author of the hidden note from the user list.

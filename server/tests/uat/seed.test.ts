@@ -4,7 +4,7 @@ import request from 'supertest';
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 import { app } from '../../src/app';
 import { pool } from '../../src/lib/pool';
-import { DEFAULT_UAT_PASSWORD, NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
+import { NOTES, USERS, toDeck, uatPassword } from '../../src/scripts/uat/data';
 import { seedUat } from '../../src/scripts/uat/seed';
 import { CSRF, insertUser, truncateAll } from '../helpers';
 
@@ -61,7 +61,7 @@ describe('UAT seed', () => {
     }
 
     await seedUat(pool);
-    const email = 'uat.student1@mail.apu.edu.my';
+    const email = 'daniel@gmail.com';
     const changed = '$2b$04$' + 'x'.repeat(53);
     await pool.query(`UPDATE "USER_T" SET usr_password_hash = $1 WHERE usr_email = $2`, [changed, email]);
     await seedUat(pool);
@@ -76,7 +76,7 @@ describe('UAT seed', () => {
 
     await seedUat(pool);
     const { rows } = await pool.query(
-      `SELECT usr_role, usr_lecturer_status FROM "USER_T" WHERE usr_email = 'uat.lecturer@mail.apu.edu.my'`,
+      `SELECT usr_role, usr_lecturer_status FROM "USER_T" WHERE usr_email = 'aisha@gmail.com'`,
     );
     expect(rows[0]).toEqual({ usr_role: 'lecturer', usr_lecturer_status: 'approved' });
     const { rows: stored } = await pool.query<{ sld_doc: unknown }>(`SELECT sld_doc FROM "SLIDE_T"`);
@@ -88,12 +88,14 @@ describe('UAT seed', () => {
     try {
       delete process.env.UAT_PASSWORD;
       process.env.NODE_ENV = 'production';
-      expect(() => uatPassword()).toThrow(/UAT_PASSWORD is required in production/);
+      expect(() => uatPassword('admin')).toThrow(/UAT_PASSWORD is required in production/);
       process.env.UAT_PASSWORD = 'Another#Pass1';
-      expect(uatPassword()).toBe('Another#Pass1');
+      expect(uatPassword('student')).toBe('Another#Pass1');
       process.env.NODE_ENV = 'test';
       delete process.env.UAT_PASSWORD;
-      expect(uatPassword()).toBe(DEFAULT_UAT_PASSWORD);
+      expect(uatPassword('admin')).toBe('admin123');
+      expect(uatPassword('lecturer')).toBe('lecturer123');
+      expect(uatPassword('student')).toBe('student123');
     } finally {
       process.env.NODE_ENV = saved.node;
       if (saved.pw === undefined) delete process.env.UAT_PASSWORD;
@@ -103,11 +105,14 @@ describe('UAT seed', () => {
 
   it('OPS-TC24: each seeded role can log in and the lecturer and a student see their UAT notes', async () => {
     await seedUat(pool);
-    const login = (email: string) =>
-      request(app).post('/api/auth/login').set(CSRF).send({ email, password: uatPassword() });
+    const login = (email: string, role: (typeof USERS)[number]['role']) =>
+      request(app)
+        .post('/api/auth/login')
+        .set(CSRF)
+        .send({ email, password: uatPassword(role) });
 
     for (const u of USERS) {
-      const res = await login(u.email);
+      const res = await login(u.email, u.role);
       expect(res.status, u.email).toBe(200);
       expect(res.body.user.role).toBe(u.role);
       if (u.role === 'admin') continue; // the admin owns no notes
@@ -118,7 +123,7 @@ describe('UAT seed', () => {
       expect(profile.status).toBe(200);
       expect(profile.body.notes.map((n: { title: string }) => n.title).sort()).toEqual([...mine].sort());
 
-      const found = await request(app).get('/api/search').query({ q: 'UAT:', tab: 'notes' }).set('Cookie', cookie);
+      const found = await request(app).get('/api/search').query({ q: 'uat', tab: 'notes' }).set('Cookie', cookie);
       expect(found.status).toBe(200);
       expect(found.body.items.length).toBeGreaterThan(0);
     }
