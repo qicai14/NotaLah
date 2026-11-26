@@ -1,6 +1,5 @@
-// Lighthouse accessibility evidence for the R26 UAT pages (#81). Run it by hand against a running E2E stack:
-//   vp run test:e2e   (once, to create and seed notalah_test_81), then start the stack the same way playwright does:
-//   see docs/testing/lighthouse.md for the exact commands. Writes docs/testing/lighthouse.json and prints a table.
+// Lighthouse accessibility evidence for the R26 UAT pages (#81). Run it with `vp run test:lighthouse`, which starts the
+// seeded E2E stack first (see docs/testing/lighthouse.md). Writes docs/testing/lighthouse.json. Needs Node 24.2+ (import.meta.main).
 //
 // Signed-in pages get the session cookie from a real login against the API, passed to Lighthouse as a header.
 import { execFileSync } from 'node:child_process';
