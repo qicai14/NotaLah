@@ -24,3 +24,5 @@
   loosened tolerances or a new test offsetting a removed one in the same file.
 - Mutation (#151): `cd server && vp exec stryker run --mutate src/path/file.ts` (Stryker, break below 50); the PR job
   `mutation` is advisory, a nightly workflow reports the full score. Cost and baseline: [`../testing/cage-baseline.md`](../testing/cage-baseline.md).
+- Lighthouse (#81): `vp run test:lighthouse` (same prerequisites as `test:e2e`) writes `docs/testing/lighthouse.json`; the
+  readable table is [`../testing/lighthouse.md`](../testing/lighthouse.md).
