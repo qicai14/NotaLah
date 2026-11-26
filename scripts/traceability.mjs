@@ -13,7 +13,7 @@ export function matrix(map, md) {
     .split('\n')
     .filter((l) => l.startsWith('| '))
     .map(cells);
-  const tcs = rows.filter((r) => /^[A-Z]+-TC\d+$/.test(r[0]));
+  const tcs = rows.filter((r) => /^[A-Z][A-Z0-9]*-TC\d+$/.test(r[0]));
   const uat = Object.fromEntries(rows.filter((r) => /^UAT-[A-Z]\d+$/.test(r[0])).map((r) => [r[0], r[6] || 'pending']));
   const gaps = [];
   const lines = ['| Requirement | Survey finding | TCs passing | UAT result |', '| --- | --- | --- | --- |'];

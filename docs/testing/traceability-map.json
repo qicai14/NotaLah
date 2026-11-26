@@ -197,8 +197,8 @@
     ]
   ],
   "NFR2": [
-    "B6: desktop 75.0% and smartphone 68.8%; no TC yet (UI-TC covers contrast only), evidence must come from the #81 mobile E2E run",
-    [],
+    "B6: desktop 75.0% and smartphone 68.8%; the R26 E2E runs each UAT task and screenshots it at 1440 and 375 px with axe (the 375 px shots are for review, not asserted)",
+    ["E2E"],
     []
   ],
   "NFR3": [

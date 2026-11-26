@@ -6,6 +6,7 @@ const md = [
   '| AUTH-TC1 | d | t | e | ok | Pass |',
   '| AUTH-TC2 | d | t | e | ok | Fail |',
   '| SRCH-TC10 | d | t | e | ok | Pass |',
+  '| E2E-TC1 | d | t | e | ok | Pass |',
   '| UAT-S4 | Student | task | b | t | 20 | Y | c |',
   '| UAT-S5 | Student | task | b | t | | | |',
 ].join('\n');
@@ -25,5 +26,9 @@ describe('traceability', () => {
       'FR9: failing TC AUTH-TC2',
     ]);
     expect(matrix({ FR2: ['f', ['AUTH'], []] }, md).gaps).toEqual(['FR2: failing TC AUTH-TC2']);
+  });
+
+  it('counts a prefix that contains a digit (E2E)', () => {
+    expect(matrix({ NFR2: ['f', ['E2E'], []] }, md).gaps).toEqual([]);
   });
 });
