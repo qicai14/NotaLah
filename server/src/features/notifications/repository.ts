@@ -2,24 +2,9 @@ import { fromMicros, type KeysetPage, micros, toPage } from '../../lib/keyset';
 import { pool } from '../../lib/pool';
 import { READABLE } from '../notes/repository';
 import { blockedWith, friends, userRef } from '../users/repository';
-import { NOTIFICATIONS } from './config';
+import { NOTIFICATIONS, NOTIFICATION_TYPES, type NotificationType } from './config';
 
-export const NOTIFICATION_TYPES = [
-  'mention',
-  'super_like',
-  'follow',
-  'lecturer_approved',
-  'lecturer_rejected',
-  'note_hidden',
-  'message_request',
-  'collab_request',
-  'collab_approved',
-  'collab_declined',
-  'edited_since_verification',
-  'annotation',
-  'annotation_hidden',
-] as const;
-export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+export { NOTIFICATION_TYPES, type NotificationType };
 
 export interface NewNotification {
   type: NotificationType;

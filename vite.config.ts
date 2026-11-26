@@ -8,12 +8,16 @@ export default defineConfig({
   },
   lint: { ignorePatterns: ['docs/**', 'load/k6/**'], options: { typeAware: true, typeCheck: true } },
   fmt: { singleQuote: true, printWidth: 120, ignorePatterns: ['docs/**', 'load/k6/**', '**/*.md', 'pnpm-lock.yaml'] },
+  // TEST_JUNIT=1 also writes JUnit XML for the 4.5 evidence script (#83).
+  test: {
+    reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
+  },
   run: {
     tasks: {
       // Type checks read @notalah/shared's built .d.ts files.
       check: {
         command:
-          'vp check && node scripts/check-agents.mjs && node scripts/check-schema-docs.mjs && node scripts/check-chapter4.mjs',
+          'vp check && node scripts/check-agents.mjs && node scripts/check-schema-docs.mjs && node scripts/check-chapter4.mjs && depcruise client/src server/src shared/src --config .dependency-cruiser.cjs --ignore-known .dependency-cruiser-known-violations.json',
         dependsOn: ['@notalah/shared#build'],
       },
       test: { command: 'vp test run scripts', cache: false },

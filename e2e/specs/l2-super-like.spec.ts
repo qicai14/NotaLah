@@ -18,6 +18,7 @@ test('E2E-TC5 L2: a lecturer Super Likes a student note with a remark', async ({
     .click();
   await expect(page).toHaveURL(/\/notes\/\d+/);
 
+  await checkAxe(page, 'L2-unverified-note'); // the Verify state's name must contain its caption (#164)
   await timed('L2', async () => {
     await page.getByRole('button', { name: /super like/i }).click();
     const dialog = page.getByRole('dialog', { name: /super like this note/i });

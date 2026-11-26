@@ -17,6 +17,7 @@ export default defineConfig({
     fixedExtension: false,
   },
   test: {
+    reporters: process.env.TEST_JUNIT ? ['default', ['junit', { outputFile: 'test-results/junit.xml' }]] : ['default'],
     // Guards truncateAll against ever pointing at the dev DB when the shell sets NODE_ENV.
     env: {
       NODE_ENV: 'test',
@@ -28,6 +29,8 @@ export default defineConfig({
     globalSetup: ['tests/globalSetup.ts'],
     // Tests share one database, so files must not run in parallel.
     fileParallelism: false,
+    // `vp test run --coverage` feeds scripts/crap.mjs (the CRAP gate, #151).
+    coverage: { provider: 'v8', include: ['src/**/*.ts'], reporter: ['json'] },
   },
   run: {
     tasks: {

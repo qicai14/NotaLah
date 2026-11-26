@@ -242,7 +242,7 @@ describe('protected routes', () => {
     expect(res.body).toEqual({ error: 'Unauthorized' });
   });
 
-  it('returns JSON 404 for unknown /api routes', async () => {
+  it('AUTH-TC24: returns JSON 404 for unknown /api routes', async () => {
     const res = await request(app).get('/api/nope');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: 'Not found' });
