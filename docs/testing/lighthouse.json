@@ -1,0 +1,55 @@
+{
+  "measured": "2026-11-26T03:47:33.754Z",
+  "lighthouse": "13.6.0",
+  "results": {
+    "login": {
+      "url": "/login",
+      "signedInAs": null,
+      "finalUrl": "/login",
+      "accessibility": 100,
+      "failed": []
+    },
+    "S3-feed-guest": {
+      "url": "/",
+      "signedInAs": null,
+      "finalUrl": "/welcome",
+      "accessibility": 100,
+      "failed": []
+    },
+    "S4-search": {
+      "url": "/search",
+      "signedInAs": null,
+      "finalUrl": "/search",
+      "accessibility": 100,
+      "failed": []
+    },
+    "S2-editor": {
+      "url": "/notes/new",
+      "signedInAs": "uat.student1",
+      "finalUrl": "/notes/new",
+      "accessibility": 100,
+      "failed": []
+    },
+    "S5-messages": {
+      "url": "/messages",
+      "signedInAs": "uat.student1",
+      "finalUrl": "/messages",
+      "accessibility": 100,
+      "failed": []
+    },
+    "L2-feed-lecturer": {
+      "url": "/",
+      "signedInAs": "uat.lecturer",
+      "finalUrl": "/",
+      "accessibility": 100,
+      "failed": []
+    },
+    "A2-reports": {
+      "url": "/admin/reports",
+      "signedInAs": "uat.admin",
+      "finalUrl": "/admin/reports",
+      "accessibility": 100,
+      "failed": []
+    }
+  }
+}
